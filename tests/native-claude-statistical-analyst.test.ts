@@ -16,6 +16,8 @@ import { nativeText } from './helpers/native-roles.js';
 const ROLE = 'statistical-analyst';
 const STEM = 'subagent-statistical-analyst';
 const text = (): string => nativeText(ROLE);
+/** The generated requests block names `schedule` and `Workflow` for every role; these checks read the authored text only. */
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to analyze'))![0];
@@ -61,7 +63,7 @@ describe('native statistical-analyst: the canonical tools that are bound and the
   });
 
   it('says nothing about timers, schedules, cron, a command runner or a question tool', () => {
-    expect(text()).not.toMatch(/cron|schedul|run_command|manage_task|timer|liveness|AskUserQuestion|ask_question/i);
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul|run_command|manage_task|timer|liveness|AskUserQuestion|ask_question/i);
   });
 });
 
@@ -121,7 +123,7 @@ describe('native statistical-analyst: what its steps say', () => {
 
   it('puts the assumed significance level, power and effect size under Open items and never asks the user', () => {
     const three = step(3);
-    expect(three).toContain('State the significance level, the power and the minimum detectable effect as assumptions in the report and put each one under `Open items`; you never ask the user directly.');
+    expect(three).toContain('State the significance level, the power and the minimum detectable effect as assumptions in the report and put each one as a non-blocking `ask-user` entry under `Requests for the lead`; you never ask the user directly.');
   });
 
   it('computes with a script through the shell it holds and reports the command', () => {
@@ -134,7 +136,7 @@ describe('native statistical-analyst: what its steps say', () => {
     expect(rows.map(row => row[2])).toEqual(['technical-documentation', 'growth-experiment-design']);
     const contract = JSON.parse(fs.readFileSync(path.resolve(`registry/core/${STEM}.contract.json`), 'utf8')) as { skills: string[] };
     expect(rows.map(row => row[2]).sort()).toEqual([...contract.skills].sort());
-    expect(section('How to analyze')).toContain("A skill's inputs that the brief does not give go under `Open items`; you do not ask the user for them.");
+    expect(section('How to analyze')).toContain("A skill's inputs that the brief does not give go to the lead as `ask-user` entries under `Requests for the lead`; you do not ask the user for them yourself.");
   });
 
   it('says what the watcher and the converter are for, and that the converter may not be connected', () => {

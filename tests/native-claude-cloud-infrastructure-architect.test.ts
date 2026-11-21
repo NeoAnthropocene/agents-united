@@ -43,7 +43,7 @@ describe('native cloud-infrastructure-architect: the tools its canonical agent h
   });
 
   it('says that a recurring check or timer is a recommendation under Open items, not an action', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is something you recommend under `Open items`, not an action you take.');
+    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is a `schedule` request, not an action you take.');
   });
 
   it('search through Bash is stated for macOS, Linux and WSL', () => {

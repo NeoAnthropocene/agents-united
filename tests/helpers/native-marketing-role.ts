@@ -146,7 +146,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
         expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings.");
         expect(boundaries).toMatch(/Your permission mode is `acceptEdits`: edits to project files go through without a prompt/);
         expect(boundaries).toContain('You hold a shell.');
-        expect(boundaries).toContain('Delegation is the lead\'s job.');
+        expect(boundaries).toContain('Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
       });
     } else {
       it('offers the role no shell at all, so the shell forms of the one guard sentence are the script\'s, not the role\'s, and the Safety rules are its own obligation', () => {
@@ -163,7 +163,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
         expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings.");
         expect(boundaries).toMatch(/Your permission mode is `acceptEdits`: edits to project files go through without a prompt/);
         expect(boundaries).toContain('You hold editors and no shell.');
-        expect(boundaries).toContain('Delegation is the lead\'s job.');
+        expect(boundaries).toContain('Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
       });
     }
   });

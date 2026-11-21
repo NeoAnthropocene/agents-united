@@ -107,6 +107,14 @@ describe('the leads', () => {
     const names = toolNames(nativeText(role));
     expect(LEAD_TOOLS.filter(tool => !names.includes(tool))).toEqual([]);
   });
+
+  it.each(leads)('$role sits before the boundaries section, or before the session task tracking section without one', ({ role }) => {
+    const text = nativeText(role);
+    const block = text.indexOf(REQUESTS_START);
+    const anchor = text.includes(`\n${BOUNDARIES}\n`) ? text.indexOf(`\n${BOUNDARIES}\n`) : text.indexOf(`\n${TRACKING}\n`);
+    expect(block).toBeGreaterThan(-1);
+    expect(anchor).toBeGreaterThan(block);
+  });
 });
 
 describe('the module on synthetic text', () => {
@@ -133,6 +141,11 @@ describe('the module on synthetic text', () => {
 
   it('reduces an Agent allowlist to Agent', () => {
     expect(openRequestTypes(['Agent(code-reviewer, repo-index)'])).not.toContain('delegate');
+  });
+
+  it('closes run-command with PowerShell alone and schedule with ScheduleWakeup alone', () => {
+    expect(openRequestTypes(['PowerShell'])).not.toContain('run-command');
+    expect(openRequestTypes(['ScheduleWakeup'])).not.toContain('schedule');
   });
 
   it('renders the lead text without a computed line', () => {
@@ -185,6 +198,17 @@ describe('the module on synthetic text', () => {
     expect(() => syncRequests(`${synced}\n${REQUESTS_START}\n`, 'specialist', ['Read'])).toThrow(/exactly one pair/);
   });
 
+  it('throws on two end markers, an end marker before start, or an orphan start marker in syncRequests and checkRequests', () => {
+    const synced = syncRequests(withBoundaries, 'specialist', ['Read']);
+    const twoEnds = `${synced}\n${REQUESTS_END}\n`;
+    const endBeforeStart = `${frontmatter}# X\n\n${REQUESTS_END}\n${REQUESTS_START}\n`;
+    const orphanStart = `${frontmatter}# X\n\n${REQUESTS_START}\n`;
+    for (const malformed of [twoEnds, endBeforeStart, orphanStart]) {
+      expect(() => syncRequests(malformed, 'specialist', ['Read'])).toThrow(/exactly one pair/);
+      expect(() => checkRequests(malformed, 'specialist', ['Read'])).toThrow(/exactly one pair/);
+    }
+  });
+
   it('reports a missing block and a stale block', () => {
     expect(checkRequests(withBoundaries, 'specialist', ['Read'])).toEqual([expect.stringMatching(/^Native requests block missing: /)]);
     const synced = syncRequests(withBoundaries, 'specialist', ['Read']);
@@ -213,5 +237,11 @@ describe('requestsBlockProblems', () => {
   it('returns nothing for a current block and for an exempt role without markers', () => {
     expect(requestsBlockProblems(current, { kind: 'specialist', name: 'x', tools: ['Read'] })).toEqual([]);
     expect(requestsBlockProblems(base, { kind: 'factory-worker', name: 'factory-sync', tools: ['Read'] })).toEqual([]);
+  });
+
+  it('returns a problem and does not throw on two start markers', () => {
+    expect(requestsBlockProblems(`${current}\n${REQUESTS_START}\n`, { kind: 'specialist', name: 'x', tools: ['Read'] })).toEqual([
+      expect.stringContaining('exactly one pair'),
+    ]);
   });
 });
