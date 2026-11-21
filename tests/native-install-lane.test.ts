@@ -216,7 +216,10 @@ describe('native install lane (agents add --native)', () => {
     await fs.remove(workspace);
     await fs.ensureDir(agentsDir);
     await new InstallEngine().install('digital-agency', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
-    expect(await fs.readFile(claudeAgent('agency-compliance-grc-specialist'), 'utf8')).toBe(expected('agency-compliance-grc-specialist'));
+    // The agency copy of the same canonical agent: its role name differs from the canonical's stem, so the marker names the canonical file.
+    expect(await fs.readFile(claudeAgent('agency-compliance-grc-specialist'), 'utf8')).toBe(
+      renderNativeRole(fs.readFileSync(nativeRoleSource(REGISTRY, 'claude', 'agency-compliance-grc-specialist')!, 'utf8'), canonicalOf('compliance-grc-specialist')),
+    );
     expect(await fs.pathExists(claudeAgent('compliance-grc-specialist'))).toBe(false);
   });
 
