@@ -58,7 +58,7 @@ describe('native legal-contract-analyst: its exact tool set and posture', () => 
 
   it('binds the one server of its canonical agent, and says what it is for', () => {
     expect([...CANONICAL().matchAll(/^  - name: (.+)$/gm)].map(match => match[1])).toEqual(['markitdown']);
-    expect(text()).toContain('- Contracts, policies and licence texts that are not plain text (a PDF, spreadsheet, slide deck or Word file) are read through `mcp__markitdown`; `ToolSearch` shows what it offers.');
+    expect(text()).toContain('- Contracts, policies and license texts that are not plain text (a PDF, spreadsheet, slide deck or Word file) are read through `mcp__markitdown`; `ToolSearch` shows what it offers.');
   });
 
   it('holds no web tool and says so in no tool name that its tools line lacks', () => {
