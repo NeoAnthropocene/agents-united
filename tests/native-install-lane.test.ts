@@ -24,7 +24,7 @@ const BUNDLE = 'software-engineering';
 const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
-  'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
+  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
   'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-security', 'repo-index', 'security-engineer',
 ];
@@ -167,6 +167,24 @@ describe('native install lane (agents add --native)', () => {
   it('without the native lane, security-operations still writes the legacy projection for security-engineer', async () => {
     await new InstallEngine().install('security-operations', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     const text = await fs.readFile(claudeAgent('security-engineer'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native accessibility-lead for the frontend-engineering bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('frontend-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('accessibility-lead'), 'utf8')).toBe(expected('accessibility-lead'));
+    expect(await fs.readFile(claudeAgent('frontend-architect'), 'utf8')).toBe(expected('frontend-architect'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/accessibility-lead.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('accessibility-lead'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, frontend-engineering still writes the legacy projection for accessibility-lead', async () => {
+    await new InstallEngine().install('frontend-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('accessibility-lead'), 'utf8');
     expect(text).toContain('profile: claude |');
     expect(text).not.toContain('claude-native');
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
