@@ -169,6 +169,16 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
   },
+  // `market-intelligence-analyst`: its floor (scope boundaries) states the three market invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'market-intelligence-analyst': {
+    'Top-down market reports are always complemented with a bottom-up TAM = Total Potential Accounts x ACV formula.': /Always complement top-down analyst reports with a bottom-up formula: `TAM = Total Potential Accounts x Annual Contract Value \(ACV\)`/,
+    'Competitor assessments remain objective and evaluate strengths, proprietary datasets, network effects and switching costs realistically.': /Avoid ungrounded flattery or disparagement; assess competitor strengths, proprietary datasets, network effects, and switching costs realistically\./,
+    'Proposed product features are explicitly evaluated against the 7 Powers framework.': /Explicitly evaluate proposed product features against Hamilton Helmer's 7 Powers/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
     'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,
