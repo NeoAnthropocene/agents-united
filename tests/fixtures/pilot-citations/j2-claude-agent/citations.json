@@ -1,0 +1,160 @@
+{
+  "origin": "2026-11-18 pilot, journey 2, second evaluator (session c7c43763)",
+  "subjectKind": "claude-agent",
+  "citations": [
+    {
+      "where": "criterion task-fit, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "Never promotes to production.",
+      "given": {
+        "startLine": 3,
+        "endLine": 3
+      }
+    },
+    {
+      "where": "criterion task-fit, citation 2",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "at most three cycles, then report what still fails",
+      "given": {
+        "startLine": 63,
+        "endLine": 63
+      }
+    },
+    {
+      "where": "criterion shared-semantics, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "Never promote a preview deployment to production yourself",
+      "given": {
+        "startLine": 42,
+        "endLine": 42
+      }
+    },
+    {
+      "where": "criterion shared-semantics, citation 2",
+      "sourceId": "shared-core",
+      "inputKind": "shared-core",
+      "path": "subagent-devops-engineer.core.md",
+      "quote": "Never promote a preview deployment to production yourself; hand the production command to the orchestrator for explicit user approval.",
+      "given": {
+        "startLine": 6,
+        "endLine": 6
+      }
+    },
+    {
+      "where": "criterion shared-semantics, citation 3",
+      "sourceId": "shared-contract",
+      "inputKind": "shared-contract",
+      "path": "subagent-devops-engineer.contract.json",
+      "quote": "\"ci-cd-pipeline-automation\",",
+      "given": {
+        "startLine": 5,
+        "endLine": 12
+      }
+    },
+    {
+      "where": "criterion host-fit, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "tools: Bash, Edit, Glob, Grep, ListMcpResourcesTool, Monitor",
+      "given": {
+        "startLine": 7,
+        "endLine": 7
+      }
+    },
+    {
+      "where": "criterion host-fit, citation 2",
+      "sourceId": "host-profile",
+      "inputKind": "profile",
+      "path": "profile.json",
+      "quote": "\"subagentHandback\": {",
+      "given": {
+        "startLine": 216,
+        "endLine": 219
+      }
+    },
+    {
+      "where": "criterion dependency-usefulness, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "A skill that is not installed, or not available to this role, is a gap to report in your handoff.",
+      "given": {
+        "startLine": 50,
+        "endLine": 50
+      }
+    },
+    {
+      "where": "criterion evidence-truthfulness, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "It is limited command protection, not filesystem isolation",
+      "given": {
+        "startLine": 68,
+        "endLine": 68
+      }
+    },
+    {
+      "where": "criterion evidence-truthfulness, citation 2",
+      "sourceId": "guard-script",
+      "inputKind": "source",
+      "path": "evidence-guard-script.js",
+      "quote": "r=\"git push --force\"",
+      "given": {
+        "startLine": 1,
+        "endLine": 1
+      }
+    },
+    {
+      "where": "criterion provenance-ownership, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "agents-united:floor:start (generated from registry/core",
+      "given": {
+        "startLine": 16,
+        "endLine": 16
+      }
+    },
+    {
+      "where": "criterion clarity-maintainability, citation 1",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "## How to work",
+      "given": {
+        "startLine": 47,
+        "endLine": 47
+      }
+    },
+    {
+      "where": "finding guard-does-not-block-destructive-commands, citation 1",
+      "sourceId": "guard-script",
+      "inputKind": "source",
+      "path": "evidence-guard-script.js",
+      "quote": "r=\"vercel --prod\"",
+      "given": {
+        "startLine": 1,
+        "endLine": 1
+      }
+    },
+    {
+      "where": "finding guard-does-not-block-destructive-commands, citation 2",
+      "sourceId": "candidate",
+      "inputKind": "candidate",
+      "path": "hosts/claude/agents/devops-engineer.md",
+      "quote": "Do not run destructive shell commands such as recursive deletes",
+      "given": {
+        "startLine": 44,
+        "endLine": 44
+      }
+    }
+  ]
+}
