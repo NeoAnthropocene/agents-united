@@ -1,0 +1,13 @@
+{
+  "definition": "subagent-database-administrator",
+  "workflows": [],
+  "skills": [
+    "database-design",
+    "turso-distributed-sqlite",
+    "supabase-backend-architecture",
+    "performance-optimization",
+    "postgres-best-practices",
+    "clickhouse-architecture-advisor"
+  ],
+  "hooks": []
+}

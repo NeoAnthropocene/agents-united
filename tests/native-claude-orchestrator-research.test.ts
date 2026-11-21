@@ -87,11 +87,13 @@ describe('native orchestrator-research (a main-thread coordinator)', () => {
     }
   });
 
-  it('says what the two native research specialists can do on this host, and that the others are not yet native', () => {
+  it('says what each native research specialist can do on this host, the two analytics roles included', () => {
     const roster = read().slice(read().indexOf('agents-united:roster:start'), read().indexOf('agents-united:roster:end'));
     expect(roster).toMatch(/\| `deep-research` \| `deep-research`, `deep-research-analytics` \|[^\n]*edits files; Glob\/Grep search/);
     expect(roster).toMatch(/\| `socratic-mentor` \| `deep-research` \|[^\n]*read-only; Glob\/Grep search/);
-    for (const type of ['literature-patent-analyst', 'statistical-analyst']) expect(roster, type).toMatch(new RegExp(`\\| \`${type}\` \\| \`deep-research-analytics\` \\| Not yet a native agent`));
+    expect(roster).toMatch(/\| `statistical-analyst` \| `deep-research-analytics` \|[^\n]*edits files and runs commands; searches through Bash; Monitor; MCP: markitdown/);
+    expect(roster).toMatch(/\| `literature-patent-analyst` \| `deep-research-analytics` \|[^\n]*edits files and runs commands; searches through Bash; MCP: firecrawl, markitdown/);
+    expect(roster).not.toContain('Not yet a native agent');
   });
 
   it('Step 0 tells the user how to install a missing type, which bundle brings the two analysts, and how to refresh the running session', () => {

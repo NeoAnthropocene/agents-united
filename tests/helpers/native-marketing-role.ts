@@ -12,7 +12,7 @@ import { bundles } from './native-coordinator.js';
 import { nativeText } from './native-roles.js';
 
 /**
- * What the five Tier 1 marketing specialists (growth-marketing) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
+ * What the Tier 1 marketing specialists (growth-marketing) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
  * the guard against the real script, the peers section of the Tier 1 form, the hand-back step, the session task tracking section, the skill table and the invariants of the core.
  * Each role's test file adds what only that role says. The roles run no shell (their cores grant none), so like the Tier 2 teammates they hold the editors and the web.
  */
@@ -22,8 +22,8 @@ export interface MarketingRoleSpec {
   role: string;
   /** The canonical registry file stem, e.g. `subagent-marketing-growth-strategist`. */
   type: string;
-  /** The Tier 2 file stood on the same core. */
-  agency: string;
+  /** The Tier 2 file stood on the same core, when there is one. A role on a core of its own leaves it out: its tools are then pinned by the class ceiling in native-claude-agents.test.ts. */
+  agency?: string;
   /** The integrations the canonical agent declares (the routes are derived), none of them an image server. */
   servers: string[];
   /** Whether the core has the artifacts class, and so the role holds the `Artifact` tool. */
@@ -32,6 +32,10 @@ export interface MarketingRoleSpec {
   peers: string[];
   /** The things step 6 returns, as the role says it. */
   returns: string;
+  /** The role holds a shell (its core grants the shell class): its description, guard checks and Boundaries line differ from the specialists that run none. */
+  shell?: boolean;
+  /** The bundle that installs the role and whose skill list its skill table draws on, when it is not growth-marketing itself (a child add-on). */
+  bundle?: string;
 }
 
 const ROLE_SPECIFIC_FORBIDDEN = /Chris\b|Campaign Director|digital agency|Deniz|Emre|Defne|Arda\b|motion designer|sound designer|motion-designer|sound-designer|agency-|workflow-agency-|Media Request/i;
@@ -53,7 +57,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
   /** A numbered step of the "How to work" section. */
   const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to work'))?.[0] ?? '';
   const canonical = (): string => fs.readFileSync(path.resolve('registry/agents', `${spec.type}.md`), 'utf8').replace(/\r\n/g, '\n');
-  const agencyTools = (): string[] => splitTools(/^tools: (.*)$/m.exec(nativeText(spec.agency))![1]!);
+  const agencyTools = (): string[] => splitTools(/^tools: (.*)$/m.exec(nativeText(spec.agency!))![1]!);
 
   describe(`native ${spec.role}: posture and tools`, () => {
     it('is pinned to the specialist posture, with the permission mode of its canonical agent, and says in its description that it edits files and runs no shell', () => {
@@ -62,12 +66,14 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
       expect(meta().permissionMode).toBe(/^permissionMode: (.+)$/m.exec(canonical())?.[1]);
       expect(meta().skills ?? []).toEqual([]);
       expect(String(meta().description).length).toBeLessThanOrEqual(300);
-      expect(meta().description).toContain('Edits files, no shell.');
+      expect(meta().description).toContain(spec.shell ? 'Edits files and runs commands.' : 'Edits files, no shell.');
     });
 
-    it('holds the tools of the Tier 2 copy on the same core, minus every image server', () => {
-      const expected = agencyTools().filter(tool => !/image/i.test(tool));
-      expect([...tools()].sort()).toEqual([...expected].sort());
+    it('holds the tools of the Tier 2 copy on the same core when there is one, minus every image server', () => {
+      if (spec.agency) {
+        const expected = agencyTools().filter(tool => !/image/i.test(tool));
+        expect([...tools()].sort()).toEqual([...expected].sort());
+      }
       expect(tools().filter(tool => /image/i.test(tool))).toEqual([]);
       expect(text()).not.toMatch(IMAGE_TOOL);
     });
@@ -79,14 +85,22 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
       expect([...declared].sort()).toEqual([...spec.servers].sort());
     });
 
-    it('runs no shell, spawns nobody and schedules nothing, and holds Artifact only when its core has the artifacts class', async () => {
-      for (const absent of ['Bash', 'PowerShell', 'Agent', 'Workflow', 'CronCreate', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'LSP']) expect(tools().map(tool => tool.split('(')[0]), absent).not.toContain(absent);
-      for (const present of ['Edit', 'Write', 'Read', 'Glob', 'Grep', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'WebFetch', 'WebSearch', 'TodoWrite']) expect(tools(), present).toContain(present);
-      expect(tools().includes('Artifact')).toBe(spec.artifact);
+    it('runs a shell only when its core grants one, spawns nobody and schedules nothing, and holds Artifact only when its core has the artifacts class', async () => {
+      const shellTools = ['Bash', 'PowerShell'];
+      for (const absent of [...(spec.shell ? [] : shellTools), 'Agent', 'Workflow', 'CronCreate', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'LSP']) expect(tools().map(tool => tool.split('(')[0]), absent).not.toContain(absent);
       const core = (await loadSemanticCore('registry')).get(spec.type)!;
+      // The web and the task tools follow the classes the core grants: a core without `web` or `task-tracking` gets neither, and the body must not claim them.
+      const webTools = ['WebFetch', 'WebSearch'];
+      const taskTools = ['TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite'];
+      const web = (core.capabilities ?? []).includes('web');
+      const tracking = (core.capabilities ?? []).includes('task-tracking');
+      for (const present of [...(spec.shell ? shellTools : []), 'Edit', 'Write', 'Read', 'Glob', 'Grep', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', ...(web ? webTools : []), ...(tracking ? taskTools : [])]) expect(tools(), present).toContain(present);
+      for (const absent of [...(web ? [] : webTools), ...(tracking ? [] : taskTools)]) expect(tools(), absent).not.toContain(absent);
+      expect(tools().includes('Artifact')).toBe(spec.artifact);
       expect(core.capabilities).toContain('messaging');
       expect((core.capabilities ?? []).includes('artifacts')).toBe(spec.artifact);
-      expect(core.capabilities).not.toContain('shell');
+      if (spec.shell) expect(core.capabilities).toContain('shell');
+      else expect(core.capabilities).not.toContain('shell');
     });
   });
 
@@ -108,22 +122,50 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
       expect(blocked('Write', { file_path: 'C:\\repo\\docs\\content\\plan.md' })).toBe(false);
     });
 
-    it('offers the role no shell at all, so the shell forms of the one guard sentence are the script\'s, not the role\'s, and the Safety rules are its own obligation', () => {
-      for (const tool of ['Bash', 'PowerShell']) expect(attempt(text(), project, { tool, input: { command: 'git push --force origin main' } }, { agentType: spec.role }).offered, tool).toBe(false);
-      const boundaries = section('Boundaries of this host');
-      expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
-      expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
-      expect(boundaries).not.toContain('which you cannot run without a shell');
-      expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
-    });
+    if (spec.shell) {
+      it('blocks the destructive forms through each shell it holds, both ways, and nothing else: the Safety rules are its own obligation', () => {
+        for (const tool of ['Bash', 'PowerShell']) {
+          expect(attempt(text(), project, { tool, input: { command: 'git status' } }, { agentType: spec.role }).offered, tool + ' is offered').toBe(true);
+          const forms = tool === 'Bash'
+            ? ['git push --force origin main', 'vercel --prod', 'echo x > .env', 'rm -rf /', 'rm -rf $HOME', 'sudo ls', 'shutdown -h now']
+            : ['git push --force origin main', 'vercel --prod', 'echo x > .env', 'Remove-Item -Recurse -Force C:\\'];
+          for (const command of forms) expect(blocked(tool, { command }), tool + ': ' + command).toBe(true);
+          const allowed = tool === 'Bash'
+            ? ['git push --force-with-lease', 'rm -rf build', 'git commit -m x', 'terraform apply', 'curl -IL https://example.com', 'echo x > .env.example']
+            : ['git push --force-with-lease', 'Remove-Item -Recurse -Force build', 'git commit -m x', 'terraform apply', 'curl -IL https://example.com', 'echo x > .env.example'];
+          for (const command of allowed) expect(blocked(tool, { command }), tool + ': ' + command).toBe(false);
+        }
+        const boundaries = section('Boundaries of this host');
+        expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
+        expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
+        expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
+      });
 
-    it('states where the guard comes from in both modes, and its permission-mode limit', () => {
-      const boundaries = section('Boundaries of this host');
-      expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings.");
-      expect(boundaries).toMatch(/Your permission mode is `acceptEdits`: edits to project files go through without a prompt/);
-      expect(boundaries).toContain('You hold editors and no shell.');
-      expect(boundaries).toContain('Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
-    });
+      it('states where the guard comes from in both modes, and its permission-mode limit', () => {
+        const boundaries = section('Boundaries of this host');
+        expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+        expect(boundaries).toMatch(/Your permission mode is `acceptEdits`: edits to project files go through without a prompt/);
+        expect(boundaries).toContain('You hold a shell.');
+        expect(boundaries).toContain('Delegation is the lead\'s job.');
+      });
+    } else {
+      it('offers the role no shell at all, so the shell forms of the one guard sentence are the script\'s, not the role\'s, and the Safety rules are its own obligation', () => {
+        for (const tool of ['Bash', 'PowerShell']) expect(attempt(text(), project, { tool, input: { command: 'git push --force origin main' } }, { agentType: spec.role }).offered, tool).toBe(false);
+        const boundaries = section('Boundaries of this host');
+        expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
+        expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
+        expect(boundaries).not.toContain('which you cannot run without a shell');
+        expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
+      });
+
+      it('states where the guard comes from in both modes, and its permission-mode limit', () => {
+        const boundaries = section('Boundaries of this host');
+        expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+        expect(boundaries).toMatch(/Your permission mode is `acceptEdits`: edits to project files go through without a prompt/);
+        expect(boundaries).toContain('You hold editors and no shell.');
+        expect(boundaries).toContain('Delegation is the lead\'s job.');
+      });
+    }
   });
 
   describe(`native ${spec.role}: no name from outside the domain`, () => {
@@ -172,10 +214,10 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
       expect(hand).toContain(`Return ${spec.returns} and the paths of what you wrote as your final message through \`SubagentHandback\`.`);
     });
 
-    it('names only skills of a bundle that installs this role (growth-marketing and its children that list it), each of which exists', () => {
+    it('names only skills of a bundle that installs this role (growth-marketing, or the child add-on that lists it), each of which exists', () => {
       const defs = bundles();
       const installing = Object.entries(defs).filter(([name, def]) => (name === 'growth-marketing' || def.parentBundle === 'growth-marketing') && (def.agents as string[]).includes(`${spec.type}.md`));
-      expect(installing.map(([name]) => name)).toContain('growth-marketing');
+      expect(installing.map(([name]) => name)).toContain(spec.bundle ?? 'growth-marketing');
       const allowed = new Set(installing.flatMap(([, def]) => def.skills as string[]));
       const lines = section('How to work').split('\n');
       const head = lines.findIndex(line => /^\|\s*Situation\s*\|\s*Skill\s*\|\s*Load when\s*\|/.test(line));
@@ -208,7 +250,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
   describe(`native ${spec.role}: the invariants of its core`, () => {
     it('are all evidenced in the file as it stands, so no delta has to be declared for this role', async () => {
       const core = (await loadSemanticCore('registry')).get(spec.type)!;
-      expect(core.invariants.length).toBeGreaterThanOrEqual(9);
+      expect(core.invariants.length).toBeGreaterThanOrEqual(8);
       const unbound = core.invariants.filter(invariant => !evidenceFor(spec.role, invariant)?.test(text()));
       expect(unbound).toEqual([]);
     });

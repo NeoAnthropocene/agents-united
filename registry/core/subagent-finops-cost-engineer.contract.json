@@ -1,0 +1,10 @@
+{
+  "definition": "subagent-finops-cost-engineer",
+  "workflows": [],
+  "skills": [
+    "telemetry-monitoring",
+    "architecture-design",
+    "runpod-gpu-orchestration"
+  ],
+  "hooks": []
+}
