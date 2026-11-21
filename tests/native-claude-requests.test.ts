@@ -122,12 +122,13 @@ describe('the module on synthetic text', () => {
   });
 
   it('closes run-command with a shell and watch with Monitor', () => {
+    const line = (block: string): string => /the types open to you are: (.*)\. Never request/.exec(block)![1]!;
     const withShell = renderRequests('specialist', ['Bash']);
-    expect(withShell).not.toContain('`run-command`');
-    expect(withShell).toContain('`watch`');
+    expect(line(withShell)).not.toContain('`run-command`');
+    expect(line(withShell)).toContain('`watch`');
     const withMonitor = renderRequests('specialist', ['PowerShell', 'Monitor']);
-    expect(withMonitor).not.toContain('`run-command`');
-    expect(withMonitor).not.toContain('`watch`');
+    expect(line(withMonitor)).not.toContain('`run-command`');
+    expect(line(withMonitor)).not.toContain('`watch`');
   });
 
   it('reduces an Agent allowlist to Agent', () => {

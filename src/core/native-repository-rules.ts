@@ -5,6 +5,7 @@
  * contract-check) both call these functions. Pure: no I/O, no clock.
  */
 import { ClaudeProjector } from './claude-projector.js';
+import { REQUESTS_EXEMPT_ROLES, checkRequests } from './native-requests.js';
 import { validateDeclaredDeltas } from './semantic-core.js';
 import type { DeclaredDelta, SemanticCore } from './types.js';
 
@@ -68,6 +69,23 @@ export function sessionTrackingProblems(text: string, options: { coordinator: bo
     if (!rule.test(body)) problems.push(`Session task tracking: the ${options.coordinator ? 'coordinator' : 'specialist'} wording does not ${label}.`);
   }
   return problems;
+}
+
+/**
+ * ADR 0076 - the generated requests block. A specialist or lead carries the current block; the factory's fixed-job roles (named in
+ * `REQUESTS_EXEMPT_ROLES`, or any `factory-worker` kind) carry none, and a marker in one of them is a problem. Never throws.
+ */
+export function requestsBlockProblems(text: string, role: { kind: NativeKind; name: string; tools: readonly string[] }): string[] {
+  const body = lf(text);
+  const marked = body.includes('agents-united:requests:start') || body.includes('agents-united:requests:end');
+  if (role.kind === 'factory-worker' || REQUESTS_EXEMPT_ROLES.includes(role.name)) {
+    return marked ? [`Native requests block: ${role.name} is exempt from the requests protocol and must carry no requests markers.`] : [];
+  }
+  try {
+    return checkRequests(body, role.kind === 'coordinator' ? 'coordinator' : 'specialist', role.tools);
+  } catch (error) {
+    return [error instanceof Error ? error.message : String(error)];
+  }
 }
 
 /** The tools line the generator writes: the class tools sorted, then the server tools in the canonical agent's order. */
