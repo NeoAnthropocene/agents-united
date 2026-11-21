@@ -167,6 +167,8 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.nativeLane).toBe(true);
     expect(lock.installed.bundles).toContain('secops-cloud-security');
     expect(lock.projections['.claude/agents/cloud-security-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-cloud-security-architect.md' });
+  });
+
   it('installs the native accessibility-lead for frontend-engineering with -t claude --native', async () => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'frontend-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
     expect(result.status, result.stdout + result.stderr).toBe(0);
