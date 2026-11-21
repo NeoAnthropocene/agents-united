@@ -119,8 +119,9 @@ const ROLES: RoleSpec[] = [
     effort: 'medium',
   },
   // The security lead (Tier 1, domain bundle): a main-thread coordinator of the security domain. Same ceiling as the engineering lead except
-  // that it holds no `Workflow` (the only native workflow a security Bundle installs is workflow-test, whose repair step spawns a type no
-  // security Bundle installs), no web tool (its canonical agent has none; Firecrawl is its web route) and no `ReportFindings` (the reviewer's).
+  // that it holds no web tool (its canonical agent has none; Firecrawl is its web route) and no `ReportFindings` (the reviewer's). It holds
+  // `Workflow` because the projector replaces the Skill workflow-test with the native workflow of that name whenever a Bundle lists it
+  // (secops-application-security does) without checking that the lead holds the tool.
   {
     name: 'orchestrator-security',
     stem: 'orchestrator-security',
@@ -129,7 +130,7 @@ const ROLES: RoleSpec[] = [
     skills: [],
     serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
     mutating: true,
-    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'Workflow', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
     coordinatorBundle: 'security-operations',
     model: 'opus',
