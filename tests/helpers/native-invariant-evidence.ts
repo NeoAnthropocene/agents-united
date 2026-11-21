@@ -269,6 +269,28 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Every design system specification enforces WCAG 2.1 AAA contrast targets and explicit :focus-visible ring parameters.': /Every design system specification must enforce WCAG 2\.1 AAA contrast targets \(7:1 normal text, 4\.5:1 large text\/UI components\) and explicit \x60:focus-visible\x60 ring parameters\./,
     'No magic value remains: every property maps to a systematic scale token.': /Eliminate arbitrary pixel paddings, hardcoded hex values, or inline z-index numbers\. All properties must map to systematic scale tokens\./,
   },
+  // The design-research-testing specialists: their floor Scope Boundaries and their own "How to work" steps state these. The peers invariants take the defaults above.
+  'design-researcher': {
+    'Existing user feedback, product requirements and session notes are read, and the key research questions documented, before synthesis.': /\*\*Ingest the research context first\.\*\* Find the user feedback[^\n]*before you synthesise anything\./,
+    'Every design recommendation cites user data, interview quotes or an established HCI heuristic.': /Every design recommendation must cite user data, interview quotes, or established HCI heuristics/,
+    'Every identified usability problem is paired with a specific, prioritized recommendation.': /Every identified usability problem must pair with a specific, prioritized recommendation\./,
+    'Every usability issue is classified by severity as Critical, Major or Minor.': /Classify every issue as Critical \(blocks task\), Major \(causes significant delay or frustration\) or Minor \(cosmetic or inconvenience\)/,
+  },
+  'designer-toolkit-expert': {
+    'AI-generated prototypes, specs and transcripts are inspected, and arbitrary CSS values searched for, before any token is extracted.': /\*\*Audit the prototype first\.\*\* Find the AI-generated prototype files[^\n]*before you extract anything\./,
+    'Every design choice cites WCAG 2.1 AA accessibility standards, cognitive load principles or usability data.': /Every design choice must cite WCAG 2\.1 AA accessibility standards, cognitive load principles, or usability data\./,
+    'Hardcoded colors, arbitrary spacing and bespoke border-radii of an AI prototype are extracted into centralized design tokens.': /Audit AI-generated prototypes \(v0, Lovable\) to extract hardcoded hex colors, arbitrary spacing \(\x60p-\[13px\]\x60\), and bespoke border-radii into centralized design tokens\./,
+    'Interactive component primitives carry keyboard focus states and ARIA roles.': /Ensure all interactive primitives include keyboard focus states \(\x60focus-visible:ring-2\x60\) and ARIA roles\./,
+    'Every major interface architecture decision is documented as a Design Decision Record with its context, options considered, final decision and expected impact.': /Document every major interface architecture decision: Context, Options Considered \(with Pros\/Cons and accessibility trade-offs\), Final Decision & Rationale, and Expected Impact Metrics\./,
+  },
+  'prototype-tester': {
+    'Prototype specifications, user journey maps and wireframes are read, and the primary and secondary task flows mapped, before any evaluation.': /\*\*Scope the prototype first\.\*\* Find the prototype specifications[^\n]*before you evaluate\./,
+    "Nielsen's 10 usability heuristics are applied to every evaluated screen or interactive flow.": /Apply Nielsen 10 Usability Heuristics to every evaluated screen or interactive flow\./,
+    'Every heuristic violation is assigned a severity from 1 (cosmetic) to 4 (usability catastrophe).': /Assign severity ratings to every violation \(1 = Cosmetic, 2 = Minor, 3 = Major, 4 = Usability Catastrophe\)/,
+    'Friction is quantified with Task Completion Rate, Estimated Time-on-Task, Click-Depth and Error Recovery Speed.': /Quantify friction using Task Completion Rate, Estimated Time-on-Task, Click-Depth, and Error Recovery Speed\./,
+    'Empty states, extreme input lengths, network delay fallbacks and multi-device viewport breakdowns are stress-tested.': /Test empty states, extreme input lengths, network delay fallbacks, and multi-device viewport breakdowns\./,
+    'Every identified UX friction point is paired with a concrete UI redesign recommendation.': /Pair every identified UX friction point with a concrete UI redesign recommendation\./,
+  },
   // The product-design specialists: their floor Safety lines and Scope Boundaries, and their own "How to work" steps, state these. The peers invariants take the defaults above.
   'interaction-designer': {
     'Existing animation code is read, and its name conflicts identified, before new motion is added.': /\*\*Audit the motion first\.\*\* Find the existing components, stylesheets and animation code[^\n]*`@keyframes` names your new ones would collide with\./,
