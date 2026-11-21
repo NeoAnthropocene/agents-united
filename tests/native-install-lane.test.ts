@@ -26,9 +26,9 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-security', 'repo-index', 'security-engineer',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'interaction-designer', 'orchestrator-agent-factory', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-security', 'repo-index', 'security-engineer', 'ui-designer', 'ux-strategist',
 ];
-const COORDINATORS = ['orchestrator-engineering', 'orchestrator-security'];
+const COORDINATORS = ['orchestrator-design', 'orchestrator-engineering', 'orchestrator-security'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
 const sha256 = (text: string): string => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`;
@@ -129,6 +129,18 @@ describe('native install lane (agents add --native)', () => {
     expect(await fs.readFile(claudeAgent('code-reviewer'), 'utf8')).toBe(expected('code-reviewer'));
   });
 
+  it('installs the native product-design roles with the design lead, recorded as managed roles of their canonical agents, the lead at the coordinator posture', async () => {
+    await new InstallEngine().install('product-design', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    for (const role of ['interaction-designer', 'orchestrator-design', 'ui-designer', 'ux-strategist']) expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/orchestrator-design.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe('agents/orchestrator-design.md');
+    expect(record.managedMarker).toBe(true);
+    const meta = yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(lf(fs.readFileSync(nativeRoleSource(REGISTRY, 'claude', 'orchestrator-design')!, 'utf8')))![1]);
+    expect(meta.model).toBe(ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.coordinator);
+    expect(meta.effort).toBe(ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.coordinator);
+  });
+
   it('installs the native devops-engineer for the devops-engineering bundle, recorded as a managed role of its canonical agent', async () => {
     await new InstallEngine().install('devops-engineering', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
     expect(await fs.readFile(claudeAgent('devops-engineer'), 'utf8')).toBe(expected('devops-engineer'));
@@ -136,6 +148,25 @@ describe('native install lane (agents add --native)', () => {
     expect(record.kind).toBe('role');
     expect(record.canonical).toBe(canonicalOf('devops-engineer'));
     expect(record.managedMarker).toBe(true);
+  });
+
+  it('installs the native ui-designer, ux-strategist and interaction-designer for the product-design bundle, recorded as managed roles of their canonical agents', async () => {
+    await new InstallEngine().install('product-design', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const projections = (await fs.readJson(lockPath)).projections;
+    for (const role of ['interaction-designer', 'ui-designer', 'ux-strategist']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      expect(projections[`.claude/agents/${role}.md`], role).toMatchObject({ kind: 'role', canonical: canonicalOf(role), managedMarker: true });
+    }
+  });
+
+  it('without the native lane, product-design still writes the legacy projection for its three designers', async () => {
+    await new InstallEngine().install('product-design', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['interaction-designer', 'ui-designer', 'ux-strategist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
   it('without the native lane, devops-engineering still writes the legacy projection for devops-engineer', async () => {
