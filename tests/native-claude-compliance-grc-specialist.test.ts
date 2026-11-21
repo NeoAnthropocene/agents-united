@@ -121,13 +121,13 @@ describe('native compliance-grc-specialist: the guard claims', () => {
     it('a Write to .env.example exits 0, as step 9 says', () => {
       const result = fire({ tool: 'Write', input: { file_path: '.env.example', content: 'X=' } });
       expect(result.blocked).toBe(false);
-      expect(result.statuses.every(status => status === 0)).toBe(true);
+      expect(result.statuses).toEqual([0]);
     });
 
     it('a Write of a policy under docs/compliance/ exits 0: the role writes its policies there', () => {
       const result = fire({ tool: 'Write', input: { file_path: 'docs/compliance/privacy-policy.md', content: '# Policy' } });
       expect(result.blocked).toBe(false);
-      expect(result.statuses.every(status => status === 0)).toBe(true);
+      expect(result.statuses).toEqual([0]);
     });
   });
 });
@@ -265,5 +265,51 @@ describe('native compliance-grc-specialist: the skills and the shared pair', () 
     const core = (await loadSemanticCore('registry')).get('subagent-compliance-grc-specialist')!;
     const whole = JSON.stringify(core);
     for (const tool of ['grep_search', 'view_file', 'list_dir', 'find_by_name', 'manage_task', 'replace_file_content', 'write_to_file', 'run_command', 'SubagentHandback', 'SendMessage']) expect(whole, tool).not.toContain(tool);
+  });
+});
+
+describe('native compliance-grc-specialist: the shared core keeps every duty of the canonical agent', () => {
+  const rawCore = (): string => fs.readFileSync(path.resolve('registry/core/subagent-compliance-grc-specialist.core.md'), 'utf8').replace(/\r\n/g, '\n');
+  const directives = (source: string): string[] => [...source.matchAll(/^\s*[1-5]\. (\*\*(?:Automated Evidence Collection|Data Minimization & Privacy by Design|Structured Policy Artifacts|Actionable Remediation Roadmaps|Campaign & Marketing Funnel Compliance)\.\*\*.*)$/gm)].map(match => match[1]!);
+
+  it('carries the five canonical directives in full and in order', async () => {
+    const fromCanonical = directives(canonical());
+    expect(fromCanonical).toHaveLength(5);
+    const scope = (await loadSemanticCore('registry')).get('subagent-compliance-grc-specialist')!.scope_boundaries;
+    expect(directives(scope)).toEqual(fromCanonical);
+  });
+
+  it('names no persona and no company anywhere in the raw core', () => {
+    expect(rawCore()).not.toMatch(/Defne|defne-grc|AstrolabsAI/);
+  });
+
+  it('keeps the consumer protection, framework, protocol and erasure duties of the canonical agent', async () => {
+    const core = (await loadSemanticCore('registry')).get('subagent-compliance-grc-specialist')!;
+    const duties = core.mission + '\n' + core.scope_boundaries;
+    for (const duty of [
+      'clear and conspicuous', 'substantiated product-efficacy claims', 'consent tracking records',
+      'Security, Availability, Confidentiality, Processing Integrity and Privacy', 'Annex A controls, asset registers, access control matrices and cryptographic policies', 'audit logging and Business Associate Agreement (BAA) mapping',
+      '(`docs/`, `.github/`, `prisma/`, `src/`)', '(`email`, `ssn`, `dob`, `phone`, `ip_address`)', 'the logging middleware and the privacy policies',
+      'immutable audit logs for authentication events, unencrypted backup snapshots, or missing data deletion cascades',
+      '`SECURITY.md`, `INCIDENT_RESPONSE.md`, `DATA_RETENTION.md`', 'removes the personal data across every database table, using fixtures and never real personal data',
+      'validates the subject identifier first', 'In one transaction it anonymizes the personal fields of financial records the law requires to be retained',
+      'cascades the deletion through the session, activity, profile and account records', 'only the minimum necessary subject reference, a timestamp and the outcome',
+    ]) expect(duties, duty).toContain(duty);
+    expect(JSON.stringify(core)).not.toMatch(/\bschedule\b/i);
+  });
+
+  it('keeps the media and 3D duties in the agency copy only', () => {
+    expect(text()).not.toMatch(/Media Request|Motion Designer|Sound Designer|\b3D\b|asset ledger/i);
+    const agency = nativeText('agency-compliance-grc-specialist');
+    expect(agency).toContain('## Media planning consultation');
+    expect(agency).toContain('## Conditional 3D handoff');
+  });
+
+  it('gives the agency paragraph its role and its peers', () => {
+    const paragraph = /^In the digital agency you are Defne .*$/m.exec(nativeText('agency-compliance-grc-specialist'))![0];
+    expect(paragraph).toContain('the compliance specialist of the AstrolabsAI team');
+    expect(paragraph).toContain('from Chris, the Campaign Director');
+    for (const peer of ['Jamileh', 'Jale', 'Yavuz']) expect(paragraph, peer).toContain(peer);
+    expect(paragraph).toContain('back to him');
   });
 });

@@ -98,7 +98,7 @@ describe.each(Object.entries(PERSONAS))('persona %s', (persona, type) => {
     expect(description.length).toBeLessThanOrEqual(300);
   });
 
-  it('is the name the role plays by, in its identity (a core persona) or in its own body (Deniz and Defne share a persona-free core)', () => {
+  it('is the name the role plays by, in its identity (a core persona) or in its own body (Deniz and Defne each use a persona-free core)', () => {
     const text = AGENCY_BODY_PERSONAS.has(type) ? afterFloor(type) : read(type);
     expect(text).toMatch(new RegExp(`You are \\*\\*${persona}\\*\\*|In the digital agency you are ${persona}`));
   });
