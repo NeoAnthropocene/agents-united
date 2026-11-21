@@ -70,8 +70,33 @@ const ROLES: RoleSpec[] = [
   { name: 'repo-index', stem: 'subagent-repo-index', guard: 'read-only', permissionMode: 'plan', skills: [], serverTools: MCP_READ_TOOLS, mutating: false, mustHold: ['Glob', 'Grep', 'LSP', 'ToolSearch'], model: 'sonnet', effort: 'medium' },
   { name: 'backend-architect', stem: 'subagent-backend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
   { name: 'frontend-architect', stem: 'subagent-frontend-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp'], mutating: true, mustHold: WRITER_MUST_HOLD, model: 'sonnet', effort: 'medium' },
+  { name: 'accessibility-lead', stem: 'subagent-accessibility-lead', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__chrome-devtools-mcp', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TaskCreate', 'TaskUpdate', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   { name: 'devops-engineer', stem: 'subagent-devops-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   { name: 'security-engineer', stem: 'subagent-security-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The product-design specialists (Tier 1): editors and no shell, like the agency specialists; the design servers with their plugin routes.
+  { name: 'interaction-designer', stem: 'subagent-interaction-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'ui-designer', stem: 'subagent-ui-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'ux-strategist', stem: 'subagent-ux-strategist', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The design lead (Tier 1, a domain lead): the engineering lead's cut minus the code-intelligence, workflow and report classes (no code, no saved workflow, no reviewer findings).
+  // It holds the seven design servers under their plugin or connector routes; Playwright is held beyond the canonical lead (prototype-tester declares it).
+  // It has no image tool and no mode-line gate: product-design is a domain bundle (ADR 0053 covers organization leads).
+  {
+    name: 'orchestrator-design',
+    stem: 'orchestrator-design',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__playwright', 'mcp__stitch']),
+    mutating: true,
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'product-design',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'opus',
+    effort: 'medium',
+  },
+  // The system architect holds editors and no shell (its canonical tools are view, write, replace, grep, find, list): it writes ADRs, C4 diagrams and specs.
+  { name: 'system-architect', stem: 'subagent-system-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
@@ -101,6 +126,24 @@ const ROLES: RoleSpec[] = [
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
     coordinatorBundle: 'security-operations',
+    model: 'opus',
+    effort: 'medium',
+  },
+  {
+    name: 'orchestrator-system-architecture',
+    stem: 'orchestrator-system-architecture',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's three servers. No browser: nothing in this domain drives one.
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
+    mutating: true,
+    // The engineering lead's list minus `Workflow`: the lead's plan does not depend on saved workflows. No Bundle of the architecture domain installs the native workflows (workflow-review,
+    // workflow-implement, workflow-test); `full` lists the lead and does install them, and the lead still fans out with parallel `Agent` calls. So it holds no `Workflow` tool (its core declares no `workflow` capability).
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'system-architecture',
+    // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
     model: 'opus',
     effort: 'medium',
   },
