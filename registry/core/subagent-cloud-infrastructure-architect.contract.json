@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-cloud-infrastructure-architect",
+  "workflows": [],
+  "skills": [
+    "azure-infrastructure-bicep",
+    "docker-deployment",
+    "architecture-design",
+    "telemetry-monitoring",
+    "terraform-style-guide"
+  ],
+  "hooks": []
+}

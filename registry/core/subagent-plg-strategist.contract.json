@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-plg-strategist",
+  "workflows": [],
+  "skills": [
+    "viral-referral-loops",
+    "onboarding-cro",
+    "signup-flow-cro",
+    "churn-prevention-playbook"
+  ],
+  "hooks": []
+}

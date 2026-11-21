@@ -110,6 +110,15 @@ const ROLES: RoleSpec[] = [
   { name: 'business-panel-experts', stem: 'subagent-business-panel-experts', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   // The SysOps and SRE lead holds editors and no shell (its canonical tools are view, write, replace, grep, find, list, plus task and timer tools): it writes runbooks, alert rules, dashboards and post-mortems. Timers (CronCreate) are not granted to a specialist.
   { name: 'sysops-sre-lead', stem: 'subagent-sysops-sre-lead', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The cloud infrastructure architect holds a shell, as its canonical run_command and as devops-engineer does (same canonical tool set): it writes Terraform and Bicep, topology documents and ADRs and runs the platform's validators. Timers (CronCreate) are not granted to a specialist. Canonical effort is `high`; every native specialist is pinned to sonnet/medium (native-ceiling), so `high` is not carried.
+  { name: 'cloud-infrastructure-architect', stem: 'subagent-cloud-infrastructure-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The database administrator holds a shell, as its canonical run_command and as devops-engineer does (same canonical tool set): it writes migrations, pooler and engine configuration and runbooks and runs them against isolated test databases. Timers (CronCreate) are not granted to a specialist. Its canonical servers are context7 only (no github). Canonical effort is `high`; every native specialist is pinned to sonnet/medium (native-ceiling), so `high` is not carried.
+  { name: 'database-administrator', stem: 'subagent-database-administrator', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The FinOps cost engineer holds a shell, as its canonical run_command and as devops-engineer does (same canonical tool set): it reads cost and infrastructure files, writes cost reports, alert and budget configuration and ADRs, and runs read-only billing queries only when its brief authorises them. Timers (CronCreate) are not granted to a specialist. Its canonical servers are context7 only (no github). Canonical effort is `medium`, as carried.
+  { name: 'finops-cost-engineer', stem: 'subagent-finops-cost-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The two analytics specialists run commands (statistics and tabulation scripts), so they hold a shell and are guarded as writers; the statistician also watches long runs, the literature analyst reads the web only through its server.
+  { name: 'statistical-analyst', stem: 'subagent-statistical-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Monitor', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'literature-patent-analyst', stem: 'subagent-literature-patent-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__firecrawl', 'mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
@@ -201,6 +210,69 @@ const ROLES: RoleSpec[] = [
       effort: 'medium',
     })
   ),
+  // The performance-paid-acquisition add-on's specialist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants no shell and no web; it does grant task-tracking, so it holds the task tools,
+  // the editors, the messaging and skill classes and the context7 server with the routes; it holds no image server.
+  {
+    name: 'paid-acquisition-specialist',
+    stem: 'subagent-paid-acquisition-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__context7']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  // The product-led-growth add-on's strategist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
+  // the editors, the task tools, the messaging and skill classes and the context7 server with the routes; it holds no image server.
+  {
+    name: 'plg-strategist',
+    stem: 'subagent-plg-strategist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__context7']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  // The lifecycle-email-marketing add-on's specialist: a native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
+  // the editors, the task tools, the messaging and skill classes and the markitdown server (which has no routes); it holds no image server.
+  {
+    name: 'lifecycle-email-specialist',
+    stem: 'subagent-lifecycle-email-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__markitdown']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  // The growth-marketing bundle's SEO specialist: a second native file on the core of 'agency-seo-specialist'. Unlike the five marketing roles it holds a shell (its core grants the shell class: crawls,
+  // header traces and Lighthouse), so it is guarded as a writer like the Tier 2 SEO specialist. Its servers are its canonical set with the routes; it holds no image server.
+  {
+    name: 'seo-specialist',
+    stem: 'subagent-seo-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__firecrawl', 'mcp__chrome-devtools-mcp']),
+    mutating: true,
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
   {
     name: 'orchestrator-marketing',
     stem: 'orchestrator-marketing',

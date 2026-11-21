@@ -130,6 +130,42 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
   });
 
+  it('installs the seo-content-marketing add-on under the lane with the native seo-specialist and content strategist, and none of the agency-only files', async () => {
+    await install('seo-content-marketing', true);
+    for (const name of ['orchestrator-marketing', 'marketing-content-strategist', 'seo-specialist']) {
+      expect(await exists(name), name).toBe(true);
+      expect(fs.readFileSync(agentFile(name), 'utf8'), name).toContain('profile: claude-native');
+    }
+    for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
+  });
+
+  it('installs the performance-paid-acquisition add-on under the lane with the native paid-acquisition-specialist and its three marketing roles, and none of the agency-only files', async () => {
+    await install('performance-paid-acquisition', true);
+    for (const name of ['orchestrator-marketing', 'marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'paid-acquisition-specialist']) {
+      expect(await exists(name), name).toBe(true);
+      expect(fs.readFileSync(agentFile(name), 'utf8'), name).toContain('profile: claude-native');
+    }
+    for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
+  });
+
+  it('installs the product-led-growth add-on under the lane with the native plg-strategist and its two marketing roles, and none of the agency-only files', async () => {
+    await install('product-led-growth', true);
+    for (const name of ['orchestrator-marketing', 'marketing-conversion-specialist', 'marketing-growth-strategist', 'plg-strategist']) {
+      expect(await exists(name), name).toBe(true);
+      expect(fs.readFileSync(agentFile(name), 'utf8'), name).toContain('profile: claude-native');
+    }
+    for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
+  });
+
+  it('installs the lifecycle-email-marketing add-on under the lane with the native lifecycle-email-specialist and the campaign specialist, and none of the agency-only files', async () => {
+    await install('lifecycle-email-marketing', true);
+    for (const name of ['orchestrator-marketing', 'marketing-campaign-specialist', 'lifecycle-email-specialist']) {
+      expect(await exists(name), name).toBe(true);
+      expect(fs.readFileSync(agentFile(name), 'utf8'), name).toContain('profile: claude-native');
+    }
+    for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
+  });
+
   it('turning the lane off brings the legacy names back and removes the agency-only files', { timeout: 120_000 }, async () => {
     await install('digital-agency', true);
     for (const name of Object.values(EXPECTED)) expect(await exists(name), `${name} was installed`).toBe(true);
