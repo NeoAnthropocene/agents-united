@@ -75,7 +75,7 @@ Every security audit and vulnerability assessment follows this standardized layo
 | Type | Provided by | Role and what it can do on this host |
 |---|---|---|
 | `appsec-penetration-tester` | `secops-application-security` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
-| `cloud-security-architect` | `secops-cloud-security` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `cloud-security-architect` | `secops-cloud-security` | Cloud security architect. Use to audit AWS, GCP and Azure IAM and IaC (Terraform, Bicep, Pulumi) against the CIS Benchmarks, harden KMS encryption and Kubernetes policies, and report fixes. Defensive, authorised assessment only; live cloud changes need the user's approval. — edits files and runs commands; searches through Bash; Monitor; MCP: context7, github |
 | `compliance-grc-specialist` | `secops-compliance-grc` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `security-engineer` | `secops-application-security`, `secops-cloud-security`, `secops-compliance-grc`, `security-operations` | Application security engineer. Use to audit code for OWASP Top 10 vulnerabilities, hardcoded secrets and STRIDE threats, and to deliver CVSS-scored findings with surgical remediation diffs. Defensive, authorised assessment only; nothing is run against external or production targets. — edits files and runs commands; searches through Bash; Monitor; MCP: context7, github |
 
