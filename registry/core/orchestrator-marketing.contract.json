@@ -1,0 +1,19 @@
+{
+  "definition": "orchestrator-marketing",
+  "workflows": [],
+  "skills": [
+    "grill-me",
+    "workflow-marketing-panel",
+    "workflow-marketing-audit",
+    "workflow-marketing-campaign-builder",
+    "workflow-marketing-content-pipeline",
+    "workflow-marketing-growth-experiment",
+    "workflow-marketing-launch",
+    "handoff",
+    "git-guardrails",
+    "host-agent-router"
+  ],
+  "hooks": [
+    "reject-destructive-operations"
+  ]
+}
