@@ -154,7 +154,7 @@ Each entry carries `R<n>`, a type, `blocking` or `non-blocking`, the reason, the
 
 | Type | What you do |
 |---|---|
-| `ask-user` | Put the question to the user with `AskUserQuestion`, with the specialist's options unchanged and its recommendation marked. |
+| `ask-user` | Put the question to the user with `AskUserQuestion`, with the specialist's options unchanged and its recommendation marked. Ask an `open answer` question in plain prose and take the user's reply as the answer. |
 | `run-command` | Run it with `Bash` or `PowerShell`, under your guard, and return the exit code and the evidence asked for. A command that changes anything outside this machine (a deploy, a publish, a production system) needs the user's explicit approval first. A command your guard blocks is declined, never reworded. |
 | `watch` | Use `Monitor`, and `TaskStop` at the stop condition or at the longest wait. |
 | `schedule` | Use `CronCreate` or `ScheduleWakeup`, only with the user's consent, because a schedule outlives the turn. You own the follow-up. |

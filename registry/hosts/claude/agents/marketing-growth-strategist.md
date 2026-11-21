@@ -134,7 +134,7 @@ Each request is one entry with these fields, in this order:
 
 | Type | Fields |
 |---|---|
-| `ask-user` | The question in plain language; 2 to 4 options, the one you recommend first. |
+| `ask-user` | The question in plain language; 2 to 4 options, the one you recommend first, or the words `open answer` when the question has no fixed choices. |
 | `run-command` | The exact command and the working folder; what it changes (nothing, files, or something outside this machine); the evidence you need back (exit code, last lines, a file). |
 | `watch` | What to watch, the stop condition, the longest wait. |
 | `schedule` | What to run or check, when (once or recurring), when it ends, who gets the result. |
