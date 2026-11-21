@@ -21,6 +21,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'system-architect', stem: 'subagent-system-architect', tier: 1, coordinator: false },
   { role: 'business-panel-experts', stem: 'subagent-business-panel-experts', tier: 1, coordinator: false },
   { role: 'sysops-sre-lead', stem: 'subagent-sysops-sre-lead', tier: 1, coordinator: false },
+  { role: 'cloud-infrastructure-architect', stem: 'subagent-cloud-infrastructure-architect', tier: 1, coordinator: false },
   { role: 'code-reviewer', stem: 'subagent-code-reviewer', tier: 1, coordinator: false },
   { role: 'repo-index', stem: 'subagent-repo-index', tier: 1, coordinator: false },
   { role: 'security-engineer', stem: 'subagent-security-engineer', tier: 1, coordinator: false },
