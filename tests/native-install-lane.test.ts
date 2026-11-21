@@ -24,9 +24,9 @@ const BUNDLE = 'software-engineering';
 const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
-  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'business-panel-experts', 'cloud-infrastructure-architect', 'cloud-security-architect', 'code-reviewer', 'database-administrator', 'deep-research', 'design-ops-lead', 'design-researcher', 'design-systems-architect', 'designer-toolkit-expert', 'devops-engineer', 'e2e-tester', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'financial-analyst', 'finops-cost-engineer', 'frontend-architect', 'interaction-designer', 'legal-contract-analyst', 'lifecycle-email-specialist', 'literature-patent-analyst', 'market-intelligence-analyst', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'operations-strategist', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'paid-acquisition-specialist', 'plg-strategist', 'prototype-tester', 'qa-automation-lead', 'repo-index', 'security-engineer', 'seo-specialist', 'socratic-mentor', 'statistical-analyst', 'sysops-sre-lead', 'system-architect', 'ui-designer', 'ux-strategist',
+  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'business-panel-experts', 'cloud-infrastructure-architect', 'cloud-security-architect', 'code-reviewer', 'database-administrator', 'deep-research', 'design-ops-lead', 'design-researcher', 'design-systems-architect', 'designer-toolkit-expert', 'devops-engineer', 'e2e-tester', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'financial-analyst', 'finops-cost-engineer', 'frontend-architect', 'interaction-designer', 'legal-contract-analyst', 'lifecycle-email-specialist', 'literature-patent-analyst', 'market-intelligence-analyst', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'operations-strategist', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'orchestrator-universal', 'paid-acquisition-specialist', 'plg-strategist', 'prototype-tester', 'qa-automation-lead', 'repo-index', 'security-engineer', 'seo-specialist', 'socratic-mentor', 'statistical-analyst', 'sysops-sre-lead', 'system-architect', 'ui-designer', 'ux-strategist',
 ];
-const COORDINATORS = ['orchestrator-business', 'orchestrator-design', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture'];
+const COORDINATORS = ['orchestrator-business', 'orchestrator-design', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'orchestrator-universal'];
 /** The lead and the five roles the growth-marketing bundle installs as native files (growth-marketing). */
 const GROWTH_MARKETING_NATIVE = ['marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-marketing'];
 /** What the seo-content-marketing add-on adds as native files on top of its parent: the SEO specialist and the content strategist, with the lead they share. */
@@ -307,6 +307,18 @@ describe('native install lane (agents add --native)', () => {
       expect(record.canonical, role).toBe(canonicalOf(role));
       expect(record.managedMarker, role).toBe(true);
     }
+  });
+
+  it('installs the native Prime Orchestrator for the universal-orchestration bundle, a managed role of its canonical agent, with the guard script it points at', async () => {
+    await new InstallEngine().install('universal-orchestration', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    expect(await fs.readFile(claudeAgent('orchestrator-universal'), 'utf8')).toBe(expected('orchestrator-universal'));
+    const record = lock.projections['.claude/agents/orchestrator-universal.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe('agents/orchestrator-universal.md');
+    expect(record.managedMarker).toBe(true);
+    expect(await fs.pathExists(path.join(workspace, '.claude/hooks/agents-united-guard.js'))).toBe(true);
   });
 
   it('without the native lane, business-strategy still writes the legacy projection for business-panel-experts', async () => {

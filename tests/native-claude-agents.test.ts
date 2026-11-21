@@ -315,6 +315,24 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  // The Prime Orchestrator (universal-orchestration, a domain bundle with no specialist): a main-thread front door that routes and holds no `Agent` tool, so it has no allowlist and no roster (the harness syncs a roster
+  // only for a role that holds `Agent`). Its core declares none of `delegate`, `web`, `workflow`, `artifacts`, `code-intel`, `worktree`, `report`, `handback` or `plan`; the servers are its canonical three, with the routes.
+  {
+    name: 'orchestrator-universal',
+    stem: 'orchestrator-universal',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__github', 'mcp__context7', 'mcp__firecrawl']),
+    mutating: true,
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'universal-orchestration',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    // The same pin as the other coordinators (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
   // Tier 2 (plan 032 follow-up 2, ADR 0036): the digital-agency team. Teammates are specialists with editors and no shell, so no `Bash`,
   // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).
