@@ -29,16 +29,21 @@ const sessionSection = (body: string): string => /\n## Session task tracking\n([
 describe('native data-engineer: the exact tool set, model and effort', () => {
   it('holds exactly this tool set', () => {
     expect([...toolsOf(text())].sort()).toEqual([
-      'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill',
-      'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskStop', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write',
+      'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill',
+      'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write',
       'mcp__context7',
     ]);
   });
 
-  it('is the tool set of devops-engineer and e2e-tester, whose canonical agents have the same tool list, with the servers of its own canonical agent', () => {
+  it('is the tool set of devops-engineer and e2e-tester without their Monitor and TaskStop, whose canonical agents have the same tool list, with the servers of its own canonical agent', () => {
+    // The siblings keep `Monitor` and `TaskStop` (their cores declare background-monitor); this canonical agent has no task-management tool, so its core does not.
     const shared = (body: string): string[] => toolsOf(body).filter(tool => !tool.startsWith('mcp__')).sort();
-    expect(shared(text())).toEqual(shared(nativeText('devops-engineer')));
-    expect(shared(text())).toEqual(shared(nativeText('e2e-tester')));
+    const withoutMonitor = (body: string): string[] => shared(body).filter(tool => tool !== 'Monitor' && tool !== 'TaskStop');
+    expect(shared(nativeText('devops-engineer'))).toContain('Monitor');
+    expect(shared(nativeText('e2e-tester'))).toContain('Monitor');
+    expect(shared(nativeText('devops-engineer'))).toContain('TaskStop');
+    expect(shared(text())).toEqual(withoutMonitor(nativeText('devops-engineer')));
+    expect(shared(text())).toEqual(withoutMonitor(nativeText('e2e-tester')));
     const canonicalTools = /^tools:\n((?:  - .+\n)+)/m.exec(canonical())![1]!.split('\n').filter(Boolean).map(line => line.replace(/^  - /, ''));
     expect(canonicalTools).toEqual(['view_file', 'grep_search', 'list_dir', 'replace_file_content', 'write_to_file', 'find_by_name', 'run_command']);
   });
@@ -53,9 +58,13 @@ describe('native data-engineer: the exact tool set, model and effort', () => {
     expect(text()).toContain('- Running workflows, scheduling and spawning teammates or subagents are not available to you. Delegation belongs to the lead.');
   });
 
-  it('holds the messaging, task and monitor tools its capabilities give, and the core declares the capabilities', async () => {
-    expect(toolsOf(text())).toEqual(expect.arrayContaining(['ListAgents', 'SendMessage', 'Monitor', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite']));
-    expect((await loadSemanticCore('registry')).get('subagent-data-engineer')!.capabilities).toEqual(expect.arrayContaining(['messaging', 'background-monitor', 'task-tracking']));
+  it('holds the messaging and task tools its capabilities give, no Monitor, and the core declares exactly those capabilities', async () => {
+    expect(toolsOf(text())).toEqual(expect.arrayContaining(['ListAgents', 'SendMessage', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite']));
+    expect(toolsOf(text())).not.toContain('Monitor');
+    expect(text()).not.toContain('Monitor');
+    const capabilities = (await loadSemanticCore('registry')).get('subagent-data-engineer')!.capabilities;
+    expect(capabilities).toEqual(expect.arrayContaining(['messaging', 'task-tracking']));
+    expect(capabilities).not.toContain('background-monitor');
   });
 });
 
@@ -108,10 +117,23 @@ describe('native data-engineer: the guard claims', () => {
     });
     afterAll(() => fs.rmSync(project, { recursive: true, force: true }));
     const run = (tool: string, command: string): boolean => attempt(text(), project, { tool, input: { command } }, { agentType: ROLE }).blocked;
-    const write = (tool: string, file: string): boolean => attempt(text(), project, { tool, input: { file_path: file } }, { agentType: ROLE }).blocked;
+    /** NotebookEdit names its target in `notebook_path`, the other editors in `file_path`. */
+    const write = (tool: string, file: string): boolean => attempt(text(), project, { tool, input: tool === 'NotebookEdit' ? { notebook_path: file } : { file_path: file } }, { agentType: ROLE }).blocked;
+    /** The hook must have fired and exited 2: an absent hook cannot satisfy a block case. */
+    const blockedByHook = (tool: string, command: string): { blocked: boolean; fired: number; statuses: Array<number | null> } => {
+      const result = attempt(text(), project, { tool, input: { command } }, { agentType: ROLE });
+      return { blocked: result.blocked, fired: result.fired, statuses: result.statuses };
+    };
 
     it.each(['Bash', 'PowerShell'])('blocks the forms of the canonical agent\'s own guard (rm -rf, sudo, shutdown) and the named forms through %s', tool => {
       for (const command of ['rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'git push --force origin main', 'vercel --prod']) expect(run(tool, command), `${tool}: ${command}`).toBe(true);
+    });
+
+    it.each(['Bash', 'PowerShell'])('blocks a shell redirect to .env, disk formatting and a cloud resource-group, project or account deletion through %s, and the hook fired with status 2', tool => {
+      for (const command of ['echo X > .env', 'mkfs.ext4 /dev/sda1', 'az group delete --name rg-prod --yes', 'gcloud projects delete my-project']) {
+        const result = blockedByHook(tool, command);
+        expect(result, `${tool}: ${command}`).toEqual({ blocked: true, fired: 1, statuses: [2] });
+      }
     });
 
     it.each(['Write', 'Edit', 'NotebookEdit'])('blocks a %s of .env and .env.local, and lets .env.example and a migration file through', tool => {
@@ -155,7 +177,7 @@ describe('native data-engineer: the peers section of the engineering family', ()
     expect(step(6)).toContain('as your final message through `SubagentHandback`.');
   });
 
-  it("carries the siblings' Session task tracking section byte for byte, as the last section", () => {
+  it("carries the siblings' Session task tracking section text-identical (trimmed, same line endings), as the last section", () => {
     expect(sessionSection(text())).toBe(sessionSection(nativeText('e2e-tester')));
     expect(sessionSection(text())).toBe(sessionSection(nativeText('devops-engineer')));
     expect(sessionSection(text())).toBe(sessionSection(nativeText('accessibility-lead')));
@@ -164,12 +186,15 @@ describe('native data-engineer: the peers section of the engineering family', ()
 });
 
 describe('native data-engineer: the shared scope_boundaries and safety', () => {
-  it('carries the five numbered directives of the canonical agent line for line, and the protocol', async () => {
+  it('carries the five numbered directives of the canonical agent, whitespace-normalised and in the canonical order, and the protocol', async () => {
     const scope = (await loadSemanticCore('registry')).get('subagent-data-engineer')!.scope_boundaries.replace(/\s+/g, ' ');
     const section = /\n## Primary Directives\n([\s\S]*?)(?=\n---\n|\n## )/.exec(canonical())![1]!;
     const directives = [...section.matchAll(/^(\d+)\. (.+)$/gm)].map(match => `${match[1]}. ${match[2]}`.replace(/\s+/g, ' '));
     expect(directives).toHaveLength(5);
     for (const directive of directives) expect(scope, directive).toContain(directive);
+    const positions = directives.map(directive => scope.indexOf(directive));
+    expect(positions, 'directives appear in the canonical order').toEqual([...positions].sort((a, b) => a - b));
+    expect(new Set(positions).size).toBe(directives.length);
     for (const phase of ['Audit', 'Design and migration', 'Verification', 'say so explicitly instead of asserting success']) expect(scope, phase).toContain(phase);
   });
 
