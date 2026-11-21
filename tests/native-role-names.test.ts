@@ -47,7 +47,7 @@ describe('the registry entry', () => {
     }
   });
 
-  it('no other bundle declares nativeRoles, so Tier-1 marketing keeps the legacy roles', () => {
+  it('no other bundle declares nativeRoles, so Tier-1 marketing installs its own native files (the shared names), not agency copies', () => {
     const others = Object.entries(manifest.bundles).filter(([name, bundle]) => name !== 'digital-agency' && (bundle as { nativeRoles?: unknown }).nativeRoles !== undefined);
     expect(others.map(([name]) => name)).toEqual(['agency-3d-production']);
     expect((manifest.bundles['agency-3d-production'] as BundleDefinition & { nativeRoles: Record<string, string> }).nativeRoles).toEqual({ 'subagent-3d-designer.md': 'agency-3d-designer' });
@@ -121,10 +121,12 @@ describe('the native install of digital-agency (Claude only, project scope)', ()
     }
   });
 
-  it('leaves the Tier-1 marketing bundle on its legacy roles, whatever the lane says', async () => {
+  it('installs the Tier-1 marketing bundle under the lane as its lead and five native roles, with none of the agency-only files', async () => {
     await install('marketing', true);
-    expect(await exists('marketing-growth-strategist')).toBe(true);
-    expect(fs.readFileSync(agentFile('marketing-growth-strategist'), 'utf8')).not.toContain('claude-native');
+    for (const name of ['orchestrator-marketing', 'marketing-growth-strategist', 'marketing-creative-designer', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-campaign-specialist']) {
+      expect(await exists(name), name).toBe(true);
+      expect(fs.readFileSync(agentFile(name), 'utf8'), name).toContain('profile: claude-native');
+    }
     for (const name of Object.values(EXPECTED)) expect(await exists(name), name).toBe(false);
   });
 
