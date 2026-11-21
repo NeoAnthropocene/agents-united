@@ -32,8 +32,10 @@ const BUNDLE = 'deep-research';
 const ROLE = 'orchestrator-research';
 const file = path.resolve('registry/hosts/claude/agents/orchestrator-research.md');
 const read = (): string => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+// The generated requests block (ADR 0076) is not authored text: scans of the authored wording leave it out.
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const frontmatter = (): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(read())![1]);
-const body = (): string => read().split('<!-- agents-united:floor:end -->')[1]!;
+const body = (): string => withoutRequests(read().split('<!-- agents-united:floor:end -->')[1]!);
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(read())![1]!.trim();
 const normalize = (value: string): string => value.replace(/\s+/g, ' ').trim();
 const canonical = (): string => fs.readFileSync(path.resolve('registry/agents/orchestrator-research.md'), 'utf8').replace(/\r\n/g, '\n');
@@ -245,7 +247,7 @@ describe('native orchestrator-research: the shared core carries the canonical le
 
   it('never uses the word schedule in the core or the native file: the canonical lead\'s wake-up timers are not bound here', () => {
     expect(coreFile()).not.toMatch(/\bschedule\b/i);
-    expect(read()).not.toMatch(/\bschedule\b/i);
+    expect(withoutRequests(read())).not.toMatch(/\bschedule\b/i);
     expect(read()).not.toMatch(/TimerCondition|IsDaemon/);
   });
 

@@ -21,6 +21,8 @@ import { NATIVE_AGENTS_DIR, nativeText } from './helpers/native-roles.js';
 const ROLE = 'orchestrator-business';
 const BUNDLE = 'business-strategy';
 const text = (): string => nativeText(ROLE);
+// The generated requests block (ADR 0076) is not authored text: scans of the authored wording leave it out.
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const frontmatter = (): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(text())![1]!);
 const tools = (): string[] => splitTools(String(frontmatter().tools));
 const names = (): string[] => tools().map(tool => tool.split('(')[0]!);
@@ -69,7 +71,7 @@ describe('native orchestrator-business: its tools', () => {
     for (const absent of ['Workflow', 'LSP', 'ReportFindings', 'EnterWorktree', 'ExitWorktree']) expect(names(), absent).not.toContain(absent);
     expect(text()).toMatch(/The business bundles ship no saved workflow/);
     expect(text()).toMatch(/no code-intelligence tool and no worktree tool/);
-    expect(text()).not.toContain('`Workflow`');
+    expect(withoutRequests(text())).not.toContain('`Workflow`');
     for (const name of ['workflow-review', 'workflow-implement', 'workflow-test']) expect(bundles()[BUNDLE].skills, name).not.toContain(name);
   });
 

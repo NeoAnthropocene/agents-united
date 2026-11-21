@@ -9,6 +9,7 @@ import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { FLOOR_END, FLOOR_START, renderFloor } from '../src/core/native-floor.js';
+import { requestsFixture } from './helpers/requests-fixture.js';
 import { getPath, git, gitBytes, inside, makeMiniCheckout, runNode, sha256, stripAnsi, walkFolder } from './helpers/proof-prep.js';
 import type { Json } from './helpers/proof-prep.js';
 import { canonical, digest } from './helpers/skill-task.js';
@@ -309,7 +310,7 @@ describe('S1 is solvable offline', () => {
     const core = cores.get(b.pair.definition)!;
     const tools = resolveGrant(loadToolPolicy(b.pair.registry, 'claude'), core.capabilities!, { subagent: true, background: false }).tools;
     const meta = { name: 'note-checker', description: 'Read-only checker for one supplied plain-text note.', model: 'sonnet', effort: 'medium', background: false, tools: tools.join(', '), hooks: readOnlyGuardFileHooks() };
-    const body = `${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\n# Note checker\n\nRead the one supplied note and answer the three checklist points.\n\n${core.invariants.join('\n')}`;
+    const body = `${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\n${requestsFixture(tools)}\n\n# Note checker\n\nRead the one supplied note and answer the three checklist points.\n\n${core.invariants.join('\n')}`;
     const draft = path.join(workRoot, 'hand-draft', 'hosts', 'claude', 'agents', 'note-checker.md');
     fs.mkdirSync(path.dirname(draft), { recursive: true });
     fs.writeFileSync(draft, `---\n${yaml.stringify(meta)}---\n${body}\n`);

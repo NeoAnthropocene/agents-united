@@ -20,6 +20,8 @@ import { nativeText } from './helpers/native-roles.js';
  */
 
 const text = (): string => nativeText('orchestrator-security');
+// The generated requests block (ADR 0076) is not authored text: scans of the authored wording leave it out.
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const frontmatter = (): string => /^---\n([\s\S]*?)\n---\n/.exec(text())![1]!;
 const tools = (): string[] => /^tools: (.*)$/m.exec(text())![1]!.split(/, (?![^()]*\))/);
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!;
@@ -36,7 +38,7 @@ describe('native orchestrator-security: its delegation grant', () => {
   it('holds no workflow, web or findings tool, and says in its body why it has no saved workflow', () => {
     for (const absent of ['Workflow', 'WebFetch', 'WebSearch', 'ReportFindings']) {
       expect(tools(), absent).not.toContain(absent);
-      expect(text().split('<!-- agents-united:floor:end -->')[1], absent).not.toContain(`\`${absent}\``);
+      expect(withoutRequests(text().split('<!-- agents-united:floor:end -->')[1]!), absent).not.toContain(`\`${absent}\``);
     }
     expect(section('No saved workflows')).toContain('the only one they can install, `workflow-test`, repairs a red run by spawning a backend type that no security Bundle installs');
   });

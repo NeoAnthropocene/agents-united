@@ -14,6 +14,8 @@ import { nativeText } from './helpers/native-roles.js';
 
 const ROLE = 'deep-research';
 const text = (): string => nativeText(ROLE);
+// The generated requests block (ADR 0076) is not authored text: scans of the authored wording leave it out.
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
@@ -56,7 +58,7 @@ describe('native deep-research: the canonical tools that are bound and the one t
   });
 
   it('says nothing about timers, schedules, cron or a command runner, and sends builds and test runs to the lead', () => {
-    const body = text();
+    const body = withoutRequests(text());
     expect(body).not.toMatch(/cron|schedul|run_command|timer|liveness/i);
     expect(body).toContain('You hold no shell, so builds and test runs go to the lead under `Open items`.');
   });

@@ -17,6 +17,8 @@ import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js
 const BUNDLE = 'system-architecture';
 const file = path.resolve('registry/hosts/claude/agents/orchestrator-system-architecture.md');
 const read = (): string => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+// The generated requests block (ADR 0076) is not authored text: scans of the authored wording leave it out.
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const frontmatter = (): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(read())![1]);
 
 describe('native orchestrator-system-architecture (a main-thread coordinator)', () => {
@@ -86,7 +88,7 @@ describe('native orchestrator-system-architecture (a main-thread coordinator)', 
   it('holds no Workflow tool and does not run saved workflows, because its plan does not depend on them', () => {
     const tools = splitTools(frontmatter().tools).map(tool => tool.split('(')[0]);
     expect(tools).not.toContain('Workflow');
-    const body = read();
+    const body = withoutRequests(read());
     expect(body).not.toContain('`Workflow`');
     expect(body).not.toMatch(/workflow-(review|implement|test)\b/);
     for (const name of ['workflow-review', 'workflow-implement', 'workflow-test']) {
