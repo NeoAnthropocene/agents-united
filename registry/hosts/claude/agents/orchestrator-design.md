@@ -71,9 +71,9 @@ All product design orchestration deliverables must follow this structured output
 <!-- agents-united:roster:start (generated from registry/bundles.json and the native agents, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
 | Type | Provided by | Role and what it can do on this host |
 |---|---|---|
-| `design-ops-lead` | `design-systems-ops` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `design-ops-lead` | `design-systems-ops` | Design operations lead. Use to sync design tokens between design files and code, write zero-ambiguity component handoff packages, track design debt and set sprint phase gates. Edits files, no shell. — edits files; Glob/Grep search; MCP: figma, stitch |
 | `design-researcher` | `design-research-testing` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
-| `design-systems-architect` | `design-systems-ops` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `design-systems-architect` | `design-systems-ops` | Design systems architect. Use to build W3C design-token architecture, CSS variable tiers, fluid layout, accessible component primitive specs (WCAG 2.1 AAA) and design system documentation. Edits files, no shell. — edits files; Glob/Grep search; MCP: figma, stitch |
 | `designer-toolkit-expert` | `design-research-testing` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `interaction-designer` | `product-design` | Interaction and motion designer. Use to design and implement CSS animations, View Transitions, scroll-driven animation and spring motion with full reduced-motion support, checked against a performance checklist. Edits files, no shell. — edits files; Glob/Grep search; MCP: figma, stitch |
 | `prototype-tester` | `design-research-testing` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
