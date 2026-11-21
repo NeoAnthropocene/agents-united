@@ -365,6 +365,19 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/orchestrator-system-architecture.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-system-architecture.md' });
   });
 
+  it('installs the native seo-specialist with the seo-content-marketing add-on with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'seo-content-marketing', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/seo-specialist.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: seo-specialist$/m);
+    expect(text).toContain('Crawl and indexation reconnaissance first');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('seo-content-marketing');
+    expect(lock.projections['.claude/agents/seo-specialist.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-seo-specialist.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',
