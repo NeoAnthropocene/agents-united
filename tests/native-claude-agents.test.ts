@@ -79,7 +79,7 @@ const ROLES: RoleSpec[] = [
     guard: 'destructive',
     permissionMode: 'acceptEdits',
     skills: [],
-    serverTools: ['mcp__github', 'mcp__context7', 'mcp__chrome-devtools-mcp', 'mcp__firecrawl'],
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__chrome-devtools-mcp', 'mcp__firecrawl', 'mcp__playwright'],
     mutating: true,
     // Delegation and orchestration: the roster allowlist, dynamic workflows, the user, schedules, watchers and worktrees.
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'Workflow', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
