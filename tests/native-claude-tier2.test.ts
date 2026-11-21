@@ -36,6 +36,8 @@ const TEAMMATES: Array<{ name: string; stem: string }> = [
   { name: 'frontend-architect', stem: 'subagent-frontend-architect' },
 ];
 const LEAD = 'orchestrator-digital-agency';
+/** The agency copies whose persona lives in the body, because their core is shared with a Tier-1 role and carries none. */
+const BODY_PERSONA_TYPES = new Set(['agency-frontend-architect', 'agency-qa-automation-lead']);
 /** The nine teammates of the AstrolabsAI team and the type that plays each (the four named on 2026-10-04: Selin, Emre, Defne, Deniz, ADR 0039). */
 const PERSONAS: Record<string, string> = {
   Ava: 'agency-growth-strategist',
@@ -95,9 +97,42 @@ describe.each(Object.entries(PERSONAS))('persona %s', (persona, type) => {
     expect(description.length).toBeLessThanOrEqual(300);
   });
 
-  it('is the name the role plays by, in its identity (a core persona) or in its own body (Deniz shares the persona-free frontend core)', () => {
-    const text = type === 'agency-frontend-architect' ? afterFloor(type) : read(type);
+  it('is the name the role plays by, in its identity (a core persona) or in its own body (Deniz and Emre share a persona-free core)', () => {
+    const text = BODY_PERSONA_TYPES.has(type) ? afterFloor(type) : read(type);
     expect(text).toMatch(new RegExp(`You are \\*\\*${persona}\\*\\*|In the digital agency you are ${persona}`));
+  });
+});
+
+// The QA core is shared with the Tier-1 engineering role, so the agency persona (Emre and his four
+// peers) moved from the core identity into the body of the agency file, as was done for Deniz (ADR 0039, commit 19ad94c).
+describe('the QA automation lead keeps its agency persona in the agency file, not in the shared core', async () => {
+  const cores = await loadSemanticCore('registry');
+  const identity = (): string => String(cores.get('subagent-qa-automation-lead')?.identity ?? '');
+  it('has a persona-free core identity: no name, no agency, no agency lead', () => {
+    expect(identity().length).toBeGreaterThan(0);
+    for (const word of ['Emre', 'AstrolabsAI', 'Campaign Director', 'Deniz', 'Kaan', 'Defne', 'Selin', 'orchestrator-digital-agency', 'orchestrator-engineering']) {
+      expect(identity(), word).not.toContain(word);
+    }
+    for (const peer of ['conversion specialist', 'compliance specialist', 'SEO specialist', 'frontend architect']) expect(identity().toLowerCase(), peer).not.toContain(peer.toLowerCase());
+    expect(identity()).toContain('You coordinate verification across the specialists whose work you test, through that lead');
+    expect(identity()).toMatch(/^You are the \*\*Senior QA Automation Lead & Test Architecture Specialist\*\* subagent in universal agent ecosystems \(`software-engineering`, `qa-automation`, and `digital-agency`\)/);
+  });
+  it('keeps the whole persona in one paragraph of the agency body, right after the floor end marker', () => {
+    const body = afterFloor('agency-qa-automation-lead');
+    const paragraph = body.trim().split('\n\n')[0];
+    expect(paragraph).toMatch(/^In the digital agency you are Emre \(`emre-qa`\)/);
+    for (const fact of [
+      'AstrolabsAI', 'Campaign Director', '`orchestrator-digital-agency`', '`orchestrator-engineering`',
+      'Frontend Architect Deniz (component hierarchy, responsive stability, accessibility and test identifiers)',
+      'Kaan (funnel steps, lead forms, validation states and confirmation paths)',
+      'compliance specialist Defne (consent gates, banner persistence and opt-out flows)',
+      'SEO specialist Selin (Core Web Vitals, canonical headers and broken-link scans)',
+    ]) expect(paragraph, fact).toContain(fact);
+  });
+  it('reaches the generated floor through the core, so the floor holds no persona either', () => {
+    const floor = read('agency-qa-automation-lead').split('<!-- agents-united:floor:end -->')[0]!.split('<!-- agents-united:floor:start')[1]!;
+    expect(floor).toContain(identity());
+    for (const word of ['Emre', 'AstrolabsAI', 'Campaign Director', 'Deniz']) expect(floor, word).not.toContain(word);
   });
 });
 

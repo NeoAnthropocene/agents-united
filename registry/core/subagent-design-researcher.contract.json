@@ -1,0 +1,10 @@
+{
+  "definition": "subagent-design-researcher",
+  "workflows": [],
+  "skills": [
+    "usability-testing-protocol",
+    "user-journey-mapping",
+    "user-flow-mapping"
+  ],
+  "hooks": []
+}

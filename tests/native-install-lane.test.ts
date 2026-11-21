@@ -24,11 +24,19 @@ const BUNDLE = 'software-engineering';
 const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
-  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'appsec-penetration-tester', 'backend-architect', 'business-panel-experts', 'cloud-security-architect', 'code-reviewer', 'deep-research', 'devops-engineer', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'interaction-designer', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'repo-index', 'security-engineer', 'socratic-mentor', 'system-architect', 'ui-designer', 'ux-strategist',
+  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'appsec-penetration-tester', 'backend-architect', 'business-panel-experts', 'cloud-infrastructure-architect', 'cloud-security-architect', 'code-reviewer', 'database-administrator', 'deep-research', 'design-ops-lead', 'design-researcher', 'design-systems-architect', 'designer-toolkit-expert', 'devops-engineer', 'e2e-tester', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'financial-analyst', 'finops-cost-engineer', 'frontend-architect', 'interaction-designer', 'legal-contract-analyst', 'lifecycle-email-specialist', 'literature-patent-analyst', 'market-intelligence-analyst', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'operations-strategist', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'paid-acquisition-specialist', 'plg-strategist', 'prototype-tester', 'qa-automation-lead', 'repo-index', 'security-engineer', 'seo-specialist', 'socratic-mentor', 'statistical-analyst', 'sysops-sre-lead', 'system-architect', 'ui-designer', 'ux-strategist',
 ];
 const COORDINATORS = ['orchestrator-business', 'orchestrator-design', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture'];
 /** The lead and the five roles the growth-marketing bundle installs as native files (growth-marketing). */
 const GROWTH_MARKETING_NATIVE = ['marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-marketing'];
+/** What the seo-content-marketing add-on adds as native files on top of its parent: the SEO specialist and the content strategist, with the lead they share. */
+const SEO_CONTENT_NATIVE = ['marketing-content-strategist', 'orchestrator-marketing', 'seo-specialist'];
+/** What the performance-paid-acquisition add-on installs as native files on top of its parent: the paid acquisition specialist and the three marketing roles it works with, with the lead they share. */
+const PAID_ACQUISITION_NATIVE = ['marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'orchestrator-marketing', 'paid-acquisition-specialist'];
+/** What the product-led-growth add-on installs as native files on top of its parent: the PLG strategist and the two marketing roles it works with, with the lead they share. */
+const PLG_NATIVE = ['marketing-conversion-specialist', 'marketing-growth-strategist', 'orchestrator-marketing', 'plg-strategist'];
+/** What the lifecycle-email-marketing add-on installs as native files on top of its parent: the lifecycle email specialist and the campaign specialist it works with, with the lead they share. */
+const LIFECYCLE_NATIVE = ['lifecycle-email-specialist', 'marketing-campaign-specialist', 'orchestrator-marketing'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
 const canonicalOf = (role: string): string => (COORDINATORS.includes(role) ? `agents/${role}.md` : `agents/subagent-${role}.md`);
 const sha256 = (text: string): string => `sha256:${crypto.createHash('sha256').update(text).digest('hex')}`;
@@ -186,24 +194,6 @@ describe('native install lane (agents add --native)', () => {
     expect(record.managedMarker).toBe(true);
   });
 
-  it('installs the native cloud-security-architect for the secops-cloud-security bundle, recorded as a managed role of its canonical agent', async () => {
-    await new InstallEngine().install('secops-cloud-security', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
-    expect(await fs.readFile(claudeAgent('cloud-security-architect'), 'utf8')).toBe(expected('cloud-security-architect'));
-    const record = (await fs.readJson(lockPath)).projections['.claude/agents/cloud-security-architect.md'];
-    expect(record.kind).toBe('role');
-    expect(record.canonical).toBe(canonicalOf('cloud-security-architect'));
-    expect(record.managedMarker).toBe(true);
-  });
-
-  it('installs the native appsec-penetration-tester for the secops-application-security bundle, recorded as a managed role of its canonical agent', async () => {
-    await new InstallEngine().install('secops-application-security', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
-    expect(await fs.readFile(claudeAgent('appsec-penetration-tester'), 'utf8')).toBe(expected('appsec-penetration-tester'));
-    const record = (await fs.readJson(lockPath)).projections['.claude/agents/appsec-penetration-tester.md'];
-    expect(record.kind).toBe('role');
-    expect(record.canonical).toBe(canonicalOf('appsec-penetration-tester'));
-    expect(record.managedMarker).toBe(true);
-  });
-
   it('installs the native orchestrator-security with the security-operations bundle, recorded as a managed coordinator of its own canonical agent', async () => {
     await new InstallEngine().install('security-operations', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
     expect(await fs.readFile(claudeAgent('orchestrator-security'), 'utf8')).toBe(expected('orchestrator-security'));
@@ -325,6 +315,345 @@ describe('native install lane (agents add --native)', () => {
     expect(text).toContain('profile: claude |');
     expect(text).not.toContain('claude-native');
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native design-systems-architect and design-ops-lead for the design-systems-ops bundle, recorded as managed roles of their canonical agents', async () => {
+    await new InstallEngine().install('design-systems-ops', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const projections = (await fs.readJson(lockPath)).projections;
+    for (const role of ['design-ops-lead', 'design-systems-architect']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      expect(projections[`.claude/agents/${role}.md`], role).toMatchObject({ kind: 'role', canonical: canonicalOf(role), managedMarker: true });
+    }
+  });
+
+  it('without the native lane, design-systems-ops still writes the legacy projection for its two roles', async () => {
+    await new InstallEngine().install('design-systems-ops', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['design-ops-lead', 'design-systems-architect']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native design-researcher, designer-toolkit-expert and prototype-tester for the design-research-testing bundle, recorded as managed roles of their canonical agents', async () => {
+    await new InstallEngine().install('design-research-testing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const projections = (await fs.readJson(lockPath)).projections;
+    for (const role of ['design-researcher', 'designer-toolkit-expert', 'prototype-tester']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      expect(projections[`.claude/agents/${role}.md`], role).toMatchObject({ kind: 'role', canonical: canonicalOf(role), managedMarker: true });
+    }
+  });
+
+  it('without the native lane, design-research-testing still writes the legacy projection for its three roles', async () => {
+    await new InstallEngine().install('design-research-testing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['design-researcher', 'designer-toolkit-expert', 'prototype-tester']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native sysops-sre-lead with the lead and the natives of its parent bundle for the sysops-sre bundle, each a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('sysops-sre', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    for (const role of ['orchestrator-system-architecture', 'sysops-sre-lead', 'system-architect', 'backend-architect']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, sysops-sre still writes the legacy projection for sysops-sre-lead', async () => {
+    await new InstallEngine().install('sysops-sre', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('sysops-sre-lead'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native cloud-infrastructure-architect with system-architect, the natives of its parent bundle and the lead for the system-architecture-cloud bundle, each a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('system-architecture-cloud', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    for (const role of ['orchestrator-system-architecture', 'cloud-infrastructure-architect', 'system-architect', 'backend-architect']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, system-architecture-cloud still writes the legacy projection for cloud-infrastructure-architect', async () => {
+    await new InstallEngine().install('system-architecture-cloud', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('cloud-infrastructure-architect'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native database-administrator with backend-architect (reused unchanged), the natives of its parent bundle and the lead for the system-architecture-data bundle, each a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('system-architecture-data', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    for (const role of ['orchestrator-system-architecture', 'database-administrator', 'system-architect', 'backend-architect']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, system-architecture-data still writes the legacy projection for database-administrator', async () => {
+    await new InstallEngine().install('system-architecture-data', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('database-administrator'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native finops-cost-engineer with system-architect, the natives of its parent bundle and the lead for the system-architecture-finops bundle, each a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('system-architecture-finops', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    expect(lock.nativeLane).toBe(true);
+    for (const role of ['orchestrator-system-architecture', 'finops-cost-engineer', 'system-architect', 'backend-architect']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, system-architecture-finops still writes the legacy projection for finops-cost-engineer', async () => {
+    await new InstallEngine().install('system-architecture-finops', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('finops-cost-engineer'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native SEO specialist and the native content strategist for seo-content-marketing, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('seo-content-marketing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of SEO_CONTENT_NATIVE) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections['.claude/agents/' + role + '.md'];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+    // The Tier 2 copies of the same cores belong to the digital agency and are not installed here.
+    expect(await fs.pathExists(claudeAgent('agency-seo-specialist'))).toBe(false);
+    expect(await fs.pathExists(claudeAgent('agency-content-strategist'))).toBe(false);
+  });
+
+  it('without the native lane, seo-content-marketing writes the legacy projection for the SEO specialist and the content strategist', async () => {
+    await new InstallEngine().install('seo-content-marketing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['marketing-content-strategist', 'seo-specialist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native paid acquisition specialist and its three marketing roles for performance-paid-acquisition, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('performance-paid-acquisition', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of PAID_ACQUISITION_NATIVE) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections['.claude/agents/' + role + '.md'];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+    // The Tier 2 copies of the same cores belong to the digital agency and are not installed here.
+    for (const role of ['agency-campaign-specialist', 'agency-conversion-specialist', 'agency-creative-designer']) expect(await fs.pathExists(claudeAgent(role)), role).toBe(false);
+  });
+
+  it('without the native lane, performance-paid-acquisition writes the legacy projection for the paid acquisition specialist and its three marketing roles', async () => {
+    await new InstallEngine().install('performance-paid-acquisition', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'paid-acquisition-specialist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native PLG strategist and its two marketing roles for product-led-growth, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('product-led-growth', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of PLG_NATIVE) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections['.claude/agents/' + role + '.md'];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+    // The Tier 2 copies of the same cores belong to the digital agency and are not installed here.
+    for (const role of ['agency-conversion-specialist', 'agency-growth-strategist']) expect(await fs.pathExists(claudeAgent(role)), role).toBe(false);
+  });
+
+  it('without the native lane, product-led-growth writes the legacy projection for the PLG strategist and its two marketing roles', async () => {
+    await new InstallEngine().install('product-led-growth', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['marketing-conversion-specialist', 'marketing-growth-strategist', 'plg-strategist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native lifecycle email specialist and the campaign specialist for lifecycle-email-marketing, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('lifecycle-email-marketing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of LIFECYCLE_NATIVE) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections['.claude/agents/' + role + '.md'];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+    // The Tier 2 copy of the campaign core belongs to the digital agency and is not installed here.
+    expect(await fs.pathExists(claudeAgent('agency-campaign-specialist'))).toBe(false);
+  });
+
+  it('without the native lane, lifecycle-email-marketing writes the legacy projection for the lifecycle email specialist and the campaign specialist', async () => {
+    await new InstallEngine().install('lifecycle-email-marketing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['lifecycle-email-specialist', 'marketing-campaign-specialist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native analytics specialists for the deep-research-analytics bundle, recorded as managed roles of their canonical agents', async () => {
+    await new InstallEngine().install('deep-research-analytics', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of ['statistical-analyst', 'literature-patent-analyst', 'deep-research']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, the deep-research-analytics bundle still writes the legacy projection for both analytics specialists', async () => {
+    await new InstallEngine().install('deep-research-analytics', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['statistical-analyst', 'literature-patent-analyst']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native financial-analyst for the business-financial-modeling bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('business-financial-modeling', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('financial-analyst'), 'utf8')).toBe(expected('financial-analyst'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/financial-analyst.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('financial-analyst'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, business-financial-modeling still writes the legacy projection for financial-analyst', async () => {
+    await new InstallEngine().install('business-financial-modeling', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('financial-analyst'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native market-intelligence-analyst for the business-market-intelligence bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('business-market-intelligence', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('market-intelligence-analyst'), 'utf8')).toBe(expected('market-intelligence-analyst'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/market-intelligence-analyst.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('market-intelligence-analyst'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, business-market-intelligence still writes the legacy projection for market-intelligence-analyst', async () => {
+    await new InstallEngine().install('business-market-intelligence', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('market-intelligence-analyst'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native legal-contract-analyst and operations-strategist for the business-operations-legal bundle, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('business-operations-legal', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    for (const role of ['legal-contract-analyst', 'operations-strategist']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = (await fs.readJson(lockPath)).projections[`.claude/agents/${role}.md`];
+      expect(record.kind).toBe('role');
+      expect(record.canonical).toBe(canonicalOf(role));
+      expect(record.managedMarker).toBe(true);
+    }
+  });
+
+  it('without the native lane, business-operations-legal still writes the legacy projection for both of its roles', async () => {
+    await new InstallEngine().install('business-operations-legal', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['legal-contract-analyst', 'operations-strategist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native qa-automation-lead for the qa-automation bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('qa-automation', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('qa-automation-lead'), 'utf8')).toBe(expected('qa-automation-lead'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/qa-automation-lead.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('qa-automation-lead'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, qa-automation still writes the legacy projection for qa-automation-lead', async () => {
+    await new InstallEngine().install('qa-automation', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('qa-automation-lead'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native e2e-tester beside the qa-automation-lead for the qa-automation bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('qa-automation', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('e2e-tester'), 'utf8')).toBe(expected('e2e-tester'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/e2e-tester.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('e2e-tester'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, qa-automation still writes the legacy projection for e2e-tester', async () => {
+    await new InstallEngine().install('qa-automation', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('e2e-tester'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native cloud-security-architect for the secops-cloud-security bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('secops-cloud-security', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('cloud-security-architect'), 'utf8')).toBe(expected('cloud-security-architect'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/cloud-security-architect.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('cloud-security-architect'));
+    expect(record.managedMarker).toBe(true);
   });
 
   it('records the lane, and every projection hash matches the file on disk', async () => {

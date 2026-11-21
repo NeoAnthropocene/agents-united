@@ -1,0 +1,10 @@
+{
+  "definition": "subagent-prototype-tester",
+  "workflows": [],
+  "skills": [
+    "interactive-prototype-builder",
+    "clickable-prototype-spec",
+    "usability-testing-protocol"
+  ],
+  "hooks": []
+}
