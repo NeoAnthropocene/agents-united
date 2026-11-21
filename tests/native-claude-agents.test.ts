@@ -95,6 +95,8 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  // The system architect holds editors and no shell (its canonical tools are view, write, replace, grep, find, list): it writes ADRs, C4 diagrams and specs.
+  { name: 'system-architect', stem: 'subagent-system-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
@@ -124,6 +126,24 @@ const ROLES: RoleSpec[] = [
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
     coordinatorBundle: 'security-operations',
+    model: 'opus',
+    effort: 'medium',
+  },
+  {
+    name: 'orchestrator-system-architecture',
+    stem: 'orchestrator-system-architecture',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's three servers. No browser: nothing in this domain drives one.
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
+    mutating: true,
+    // The engineering lead's list minus `Workflow`: the lead's plan does not depend on saved workflows. No Bundle of the architecture domain installs the native workflows (workflow-review,
+    // workflow-implement, workflow-test); `full` lists the lead and does install them, and the lead still fans out with parallel `Agent` calls. So it holds no `Workflow` tool (its core declares no `workflow` capability).
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'system-architecture',
+    // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
     model: 'opus',
     effort: 'medium',
   },
