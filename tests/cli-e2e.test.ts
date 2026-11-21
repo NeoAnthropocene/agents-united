@@ -446,6 +446,19 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/financial-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-financial-analyst.md' });
   });
 
+  it('installs the native market-intelligence-analyst for business-market-intelligence with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'business-market-intelligence', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/market-intelligence-analyst.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: market-intelligence-analyst$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('business-market-intelligence');
+    expect(lock.projections['.claude/agents/market-intelligence-analyst.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-market-intelligence-analyst.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',
