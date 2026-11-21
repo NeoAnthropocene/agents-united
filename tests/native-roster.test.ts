@@ -130,6 +130,19 @@ describe('the committed bundles', () => {
   });
 });
 
+describe('the committed bundles: the design coordinator', () => {
+  it('gives the product-design coordinator its eight design types, each from the bundle that declares it, and no frontend or accessibility type', () => {
+    const raw = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')) as { bundles?: unknown };
+    const types = domainTypes((raw.bundles ?? raw) as never, 'product-design');
+    expect(types.map(t => t.name)).toEqual([
+      'design-ops-lead', 'design-researcher', 'design-systems-architect', 'designer-toolkit-expert', 'interaction-designer', 'prototype-tester', 'ui-designer', 'ux-strategist',
+    ]);
+    expect(types.find(t => t.name === 'ui-designer')!.bundles).toEqual(['product-design']);
+    expect(types.find(t => t.name === 'design-systems-architect')!.bundles).toEqual(['design-systems-ops']);
+    expect(types.find(t => t.name === 'prototype-tester')!.bundles).toEqual(['design-research-testing']);
+  });
+});
+
 describe('the MCP note of a role that carries more than one route (Plan 035 N1)', () => {
   it('names each integration once, whatever the form of the grant', () => {
     const table = renderRoster([
