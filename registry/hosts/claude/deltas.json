@@ -31,6 +31,30 @@
       "feature": "Component contracts settle through the orchestrator before touching peer-owned files.",
       "disposition": "approximated",
       "rationale": "The lead owns contract-first (it hands the contract as a fixed input before the slice starts); the specialist's body routes every question for a peer through the lead but does not name peer-owned files."
+    },
+    {
+      "roles": ["orchestrator-universal"],
+      "feature": "Consult at least one relevant specialist read-only before the delegation map, unless the user waives it.",
+      "disposition": "unsupported",
+      "rationale": "Decided by the coordinating AI session on 2026-11-22, the maintainer's to overturn. The Prime Orchestrator on this host routes and holds no Agent tool, so it consults no specialist and builds no delegation map. ADR 0010 rejected stay-and-delegate, the Bundle ships no specialist, and a department lead run as a subagent loses its structured questions and its allowlist. The duty stays in the floor from the Semantic Core; the body says plainly that this lane neither consults nor executes in session."
+    },
+    {
+      "roles": ["orchestrator-universal"],
+      "feature": "A slice executed in session is delegated to domain specialists: the orchestrator coordinates and reviews and does not write the implementation itself.",
+      "disposition": "unsupported",
+      "rationale": "Decided by the coordinating AI session on 2026-11-22, the maintainer's to overturn. The Prime Orchestrator on this host executes no department work in session at all: it routes, and the department lead runs the work as the main agent of a fresh session. It holds no Agent tool to delegate with, the Bundle ships no specialist, and a department lead run as a subagent loses its structured questions and its allowlist (ADR 0010 rejected stay-and-delegate)."
+    },
+    {
+      "roles": ["orchestrator-universal"],
+      "feature": "Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format.",
+      "disposition": "unsupported",
+      "rationale": "Decided by the coordinating AI session on 2026-11-22, the maintainer's to overturn. With no Agent tool the Prime Orchestrator issues no delegation, so there is no brief to write. The hand-off to a department lead is a handoff note and a start line (ADR 0010), not a delegation."
+    },
+    {
+      "roles": ["orchestrator-universal"],
+      "feature": "The coordinator relays between specialists and wakes a finished peer before expecting its reply.",
+      "disposition": "unsupported",
+      "rationale": "Decided by the coordinating AI session on 2026-11-22, the maintainer's to overturn. The Prime Orchestrator spawns no specialist, so there is no peer to relay between and none to wake. A department lead does that in its own session."
     }
   ]
 }
