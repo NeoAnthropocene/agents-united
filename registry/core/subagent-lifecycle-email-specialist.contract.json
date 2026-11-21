@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-lifecycle-email-specialist",
+  "workflows": [],
+  "skills": [
+    "email-drip-sequences",
+    "email-marketing-automation",
+    "churn-prevention-playbook",
+    "copywriting-frameworks"
+  ],
+  "hooks": []
+}

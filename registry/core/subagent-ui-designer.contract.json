@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-ui-designer",
+  "workflows": [],
+  "skills": [
+    "frontend-design",
+    "stitch-design-taste",
+    "ui-component-spec",
+    "design-system-tokens",
+    "generative-ui"
+  ],
+  "hooks": []
+}

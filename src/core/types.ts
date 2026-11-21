@@ -885,6 +885,8 @@ export interface SubagentContract {
 export interface SharedPairCheckInput {
   registryDir: string;
   definition: string;
+  /** The canonical agent the pair stands for; when given, the core must carry its guardrails and numbered directives (ADR 0072). */
+  canonicalFile?: string;
 }
 
 export interface SharedPairCheckResult {
@@ -906,6 +908,10 @@ export interface FactoryCheckInput {
   artifactPath?: string;
   loading?: 'subagent' | 'main';
   requiredSkills?: string[];
+  /** The canonical agent the pair stands for; default `<registry>/agents/<definition>.md` when it exists (ADR 0072). */
+  canonicalFile?: string;
+  /** The candidate's invariant coverage file (ADR 0072). */
+  coverageFile?: string;
 }
 
 export interface FactoryCheckResult {

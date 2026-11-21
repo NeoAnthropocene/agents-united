@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { absolute, argumentsFor, checkJob, fail, fileBytes, hash, jsonFile, physicallyWithin, pinned, relative, runCli, same, schemaFor, unique, validateRecord, within } from './check-job.mjs';
+import { absolute, argumentsFor, checkJob, coveragePathFor, fail, fileBytes, hash, jsonFile, physicallyWithin, pinned, relative, runCli, same, schemaFor, unique, validateRecord, within } from './check-job.mjs';
 
 /** Checks the returned record against actual bytes; never executes returned commands. */
 export function checkHandback(job, result) {
@@ -36,6 +36,7 @@ export function checkHandback(job, result) {
   if (!same([...result.diff].sort(byPath), expectedDiff)) fail('Returned before/after diff differs from actual baseline and final bytes.');
   if (result.status === 'draft') {
     for (const rel of job.artifact.paths) if (!current.has(rel)) fail(`Required artifact missing: ${rel}`);
+    for (const rel of job.artifact.paths.map(coveragePathFor)) if (Object.values(job.allowedChanges).flat().includes(rel) && !current.has(rel)) fail(`Declared coverage file missing: ${rel}`);
     for (const fixed of job.constraints.fixedValues) if (!current.get(fixed.path)?.toString('utf8').includes(fixed.contains)) fail(`Fixed task value missing from ${fixed.path}.`);
   }
   unique(result.coverage.map(item => item.input), 'Input coverage');

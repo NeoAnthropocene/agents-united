@@ -175,7 +175,7 @@ describe('the shipped review-job builder', () => {
     const { out, job, jobFile, record } = await roundTrip(await skillSpec());
     expect(out).toMatchObject({ version: 1, status: 'job-written', counts: { files: 4, checks: 1, copies: 3 } });
     expect(job.subject).toEqual({ kind: 'skill', identity: 'invoice-action-csv', target: null, paths: ['SKILL.md'], definition: null });
-    expect(job.rubric.criteria.filter((item: Json) => !item.applicable).map((item: Json) => item.id).sort()).toEqual(['host-fit', 'shared-semantics']);
+    expect(job.rubric.criteria.filter((item: Json) => !item.applicable).map((item: Json) => item.id).sort()).toEqual(['coverage-evidence', 'host-fit', 'shared-semantics']);
     expect(job.inputs.filter((item: Json) => item.kind === 'guide').map((item: Json) => item.id)).toEqual(['skill-guide']);
     // The receipt carries exactly the eight keys the checker compares.
     const receipt = await fs.readJson(path.join(review(), 'checks', 'skill-layout.receipt.json'));
@@ -246,6 +246,23 @@ describe('the shipped review-job builder', () => {
     expect(job.inputs.find((item: Json) => item.kind === 'shared-core').path).toBe(path.join(fixture.registry, 'core', `${STEM}.core.md`));
     expect(job.inputs.find((item: Json) => item.kind === 'shared-contract').path).toBe(path.join(fixture.registry, 'core', `${STEM}.contract.json`));
     expect(job.inputs.filter((item: Json) => item.kind === 'guide')).toHaveLength(5);
+    // ADR 0072: no coverage file in the candidate, so coverage evidence does not apply.
+    expect(job.rubric.criteria.find((item: Json) => item.id === 'coverage-evidence')).toMatchObject({ applicable: false, required: false, reason: 'The candidate holds no Claude agent coverage file.' });
+  });
+
+  it('makes coverage evidence applicable for a claude-agent job whose candidate holds the agent\'s coverage file (ADR 0072)', async () => {
+    const spec = await skillSpec();
+    await fs.emptyDir(candidate());
+    await writeCandidate({ 'hosts/claude/agents/factory-evaluator.md': await fs.readFile(fixture.source('hosts/claude/agents/factory-evaluator.md')),
+      'hosts/claude/agents/factory-evaluator.coverage.json': '{"version":1,"role":"factory-evaluator","definition":"subagent-factory-evaluator","invariants":[]}\n' });
+    const tool = await validator();
+    const candidateDigest = await digestOf(spec);
+    const ran = await callerRun('agent-text', [tool, path.join(candidate(), 'hosts/claude/agents/factory-evaluator.md'), 'name: factory-evaluator']);
+    const { job } = await roundTrip({ ...spec, id: 'agent-review',
+      subject: { kind: 'claude-agent', identity: 'factory-evaluator', definition: STEM, target: { unverifiedReason: 'No Claude process invoked.' } },
+      roles: { 'hosts/claude/agents/factory-evaluator.md': 'subject', 'hosts/claude/agents/factory-evaluator.coverage.json': 'support' },
+      checks: [{ id: 'agent-text', required: true, status: 'passed', command: { argv: [tool], cwd: work }, candidateDigest, exit: ran.exit, output: ran.output }] });
+    expect(job.rubric.criteria.find((item: Json) => item.id === 'coverage-evidence')).toMatchObject({ applicable: true, required: true });
   });
 
   it('builds the live session shape: a portable Skill, one passed skill-check and the task file as extra evidence, accepted at the first call', async () => {

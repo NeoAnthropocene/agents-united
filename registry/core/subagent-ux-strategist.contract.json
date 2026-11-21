@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-ux-strategist",
+  "workflows": [],
+  "skills": [
+    "user-flow-mapping",
+    "mobile-first-design",
+    "responsive-design-audit",
+    "interaction-pattern-library"
+  ],
+  "hooks": []
+}

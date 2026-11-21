@@ -1,0 +1,16 @@
+{
+  "definition": "subagent-security-engineer",
+  "workflows": [],
+  "skills": [
+    "security-audit",
+    "git-guardrails",
+    "threat-modeling",
+    "security-best-practices",
+    "semgrep-scanning",
+    "codeql-scanning",
+    "sarif-triage",
+    "supply-chain-risk-audit",
+    "security-diff-review"
+  ],
+  "hooks": []
+}

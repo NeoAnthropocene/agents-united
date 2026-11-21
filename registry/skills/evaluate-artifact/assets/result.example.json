@@ -60,6 +60,12 @@
       "citations": [
         { "sourceId": "candidate", "path": "SKILL.md", "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc", "quote": "# Sample\nRead only the supplied path." }
       ]
+    },
+    {
+      "id": "coverage-evidence",
+      "outcome": "not-applicable",
+      "rationale": "A Skill review has no Claude agent coverage file.",
+      "citations": []
     }
   ],
   "findings": [

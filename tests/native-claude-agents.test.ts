@@ -15,6 +15,7 @@ import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
+import { nativeToolOrder } from '../src/core/native-repository-rules.js';
 import { withRoutes } from '../src/core/claude-mcp-routes.js';
 
 /**
@@ -73,6 +74,56 @@ const ROLES: RoleSpec[] = [
   { name: 'distributed-systems-architect', stem: 'subagent-distributed-systems-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   { name: 'data-engineer', stem: 'subagent-data-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   { name: 'devops-engineer', stem: 'subagent-devops-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'security-engineer', stem: 'subagent-security-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'cloud-security-architect', stem: 'subagent-cloud-security-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The product-design specialists (Tier 1): editors and no shell, like the agency specialists; the design servers with their plugin routes.
+  { name: 'design-ops-lead', stem: 'subagent-design-ops-lead', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'design-researcher', stem: 'subagent-design-researcher', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__firecrawl']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'design-systems-architect', stem: 'subagent-design-systems-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'designer-toolkit-expert', stem: 'subagent-designer-toolkit-expert', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'interaction-designer', stem: 'subagent-interaction-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'prototype-tester', stem: 'subagent-prototype-tester', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__playwright']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'ui-designer', stem: 'subagent-ui-designer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma', 'mcp__stitch']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'ux-strategist', stem: 'subagent-ux-strategist', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__figma']), mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The design lead (Tier 1, a domain lead): the engineering lead's cut minus the code-intelligence, workflow and report classes (no code, no saved workflow, no reviewer findings).
+  // It holds the seven design servers under their plugin or connector routes; Playwright is held beyond the canonical lead (prototype-tester declares it).
+  // It has no image tool and no mode-line gate: product-design is a domain bundle (ADR 0053 covers organization leads).
+  {
+    name: 'orchestrator-design',
+    stem: 'orchestrator-design',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__playwright', 'mcp__stitch']),
+    mutating: true,
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'product-design',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'opus',
+    effort: 'medium',
+  },
+  // The system architect holds editors and no shell (its canonical tools are view, write, replace, grep, find, list): it writes ADRs, C4 diagrams and specs.
+  { name: 'system-architect', stem: 'subagent-system-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The research specialists: one writes reports and reads the web (no shell), the other only reads and asks (no tool to put a question to the user: the host never gives it to a subagent).
+  { name: 'deep-research', stem: 'subagent-deep-research', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__firecrawl', 'mcp__context7']), mutating: true, mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  { name: 'socratic-mentor', stem: 'subagent-socratic-mentor', guard: 'read-only', skills: [], serverTools: withRoutes(['mcp__context7']), mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'business-panel-experts', stem: 'subagent-business-panel-experts', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The SysOps and SRE lead holds editors and no shell (its canonical tools are view, write, replace, grep, find, list, plus task and timer tools): it writes runbooks, alert rules, dashboards and post-mortems. Timers (CronCreate) are not granted to a specialist.
+  { name: 'sysops-sre-lead', stem: 'subagent-sysops-sre-lead', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
+  // The cloud infrastructure architect holds a shell, as its canonical run_command and as devops-engineer does (same canonical tool set): it writes Terraform and Bicep, topology documents and ADRs and runs the platform's validators. Timers (CronCreate) are not granted to a specialist. Canonical effort is `high`; every native specialist is pinned to sonnet/medium (native-ceiling), so `high` is not carried.
+  { name: 'cloud-infrastructure-architect', stem: 'subagent-cloud-infrastructure-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__github', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The database administrator holds a shell, as its canonical run_command and as devops-engineer does (same canonical tool set): it writes migrations, pooler and engine configuration and runbooks and runs them against isolated test databases. Timers (CronCreate) are not granted to a specialist. Its canonical servers are context7 only (no github). Canonical effort is `high`; every native specialist is pinned to sonnet/medium (native-ceiling), so `high` is not carried.
+  { name: 'database-administrator', stem: 'subagent-database-administrator', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The FinOps cost engineer holds a shell, as its canonical run_command and as devops-engineer does (same canonical tool set): it reads cost and infrastructure files, writes cost reports, alert and budget configuration and ADRs, and runs read-only billing queries only when its brief authorises them. Timers (CronCreate) are not granted to a specialist. Its canonical servers are context7 only (no github). Canonical effort is `medium`, as carried.
+  { name: 'finops-cost-engineer', stem: 'subagent-finops-cost-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  // The two analytics specialists run commands (statistics and tabulation scripts), so they hold a shell and are guarded as writers; the statistician also watches long runs, the literature analyst reads the web only through its server.
+  { name: 'statistical-analyst', stem: 'subagent-statistical-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Monitor', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'literature-patent-analyst', stem: 'subagent-literature-patent-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__firecrawl', 'mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'market-intelligence-analyst', stem: 'subagent-market-intelligence-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__firecrawl', 'mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'legal-contract-analyst', stem: 'subagent-legal-contract-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'operations-strategist', stem: 'subagent-operations-strategist', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__github']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'financial-analyst', stem: 'subagent-financial-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   { name: 'e2e-tester', stem: 'subagent-e2e-tester', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   { name: 'qa-automation-lead', stem: 'subagent-qa-automation-lead', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TaskCreate', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   {
@@ -81,12 +132,188 @@ const ROLES: RoleSpec[] = [
     guard: 'destructive',
     permissionMode: 'acceptEdits',
     skills: [],
-    serverTools: ['mcp__github', 'mcp__context7', 'mcp__chrome-devtools-mcp', 'mcp__firecrawl'],
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__chrome-devtools-mcp', 'mcp__firecrawl', 'mcp__playwright'],
     mutating: true,
     // Delegation and orchestration: the roster allowlist, dynamic workflows, the user, schedules, watchers and worktrees.
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'Workflow', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
     // Maintainer decision, plan 032 close-out (after the first real Claude session): the native coordinator is pinned opus / medium.
+    model: 'opus',
+    effort: 'medium',
+  },
+  // The security lead (Tier 1, domain bundle): a main-thread coordinator of the security domain. Same ceiling as the engineering lead except
+  // that it holds no `Workflow` (the only native workflow a security Bundle installs is workflow-test, whose repair step spawns a type no
+  // security Bundle installs), no web tool (its canonical agent has none; Firecrawl is its web route) and no `ReportFindings` (the reviewer's).
+  {
+    name: 'orchestrator-security',
+    stem: 'orchestrator-security',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
+    mutating: true,
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'security-operations',
+    model: 'opus',
+    effort: 'medium',
+  },
+  {
+    name: 'orchestrator-system-architecture',
+    stem: 'orchestrator-system-architecture',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's three servers. No browser: nothing in this domain drives one.
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__firecrawl'],
+    mutating: true,
+    // The engineering lead's list minus `Workflow`: the lead's plan does not depend on saved workflows. No Bundle of the architecture domain installs the native workflows (workflow-review,
+    // workflow-implement, workflow-test); `full` lists the lead and does install them, and the lead still fans out with parallel `Agent` calls. So it holds no `Workflow` tool (its core declares no `workflow` capability).
+    mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'system-architecture',
+    // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
+  {
+    name: 'orchestrator-business',
+    stem: 'orchestrator-business',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's four servers, each under its plugin or connector route, because the roles it spawns (the panel binds markitdown) are resolved against the lead's pool.
+    serverTools: withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__firecrawl', 'mcp__github']),
+    mutating: true,
+    // The engineering lead's list minus `Workflow` (no bundle of the business domain installs a saved workflow), `LSP` (the lead writes no code), `ReportFindings` (no reviewer in the department) and the worktree tools (the work is documents).
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'business-strategy',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
+  // Tier 1, the growth-marketing bundle (growth-marketing): five second native files on the cores the digital agency already uses (as `frontend-architect` beside `agency-frontend-architect`),
+  // and a lead cut like the engineering lead's minus saved workflows, code intelligence, structured findings and worktrees. These roles run no shell (their cores grant none), so like the
+  // Tier 2 teammates they hold the editors and the web; their servers are their canonical set with the routes, and none holds the image tool (the `image-gen` route is the agency's, ADR 0049).
+  ...[
+    { name: 'marketing-growth-strategist', stem: 'subagent-marketing-growth-strategist', serverTools: withRoutes(['mcp__firecrawl']) },
+    { name: 'marketing-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: withRoutes(['mcp__figma', 'mcp__stitch']) },
+    { name: 'marketing-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__playwright']) },
+    { name: 'marketing-content-strategist', stem: 'subagent-marketing-content-strategist', serverTools: withRoutes(['mcp__firecrawl', 'mcp__markitdown']) },
+    { name: 'marketing-campaign-specialist', stem: 'subagent-marketing-campaign-specialist', serverTools: withRoutes(['mcp__context7']) },
+  ].map(
+    (spec): RoleSpec => ({
+      ...spec,
+      guard: 'destructive',
+      permissionMode: 'acceptEdits',
+      skills: [],
+      mutating: true,
+      mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+      searchTools: ['Glob', 'Grep', 'Read'],
+      workTools: ['Edit', 'Write'],
+      model: 'sonnet',
+      effort: 'medium',
+    })
+  ),
+  // The performance-paid-acquisition add-on's specialist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants no shell and no web; it does grant task-tracking, so it holds the task tools,
+  // the editors, the messaging and skill classes and the context7 server with the routes; it holds no image server.
+  {
+    name: 'paid-acquisition-specialist',
+    stem: 'subagent-paid-acquisition-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__context7']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  // The product-led-growth add-on's strategist: the first native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
+  // the editors, the task tools, the messaging and skill classes and the context7 server with the routes; it holds no image server.
+  {
+    name: 'plg-strategist',
+    stem: 'subagent-plg-strategist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__context7']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  // The lifecycle-email-marketing add-on's specialist: a native file on a core of its own (no Tier 2 copy stands on it). Its core grants the task tools through task-tracking but no shell and no web, so it holds
+  // the editors, the task tools, the messaging and skill classes and the markitdown server (which has no routes); it holds no image server.
+  {
+    name: 'lifecycle-email-specialist',
+    stem: 'subagent-lifecycle-email-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__markitdown']),
+    mutating: true,
+    mustHold: ['Edit', 'Write', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    workTools: ['Edit', 'Write'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  // The growth-marketing bundle's SEO specialist: a second native file on the core of 'agency-seo-specialist'. Unlike the five marketing roles it holds a shell (its core grants the shell class: crawls,
+  // header traces and Lighthouse), so it is guarded as a writer like the Tier 2 SEO specialist. Its servers are its canonical set with the routes; it holds no image server.
+  {
+    name: 'seo-specialist',
+    stem: 'subagent-seo-specialist',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__firecrawl', 'mcp__chrome-devtools-mcp']),
+    mutating: true,
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch'],
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'sonnet',
+    effort: 'medium',
+  },
+  {
+    name: 'orchestrator-marketing',
+    stem: 'orchestrator-marketing',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The union of the servers its roles' canonical agents declare (firecrawl, markitdown, context7, github, stitch, figma, playwright, chrome-devtools-mcp), with the routes as the digital-agency lead has them.
+    // This goes beyond the lead's own canonical agent (firecrawl, markitdown, context7, github) by a decision made during the roll-out (2026-11-20, open to the maintainer's review): a subagent gets the MCP tools of the main conversation, and the main conversation of
+    // `--agent` is cut to this list (Sitting T), so a role's server is worth nothing unless its lead holds it too. No image server: the lead has no image tool in this lane.
+    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch']),
+    mutating: true,
+    // Delegation and orchestration: the roster allowlist, the user, schedules, watchers and the shared task list; no saved workflows (the bundle has none), no worktrees, no code intelligence, no structured findings.
+    mustHold: ['Agent', 'AskUserQuestion', 'Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'CronCreate', 'SendMessage', 'Skill', 'TaskCreate', 'TaskList', 'TaskUpdate'],
+    mainThread: true,
+    coordinatorBundle: 'growth-marketing',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    model: 'opus',
+    effort: 'medium',
+  },
+  {
+    name: 'orchestrator-research',
+    stem: 'orchestrator-research',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's four servers, each by every route that exists (the research specialists hold firecrawl and context7 by those routes, and a role cannot hold a server its lead does not).
+    serverTools: withRoutes(['mcp__github', 'mcp__context7', 'mcp__firecrawl', 'mcp__markitdown']),
+    mutating: true,
+    // The engineering lead's list minus `Workflow`, `EnterWorktree`, `ExitWorktree` and `LSP` (see the header of tests/native-claude-orchestrator-research.test.ts for the four decided leave-outs).
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill', 'WebSearch', 'WebFetch'],
+    mainThread: true,
+    coordinatorBundle: 'deep-research',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    // The same pin as the other coordinators (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
     model: 'opus',
     effort: 'medium',
   },
@@ -215,7 +442,7 @@ beforeAll(async () => {
     for (const role of [...ROLES].sort((a, b) => Number(a.mainThread ?? false) - Number(b.mainThread ?? false))) {
       if (!fs.existsSync(fileOf(role))) continue;
       const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool));
-      const toolsLine = `tools: ${[...[...tools].sort(), ...role.serverTools].join(', ')}`;
+      const toolsLine = `tools: ${nativeToolOrder(tools, role.serverTools).join(', ')}`;
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
       if (role.mainThread) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
@@ -277,6 +504,9 @@ describe.each(ROLES)('native Claude $name', role => {
     expect(declaredNames()).toEqual(expect.arrayContaining(role.mustHold));
     expect(declaredNames().filter(tool => !tool.startsWith('mcp__')).sort()).toEqual([...ceilingOf(role)].sort());
     expect(declared().filter(tool => tool.startsWith('mcp__')).sort()).toEqual([...role.serverTools].sort());
+    // The committed tools line is the generator's line, character for character (ADR 0072).
+    const generated = nativeToolOrder(ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool)), role.serverTools);
+    expect(/^tools: (.*)$/m.exec(read())![1]).toBe(generated.join(', '));
   });
 
   it('has Glob and Grep, and no delegation, workflow or scheduling tool', () => {

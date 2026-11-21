@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-designer-toolkit-expert",
+  "workflows": [],
+  "skills": [
+    "component-playground-setup",
+    "design-handoff-spec",
+    "ui-component-spec",
+    "frontend-design"
+  ],
+  "hooks": []
+}

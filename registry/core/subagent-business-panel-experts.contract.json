@@ -1,0 +1,9 @@
+{
+  "definition": "subagent-business-panel-experts",
+  "workflows": [],
+  "skills": [
+    "technical-documentation",
+    "domain-modeling"
+  ],
+  "hooks": []
+}
