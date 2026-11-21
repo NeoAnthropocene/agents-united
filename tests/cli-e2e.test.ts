@@ -156,6 +156,19 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/orchestrator-security.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-security.md' });
   });
 
+  it('installs the native accessibility-lead for frontend-engineering with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'frontend-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/accessibility-lead.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: accessibility-lead$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('frontend-engineering');
+    expect(lock.projections['.claude/agents/accessibility-lead.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-accessibility-lead.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',

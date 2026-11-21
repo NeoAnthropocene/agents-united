@@ -141,6 +141,13 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
   },
+  // `accessibility-lead`: its floor Safety lines and its own "How to work" steps state these. The comms invariants take the default evidence (the engineering family's peers section).
+  'accessibility-lead': {
+    'Never suppress, skip or lower the severity of an automated accessibility rule to make an audit pass; fix the underlying markup.': /- Never suppress, skip, or lower the severity of an automated accessibility rule to make an audit pass — fix the underlying markup\.(?=\n|$)/,
+    'Semantic HTML is the first remedy and ARIA the fallback.': /- Never rely on `aria-\*` attributes to fix what a native semantic element would fix correctly on its own; semantic HTML is the first remedy, ARIA is the fallback\.(?=\n|$)/,
+    'A fix that needs a design change is reported to the orchestrator, never shipped as a visually inconsistent workaround.': /- Report a fix that requires a design change \(e\.g\. insufficient color contrast in the design system\) to the orchestrator rather than shipping a visually inconsistent workaround\.(?=\n|$)/,
+    'Consult the named Skill before applying its standard; report a missing Skill instead of improvising.': /Load the matching skill with the `Skill` tool before you apply its standard, rather than reasoning about WCAG success criteria from memory\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+  },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
     'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,
