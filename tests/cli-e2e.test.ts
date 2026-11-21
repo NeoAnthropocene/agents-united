@@ -265,6 +265,53 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/orchestrator-business.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-business.md' });
   });
 
+  it('installs the native design-systems-architect and design-ops-lead for design-systems-ops with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'design-systems-ops', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('design-systems-ops');
+    for (const role of ['design-ops-lead', 'design-systems-architect']) {
+      const text = await fs.readFile(path.join(e2eDir, `.claude/agents/${role}.md`), 'utf8');
+      expect(text, role).toContain('profile: claude-native');
+      expect(text, role).toMatch(new RegExp(`^name: ${role}$`, 'm'));
+      expect(text, role).toContain('## Working with peers');
+      expect(lock.projections[`.claude/agents/${role}.md`], role).toMatchObject({ host: 'claude', kind: 'role', canonical: `agents/subagent-${role}.md` });
+    }
+  });
+
+  it('installs the native design-researcher, designer-toolkit-expert and prototype-tester for design-research-testing with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'design-research-testing', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('design-research-testing');
+    for (const role of ['design-researcher', 'designer-toolkit-expert', 'prototype-tester']) {
+      const text = await fs.readFile(path.join(e2eDir, `.claude/agents/${role}.md`), 'utf8');
+      expect(text, role).toContain('profile: claude-native');
+      expect(text, role).toMatch(new RegExp(`^name: ${role}$`, 'm'));
+      expect(text, role).toContain('## Working with peers');
+      expect(lock.projections[`.claude/agents/${role}.md`], role).toMatchObject({ host: 'claude', kind: 'role', canonical: `agents/subagent-${role}.md` });
+    }
+  });
+
+  it('installs the native sysops-sre-lead, its parent natives and the architecture lead for sysops-sre with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'sysops-sre', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/sysops-sre-lead.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: sysops-sre-lead$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('sysops-sre');
+    expect(lock.projections['.claude/agents/sysops-sre-lead.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-sysops-sre-lead.md' });
+    expect(lock.projections['.claude/agents/system-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-system-architect.md' });
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-system-architecture.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lock.projections['.claude/agents/orchestrator-system-architecture.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-system-architecture.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',

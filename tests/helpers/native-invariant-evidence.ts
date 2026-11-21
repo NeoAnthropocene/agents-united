@@ -256,6 +256,41 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
+  // The design-systems-ops specialists: their floor Scope Boundaries and their own "How to work" steps state these. The peers invariants take the defaults above.
+  'design-ops-lead': {
+    'The existing component libraries and token files are scanned, and hard-coded styling values searched for, before token files are structured.': /\*\*Audit first\.\*\* List the UI component libraries and design token files[^\n]*search for hard-coded styling values/,
+    'Design tokens sync deterministically between design assets and code tokens.': /Design tokens \(colors, typography, spacing, elevation\) must sync deterministically between design assets and code tokens/,
+    'Every component handoff package specifies variants, interactive states, responsive breakpoints and ARIA patterns.': /Every component handoff package must specify component variants, interactive states \(hover, focus, active, disabled\), responsiveness breakpoints, and ARIA patterns\./,
+    'Clear phase gates separate design exploration, spec freeze, engineering handoff and QA signoff.': /Establish clear phase gates between design exploration, spec freeze, engineering handoff, and QA signoff\./,
+  },
+  'design-systems-architect': {
+    'Existing stylesheets, token manifests and components are read, and token drift identified, before any token is drafted.': /\*\*Inventory first\.\*\* Find the existing stylesheets, token JSON manifests and UI components[^\n]*before you draft anything\./,
+    'Tokens follow a three-tier architecture: primitive, semantic and component tokens.': /Enforce a three-tier token architecture:/,
+    'Every design system specification enforces WCAG 2.1 AAA contrast targets and explicit :focus-visible ring parameters.': /Every design system specification must enforce WCAG 2\.1 AAA contrast targets \(7:1 normal text, 4\.5:1 large text\/UI components\) and explicit \x60:focus-visible\x60 ring parameters\./,
+    'No magic value remains: every property maps to a systematic scale token.': /Eliminate arbitrary pixel paddings, hardcoded hex values, or inline z-index numbers\. All properties must map to systematic scale tokens\./,
+  },
+  // The design-research-testing specialists: their floor Scope Boundaries and their own "How to work" steps state these. The peers invariants take the defaults above.
+  'design-researcher': {
+    'Existing user feedback, product requirements and session notes are read, and the key research questions documented, before synthesis.': /\*\*Ingest the research context first\.\*\* Find the user feedback[^\n]*before you synthesise anything\./,
+    'Every design recommendation cites user data, interview quotes or an established HCI heuristic.': /Every design recommendation must cite user data, interview quotes, or established HCI heuristics/,
+    'Every identified usability problem is paired with a specific, prioritized recommendation.': /Every identified usability problem must pair with a specific, prioritized recommendation\./,
+    'Every usability issue is classified by severity as Critical, Major or Minor.': /Classify every issue as Critical \(blocks task\), Major \(causes significant delay or frustration\) or Minor \(cosmetic or inconvenience\)/,
+  },
+  'designer-toolkit-expert': {
+    'AI-generated prototypes, specs and transcripts are inspected, and arbitrary CSS values searched for, before any token is extracted.': /\*\*Audit the prototype first\.\*\* Find the AI-generated prototype files[^\n]*before you extract anything\./,
+    'Every design choice cites WCAG 2.1 AA accessibility standards, cognitive load principles or usability data.': /Every design choice must cite WCAG 2\.1 AA accessibility standards, cognitive load principles, or usability data\./,
+    'Hardcoded colors, arbitrary spacing and bespoke border-radii of an AI prototype are extracted into centralized design tokens.': /Audit AI-generated prototypes \(v0, Lovable\) to extract hardcoded hex colors, arbitrary spacing \(\x60p-\[13px\]\x60\), and bespoke border-radii into centralized design tokens\./,
+    'Interactive component primitives carry keyboard focus states and ARIA roles.': /Ensure all interactive primitives include keyboard focus states \(\x60focus-visible:ring-2\x60\) and ARIA roles\./,
+    'Every major interface architecture decision is documented as a Design Decision Record with its context, options considered, final decision and expected impact.': /Document every major interface architecture decision: Context, Options Considered \(with Pros\/Cons and accessibility trade-offs\), Final Decision & Rationale, and Expected Impact Metrics\./,
+  },
+  'prototype-tester': {
+    'Prototype specifications, user journey maps and wireframes are read, and the primary and secondary task flows mapped, before any evaluation.': /\*\*Scope the prototype first\.\*\* Find the prototype specifications[^\n]*before you evaluate\./,
+    "Nielsen's 10 usability heuristics are applied to every evaluated screen or interactive flow.": /Apply Nielsen 10 Usability Heuristics to every evaluated screen or interactive flow\./,
+    'Every heuristic violation is assigned a severity from 1 (cosmetic) to 4 (usability catastrophe).': /Assign severity ratings to every violation \(1 = Cosmetic, 2 = Minor, 3 = Major, 4 = Usability Catastrophe\)/,
+    'Friction is quantified with Task Completion Rate, Estimated Time-on-Task, Click-Depth and Error Recovery Speed.': /Quantify friction using Task Completion Rate, Estimated Time-on-Task, Click-Depth, and Error Recovery Speed\./,
+    'Empty states, extreme input lengths, network delay fallbacks and multi-device viewport breakdowns are stress-tested.': /Test empty states, extreme input lengths, network delay fallbacks, and multi-device viewport breakdowns\./,
+    'Every identified UX friction point is paired with a concrete UI redesign recommendation.': /Pair every identified UX friction point with a concrete UI redesign recommendation\./,
+  },
   // The product-design specialists: their floor Safety lines and Scope Boundaries, and their own "How to work" steps, state these. The peers invariants take the defaults above.
   'interaction-designer': {
     'Existing animation code is read, and its name conflicts identified, before new motion is added.': /\*\*Audit the motion first\.\*\* Find the existing components, stylesheets and animation code[^\n]*`@keyframes` names your new ones would collide with\./,
@@ -273,6 +308,18 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Every major architectural decision is recorded as an ADR with Context, Decision, Consequences and Status.': /\*\*Architecture Decision Records \(ADRs\)\*\* — Document major architectural decisions following Nygard \/ MADR templates \(Context, Decision, Consequences, Status\)\./,
     'Map the existing system before designing: read the module layout, APIs and data models first.': /\*\*Map first\.\*\* Read the existing module layout, APIs and data models with `Glob`, `Grep` and `Read` before you design anything\./,
     'Non-functional requirements carry measurable targets: SLA, SLO, throughput, p99 latency, availability and disaster recovery.': /\*\*Non-Functional Requirements \(NFRs\)\*\* — Enforce SLA, SLO, throughput \(RPS\), latency \(p99\), availability \(99\.99%\), and disaster recovery targets\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `sysops-sre-lead`: its floor Scope Boundaries state the domain invariants (directive 1 and the four forbidden anti-patterns), its own "How to work" the
+  // inspection step; the peers section is the engineering family's, as `system-architect` binds it.
+  'sysops-sre-lead': {
+    'Reliability is governed by Service Level Objectives, Service Level Indicators and error budgets.': /\*\*Uptime & SLA\/SLO Management\*\* — Define Service Level Objectives \(SLOs\), Service Level Indicators \(SLIs\), and error budgets/,
+    'Alerts fire on symptoms that affect SLOs, not on transient blips.': /- Refuse alert fatigue \(noisy non-actionable alerts\)[^\n]*alert on symptoms affecting SLOs, not transient blips\./,
+    'No single point of failure: infrastructure is redundant across zones or regions.': /- Refuse single point of failure \(SPOF\) infrastructure[^\n]*use multi-AZ and multi-region redundancy\./,
+    'No manual, undocumented server change: changes go through managed automation and runbooks.': /- Refuse manual un-documented server changes[^\n]*use managed infrastructure automation and runbooks\./,
+    'A disaster recovery backup counts only after an automated restoration drill has proven it.': /- Refuse untested disaster recovery backups[^\n]*prove them with automated backup restoration drills\./,
+    'Inspect the existing telemetry configuration and SLI metrics before triaging or designing.': /\*\*Inspect first\.\*\* Read the existing telemetry configuration and SLI metrics with `Glob`, `Grep` and `Read` before you triage or design anything: /,
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },

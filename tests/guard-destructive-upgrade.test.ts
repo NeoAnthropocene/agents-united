@@ -214,7 +214,7 @@ describe('the role texts say one true sentence about the guard', () => {
     'accessibility-lead',
     'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
     'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer',
-    'backend-architect', 'business-panel-experts', 'devops-engineer', 'frontend-architect', 'interaction-designer', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'security-engineer', 'ui-designer', 'ux-strategist',
+    'backend-architect', 'business-panel-experts', 'design-ops-lead', 'design-researcher', 'design-systems-architect', 'designer-toolkit-expert', 'devops-engineer', 'frontend-architect', 'interaction-designer', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'prototype-tester', 'security-engineer', 'ui-designer', 'ux-strategist',
   ];
 
   it.each(named)('%s carries the sentence once', name => {
