@@ -130,7 +130,7 @@ describe('the QA automation lead keeps its agency persona in the agency file, no
     ]) expect(paragraph, fact).toContain(fact);
   });
   it('reaches the generated floor through the core, so the floor holds no persona either', () => {
-    const floor = read('agency-qa-automation-lead').split('<!-- agents-united:floor:end -->')[0];
+    const floor = read('agency-qa-automation-lead').split('<!-- agents-united:floor:end -->')[0]!.split('<!-- agents-united:floor:start')[1]!;
     expect(floor).toContain(identity());
     for (const word of ['Emre', 'AstrolabsAI', 'Campaign Director', 'Deniz']) expect(floor, word).not.toContain(word);
   });
