@@ -1,0 +1,9 @@
+{
+  "definition": "subagent-socratic-mentor",
+  "workflows": [],
+  "skills": [
+    "grill-me",
+    "technical-documentation"
+  ],
+  "hooks": []
+}

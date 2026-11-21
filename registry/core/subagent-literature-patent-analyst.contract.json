@@ -1,0 +1,9 @@
+{
+  "definition": "subagent-literature-patent-analyst",
+  "workflows": [],
+  "skills": [
+    "technical-documentation",
+    "domain-modeling"
+  ],
+  "hooks": []
+}
