@@ -105,7 +105,7 @@ All business strategy briefs and product roadmaps must follow this structured ma
 | Type | Provided by | Role and what it can do on this host |
 |---|---|---|
 | `business-panel-experts` | `business-financial-modeling`, `business-market-intelligence`, `business-operations-legal`, `business-strategy` | Business strategy panel. Use to evaluate a software product, technical initiative or architecture from executive business viewpoints, covering unit economics (LTV, CAC, payback, gross margin), market size, competitors, risks and a 30-60-90 day plan, as a report. Edits files, no shell. — edits files; Glob/Grep search; MCP: markitdown |
-| `financial-analyst` | `business-financial-modeling` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `financial-analyst` | `business-financial-modeling` | SaaS financial analyst. Use to model unit economics (CAC, LTV, payback, gross margin), pricing tier sensitivity, 12 and 24 month pro-forma revenue and cash runway, and cloud COGS margins, as a report with formulas and three scenarios. Edits files and runs calculations. — edits files and runs commands; searches through Bash; MCP: markitdown |
 | `legal-contract-analyst` | `business-operations-legal` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `market-intelligence-analyst` | `business-market-intelligence` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `operations-strategist` | `business-operations-legal` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
