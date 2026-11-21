@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-accessibility-lead",
+  "workflows": [],
+  "skills": [
+    "accessibility-audit",
+    "responsive-design-audit",
+    "ui-component-spec",
+    "component-library-management"
+  ],
+  "hooks": []
+}

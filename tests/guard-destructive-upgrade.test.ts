@@ -211,9 +211,10 @@ describe('the role texts say one true sentence about the guard', () => {
     'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
   const AGENTS = path.resolve('registry/hosts/claude/agents');
   const named = [
+    'accessibility-lead',
     'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
     'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer',
-    'backend-architect', 'devops-engineer', 'frontend-architect', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-security', 'security-engineer',
+    'backend-architect', 'devops-engineer', 'frontend-architect', 'interaction-designer', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-security', 'security-engineer', 'ui-designer', 'ux-strategist',
   ];
 
   it.each(named)('%s carries the sentence once', name => {
