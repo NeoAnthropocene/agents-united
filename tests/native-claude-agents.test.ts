@@ -442,7 +442,8 @@ beforeAll(async () => {
       const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool));
       const toolsLine = `tools: ${nativeToolOrder(tools, role.serverTools).join(', ')}`;
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
-      if (role.mainThread) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
+      // A roster block belongs to a lead that spawns the roster: only a main-thread role that holds `Agent` carries one.
+      if (role.mainThread && ceilingOf(role).includes('Agent')) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
     }
   }
@@ -543,5 +544,21 @@ describe.each(ROLES)('native Claude $name', role => {
       const row = inSkillTable ? /^\|[^|\n]*\|\s*`([a-z0-9-]+)`\s*\|/.exec(line) : null;
       if (row) expect(fs.existsSync(path.resolve('registry/skills', row[1], 'SKILL.md')), `skill ${row[1]}`).toBe(true);
     }
+  });
+});
+
+describe('the roster block of a main-thread role follows its Agent tool', () => {
+  const leads = ROLES.filter(role => role.mainThread);
+  const markers = (text: string, edge: 'start' | 'end'): number => text.split(`<!-- agents-united:roster:${edge}`).length - 1;
+
+  it('finds main-thread roles that hold Agent, so that no test below passes on an empty list', () => {
+    expect(leads.filter(role => ceilingOf(role).includes('Agent')).length).toBeGreaterThan(0);
+  });
+
+  it.each(leads)('$name carries exactly one pair of roster markers when it holds Agent, and none when it does not', role => {
+    const text = fs.readFileSync(fileOf(role), 'utf8').replace(/\r\n/g, '\n');
+    const holdsAgent = splitTools(yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(text)![1]).tools).some(tool => tool.split('(')[0] === 'Agent');
+    expect(holdsAgent).toBe(ceilingOf(role).includes('Agent'));
+    expect([markers(text, 'start'), markers(text, 'end')]).toEqual(holdsAgent ? [1, 1] : [0, 0]);
   });
 });
