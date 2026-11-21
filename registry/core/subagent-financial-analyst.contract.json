@@ -1,0 +1,9 @@
+{
+  "definition": "subagent-financial-analyst",
+  "workflows": [],
+  "skills": [
+    "technical-documentation",
+    "domain-modeling"
+  ],
+  "hooks": []
+}
