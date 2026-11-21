@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { loadSemanticCore, validateDeclaredDeltas } from '../src/core/semantic-core.js';
+import { loadSemanticCore } from '../src/core/semantic-core.js';
+import { invariantCoverageProblems } from '../src/core/native-repository-rules.js';
 import { EVIDENCE, evidenceFor, ROLE_EVIDENCE } from './helpers/native-invariant-evidence.js';
 import { loadNativeDeltas, nativeText, NATIVE_ROLES } from './helpers/native-roles.js';
 
@@ -22,8 +23,7 @@ describe.each(NATIVE_ROLES)('native role $role', ({ role, stem }) => {
 
   it('states every core invariant in its body or declares the divergence (no undeclared divergence)', () => {
     const text = nativeText(role);
-    const bound = core().invariants.filter(invariant => evidenceFor(role, invariant)?.test(text));
-    const violations = validateDeclaredDeltas({ realization: { boundInvariants: bound, aboveFloorScope: [] }, core: core(), deltas: declared() });
+    const violations = invariantCoverageProblems(core(), invariant => evidenceFor(role, invariant)?.test(text) ?? false, declared());
     expect(violations).toEqual([]);
   });
 
@@ -35,8 +35,7 @@ describe.each(NATIVE_ROLES)('native role $role', ({ role, stem }) => {
       const rule = evidenceFor(role, invariant)!;
       const stripped = text.split('\n').filter(line => !rule.test(line)).join('\n');
       if (rule.test(stripped)) continue; // evidence that spans lines: a line-wise strip cannot remove it, so this check does not apply
-      const bound = core().invariants.filter(candidate => candidate !== invariant && evidenceFor(role, candidate)?.test(text));
-      const violations = validateDeclaredDeltas({ realization: { boundInvariants: bound, aboveFloorScope: [] }, core: core(), deltas: declared() });
+      const violations = invariantCoverageProblems(core(), candidate => candidate !== invariant && (evidenceFor(role, candidate)?.test(text) ?? false), declared());
       if (declared().some(delta => delta.feature === invariant)) continue;
       expect(violations.join('\n'), `${role}: "${invariant}"`).toContain(invariant);
     }

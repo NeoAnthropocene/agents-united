@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-system-architect",
+  "workflows": [],
+  "skills": [
+    "architecture-design",
+    "microservices-architecture",
+    "domain-modeling",
+    "database-design",
+    "technical-documentation"
+  ],
+  "hooks": []
+}

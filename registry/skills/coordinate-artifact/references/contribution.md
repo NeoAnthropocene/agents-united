@@ -26,7 +26,7 @@ Only for upstream intent. A local draft stops at the candidate and needs none of
 2. Collect the `contract-check` output and exit (0 when `valid`). `[script: agents contract-check]`
 3. Collect the P5 `shared-pair` review result and its checker output. `[script: check-review.mjs]`
 4. Place `<definition>.core.md` and `<definition>.contract.json` in `registry/core/` (reuse or add the pair) and run `npm run build` before using the checkout's `dist/cli.js`. `[prose]`
-5. In the checkout, run `node <checkout>/dist/cli.js contract-check --registry <checkout>/registry --definition <definition>`. `[script: agents contract-check]`
+5. In the checkout, run `node <checkout>/dist/cli.js contract-check --registry <checkout>/registry --definition <definition> --canonical <checkout>/registry/agents/<definition>.md` when that file exists. `[script: agents contract-check]`
 6. The guide expects a new subagent's pair alongside its native host addition; a pair-only pull request is agreed with the maintainer first. Template: the four contract fields, the pair paths and the operation (create, reuse, update); the host rows `N/A (shared pair only)` with the reason, or a link to the paired realization; skill-loading and guard boxes N/A with the reason. `[prose]`
 
 ## Claude agent

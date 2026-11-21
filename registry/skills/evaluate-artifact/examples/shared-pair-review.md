@@ -1,6 +1,6 @@
 # Shared-pair review
 
-The fixed task asks for a private read-only planning reviewer. Candidate inventory contains core/subagent-plan-reviewer.core.md, its four-field companion and an unchanged notes.txt labeled preservation-only. Target is null; host-fit is explicitly N/A. The caller supplies an actual contract-check receipt on these final bytes and the original brief/source pins.
+The fixed task asks for a private read-only planning reviewer. Candidate inventory contains core/subagent-plan-reviewer.core.md, its four-field companion and an unchanged notes.txt labeled preservation-only. Target is null; host-fit and coverage-evidence are explicitly N/A. The caller supplies an actual contract-check receipt on these final bytes and the original brief/source pins.
 
 Inspect the core's mission/scope/output/safety and the permitted lists together. If the core promises no mutation but includes edit/shell capability classes, cite those actual core lines and explain the inconsistent affordance. The pair validator's success does not make that semantic choice safe or useful. If no target binding is requested, report native delivery unverified rather than inventing an unavailable-host defect.
 

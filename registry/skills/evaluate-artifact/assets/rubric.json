@@ -7,6 +7,7 @@
     { "id": "dependency-usefulness", "name": "Dependency usefulness", "question": "Are required delivery/loading edges complete and useful, with optional integrations and unavailable dependencies explicit?" },
     { "id": "evidence-truthfulness", "name": "Evidence truthfulness", "question": "Do inventory, diff, check receipts and claims distinguish deterministic consistency, quality findings and actual Host proof?" },
     { "id": "provenance-ownership", "name": "Provenance and ownership", "question": "Are inspected sources, licences, comparison, notices, authorship, ownership and unresolved holds represented truthfully?" },
-    { "id": "clarity-maintainability", "name": "Clarity and maintainability", "question": "Are instructions coherent, concise, useful and maintainable, with appropriate examples, disclosure and bounded repair guidance?" }
+    { "id": "clarity-maintainability", "name": "Clarity and maintainability", "question": "Are instructions coherent, concise, useful and maintainable, with appropriate examples, disclosure and bounded repair guidance?" },
+    { "id": "coverage-evidence", "name": "Coverage evidence", "question": "Does the evidence of each invariant coverage entry, floor and shared entries included, state its invariant?" }
   ]
 }

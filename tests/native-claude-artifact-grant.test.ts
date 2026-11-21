@@ -19,7 +19,7 @@ const HER = 'agency-creative-designer';
 const HER_STEM = 'subagent-marketing-creative-designer';
 const LEAD = 'orchestrator-digital-agency';
 
-describe('the grant: one role holds Artifact', () => {
+describe('the grant: the roles on one core hold Artifact', () => {
   it('has the artifacts class in her core, and in no other native role\'s core', async () => {
     const cores = await loadSemanticCore('registry');
     for (const stem of new Set(NATIVE_ROLES.map(r => r.stem))) {
@@ -29,7 +29,8 @@ describe('the grant: one role holds Artifact', () => {
   });
 
   it('has Artifact in her tools line, and in no other native role\'s', () => {
-    for (const { role } of NATIVE_ROLES) expect(tools(role).includes('Artifact'), role).toBe(role === HER);
+    // Two native files stand on her core: the agency's and the growth-marketing bundle's (growth-marketing). The tool follows the class of the core, so both hold it and no other role does.
+    for (const { role } of NATIVE_ROLES) expect(tools(role).includes('Artifact'), role).toBe(role === HER || role === 'marketing-creative-designer');
   });
 
   it('keeps her other tools as they were: no shell, no delegation, the editors and the connected servers', () => {

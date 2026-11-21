@@ -355,6 +355,26 @@ export class ClaudeProjector {
     return { meta, body: match[2].replace(/^\r?\n/, '') };
   }
 
+  /** The tools one declared server grants: the server itself for a writable role, its pinned read-only tools (none when unpinned) for a read-only one. */
+  public static serverGrant(server: string, readOnly: boolean): readonly string[] {
+    return readOnly ? READ_ONLY_MCP_TOOL_GRANTS[server] ?? [] : [`mcp__${server}`];
+  }
+
+  /** The server tools a canonical agent's frontmatter yields, in declaration order: one rule for the projector and the repository checks (ADR 0072). */
+  public static serverToolsOf(meta: Record<string, unknown>, canonicalRelPath: string): string[] {
+    const readOnly = typeof meta.permissionMode === 'string' && (ClaudeProjector.CLAUDE_DIALECT.permissionModeMap[meta.permissionMode] ?? 'default') === 'plan';
+    const tools: string[] = [];
+    for (const server of ClaudeProjector.declaredMcpServers(meta, canonicalRelPath)) {
+      for (const grant of ClaudeProjector.serverGrant(server, readOnly)) if (!tools.includes(grant)) tools.push(grant);
+    }
+    return tools;
+  }
+
+  /** `serverToolsOf` for a canonical agent's text. */
+  public static serverToolsOfAgent(canonicalContent: string, canonicalRelPath: string): string[] {
+    return ClaudeProjector.serverToolsOf(ClaudeProjector.parse(canonicalContent, canonicalRelPath).meta, canonicalRelPath);
+  }
+
   /**
    * Plan 029 A2 / Risk R4 — the servers a canonical role declares, by NAME only.
    *
@@ -636,7 +656,7 @@ export class ClaudeProjector {
     // role (Risk R1, owner Option B). Servers are referenced BY NAME ONLY (Risk R4).
     const declaredServers = ClaudeProjector.declaredMcpServers(meta, canonicalRelPath);
     for (const server of declaredServers) {
-      const grants = permission === 'plan' ? READ_ONLY_MCP_TOOL_GRANTS[server] ?? [] : [`mcp__${server}`];
+      const grants = ClaudeProjector.serverGrant(server, permission === 'plan');
       for (const grant of grants) {
         if (!tools.includes(grant)) tools.push(grant);
       }
