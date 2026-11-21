@@ -1,0 +1,13 @@
+{
+  "definition": "subagent-distributed-systems-architect",
+  "workflows": [],
+  "skills": [
+    "microservices-architecture",
+    "backend-api-design",
+    "graphql-schema-design",
+    "turso-distributed-sqlite",
+    "database-design",
+    "postgres-best-practices"
+  ],
+  "hooks": []
+}
