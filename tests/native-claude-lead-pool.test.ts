@@ -31,7 +31,7 @@ const KNOWN_GAPS: Record<string, string[]> = {
 const covers = (held: string[], wanted: string): boolean => held.some(h => h === wanted || wanted.startsWith(`${h}__`));
 
 describe('the pool of a coordinator: a teammate gets the MCP tools of the main conversation', () => {
-  for (const lead of ['orchestrator-digital-agency', 'orchestrator-engineering']) {
+  for (const lead of ['orchestrator-business', 'orchestrator-digital-agency', 'orchestrator-engineering']) {
     it(`${lead} holds every MCP tool that a role it may spawn holds`, () => {
       const roles = spawnable(lead).filter(exists);
       expect(roles.length, `the roles ${lead} may spawn that have a native file`).toBeGreaterThan(2);
