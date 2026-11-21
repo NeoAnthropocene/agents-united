@@ -179,6 +179,26 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
   },
+  // `legal-contract-analyst`: its floor (scope boundaries and safety) states the three legal invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'legal-contract-analyst': {
+    'Any GPL or AGPL licensed code or libraries integrated into commercial proprietary codebases are strictly flagged.': /Strictly flag any GPL or AGPL licensed code or libraries integrated into commercial proprietary codebases/,
+    'Contract analysis is framed as operational and technical support, never formal legal counsel.': /Provide structured technical and operational contract analysis to support business decision-making, not formal legal representation or binding legal counsel\./,
+    'Every flagged contract clause includes a risk tier (Low, Medium, High, or Dealbreaker) and a concrete redline suggestion.': /Categorize contract clauses into Low, Medium, High, or Dealbreaker risk tiers with concrete redline suggestions/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
+  // `operations-strategist`: its floor (scope boundaries) states the three operations invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'operations-strategist': {
+    'Every Key Result is strictly quantifiable.': /Every Key Result must be strictly quantifiable/,
+    'Vendor and tooling evaluations use transparent weighted scorecards across Security, Cost, Ease of Integration, and Vendor Longevity.': /apply transparent weighted scorecards across Security, Cost, Ease of Integration, and Vendor Longevity/,
+    'Critical path dependencies and single points of failure (SPOF) are explicitly documented.': /Explicitly document critical path dependencies and single points of failure \(SPOF\) in personnel or vendor systems/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
+  },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
     'No plaintext secret, token or connection string appears in a workflow file or IaC template.': /- Never commit a secret, token or connection string into a workflow file or IaC template; use repository or environment secrets and the platform secret manager, and prefer managed identities\.(?=\n|$)/,

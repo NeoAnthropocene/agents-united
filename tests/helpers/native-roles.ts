@@ -18,6 +18,8 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'business-panel-experts', stem: 'subagent-business-panel-experts', tier: 1, coordinator: false },
   { role: 'financial-analyst', stem: 'subagent-financial-analyst', tier: 1, coordinator: false },
   { role: 'market-intelligence-analyst', stem: 'subagent-market-intelligence-analyst', tier: 1, coordinator: false },
+  { role: 'legal-contract-analyst', stem: 'subagent-legal-contract-analyst', tier: 1, coordinator: false },
+  { role: 'operations-strategist', stem: 'subagent-operations-strategist', tier: 1, coordinator: false },
   { role: 'code-reviewer', stem: 'subagent-code-reviewer', tier: 1, coordinator: false },
   { role: 'repo-index', stem: 'subagent-repo-index', tier: 1, coordinator: false },
   { role: 'orchestrator-digital-agency', stem: 'orchestrator-digital-agency', tier: 2, coordinator: true },
