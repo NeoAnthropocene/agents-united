@@ -174,6 +174,19 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   'marketing-creative-designer': {
     'Design tokens are handed to engineering as a fixed input before the production build starts.': /Design tokens go back to `orchestrator-marketing` as a fixed input before the production build starts, for whoever builds the page/,
   },
+  // The research lead: the shared coordinator wording (EVIDENCE) for most, its own for what the engineering lead does not state (evidence gathering is delegated, citations, the two-source spot-check, documentation only, recommended bundles).
+  'orchestrator-research': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Plan solo; delegate evidence gathering, logic audit, code mapping, quantitative work and prior-art search to specialists.': /You delegate evidence gathering, logic audit, code mapping, quantitative work and prior-art search to specialists/,
+    'Consult at least one relevant specialist, read-only, before the delegation map, unless the user waives it.': /\*\*Consult before you map\.\*\* Before the delegation map, consult at least one relevant specialist with a short, read-only brief, unless the user waived it/,
+    'The lead searches only to scope a request and to spot-check key claims; evidence gathering is delegated.': /You search only to scope a request and to spot-check key claims/,
+    'Verify-then-deliver: no report completes until every claim is cited and every key claim passed the two-source spot-check.': /A claim that fails the spot-check goes back to the specialist that supplied it/,
+    'Every empirical claim cites an explicit source, and no source is invented.': /Every empirical claim carries an explicit source URL or document reference; never invent a source/,
+    'Key claims are checked against two independent primary sources before delivery.': /Check each key claim yourself against at least two independent primary sources/,
+    'Project runtime source code is not changed; the output is research documentation only.': /Do not change project runtime source code \(`src\/`\); output research documentation only/,
+    'Work beyond research synthesis is recommended to the user as a bundle, never delegated by this lead.': /\*\*Work beyond research synthesis is recommended, not delegated\.\*\*/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
@@ -184,6 +197,16 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Semantic HTML is the first remedy and ARIA the fallback.': /- Never rely on `aria-\*` attributes to fix what a native semantic element would fix correctly on its own; semantic HTML is the first remedy, ARIA is the fallback\.(?=\n|$)/,
     'A fix that needs a design change is reported to the orchestrator, never shipped as a visually inconsistent workaround.': /- Report a fix that requires a design change \(e\.g\. insufficient color contrast in the design system\) to the orchestrator rather than shipping a visually inconsistent workaround\.(?=\n|$)/,
     'Consult the named Skill before applying its standard; report a missing Skill instead of improvising.': /Load the matching skill with the `Skill` tool before you apply its standard, rather than reasoning about WCAG success criteria from memory\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+  },
+  // `deep-research`: the five research invariants are stated by its floor (scope boundaries and safety); the peer-messaging ones by its peers section, the engineering family's form.
+  'deep-research': {
+    'Prioritize official specs, official framework documentation and primary repositories over secondary sources.': /Always prioritize official specs \(W3C, IETF RFCs, ISO\), official framework documentation, and primary GitHub repositories/,
+    'Cross-reference findings across at least 3 distinct sources before marking a claim as established fact.': /Cross-reference findings across at least 3 distinct sources before marking a claim as established fact/,
+    'Clearly differentiate established specs, experimental features, community workarounds and vendor claims.': /Clearly differentiate between established specs, experimental features, community workarounds, and vendor claims/,
+    'Never report unverified blog posts as technical specification facts.': /- Never report unverified blog posts as technical specification facts\.(?=\n|$)/,
+    'Include publication/retrieval dates for all web citations.': /- Include publication\/retrieval dates for all web citations\.(?=\n|$)/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
@@ -243,6 +266,15 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'No dark pattern is recommended: no forced continuity, no roach motel flow, no misdirection.': /- Never recommend dark patterns \(forced continuity, roach motel flows, misdirection\)\./,
     'Validated user research and strategic hypotheses are labelled as different things in every deliverable.': /- Always distinguish between validated user research and strategic hypotheses\./,
     'Every critical action path targets fewer than three steps.': /Deconstruct every primary task into atomic steps\. Target <3 steps for any critical action path\./,
+  },
+  // `socratic-mentor`: its four role invariants are bound by sentences of its own "How to mentor" steps; the peer-messaging ones by the engineering family's peers section.
+  'socratic-mentor': {
+    'Read-only operation: never write or mutate files.': /Never write or mutate a file: this role holds no tool that writes a file or runs a command, and as a subagent the guard bound to it blocks any write tool, shell or mutating connected-server tool; as a teammate that guard does not apply, so the read-only rule is yours alone\./,
+    'Guide through targeted questions (1-3 per turn) rather than code dumps.': /Ask one to three targeted questions per turn, never more, and no code dump\./,
+    'Never supply copy-paste code solutions unless explicitly instructed after 3 Socratic turns.': /Never supply a copy-paste code solution unless explicitly instructed after three Socratic turns/,
+    'Keep tone supportive, intellectually curious, and non-judgmental.': /Keep your tone supportive, intellectually curious and non-judgmental/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
 };
 

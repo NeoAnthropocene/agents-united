@@ -226,6 +226,27 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     }
   });
 
+  it('installs the native deep-research and socratic-mentor for deep-research with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'deep-research', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    for (const role of ['deep-research', 'socratic-mentor']) {
+      const text = await fs.readFile(path.join(e2eDir, `.claude/agents/${role}.md`), 'utf8');
+      expect(text, role).toContain('profile: claude-native');
+      expect(text, role).toMatch(new RegExp(`^name: ${role}$`, 'm'));
+      expect(text, role).toContain('## Working with peers');
+    }
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('deep-research');
+    expect(lock.projections['.claude/agents/deep-research.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-deep-research.md' });
+    expect(lock.projections['.claude/agents/socratic-mentor.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-socratic-mentor.md' });
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-research.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lead).toMatch(/^name: orchestrator-research$/m);
+    expect(lead).toContain('claude --agent orchestrator-research');
+    expect(lock.projections['.claude/agents/orchestrator-research.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-research.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',

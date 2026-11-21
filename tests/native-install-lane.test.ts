@@ -24,9 +24,9 @@ const BUNDLE = 'software-engineering';
 const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect', 'orchestrator-engineering', 'repo-index'];
 /** Every committed native Claude role, including optional 3D and the bounded contributor main and workers. */
 const COMMITTED_NATIVE_ROLES = [
-  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'devops-engineer', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'interaction-designer', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-security', 'orchestrator-system-architecture', 'repo-index', 'security-engineer', 'system-architect', 'ui-designer', 'ux-strategist',
+  'accessibility-lead', 'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer', 'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'code-reviewer', 'deep-research', 'devops-engineer', 'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'interaction-designer', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-agent-factory', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture', 'repo-index', 'security-engineer', 'socratic-mentor', 'system-architect', 'ui-designer', 'ux-strategist',
 ];
-const COORDINATORS = ['orchestrator-design', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-security', 'orchestrator-system-architecture'];
+const COORDINATORS = ['orchestrator-design', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-security', 'orchestrator-system-architecture'];
 /** The lead and the five roles the growth-marketing bundle installs as native files (growth-marketing). */
 const GROWTH_MARKETING_NATIVE = ['marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'orchestrator-marketing'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
@@ -259,6 +259,28 @@ describe('native install lane (agents add --native)', () => {
   it('without the native lane, growth-marketing writes the legacy projection for the lead and all five roles', async () => {
     await new InstallEngine().install('growth-marketing', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     for (const role of GROWTH_MARKETING_NATIVE) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native lead, deep-research and socratic-mentor for the deep-research bundle, recorded as managed roles of their canonical agents', async () => {
+    await new InstallEngine().install('deep-research', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const lock = await fs.readJson(lockPath);
+    for (const role of ['orchestrator-research', 'deep-research', 'socratic-mentor']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = lock.projections[`.claude/agents/${role}.md`];
+      expect(record.kind, role).toBe('role');
+      expect(record.canonical, role).toBe(canonicalOf(role));
+      expect(record.managedMarker, role).toBe(true);
+    }
+  });
+
+  it('without the native lane, the deep-research bundle still writes the legacy projection for both research specialists', async () => {
+    await new InstallEngine().install('deep-research', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['deep-research', 'socratic-mentor']) {
       const text = await fs.readFile(claudeAgent(role), 'utf8');
       expect(text, role).toContain('profile: claude |');
       expect(text, role).not.toContain('claude-native');

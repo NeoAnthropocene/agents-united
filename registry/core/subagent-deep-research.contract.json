@@ -1,0 +1,9 @@
+{
+  "definition": "subagent-deep-research",
+  "workflows": [],
+  "skills": [
+    "technical-documentation",
+    "domain-modeling"
+  ],
+  "hooks": []
+}
