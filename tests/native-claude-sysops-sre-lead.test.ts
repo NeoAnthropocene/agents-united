@@ -187,15 +187,14 @@ describe('native sysops-sre-lead: the MCP servers and posture of its canonical a
 
 describe('native sysops-sre-lead: the shared scope_boundaries and safety', () => {
   const normalize = (value: string): string => value.replace(/\s+/g, ' ').trim();
-  /** The one reworded token: the core lint forbids the word the canonical directive 4 uses for planning OS updates (the host-neutral core says "plan"). */
-  const neutral = (value: string): string => value.replace('schedule OS security updates', 'plan OS security updates');
 
-  it('carries every numbered Primary Directive of the canonical agent, word for word (one token reworded for the core lint)', async () => {
-    const directives = [...(/\n## Primary Directives\n([\s\S]*?)(?=\n## )/.exec(canonical())?.[1] ?? '').matchAll(/^(\d+)\. (.+)$/gm)].map(match => normalize(neutral(`${match[1]}. ${match[2]}`)));
+  it('carries every numbered Primary Directive of the canonical agent, word for word, with no substitution', async () => {
+    const directives = [...(/\n## Primary Directives\n([\s\S]*?)(?=\n## )/.exec(canonical())?.[1] ?? '').matchAll(/^(\d+)\. (.+)$/gm)].map(match => normalize(`${match[1]}. ${match[2]}`));
     expect(directives).toHaveLength(5);
     const scope = normalize((await loadSemanticCore('registry')).get('subagent-sysops-sre-lead')!.scope_boundaries);
     for (const directive of directives) expect(scope, directive).toContain(directive);
-    expect(canonical()).toContain('schedule OS security updates and kernel patch cycles');
+    expect(canonical()).toContain('plan OS security updates and kernel patch cycles');
+    expect(canonical()).not.toContain('schedule OS security updates');
   });
 
   it('keeps the three protocol phases and the four anti-patterns with their risks and practices', async () => {
