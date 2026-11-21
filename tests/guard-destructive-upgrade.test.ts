@@ -214,7 +214,7 @@ describe('the role texts say one true sentence about the guard', () => {
     'accessibility-lead',
     'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
     'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer',
-    'backend-architect', 'devops-engineer', 'e2e-tester', 'frontend-architect', 'orchestrator-digital-agency', 'orchestrator-engineering', 'qa-automation-lead',
+    'backend-architect', 'data-engineer', 'devops-engineer', 'distributed-systems-architect', 'e2e-tester', 'frontend-architect', 'orchestrator-digital-agency', 'orchestrator-engineering', 'qa-automation-lead',
   ];
 
   it.each(named)('%s carries the sentence once', name => {
