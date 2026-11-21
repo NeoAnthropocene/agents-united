@@ -187,6 +187,21 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Project runtime source code is not changed; the output is research documentation only.': /Do not change project runtime source code \(`src\/`\); output research documentation only/,
     'Work beyond research synthesis is recommended to the user as a bundle, never delegated by this lead.': /\*\*Work beyond research synthesis is recommended, not delegated\.\*\*/,
   },
+  // The business lead: the shared coordinator wording (EVIDENCE) for most; its own for what no other lead states (one document written by the lead, every figure read, one formula per metric, a cited source, the legal boundary, application source left alone, provisional estimates, types not installed).
+  'orchestrator-business': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Plan solo; delegate every execution deliverable to a specialist.': /You delegate every deliverable to a specialist/,
+    'Shared definitions and assumptions are fixed once and handed to parallel specialists as fixed inputs.': /\*\*Definitions first\.\*\* When two or more pieces of work share a definition[^\n]*fix it once and hand it to the others as a fixed input before they start/,
+    'The lead writes only the synthesis brief; the specialists write every other deliverable.': /You write only one document yourself: the synthesis brief, built from their reports/,
+    "Every number in the synthesis is checked against the analyst's report and the stated formulas, and a figure the lead has not read is never passed on.": /\*\*Check every number\.\*\* Read each analyst's report and check every figure you synthesise against it and against the stated formulas\. You never pass on a figure you have not read/,
+    'CAC, LTV, ARR and gross margin use one standard formula across all reports, and churn, discount rates and acquisition friction are accounted for.': /\*\*One formula per metric\.\*\* CAC, LTV, ARR and gross margin are standardized across every report\. A projection accounts for churn, discount rates and customer acquisition friction/,
+    'Every strategic claim cites a primary source or a financial model.': /\*\*Cite a primary source or a model\.\*\* Every strategic claim in the brief names the primary source or the financial model behind it/,
+    'Analysis by the legal contract analyst is carried with its boundary: structured technical and operational contract analysis, not formal legal representation or binding legal counsel.': /\*\*Carry the legal boundary\.\*\* Where the brief uses the legal contract analyst's analysis, it states, as a quotation, that this is "structured technical and operational contract analysis to support business decision-making, not formal legal representation or binding legal counsel"/,
+    'The lead modifies no application source code and writes only strategy, documentation and roadmap files.': /\*\*Keep application source untouched\.\*\* No guard stops a write under `src\/`[^\n]*That is your own obligation/,
+    'Provisional estimates during planning are labelled provisional, and a concrete deliverable waits for the accepted delegation map.': /\*\*Give provisional answers as provisional\.\*\* While you plan you may give the user estimates; label each as provisional and name its assumption\. A concrete deliverable waits for the accepted map/,
+    'A specialist type that is not installed is recommended to the user, never improvised.': /\*\*Only delegate to a type in your allowlist and in the install record\.\*\* Never improvise a specialist/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
@@ -207,6 +222,16 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Include publication/retrieval dates for all web citations.': /- Include publication\/retrieval dates for all web citations\.(?=\n|$)/,
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `business-panel-experts`: its floor (scope boundaries) states the three business invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'business-panel-experts': {
+    'Every revenue model or cost projection is grounded in industry benchmarks, published case studies, or explicit financial assumptions.': /Every revenue model or cost projection must be grounded in industry benchmarks, published case studies, or explicit financial assumptions\./,
+    'Gross margin per user or transaction is calculated before projecting aggregate revenue.': /Always calculate gross margin per user\/transaction before projecting aggregate revenue\./,
+    'Payback period metrics are provided for all proposed investments.': /Provide clear payback period metrics \(e\.g\. months to recover acquisition\/engineering costs\) for all proposed investments\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
   },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {

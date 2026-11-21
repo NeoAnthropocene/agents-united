@@ -100,6 +100,7 @@ const ROLES: RoleSpec[] = [
   // The research specialists: one writes reports and reads the web (no shell), the other only reads and asks (no tool to put a question to the user: the host never gives it to a subagent).
   { name: 'deep-research', stem: 'subagent-deep-research', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__firecrawl', 'mcp__context7']), mutating: true, mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   { name: 'socratic-mentor', stem: 'subagent-socratic-mentor', guard: 'read-only', skills: [], serverTools: withRoutes(['mcp__context7']), mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'business-panel-experts', stem: 'subagent-business-panel-experts', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Edit', 'Write', 'WebFetch', 'WebSearch', 'Skill', 'SendMessage', 'SubagentHandback', 'ToolSearch', 'TodoWrite'], searchTools: ['Glob', 'Grep', 'Read'], workTools: ['Edit', 'Write'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
@@ -146,6 +147,24 @@ const ROLES: RoleSpec[] = [
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
     mainThread: true,
     coordinatorBundle: 'system-architecture',
+    // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
+  {
+    name: 'orchestrator-business',
+    stem: 'orchestrator-business',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    // The canonical lead's four servers, each under its plugin or connector route, because the roles it spawns (the panel binds markitdown) are resolved against the lead's pool.
+    serverTools: withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__firecrawl', 'mcp__github']),
+    mutating: true,
+    // The engineering lead's list minus `Workflow` (no bundle of the business domain installs a saved workflow), `LSP` (the lead writes no code), `ReportFindings` (no reviewer in the department) and the worktree tools (the work is documents).
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Agent', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'business-strategy',
+    searchTools: ['Glob', 'Grep', 'Read'],
     // The same pin as the engineering coordinator (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
     model: 'opus',
     effort: 'medium',
