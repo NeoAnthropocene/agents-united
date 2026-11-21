@@ -3,7 +3,6 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { EVIDENCE, ROLE_EVIDENCE } from './helpers/native-invariant-evidence.js';
 // @ts-expect-error -- a plain ES module of the contributor tooling, without type declarations.
 import { applyWiring, checkManifest, planWiring } from '../scripts/native-wiring.mjs';
 // @ts-expect-error -- a plain ES module of the contributor tooling, without type declarations.
@@ -22,21 +21,40 @@ const lf = (text: string): string => text.replace(/\r\n/g, '\n');
 const read = (file: string): string => lf(fs.readFileSync(file, 'utf8'));
 const manifest = (): Json => fs.readJsonSync(MANIFEST);
 
-/** The files the generator may write, and the ones it reads. */
+/** The files the generator may write. */
 const WIRED = ['tests/helpers/native-roles.ts', 'tests/native-claude-agents.test.ts', 'tests/helpers/native-invariant-evidence.ts',
   'tests/native-claude-own-session.test.ts', 'tests/native-install-lane.test.ts', 'tests/cli-e2e.test.ts'];
-const READ_ONLY = ['registry/bundles.json', 'registry/hosts/claude/deltas.json', 'registry/hosts/claude/agents', 'registry/core', 'registry/agents',
-  'tests/fixtures/pilot-devops/final/agent/devops-engineer.coverage.json'];
+/**
+ * The repository as PR #237 left it (commit 908c521), frozen: the six wired files and the generator's inputs, each stored as `<path>.frozen` so the
+ * test runner and the type check leave them alone. The live files change with every role that lands, so the proof never reads them.
+ */
+const FROZEN = path.resolve('tests/fixtures/native-wiring/908c521');
+const COVERAGE = 'tests/fixtures/pilot-devops/final/agent/devops-engineer.coverage.json';
 
 let work = '';
 beforeEach(async () => { work = await fs.mkdtemp(path.join(os.tmpdir(), 'au-native-wiring-')); });
 afterEach(async () => { await fs.remove(work); });
 
-/** A copy of the checkout's wired and read files, line endings normalised. */
+/** Every frozen file, by its repository path. */
+function frozenFiles(dir = FROZEN): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory()
+    ? frozenFiles(path.join(dir, entry.name))
+    : [path.relative(FROZEN, path.join(dir, entry.name)).replace(/\\/g, '/').replace(/\.frozen$/, '')]);
+}
+const frozen = (rel: string): string => read(path.join(FROZEN, `${rel}.frozen`));
+
+/**
+ * A checkout as it was at 908c521: the frozen files, the devops-engineer coverage file, and one placeholder native file for each other role of
+ * the frozen roster (the generator only counts those; it reads the files of the roles it wires).
+ */
 async function copyCheckout(): Promise<string> {
   const checkout = path.join(work, 'checkout');
-  for (const rel of [...WIRED, ...READ_ONLY]) await fs.copy(path.join(ROOT, rel), path.join(checkout, rel));
-  for (const rel of WIRED) await fs.writeFile(path.join(checkout, rel), read(path.join(checkout, rel)));
+  for (const rel of frozenFiles()) await fs.outputFile(path.join(checkout, rel), frozen(rel));
+  await fs.copy(path.join(ROOT, COVERAGE), path.join(checkout, COVERAGE));
+  for (const [, role] of frozen('tests/helpers/native-roles.ts').matchAll(/^ {2}\{ role: '([a-z0-9-]+)'/gm)) {
+    const file = path.join(checkout, 'registry/hosts/claude/agents', `${role}.md`);
+    if (!fs.existsSync(file)) await fs.outputFile(file, `---\nname: ${role}\n---\nPlaceholder: only counted.\n`);
+  }
   return checkout;
 }
 
@@ -67,43 +85,49 @@ async function unwire(checkout: string): Promise<void> {
   await edit('tests/cli-e2e.test.ts', text => cut(text, "  it('installs the native devops-engineer for devops-engineering with -t claude --native'", "  it.each(['domain:contributor'", true));
 }
 
-/** `'<invariant>': /<pattern>/flags` lines of one role's block in the evidence helper. */
-function evidenceBlock(text: string, role: string): Map<string, RegExp> {
-  const start = text.indexOf(`  '${role}': {\n`);
+/** `'<invariant>': /<pattern>/flags` (or `[COMMS.name]: ...`) lines of a block of the evidence helper that opens with `header`, at `indent` spaces. */
+function patternsOf(text: string, header: string, indent: number): Map<string, RegExp> {
+  const start = text.indexOf(header);
   if (start < 0) return new Map();
-  const end = text.indexOf('\n  },\n', start);
+  const end = text.indexOf(`\n${' '.repeat(indent - 2)}}`, start);
+  const named = new Map([...(/const COMMS = \{([\s\S]*?)\}/.exec(text)?.[1] ?? '').matchAll(/^\s+(\w+): '((?:[^'\\]|\\.)*)',$/gm)].map(m => [m[1]!, m[2]!]));
+  const line = new RegExp(`^ {${indent}}(?:'((?:[^'\\\\]|\\\\.)*)'|\\[COMMS\\.(\\w+)\\]): \\/(.*)\\/([a-z]*),$`);
   const patterns = new Map<string, RegExp>();
-  for (const line of text.slice(start, end).split('\n').slice(1)) {
-    const match = /^ {4}'((?:[^'\\]|\\.)*)': \/(.*)\/([a-z]*),$/.exec(line);
-    if (match) patterns.set(match[1]!.replace(/\\'/g, "'"), new RegExp(match[2]!, match[3]));
+  for (const row of text.slice(start, end).split('\n').slice(1)) {
+    const match = line.exec(row);
+    const key = match && (match[1] !== undefined ? match[1].replace(/\\'/g, "'") : named.get(match[2]!));
+    if (match && key) patterns.set(key, new RegExp(match[3]!, match[4]));
   }
   return patterns;
 }
+const evidenceBlock = (text: string, role: string): Map<string, RegExp> => patternsOf(text, `\n  '${role}': {\n`, 4);
+const sharedEvidence = (text: string): Map<string, RegExp> => patternsOf(text, 'export const EVIDENCE: Record<string, RegExp> = {', 2);
 
 describe('the batch manifest (ADR 0075, decision 1)', () => {
-  it('accepts the devops-engineer manifest against this checkout', () => {
-    expect(checkManifest(manifest(), ROOT)).toEqual([]);
+  it('accepts the devops-engineer manifest against the frozen checkout', async () => {
+    expect(checkManifest(manifest(), await copyCheckout())).toEqual([]);
   });
 
-  it('refuses an unknown bundle, a role named twice, a missing canonical agent, a missing native file and an undated decision', () => {
+  it('refuses an unknown bundle, a role named twice, a missing canonical agent, a missing native file and an undated decision', async () => {
     const m = manifest();
-    expect(checkManifest({ ...m, roles: [{ ...m.roles[0], bundle: 'no-such-bundle' }] }, ROOT).join('\n')).toContain('no-such-bundle');
-    expect(checkManifest({ ...m, roles: [m.roles[0], m.roles[0]] }, ROOT).join('\n')).toContain('more than once');
-    expect(checkManifest({ ...m, roles: [{ ...m.roles[0], canonical: 'registry/agents/no-such-agent.md' }] }, ROOT).join('\n')).toContain('no-such-agent.md');
-    expect(checkManifest({ ...m, roles: [{ ...m.roles[0], native: 'registry/hosts/claude/agents/no-such-role.md' }] }, ROOT).join('\n')).toContain('no-such-role.md');
-    expect(checkManifest({ ...m, decisions: [{ ...m.decisions[0], date: null }] }, ROOT).join('\n')).toContain('date');
-    expect(checkManifest({ ...m, version: 2 }, ROOT).join('\n')).toContain('version');
+    const at = await copyCheckout();
+    expect(checkManifest({ ...m, roles: [{ ...m.roles[0], bundle: 'no-such-bundle' }] }, at).join('\n')).toContain('no-such-bundle');
+    expect(checkManifest({ ...m, roles: [m.roles[0], m.roles[0]] }, at).join('\n')).toContain('more than once');
+    expect(checkManifest({ ...m, roles: [{ ...m.roles[0], canonical: 'registry/agents/no-such-agent.md' }] }, at).join('\n')).toContain('no-such-agent.md');
+    expect(checkManifest({ ...m, roles: [{ ...m.roles[0], native: 'registry/hosts/claude/agents/no-such-role.md' }] }, at).join('\n')).toContain('no-such-role.md');
+    expect(checkManifest({ ...m, decisions: [{ ...m.decisions[0], date: null }] }, at).join('\n')).toContain('date');
+    expect(checkManifest({ ...m, version: 2 }, at).join('\n')).toContain('version');
     // The base is a commit name, and a lead names its Bundle and a roster of kebab-case roles.
-    expect(checkManifest({ ...m, base: 'not a commit' }, ROOT).join('\n')).toContain('base');
-    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'no-such-bundle', roster: [] }] }, ROOT).join('\n')).toContain('no-such-bundle');
-    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'software-engineering', roster: ['Not Kebab'] }] }, ROOT).join('\n')).toContain('roster');
-    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'software-engineering', roster: ['devops-engineer'] }] }, ROOT)).toEqual([]);
+    expect(checkManifest({ ...m, base: 'not a commit' }, at).join('\n')).toContain('base');
+    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'no-such-bundle', roster: [] }] }, at).join('\n')).toContain('no-such-bundle');
+    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'software-engineering', roster: ['Not Kebab'] }] }, at).join('\n')).toContain('roster');
+    expect(checkManifest({ ...m, leads: [{ lead: 'orchestrator-engineering', bundle: 'software-engineering', roster: ['devops-engineer'] }] }, at)).toEqual([]);
   });
 
   it('holds back only the roles an open decision names', async () => {
     const m = manifest();
     const open = { ...m, decisions: [{ ...m.decisions[0], answer: null, date: null, by: 'maintainer' }] };
-    const plan = planWiring(open, ROOT, {});
+    const plan = planWiring(open, await copyCheckout(), {});
     expect(plan.held).toEqual([{ role: 'devops-engineer', decision: 'devops-messaging' }]);
     expect(plan.edits).toEqual([]);
     // In a batch of two, the open decision holds back the role it names; the other is wired.
@@ -144,10 +168,12 @@ describe('the batch manifest (ADR 0075, decision 1)', () => {
 });
 
 describe('the wiring generator (ADR 0075, decisions 2 and 3)', () => {
-  it('finds PR #237\'s wiring already complete in this checkout: nothing to write', () => {
-    const plan = planWiring(manifest(), ROOT, {});
+  it('finds PR #237\'s wiring already complete in the frozen checkout: nothing to write', async () => {
+    const plan = planWiring(manifest(), await copyCheckout(), {});
     expect(plan.refusals).toEqual([]);
-    expect(plan.edits.filter((edit: Json) => edit.action !== 'unchanged')).toEqual([]);
+    // The frozen tree holds no role test file, so the only edit is its stub.
+    expect(plan.edits.filter((edit: Json) => edit.action !== 'unchanged').map((edit: Json) => [edit.file, edit.action]))
+      .toEqual([['tests/native-claude-devops-engineer.test.ts', 'create']]);
   });
 
   it('restores PR #237\'s wiring of devops-engineer after it is removed from a copy', async () => {
@@ -161,6 +187,7 @@ describe('the wiring generator (ADR 0075, decisions 2 and 3)', () => {
     // Byte for byte where the placement rule is fixed.
     for (const rel of ['tests/native-claude-agents.test.ts', 'tests/native-claude-own-session.test.ts', 'tests/native-install-lane.test.ts', 'tests/cli-e2e.test.ts']) {
       expect(now(rel), rel).toBe(original.get(rel));
+      expect(now(rel), `${rel} is #237's file`).toBe(frozen(rel));
     }
     // Line for line in the roster helper (#237 placed the row by family; the generator ends its tier).
     const lines = (text: string) => text.split('\n').sort();
@@ -169,9 +196,14 @@ describe('the wiring generator (ADR 0075, decisions 2 and 3)', () => {
     const agent = read(path.join(checkout, 'registry/hosts/claude/agents/devops-engineer.md'));
     const generated = evidenceBlock(now('tests/helpers/native-invariant-evidence.ts'), 'devops-engineer');
     const coverage = fs.readJsonSync(path.join(checkout, 'tests/fixtures/pilot-devops/final/agent/devops-engineer.coverage.json')) as { invariants: Json[] };
+    const frozenHelper = frozen('tests/helpers/native-invariant-evidence.ts');
+    const frozenRole = evidenceBlock(frozenHelper, 'devops-engineer');
+    const shared = sharedEvidence(frozenHelper);
+    expect(frozenRole.size, '#237 bound eight invariants in its own block').toBe(8);
     for (const entry of coverage.invariants.filter(item => typeof item.evidence === 'string')) {
-      const before = (ROLE_EVIDENCE['devops-engineer']?.[entry.invariant] ?? EVIDENCE[entry.invariant])!;
-      const after = (generated.get(entry.invariant) ?? EVIDENCE[entry.invariant])!;
+      const before = (frozenRole.get(entry.invariant) ?? shared.get(entry.invariant))!;
+      const after = (generated.get(entry.invariant) ?? shared.get(entry.invariant))!;
+      expect(before, entry.invariant).toBeDefined();
       expect(after, entry.invariant).toBeDefined();
       expect(after.exec(agent)?.[0], entry.invariant).toBe(before.exec(agent)?.[0]);
     }
