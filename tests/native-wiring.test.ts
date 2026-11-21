@@ -90,12 +90,13 @@ function patternsOf(text: string, header: string, indent: number): Map<string, R
   const start = text.indexOf(header);
   if (start < 0) return new Map();
   const end = text.indexOf(`\n${' '.repeat(indent - 2)}}`, start);
-  const named = new Map([...(/const COMMS = \{([\s\S]*?)\}/.exec(text)?.[1] ?? '').matchAll(/^\s+(\w+): '((?:[^'\\]|\\.)*)',$/gm)].map(m => [m[1]!, m[2]!]));
+  const unquote = (value: string): string => value.replace(/\\'/g, "'").replace(/\\\\/g, '\\');
+  const named = new Map([...(/const COMMS = \{([\s\S]*?)\}/.exec(text)?.[1] ?? '').matchAll(/^\s+(\w+): '((?:[^'\\]|\\.)*)',$/gm)].map(m => [m[1]!, unquote(m[2]!)]));
   const line = new RegExp(`^ {${indent}}(?:'((?:[^'\\\\]|\\\\.)*)'|\\[COMMS\\.(\\w+)\\]): \\/(.*)\\/([a-z]*),$`);
   const patterns = new Map<string, RegExp>();
   for (const row of text.slice(start, end).split('\n').slice(1)) {
     const match = line.exec(row);
-    const key = match && (match[1] !== undefined ? match[1].replace(/\\'/g, "'") : named.get(match[2]!));
+    const key = match && (match[1] !== undefined ? unquote(match[1]) : named.get(match[2]!));
     if (match && key) patterns.set(key, new RegExp(match[3]!, match[4]));
   }
   return patterns;
@@ -139,6 +140,21 @@ describe('the batch manifest (ADR 0075, decision 1)', () => {
     expect(both.held).toEqual([{ role: 'devops-engineer', decision: 'devops-messaging' }]);
     expect(both.edits.some((edit: Json) => edit.role === 'backend-architect')).toBe(true);
     expect(both.edits.some((edit: Json) => edit.role === 'devops-engineer')).toBe(false);
+    // backend-architect's native file is a real frozen file, not a placeholder; its existing ROLES row is #237's hand-written form, so the
+    // generator's row differs and is refused, while nothing is refused for the held role.
+    expect(fs.existsSync(path.join(FROZEN, 'registry/hosts/claude/agents/backend-architect.md.frozen'))).toBe(true);
+    expect(both.refusals.join('\n')).not.toContain('not a native agent file');
+    expect(both.refusals.join('\n')).not.toContain('devops-engineer');
+  });
+
+  it('refuses a native file that is not an agent (no tools, model or effort), such as a placeholder', async () => {
+    const checkout = await copyCheckout();
+    await unwire(checkout);
+    const m = manifest();
+    const placeholder = { ...m.roles[0], role: 'code-reviewer', definition: 'subagent-devops-engineer', native: 'registry/hosts/claude/agents/code-reviewer.md' };
+    const plan = planWiring({ ...m, roles: [placeholder] }, checkout, {});
+    expect(plan.refusals.join('\n')).toContain('registry/hosts/claude/agents/code-reviewer.md is not a native agent file');
+    expect(() => applyWiring(plan, checkout)).toThrow(/refus/i);
   });
 
   it('refuses, and writes nothing, when an anchor it inserts at is missing', async () => {
@@ -205,6 +221,7 @@ describe('the wiring generator (ADR 0075, decisions 2 and 3)', () => {
       const after = (generated.get(entry.invariant) ?? shared.get(entry.invariant))!;
       expect(before, entry.invariant).toBeDefined();
       expect(after, entry.invariant).toBeDefined();
+      expect(before.exec(agent), `#237's pattern matches: ${entry.invariant}`).not.toBeNull();
       expect(after.exec(agent)?.[0], entry.invariant).toBe(before.exec(agent)?.[0]);
     }
     // The role's own test file did not exist in the copy: a stub with its exact tool set, and a case that fails until its claims are written.
