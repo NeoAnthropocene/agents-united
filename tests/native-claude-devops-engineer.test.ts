@@ -130,3 +130,18 @@ describe('native devops-engineer: the shared scope_boundaries', () => {
     expect(scope).toContain('Where the target platform supports them, configure KEDA scale rules');
   });
 });
+
+describe('native devops-engineer: the exact tool set and where search runs', () => {
+  it('holds exactly this tool set', () => {
+    const tools = /^tools: (.*)$/m.exec(text())![1]!.replace(/\r$/, '').split(', ');
+    expect([...tools].sort()).toEqual([
+      'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskStop', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__context7', 'mcp__github',
+    ]);
+  });
+
+  it('step 1 says where its search runs on macOS, Linux and WSL, as backend-architect does', () => {
+    const work = /\n## How to work\n([\s\S]*?)(?=\n## )/.exec(text())![1]!;
+    const one = /^1\. .*$/m.exec(work)![0];
+    expect(one).toContain('with `Glob` and `Grep` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`)');
+  });
+});
