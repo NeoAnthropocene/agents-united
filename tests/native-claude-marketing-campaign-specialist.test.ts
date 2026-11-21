@@ -40,6 +40,13 @@ describe('native marketing-campaign-specialist: tracking, compliance and one act
   });
 });
 
+describe('native marketing-campaign-specialist: campaign email, not lifecycle journeys', () => {
+  it('leaves behaviour-triggered lifecycle journeys to the lifecycle email specialist and reports them under Open items', () => {
+    const sentence = '- **Lifecycle journeys are not yours.** You write campaign email (launch announcements, the nurture drips of a campaign, and win-back and adoption campaigns that have an end date); a behaviour-triggered lifecycle journey (welcome onboarding, inactivity re-engagement, upgrade nudges, milestone and retention journeys) belongs to `lifecycle-email-specialist`, reached through `orchestrator-marketing`, so when the brief asks for one, say so under `Open items` and do not design it.';
+    expect(text().split(sentence)).toHaveLength(2);
+  });
+});
+
 describe('native marketing-campaign-specialist: sequencing, not copy or design', () => {
   it('treats a send time as content, sequences hand-offs through the lead and leaves landing-page copy and visual design to their owners', () => {
     expect(text()).toContain('- A send time in a campaign plan is content, not an action you take. Sequence the hand-offs for copy, creative and tracking through the lead: the campaign brief stays the single source of truth.');
