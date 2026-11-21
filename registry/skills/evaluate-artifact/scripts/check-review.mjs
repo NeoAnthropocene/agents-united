@@ -18,6 +18,66 @@ const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(
   : value !== null && typeof value === 'object' ? `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
     : JSON.stringify(value);
 const same = (a, b) => canonical(a) === canonical(b);
+const lf = text => text.replace(/\r\n/g, '\n');
+
+/** The invariant coverage files of a Claude agent review: `<agent without .md>.coverage.json` beside a subject agent, when the candidate holds it (ADR 0072). */
+function coverageFilesOf(job) {
+  if (job.subject.kind !== 'claude-agent') return [];
+  return job.subject.paths.filter(rel => rel.endsWith('.md'))
+    .map(agent => ({ agent, coverage: agent.replace(/\.md$/, '.coverage.json') }))
+    .filter(({ coverage }) => job.candidate.files.some(file => file.path === coverage));
+}
+
+/** A coverage-evidence citation quotes at least this many characters of an entry's evidence, or the whole evidence when it is shorter. */
+const COVERAGE_QUOTE_MIN = 24;
+
+/**
+ * The coverage-evidence criterion cites every coverage entry that has evidence: at least one of its citations names the agent file as the
+ * candidate, quotes text from inside that entry's evidence (at least COVERAGE_QUOTE_MIN characters, or the whole evidence), and resolves to
+ * lines where that evidence stands in the agent. The coverage file and the agent are read at the candidate's pinned bytes. Text from the
+ * candidate is echoed, never the result's.
+ */
+function coverageCitationProblems(job, record, criterion, resolved) {
+  const pinnedText = (rel, label) => {
+    const pin = record.inventory.find(item => item.path === rel);
+    const bytes = bytesAt(path.join(job.roots.candidate, rel), job.budget.maxCandidateFileBytes, label);
+    if (!pin || hash(bytes) !== pin.sha256) fail(`${label} changed during review: ${rel}.`);
+    return lf(bytes.toString('utf8'));
+  };
+  const linesAt = criterion.citations.map((_cite, index) => resolved.find(item => item.where === `criterion ${criterion.id}, citation ${index + 1}`));
+  for (const { agent, coverage } of coverageFilesOf(job)) {
+    let parsed;
+    try { parsed = JSON.parse(pinnedText(coverage, 'Coverage file')); } catch (error) { if (error instanceof SyntaxError) fail(`Coverage file is not JSON: ${coverage}.`); throw error; }
+    const agentText = pinnedText(agent, 'Agent file');
+    // The line ranges where an evidence text stands in the agent, numbered as the Read tool numbers them.
+    const spansOf = evidence => {
+      const spans = [];
+      for (let at = agentText.indexOf(evidence); at !== -1; at = agentText.indexOf(evidence, at + 1)) {
+        const start = agentText.slice(0, at).split('\n').length;
+        spans.push([start, start + evidence.split('\n').length - 1]);
+      }
+      return spans;
+    };
+    const entries = Array.isArray(parsed?.invariants) ? parsed.invariants : [];
+    const missing = entries
+      .filter(entry => entry && typeof entry.invariant === 'string' && typeof entry.evidence === 'string' && entry.evidence.trim() !== '')
+      .filter(entry => {
+        const evidence = lf(entry.evidence).trim();
+        const spans = spansOf(evidence);
+        return !criterion.citations.some((cite, index) => {
+          const quote = lf(cite.quote).trim();
+          const at = linesAt[index];
+          return cite.sourceId === 'candidate' && cite.path === agent && quote.length >= Math.min(COVERAGE_QUOTE_MIN, evidence.length)
+            && evidence.includes(quote) && at !== undefined && spans.some(([first, last]) => at.startLine >= first && at.endLine <= last);
+        });
+      })
+      .map(entry => entry.invariant);
+    if (missing.length) {
+      const shown = missing.slice(0, 10).map(name => JSON.stringify(name.slice(0, 120))).join('; ');
+      fail(`Criterion coverage-evidence has no citation of ${agent} quoting at least ${COVERAGE_QUOTE_MIN} characters (or all) of the evidence, where it stands, of ${missing.length} coverage entr${missing.length === 1 ? 'y' : 'ies'}: ${shown}${missing.length > 10 ? `; and ${missing.length - 10} more` : ''}.`);
+    }
+  }
+}
 // String comparisons fold case on every platform, as before P27. The physical comparison folds case only on Windows: the native real
 // path spells an existing folder as the volume stores it, so two spellings of one folder become one string where the volume ignores
 // case, and stay two (another folder) where it is case-sensitive. A grant needs both, so on a case-sensitive volume it needs exact case.
@@ -301,8 +361,10 @@ function checkJob(jobFile) {
   if (rubric.version !== job.rubric.version || !same([...job.rubric.criteria.map(item => item.id)].sort(), rubric.criteria.map(item => item.id).sort())) fail('Fixed rubric criterion coverage mismatch.');
   const needsShared = job.subject.kind !== 'skill';
   const needsHost = job.subject.target !== null;
+  const needsCoverage = coverageFilesOf(job).length > 0;
   for (const criterion of job.rubric.criteria) {
-    const applies = criterion.id === 'shared-semantics' ? needsShared : criterion.id === 'host-fit' ? needsHost : true;
+    const applies = criterion.id === 'shared-semantics' ? needsShared : criterion.id === 'host-fit' ? needsHost
+      : criterion.id === 'coverage-evidence' ? needsCoverage : true;
     if (criterion.applicable !== applies || criterion.required !== applies) fail(`Required rubric applicability mismatch: ${criterion.id}.`);
   }
   unique(job.acceptance.map(item => item.id), 'Acceptance IDs');
@@ -506,6 +568,7 @@ function checkResult(record, resultFile, precheck = false) {
     if ((!required.applicable) !== (criterion.outcome === 'not-applicable')) fail(`Returned criterion applicability contradiction: ${criterion.id}.`);
     if (required.required && result.status === 'reviewed' && criterion.outcome === 'unverified') fail(`Complete review leaves required criterion unverified: ${criterion.id}.`);
     if (required.applicable && ['satisfactory', 'needs-work'].includes(criterion.outcome) && !criterion.citations.length) fail(`Required criterion opinion has no pinned citation: ${criterion.id}.`);
+    if (criterion.id === 'coverage-evidence' && required.applicable && ['satisfactory', 'needs-work'].includes(criterion.outcome)) coverageCitationProblems(job, record, criterion, resolved);
   }
   unique(result.findings.map(item => item.id), 'Finding IDs');
   if (result.status === 'reviewed' && record.unavailable.some(item => item.required)) fail('Complete review has an unavailable/unperformed required check.');

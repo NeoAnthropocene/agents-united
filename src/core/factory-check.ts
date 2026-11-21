@@ -11,8 +11,23 @@ import { GUARD_SCRIPT, NATIVE_GUARD_FILES } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
+import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
+import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, nativeToolOrder, nativeToolsWanted, postureProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** The skill of the agent-factory binding that names `definition` as one of its roles (a worker or the coordinator of the factory), else undefined. */
+function factoryBindingSkill(registry: string, definition: string): string | undefined {
+  const dir = path.join(registry, 'hosts', 'claude');
+  if (!fs.existsSync(dir)) return undefined;
+  for (const name of fs.readdirSync(dir).filter(file => /^agent-factory-.*\.binding\.json$/.test(file))) {
+    try {
+      const binding = JSON.parse(fs.readFileSync(path.join(dir, name), 'utf8')) as { skill?: string; roles?: Array<{ definition?: string }> };
+      if (binding.roles?.some(role => role.definition === definition)) return binding.skill ?? '';
+    } catch { /* an unreadable binding names no role */ }
+  }
+  return undefined;
+}
 
 export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<FactoryCheckResult> {
   const findings: string[] = [];
@@ -59,10 +74,44 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       if (facts.meta.disallowedTools !== undefined) findings.push('Native deny overlays change the class-derived grant; disallowedTools needs a separately reviewed binding.');
       if (facts.meta.name !== path.basename(input.artifactPath, '.md')) findings.push('Native name must match the artifact filename.');
       findings.push(...checkFloor(text, core));
+      // The repository's own rules for a native role (ADR 0072): the same functions its conformance tests call.
+      const coordinator = core.capabilities?.includes('delegate') ?? false;
+      const factorySkill = factoryBindingSkill(registry, input.definition);
+      const kind: NativeKind = factorySkill !== undefined ? 'factory-worker' : coordinator ? 'coordinator' : 'specialist';
+      findings.push(...postureProblems(facts.meta, kind));
+      if (core.capabilities?.includes('task-tracking')) findings.push(...sessionTrackingProblems(text, { coordinator }));
+      let canonicalText: string | undefined;
+      const defaultCanonical = path.join(registry, 'agents', `${input.definition}.md`);
+      if (input.canonicalFile !== undefined) {
+        if (!path.isAbsolute(input.canonicalFile)) findings.push('Canonical agent must be an absolute path.');
+        else if (!fs.existsSync(input.canonicalFile) || !fs.statSync(input.canonicalFile).isFile()) findings.push(`Missing canonical agent ${input.canonicalFile}.`);
+        else canonicalText = fs.readFileSync(input.canonicalFile, 'utf8');
+      } else if (fs.existsSync(defaultCanonical) && fs.statSync(defaultCanonical).isFile()) canonicalText = fs.readFileSync(defaultCanonical, 'utf8');
+      if (canonicalText !== undefined) findings.push(...canonicalFloorProblems(core, canonicalText));
+      if (input.coverageFile !== undefined) {
+        if (!path.isAbsolute(input.coverageFile)) findings.push('Invariant coverage: the coverage file must be an absolute path.');
+        else if (!fs.existsSync(input.coverageFile) || !fs.statSync(input.coverageFile).isFile()) findings.push(`Invariant coverage: missing coverage file ${input.coverageFile}.`);
+        else {
+          let coverage: unknown;
+          try { coverage = JSON.parse(fs.readFileSync(input.coverageFile, 'utf8')) as unknown; } catch { coverage = null; }
+          findings.push(...coverageFileProblems(core, text, coverage, { role: path.basename(input.artifactPath, '.md'), definition: input.definition }));
+        }
+      } else if (kind !== 'factory-worker') findings.push("Invariant coverage needs the candidate's coverage file (--coverage).");
       if (core.capabilities === undefined) findings.push('Native grant validation needs explicit core capability classes.');
       else {
         const grant = resolveGrant(policy, core.capabilities, { subagent: input.loading !== 'main', background: facts.meta.background === true }).tools;
-        if (facts.meta.tools === undefined || !isDeepStrictEqual([...facts.tools].sort(), [...grant].sort())) findings.push('Native tools differ from the class-derived grant.');
+        // The generator's own form (ADR 0072): the class grant sorted, then the canonical agent's server tools in its order. The factory's own
+        // coordinator must hold exactly its fixed delegate list (the same function as tests/helpers/native-delta.ts); any other delegating role's
+        // one well-formed `Agent(...)` allowlist stands for `Agent`.
+        const expected = nativeToolOrder(grant, canonicalText === undefined ? [] : canonicalServerTools(canonicalText));
+        let wanted = nativeToolsWanted(expected, facts.tools, { coordinator });
+        if (factorySkill === 'coordinate-artifact') {
+          try {
+            normalizeClaudeFactoryCoordinatorTools(facts.tools);
+            wanted = nativeToolsWanted(expected, facts.tools, { coordinator: true });
+          } catch (error) { findings.push(error instanceof Error ? error.message : String(error)); }
+        }
+        if (facts.meta.tools === undefined || !isDeepStrictEqual(facts.tools, wanted)) findings.push(`Native tools differ from the generator's form: expected ${wanted.join(', ')}.`);
       }
       const preloads: unknown = facts.meta.skills ?? [];
       if (!Array.isArray(preloads) || preloads.some(id => typeof id !== 'string' || !ID.test(id))) findings.push('Native Skill preloads must be semantic identifiers.');

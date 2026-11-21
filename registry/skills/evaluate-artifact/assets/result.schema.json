@@ -201,7 +201,8 @@
               "dependency-usefulness",
               "evidence-truthfulness",
               "provenance-ownership",
-              "clarity-maintainability"
+              "clarity-maintainability",
+              "coverage-evidence"
             ]
           },
           "outcome": {
@@ -267,8 +268,8 @@
         ],
         "additionalProperties": false
       },
-      "minItems": 7,
-      "maxItems": 7
+      "minItems": 8,
+      "maxItems": 8
     },
     "findings": {
       "type": "array",
@@ -288,7 +289,8 @@
               "dependency-usefulness",
               "evidence-truthfulness",
               "provenance-ownership",
-              "clarity-maintainability"
+              "clarity-maintainability",
+              "coverage-evidence"
             ]
           },
           "severity": {

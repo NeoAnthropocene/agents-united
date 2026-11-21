@@ -518,7 +518,8 @@
                   "dependency-usefulness",
                   "evidence-truthfulness",
                   "provenance-ownership",
-                  "clarity-maintainability"
+                  "clarity-maintainability",
+                  "coverage-evidence"
                 ]
               },
               "required": {
@@ -541,8 +542,8 @@
             ],
             "additionalProperties": false
           },
-          "minItems": 7,
-          "maxItems": 7
+          "minItems": 8,
+          "maxItems": 8
         }
       },
       "required": [

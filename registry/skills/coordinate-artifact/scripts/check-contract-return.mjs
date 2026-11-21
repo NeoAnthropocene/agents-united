@@ -341,6 +341,15 @@ function checkTask(taskFile, withResult) {
   pinned(runtime.validator, limits.executable, 'Packaged validator', 'RUNTIME_MISMATCH');
   if (folded(runtime.validator.path) !== folded(path.join(checkout, 'dist', 'cli.js'))) stop('RUNTIME_MISMATCH', 'Validator must be the selected checkout dist/cli.js.');
 
+  // ADR 0072: the canonical agent the pair stands for, when the source registry holds one, is pinned by the task so that every contract-check can name it.
+  const canonicalFile = path.join(registry, 'agents', `${definition}.md`);
+  if (task.canonical !== undefined && task.canonical !== null) {
+    if (folded(task.canonical.path) !== folded(canonicalFile)) stop('JOB_INVALID', `The canonical pin must be the source registry's agents/${definition}.md.`);
+    pinned(task.canonical, limits.installed, 'Canonical agent', 'STALE_INPUT');
+  } else if (fs.statSync(canonicalFile, { throwIfNoEntry: false })?.isFile()) {
+    stop('JOB_INVALID', `The source registry holds the canonical agent agents/${definition}.md; the task must pin it as canonical.`);
+  }
+
   // The draft job template: only the rules draft-pair.mjs enforces itself, plus agreement with the task.
   const bad = reason => stop('TEMPLATE_INVALID', reason);
   if (template.mode !== task.operation || template.intent !== task.intent || template.definition !== definition) {

@@ -51,6 +51,9 @@ describe('production factory delivery from an extracted offline npm package', ()
     const pairCheck = { ...allowed, id: 'input-pair', argv: [allowed.argv[0]!, 'factory-check', '--registry', f.registry, '--definition', f.job.artifact.definition, '--host', 'claude'] };
     f.job.checks.push(pairCheck);
     f.job.acceptance[0]!.requiredChecks.push(pairCheck.id);
+    // ADR 0072: a non-factory role declares its coverage file beside the agent, and the native check names it.
+    f.job.allowedChanges.create.push('hosts/claude/agents/example.coverage.json');
+    allowed.argv.push('--coverage', path.join(f.draft, 'hosts/claude/agents/example.coverage.json'));
     await f.save();
     const preflight = run('check-job', ['--job', f.jobFile]);
     expect(preflight.status, preflight.stdout + preflight.stderr).toBe(0);
@@ -59,8 +62,11 @@ describe('production factory delivery from an extracted offline npm package', ()
     const pair = spawnSync(pairCheck.executable, pairCheck.argv, { cwd: pairCheck.cwd, encoding: 'utf8' });
     const pairEndedAt = new Date().toISOString();
     expect(pair.status, pair.stdout + pair.stderr).toBe(0);
-    const text = `---\n${YAML.stringify({ name: 'example', description: 'Review the supplied original document.', model: 'inherit', background: false, tools: resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools.join(', '), hooks: readOnlyGuardFileHooks() })}---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\nReturn bounded findings to the caller.\n`;
+    const text = `---\n${YAML.stringify({ name: 'example', description: 'Review the supplied original document.', model: 'sonnet', effort: 'medium', background: false, tools: resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools.join(', '), hooks: readOnlyGuardFileHooks() })}---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\nReturn bounded findings to the caller.\nReport missing evidence.\n`;
     await fs.outputFile(path.join(f.draft, f.job.artifact.paths[0]!), text);
+    const covRel = 'hosts/claude/agents/example.coverage.json';
+    const covText = `${JSON.stringify({ version: 1, role: 'example', definition: 'subagent-example', invariants: [{ invariant: 'Report missing evidence.', evidence: 'Report missing evidence.', in: 'body' }] }, null, 2)}\n`;
+    await fs.outputFile(path.join(f.draft, covRel), covText);
     const startedAt = new Date().toISOString();
     const native = spawnSync(allowed.executable, allowed.argv, { cwd: allowed.cwd, encoding: 'utf8' });
     const endedAt = new Date().toISOString();
@@ -74,7 +80,7 @@ describe('production factory delivery from an extracted offline npm package', ()
       const file = path.join(f!.evidence, index === 0 ? 'pair-stdout.txt' : 'pair-stderr.txt'); await fs.writeFile(file, bytes);
       return { path: file, sha256: sha256(bytes), bytes: Buffer.byteLength(bytes) };
     }));
-    await fs.writeJson(resultFile, { version: 1, jobId: f.job.id, jobDigest: f.digest(), status: 'draft', inventory: [{ path: f.job.artifact.paths[0], kind: 'file', bytes: Buffer.byteLength(text), sha256: sha256(text) }], diff: [{ path: f.job.artifact.paths[0], before: null, after: text }], coverage: f.job.inputs.map(input => ({ input: input.path, sections: input.sections, rationale: 'Original offline fixture uses the pinned native evidence.' })), deltas: [{ kind: 'mapped', subject: 'Class-derived read-only grant and native guard', rationale: 'Checked on actual candidate bytes; live behavior unverified.' }], provenance: { disposition: 'original', evidence: [f.job.inputs.find(input => input.kind === 'core')!.path], findings: [] }, checks: [{ id: pairCheck.id, jobDigest: f.digest(), executable: pairCheck.executable, argv: pairCheck.argv, cwd: pairCheck.cwd, startedAt: pairStartedAt, endedAt: pairEndedAt, exitCode: pair.status, classification: 'passed', stdout: pairLogs[0], stderr: pairLogs[1] }, { id: allowed.id, jobDigest: f.digest(), executable: allowed.executable, argv: allowed.argv, cwd: allowed.cwd, startedAt, endedAt, exitCode: native.status, classification: 'passed', stdout: logs[0], stderr: logs[1] }], quality: { status: 'pending', findings: [] }, live: { status: 'unverified', reason: 'Only offline deterministic validation ran.' }, openItems: ['Independent semantic review and live invocation unverified.'], upstream: null });
+    await fs.writeJson(resultFile, { version: 1, jobId: f.job.id, jobDigest: f.digest(), status: 'draft', inventory: [{ path: f.job.artifact.paths[0], kind: 'file', bytes: Buffer.byteLength(text), sha256: sha256(text) }, { path: covRel, kind: 'file', bytes: Buffer.byteLength(covText), sha256: sha256(covText) }], diff: [{ path: f.job.artifact.paths[0], before: null, after: text }, { path: covRel, before: null, after: covText }], coverage: f.job.inputs.map(input => ({ input: input.path, sections: input.sections, rationale: 'Original offline fixture uses the pinned native evidence.' })), deltas: [{ kind: 'mapped', subject: 'Class-derived read-only grant and native guard', rationale: 'Checked on actual candidate bytes; live behavior unverified.' }], provenance: { disposition: 'original', evidence: [f.job.inputs.find(input => input.kind === 'core')!.path], findings: [] }, checks: [{ id: pairCheck.id, jobDigest: f.digest(), executable: pairCheck.executable, argv: pairCheck.argv, cwd: pairCheck.cwd, startedAt: pairStartedAt, endedAt: pairEndedAt, exitCode: pair.status, classification: 'passed', stdout: pairLogs[0], stderr: pairLogs[1] }, { id: allowed.id, jobDigest: f.digest(), executable: allowed.executable, argv: allowed.argv, cwd: allowed.cwd, startedAt, endedAt, exitCode: native.status, classification: 'passed', stdout: logs[0], stderr: logs[1] }], quality: { status: 'pending', findings: [] }, live: { status: 'unverified', reason: 'Only offline deterministic validation ran.' }, openItems: ['Independent semantic review and live invocation unverified.'], upstream: null });
     const checked = run('check-handback', ['--job', f.jobFile, '--result', resultFile]);
     expect(checked.status, checked.stdout + checked.stderr).toBe(0);
     expect(JSON.parse(checked.stdout)).toMatchObject({ recordValid: true, acceptedDraft: false, quality: 'pending', live: 'unverified' });

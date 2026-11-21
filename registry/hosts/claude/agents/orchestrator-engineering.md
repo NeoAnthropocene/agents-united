@@ -62,7 +62,7 @@ All engineering plans, execution summaries, and handoff reports must follow this
 <!-- agents-united:roster:start (generated from registry/bundles.json and the native agents, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
 | Type | Provided by | Role and what it can do on this host |
 |---|---|---|
-| `accessibility-lead` | `frontend-engineering` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
+| `accessibility-lead` | `frontend-engineering` | Accessibility lead. Use to audit user interfaces against WCAG 2.1 AA/AAA, check keyboard navigation, focus, color contrast, form controls and screen reader semantics, and apply the minimal semantic-HTML or ARIA fix. Reads audit output or asks for it; runs no commands. — edits files; Glob/Grep search; MCP: chrome-devtools-mcp, context7 |
 | `ai-model-architect` | `ai-ml-engineering` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `android-architect` | `mobile-development` | Not yet a native agent: read its definition in `.claude/agents/` before relying on a specific tool. |
 | `backend-architect` | `software-engineering` | TypeScript/Node.js backend architect. Use to design and implement REST, GraphQL or gRPC services, database schemas and migrations, and cloud-native backend infrastructure, with tests and a build check. — edits files and runs commands; searches through Bash; Monitor; worktrees; MCP: context7, github |

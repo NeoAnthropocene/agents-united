@@ -1,0 +1,10 @@
+{
+  "definition": "subagent-interaction-designer",
+  "workflows": [],
+  "skills": [
+    "interaction-pattern-library",
+    "micro-interaction-design",
+    "state-driven-ui-animation"
+  ],
+  "hooks": []
+}
