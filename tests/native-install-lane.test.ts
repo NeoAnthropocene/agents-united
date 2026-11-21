@@ -26,7 +26,7 @@ const NATIVE_ROLES = ['backend-architect', 'code-reviewer', 'frontend-architect'
 const COMMITTED_NATIVE_ROLES = [
   'agency-3d-designer', 'agency-campaign-specialist', 'agency-compliance-grc-specialist', 'agency-content-strategist', 'agency-conversion-specialist', 'agency-creative-designer',
   'agency-frontend-architect', 'agency-growth-strategist', 'agency-motion-designer', 'agency-qa-automation-lead', 'agency-seo-specialist', 'agency-sound-designer', 'backend-architect', 'business-panel-experts', 'code-reviewer', 'devops-engineer',
-  'factory-evaluator', 'factory-realizer', 'factory-sync', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
+  'factory-evaluator', 'factory-realizer', 'factory-sync', 'financial-analyst', 'frontend-architect', 'orchestrator-agent-factory', 'orchestrator-business', 'orchestrator-digital-agency', 'orchestrator-engineering', 'repo-index',
 ];
 const COORDINATORS = ['orchestrator-business', 'orchestrator-engineering'];
 /** The canonical asset a native role stands for: specialists are `subagent-<role>`, a coordinator keeps its own name. */
@@ -154,6 +154,23 @@ describe('native install lane (agents add --native)', () => {
   it('without the native lane, business-strategy still writes the legacy projection for business-panel-experts', async () => {
     await new InstallEngine().install('business-strategy', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
     const text = await fs.readFile(claudeAgent('business-panel-experts'), 'utf8');
+    expect(text).toContain('profile: claude |');
+    expect(text).not.toContain('claude-native');
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
+  it('installs the native financial-analyst for the business-financial-modeling bundle, recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('business-financial-modeling', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    expect(await fs.readFile(claudeAgent('financial-analyst'), 'utf8')).toBe(expected('financial-analyst'));
+    const record = (await fs.readJson(lockPath)).projections['.claude/agents/financial-analyst.md'];
+    expect(record.kind).toBe('role');
+    expect(record.canonical).toBe(canonicalOf('financial-analyst'));
+    expect(record.managedMarker).toBe(true);
+  });
+
+  it('without the native lane, business-financial-modeling still writes the legacy projection for financial-analyst', async () => {
+    await new InstallEngine().install('business-financial-modeling', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const text = await fs.readFile(claudeAgent('financial-analyst'), 'utf8');
     expect(text).toContain('profile: claude |');
     expect(text).not.toContain('claude-native');
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
