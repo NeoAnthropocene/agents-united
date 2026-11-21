@@ -112,6 +112,42 @@ describe('native socratic-mentor: read-only, against the real script', () => {
   });
 });
 
+describe('native socratic-mentor: the turn loop of the requests block (ADR 0076)', () => {
+  const line = (pattern: RegExp): string => pattern.exec(text())![0];
+
+  it('step 7 opens the section with the Turn line, puts each probing question there as an ask-user entry, and ends only when the engineer stops or confirms a synthesis', () => {
+    const seven = line(/^7\. \*\*Hand back, turn by turn\.\*\*[^\n]*$/m);
+    expect(seven).toContain('Open `Requests for the lead` with the line `Turn <n>`');
+    expect(seven).toContain('put each probing question of this turn there as an `ask-user` entry');
+    expect(seven).toContain("When the lead continues you with the engineer's answers, that is the next turn");
+    expect(seven).toContain('ask the next one to three questions and report again');
+    expect(seven).toContain('The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.');
+  });
+
+  it('the grill-me line sends the questions as ask-user entries, at most three per turn, and takes the answers back', () => {
+    const grill = line(/^The `grill-me` interview is the method:[^\n]*$/m);
+    expect(grill).toContain('as `ask-user` entries under `Requests for the lead`');
+    expect(grill).toContain('at most three per turn, each marked `open answer` unless it offers choices');
+    expect(grill).toContain('returns the answers to you; the next turn starts from those answers');
+  });
+
+  it('the Boundaries line sends probing and clarifying questions to the engineer as ask-user entries, and keeps the Probing Questions section', () => {
+    const boundaries = /\n## Boundaries of this host\n([\s\S]*?)(?=\n## )/.exec(text())![1]!;
+    expect(boundaries).toContain('Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`');
+    expect(boundaries).toContain("the report's `Probing Questions` section lists the probing questions of this turn in the order you asked them");
+  });
+
+  it('step 5 counts the three Socratic turns as the Turn line counts them', () => {
+    expect(line(/^5\. \*\*Stay read-only and question-led\.\*\*[^\n]*$/m)).toContain('after three Socratic turns, counted as your `Turn <n>` line counts them');
+  });
+
+  it('the types open to it include ask-user, because it holds no AskUserQuestion', () => {
+    const open = /By your tools on this host, the types open to you are: ([^\n]*)\. Never request/.exec(text())![1]!;
+    expect(open.split(', ')).toContain('`ask-user`');
+    expect(toolsLine().split(', ')).not.toContain('AskUserQuestion');
+  });
+});
+
 describe('native socratic-mentor: the peers section of the engineering family', () => {
   it("is devops-engineer's section line for line", () => {
     expect(peersSection(text()).split('\n')).toEqual(peersSection(nativeText('devops-engineer')).split('\n'));

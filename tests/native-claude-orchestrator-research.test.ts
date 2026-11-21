@@ -157,6 +157,19 @@ describe('native orchestrator-research (a main-thread coordinator)', () => {
   });
 });
 
+describe('native orchestrator-research: the answers go back to the same mentor (ADR 0076)', () => {
+  it('the owner row of socratic-mentor says its questions come back as ask-user entries, turn by turn, and the answers return to the same mentor', () => {
+    const row = /^\| `socratic-mentor` \| `deep-research` \| Logical consistency auditing[^\n]*$/m.exec(body())![0];
+    expect(row).toContain('Read-only; its probing questions come back as `ask-user` entries, turn by turn: you put them to the user and return the answers to the same mentor.');
+  });
+
+  it('the lead block returns every result to the same specialist and never launches a second agent of that type', () => {
+    const block = /<!-- agents-united:requests:start[^>]*-->\n([\s\S]*?)\n<!-- agents-united:requests:end -->/.exec(read())![1]!;
+    expect(block).toContain('Return every result to the same specialist');
+    expect(block).toContain('Never launch a second agent of that type to carry an answer');
+  });
+});
+
 describe('native orchestrator-research: the four leave-outs, pinned', () => {
   const held = (): string[] => splitTools(frontmatter().tools).map(tool => tool.split('(')[0]!);
 
