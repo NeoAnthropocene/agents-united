@@ -1,0 +1,10 @@
+{
+  "definition": "subagent-operations-strategist",
+  "workflows": [],
+  "skills": [
+    "technical-documentation",
+    "to-tickets",
+    "to-spec"
+  ],
+  "hooks": []
+}
