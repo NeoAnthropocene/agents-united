@@ -92,7 +92,7 @@ describe('native literature-patent-analyst: acceptEdits, the guard and the oblig
     expect(five).toMatch(/your own obligation/);
   });
 
-  it.each(['git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo x > .env', 'rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now'])('blocks the shell call %s, as step 5 says', command => {
+  it.each(['git push --force origin main', 'git push -f origin main', 'vercel --prod', 'echo x > .env', 'rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'mkfs.ext4 /dev/sda1', 'az group delete --name g --yes'])('blocks the shell call %s, as step 5 says', command => {
     expect(call('Bash', { command }).blocked).toBe(true);
     expect(call('PowerShell', { command }).blocked).toBe(true);
   });
