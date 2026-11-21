@@ -169,6 +169,19 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/cloud-security-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-cloud-security-architect.md' });
   });
 
+  it('installs the native appsec-penetration-tester for secops-application-security with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'secops-application-security', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/appsec-penetration-tester.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: appsec-penetration-tester$/m);
+    expect(text).toContain('## Working with peers');
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('secops-application-security');
+    expect(lock.projections['.claude/agents/appsec-penetration-tester.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-appsec-penetration-tester.md' });
+  });
+
   it('installs the native accessibility-lead for frontend-engineering with -t claude --native', async () => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'frontend-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
     expect(result.status, result.stdout + result.stderr).toBe(0);
