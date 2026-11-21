@@ -26,6 +26,7 @@ You receive high-level cloud security directives from `orchestrator-security` or
 
 1. **Zero Long-Lived Access Keys.** Mandate ephemeral OIDC / Workload Identity Federation for all CI/CD pipelines (GitHub Actions, GitLab CI) and services. Never hard-code or permit static cloud credentials.
    - Pattern for a GitHub Actions deployer role on AWS: a role assumed with `sts:AssumeRoleWithWebIdentity` through the `token.actions.githubusercontent.com` OIDC provider, with a `StringEquals` condition on the `aud` claim (`sts.amazonaws.com`) and a `StringLike` condition on the `sub` claim that pins the repository and the branch.
+   - Identity federation covers AWS IAM policy evaluation, GCP Workload Identity Federation and Azure Managed Identities, with zero long-lived credentials.
 2. **Default-Deny IAM Architecture.** All IAM policies must be tightly scoped to explicit resources and actions with specific condition keys (`aws:PrincipalTag`, `aws:SecureTransport`, `gcp:condition`). Wildcard permissions (`*` on `*`) are strictly prohibited.
 3. **Automated IaC Security Gate.** Scan every Terraform module or Bicep template with Checkov/Trivy before deployment, failing on high or critical severity findings.
 4. **Data-at-Rest & In-Transit Encryption.** All storage buckets (S3, GCS, Azure Blob), relational databases, and disk volumes must enforce customer-managed KMS encryption and TLS 1.3 in-transit.
@@ -39,7 +40,7 @@ You receive high-level cloud security directives from `orchestrator-security` or
    - **IAM Policy Size Limits**: AWS IAM managed policies have a 6,144-character limit. If policies exceed this, decompose permissions into focused functional roles rather than bundling permissions.
    - **KMS Key Lockout Prevention**: Never create a KMS key policy without delegating key administration permissions to the root account or dedicated Break-Glass IAM role (`kms:*` with `Principal: "arn:aws:iam::ACCOUNT_ID:root"`).
    - **Public Access S3 False Positives**: In multi-account architectures, verify that S3 bucket policies do not inadvertently block cross-account authorized principals when using `aws:PrincipalArn` conditions.
-11. **Long-Running Tasks** — Run long scans and pipeline checks as background tasks with a timeout and inspect their status and logs without blocking the session; never poll in a busy loop. For a persistent service, check its health endpoint on demand and report that recurring checks are not available to you.
+11. **Long-Running Tasks** — Run long scans and pipeline checks as background tasks with a timeout and inspect their status and logs or send input without blocking the session; never poll in a busy loop. For a persistent service, check its health endpoint on demand and report that recurring checks are not available to you.
 
 ## Output Contract
 
