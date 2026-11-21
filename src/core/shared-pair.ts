@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { loadSemanticCore, validateSubagentContract } from './semantic-core.js';
+import { canonicalFloorProblems } from './native-repository-rules.js';
 import type { SharedPairCheckInput, SharedPairCheckResult } from './types.js';
 
 function requirePlainPath(file: string, kind: 'file' | 'directory'): void {
@@ -33,7 +34,14 @@ export async function checkSharedPair(input: SharedPairCheckInput): Promise<Shar
     const contract = validateSubagentContract(JSON.parse(fs.readFileSync(contractFile, 'utf8')) as unknown, cores);
     if (contract.definition !== input.definition) throw new Error('Companion contract definition does not match the requested definition.');
     result.valid = true;
+    if (input.canonicalFile !== undefined) {
+      if (!path.isAbsolute(input.canonicalFile)) throw new Error('Canonical agent must be an absolute path.');
+      if (!fs.existsSync(input.canonicalFile) || !fs.statSync(input.canonicalFile).isFile()) throw new Error(`Missing canonical agent ${input.canonicalFile}.`);
+      const problems = canonicalFloorProblems(cores.get(input.definition)!, fs.readFileSync(input.canonicalFile, 'utf8'));
+      if (problems.length > 0) { result.valid = false; result.findings.push(...problems); }
+    }
   } catch (error) {
+    result.valid = false;
     result.findings.push(error instanceof Error ? error.message : String(error));
   }
   return result;

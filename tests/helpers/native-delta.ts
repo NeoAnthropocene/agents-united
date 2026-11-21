@@ -8,7 +8,7 @@ import { normalizeClaudeFactoryCoordinatorTools } from '../../src/core/claude-fa
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { ClaudeProjector } from '../../src/core/claude-projector.js';
+import { postureProblems, type NativeKind } from '../../src/core/native-repository-rules.js';
 import { compareRealization, loadToolPolicy, resolveGrant } from '../../src/core/host-profile.js';
 import { checkFloor } from '../../src/core/native-floor.js';
 import type { NativeGuard } from '../../src/core/native-guard.js';
@@ -58,10 +58,6 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
     .map(name => path.join(registryDir, 'hosts', host, name))
     .filter(file => fs.existsSync(file))
     .map(file => JSON.parse(fs.readFileSync(file, 'utf8')) as ClaudeFactoryBinding) : [];
-  const postureOf = (coordinator: boolean): { model?: string; effort?: string } => ({
-    model: ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults?.[coordinator ? 'coordinator' : 'specialist'],
-    effort: ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults?.[coordinator ? 'coordinator' : 'specialist'],
-  });
 
   return roles.map(role => {
     const text = (options.installed?.get(role) ?? fs.readFileSync(nativeRoleSource(registryDir, host, role)!, 'utf8')).replace(/\r\n/g, '\n');
@@ -73,7 +69,7 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
     const core = cores.get(factoryRole?.definition ?? scopedCoreStem(role) ?? `subagent-${role}`) ?? cores.get(role);
     // A coordinator (it can delegate) runs as the main thread, whose ceiling includes what a subagent never gets.
     const coordinator = core?.capabilities?.includes('delegate') ?? false;
-    const posture = factoryRole ? { model: 'inherit', effort: 'medium' } : postureOf(coordinator);
+    const kind: NativeKind = factoryRole ? 'factory-worker' : coordinator ? 'coordinator' : 'specialist';
 
     let floor: NativeDeltaRow['floor'] = 'ok';
     let toolGains: string[] = [];
@@ -102,9 +98,7 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
 
     const model = typeof facts.meta.model === 'string' ? facts.meta.model : undefined;
     const effort = typeof facts.meta.effort === 'string' ? facts.meta.effort : undefined;
-    if (model !== posture.model || effort !== posture.effort) {
-      issues.push(`Model posture ${model ?? '(none)'}/${effort ?? '(none)'} differs from the specialist posture ${posture.model}/${posture.effort}.`);
-    }
+    issues.push(...postureProblems(facts.meta, kind));
 
     return { role, floor, toolGains, toolExtras, serverTools: facts.tools.filter(tool => tool.startsWith('mcp__')).sort(), guard: facts.guard, model, effort, issues };
   });

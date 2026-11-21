@@ -375,7 +375,7 @@ describe('the runbook states the route plainly', () => {
     expect(named).toEqual(expect.arrayContaining(['build', 'hostlib:verify', 'typecheck', 'hostlib:session']));
     for (const script of named) expect(known.npmScripts, `npm run ${script}`).toContain(script);
     expect(cliOptions(cliSource, 'skill-check')).toEqual(['artifact', 'corpus', 'policy']);
-    expect(cliOptions(cliSource, 'contract-check')).toEqual(['registry', 'definition']);
+    expect(cliOptions(cliSource, 'contract-check')).toEqual(['registry', 'definition', 'canonical']);
     expect(cliOptions(cliSource, 'factory-check')).toEqual(expect.arrayContaining(['registry', 'definition', 'host', 'artifact', 'loading', 'required-skills']));
     expect(cliOptions(cliSource, 'bundle-check')).toEqual(['artifact', 'registry', 'operation', 'allow-unresolved']);
     expect(cliLineProblems(text, cliSource)).toEqual([]);

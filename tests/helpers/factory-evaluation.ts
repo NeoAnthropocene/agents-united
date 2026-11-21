@@ -87,8 +87,9 @@ export async function prepareEvaluationJob(fixture: EvaluationFixture) {
     candidate: { files: [{ path: 'SKILL.md', kind: 'file', bytes: filePin.bytes, sha256: filePin.sha256, role: 'subject' }] },
     inputs, runtime: { executable: runtime, checker: await reviewPin(path.join(root, 'scripts/check-review.mjs')) },
     rubric: { ...await reviewPin(rubricFile), version: 1, criteria: rubric.criteria.map(({ id }) => ({ id,
-      required: !['shared-semantics', 'host-fit'].includes(id), applicable: !['shared-semantics', 'host-fit'].includes(id),
-      reason: ['shared-semantics', 'host-fit'].includes(id) ? 'Portable Skill adds no subagent or native target.' : 'Required for this fixed artifact review.' })) },
+      required: !['shared-semantics', 'host-fit', 'coverage-evidence'].includes(id), applicable: !['shared-semantics', 'host-fit', 'coverage-evidence'].includes(id),
+      reason: ['shared-semantics', 'host-fit'].includes(id) ? 'Portable Skill adds no subagent or native target.'
+        : id === 'coverage-evidence' ? 'A Skill review has no Claude agent coverage file.' : 'Required for this fixed artifact review.' })) },
     checks: [{ id: 'skill-layout', required: true, status: 'passed', command, candidateDigest, exit: 0, raw, receipt: await reviewPin(receiptFile) }],
     provenance: { disposition: 'original', author: 'Fixture author', evidence: ['provenance'], unresolved: [], notices: [] },
     budget: { maxCandidateFiles: 32, maxCandidateFileBytes: 262144, maxCandidateBytes: 1048576,
@@ -116,9 +117,12 @@ export async function prepareEvaluationKind(fixture: EvaluationFixture, kind: 's
   selected.job.candidate.files = selected.inventory.map(item => ({ ...item, role: 'subject' }));
   selected.job.subject = { kind, identity: kind === 'shared-pair' ? stem : 'factory-evaluator', definition: stem,
     target: kind === 'claude-agent' ? selected.job.authoringHost : null, paths };
+  // No coverage file is in these candidates, so coverage evidence does not apply (ADR 0072).
   selected.job.rubric.criteria = selected.job.rubric.criteria.map(item => ({ ...item,
-    required: item.id !== 'host-fit' || kind === 'claude-agent', applicable: item.id !== 'host-fit' || kind === 'claude-agent',
-    reason: item.id === 'host-fit' && kind === 'shared-pair' ? 'Shared pair is host neutral.' : 'Required for the selected subject.' }));
+    required: item.id === 'coverage-evidence' ? false : item.id !== 'host-fit' || kind === 'claude-agent',
+    applicable: item.id === 'coverage-evidence' ? false : item.id !== 'host-fit' || kind === 'claude-agent',
+    reason: item.id === 'coverage-evidence' ? 'The candidate holds no Claude agent coverage file.'
+      : item.id === 'host-fit' && kind === 'shared-pair' ? 'Shared pair is host neutral.' : 'Required for the selected subject.' }));
   const extras: Array<[string, string, string]> = [
     ['shared-core', 'shared-core', fixture.source(`core/${stem}.core.md`)],
     ['shared-contract', 'shared-contract', fixture.source(`core/${stem}.contract.json`)],

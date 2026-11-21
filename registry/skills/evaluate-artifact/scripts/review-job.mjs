@@ -33,6 +33,8 @@ const withinFolded = (parent, child) => inside(path.relative(folded(parent), fol
 const unique = (values, label) => { if (new Set(values.map(value => value.toLowerCase())).size !== values.length) fail(`${label}: duplicate/case-colliding values.`); };
 const isObject = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const byPath = (a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+/** A Claude agent's invariant coverage file sits beside it: `<agent without .md>.coverage.json` (ADR 0072). */
+const coveragePathOf = rel => rel.replace(/\.md$/, '.coverage.json');
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SHA = /^[a-f0-9]{64}$/;
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
@@ -504,16 +506,20 @@ function build(specArg) {
   extraRoots.forEach(addRoot);
   for (const root of readRoots) if (overlaps(review, root)) fail('Review output root overlaps candidate/source/read/managed/protected inputs.');
 
-  // Rubric: applicability follows the kind and target only; the caller may word the reasons.
+  // Rubric: applicability follows the kind, the target and (for coverage evidence) whether the candidate holds a Claude agent's coverage
+  // file; the caller may word the reasons.
   const rubricFile = path.join(skillRoot, 'assets/rubric.json');
   const rubricBytes = bytesAt(rubricFile, budget.maxEvidenceFileBytes, 'Rubric');
   const rubric = JSON.parse(decode(rubricBytes, 'Rubric'));
   const reasons = spec.rubricReasons ?? {};
   for (const id of Object.keys(reasons)) if (!rubric.criteria.some(item => item.id === id)) fail(`Spec rubricReasons names an unknown criterion: ${id}.`);
+  // The same rule as check-review.mjs: a subject agent file (ending in .md) with its coverage file beside it in the candidate.
+  const hasCoverage = subject.kind === 'claude-agent' && paths.some(rel => rel.endsWith('.md') && files.some(item => item.path === coveragePathOf(rel)));
   const criteria = rubric.criteria.map(({ id }) => {
-    const applicable = id === 'shared-semantics' ? subject.kind !== 'skill' : id === 'host-fit' ? subject.target !== null : true;
+    const applicable = id === 'shared-semantics' ? subject.kind !== 'skill' : id === 'host-fit' ? subject.target !== null : id === 'coverage-evidence' ? hasCoverage : true;
     const reason = reasons[id] ?? (applicable ? `Applies to this ${subject.kind} review.`
-      : id === 'shared-semantics' ? 'A Skill-only review has no shared definition.' : 'No native target is declared for this subject.');
+      : id === 'shared-semantics' ? 'A Skill-only review has no shared definition.'
+        : id === 'coverage-evidence' ? 'The candidate holds no Claude agent coverage file.' : 'No native target is declared for this subject.');
     return { id, required: applicable, applicable, reason };
   });
 
