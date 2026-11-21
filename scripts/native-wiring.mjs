@@ -107,8 +107,11 @@ export function checkManifest(manifest, checkout) {
 function factsOf(role, checkout) {
   const text = readText(path.join(checkout, role.native));
   const front = /^---\n([\s\S]*?)\n---\n/.exec(text);
-  if (!front) throw new Error(`${role.native} has no frontmatter.`);
+  if (!front) throw new Error(`${role.native} is not a native agent file: it has no frontmatter.`);
   const meta = YAML.parse(front[1]) ?? {};
+  // Every native agent declares its tools, model and effort; a file without them (a stub or a placeholder) cannot be wired.
+  const missing = ['tools', 'model', 'effort'].filter(key => typeof meta[key] !== 'string' || !meta[key]);
+  if (missing.length) throw new Error(`${role.native} is not a native agent file: its frontmatter has no ${missing.join(', ')}.`);
   const tools = splitTools(meta.tools ?? '');
   const plain = tools.map(tool => tool.split('(')[0]);
   const serverTools = tools.filter(tool => tool.startsWith('mcp__'));
@@ -277,7 +280,8 @@ export function planWiring(manifest, checkout, options = {}) {
   const shared = patternsIn(original[FILES.evidence], 'export const EVIDENCE: Record<string, RegExp> = {', 2) ?? new Map();
 
   for (const role of active) {
-    const facts = factsOf(role, checkout);
+    let facts;
+    try { facts = factsOf(role, checkout); } catch (error) { plan.refusals.push(error instanceof Error ? error.message : String(error)); continue; }
 
     // 1. The roster helper: one row; a new row ends its tier.
     {
