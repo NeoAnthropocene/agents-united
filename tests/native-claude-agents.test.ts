@@ -122,13 +122,15 @@ const ROLES: RoleSpec[] = [
   { name: 'legal-contract-analyst', stem: 'subagent-legal-contract-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   { name: 'operations-strategist', stem: 'subagent-operations-strategist', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__github']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   { name: 'financial-analyst', stem: 'subagent-financial-analyst', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: withRoutes(['mcp__markitdown']), mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'e2e-tester', stem: 'subagent-e2e-tester', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'qa-automation-lead', stem: 'subagent-qa-automation-lead', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TaskCreate', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-engineering',
     stem: 'orchestrator-engineering',
     guard: 'destructive',
     permissionMode: 'acceptEdits',
     skills: [],
-    serverTools: ['mcp__github', 'mcp__context7', 'mcp__chrome-devtools-mcp', 'mcp__firecrawl'],
+    serverTools: ['mcp__github', 'mcp__context7', 'mcp__chrome-devtools-mcp', 'mcp__firecrawl', 'mcp__playwright'],
     mutating: true,
     // Delegation and orchestration: the roster allowlist, dynamic workflows, the user, schedules, watchers and worktrees.
     mustHold: [...WRITER_MUST_HOLD, 'Agent', 'Workflow', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],

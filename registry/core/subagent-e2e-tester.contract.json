@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-e2e-tester",
+  "workflows": [],
+  "skills": [
+    "playwright-best-practices",
+    "test-driven-development",
+    "diagnosing-bugs",
+    "systematic-debugging"
+  ],
+  "hooks": []
+}
