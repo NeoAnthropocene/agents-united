@@ -46,6 +46,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'deep-research', stem: 'subagent-deep-research', tier: 1, coordinator: false },
   { role: 'socratic-mentor', stem: 'subagent-socratic-mentor', tier: 1, coordinator: false },
   { role: 'paid-acquisition-specialist', stem: 'subagent-paid-acquisition-specialist', tier: 1, coordinator: false },
+  { role: 'plg-strategist', stem: 'subagent-plg-strategist', tier: 1, coordinator: false },
   { role: 'seo-specialist', stem: 'subagent-seo-specialist', tier: 1, coordinator: false },
   { role: 'orchestrator-digital-agency', stem: 'orchestrator-digital-agency', tier: 2, coordinator: true },
   { role: 'agency-growth-strategist', stem: 'subagent-marketing-growth-strategist', tier: 2, coordinator: false },
