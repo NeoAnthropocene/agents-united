@@ -40,8 +40,8 @@ describe('native sysops-sre-lead: no shell, as its canonical agent', () => {
     expect(toolsOf(text())).toEqual(expect.arrayContaining(['TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate']));
   });
 
-  it('says that a recurring check or timer is a recommendation under Open items, not an action', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is something you recommend under `Open items`, not an action you take.');
+  it('says that a recurring check or timer is a schedule request, not an action', () => {
+    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is a `schedule` request, not an action you take.');
   });
 });
 
@@ -110,8 +110,8 @@ describe('native sysops-sre-lead: the shell-less working method', () => {
     expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
   });
 
-  it('Boundaries put a command the work needs under Open items for the lead', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a probe, a chaos experiment, a `kubectl` call, an alert-rule linter, a restoration drill) goes under `Open items` for the lead.');
+  it('Boundaries send a command the work needs to the lead as a run-command request', () => {
+    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a probe, a chaos experiment, a `kubectl` call, an alert-rule linter, a restoration drill) goes to the lead as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

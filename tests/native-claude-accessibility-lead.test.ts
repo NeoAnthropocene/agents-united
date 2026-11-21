@@ -44,10 +44,10 @@ describe('native accessibility-lead: no command execution, as its canonical agen
     expect(toolsOf(text())).toEqual(expect.arrayContaining(['Read', 'Glob', 'Grep', 'Edit', 'Write', 'NotebookEdit']));
   });
 
-  it('says in step 3 that it cannot run the audit, and sends the command to the lead under Open items', () => {
+  it('says in step 3 that it cannot run the audit, and sends the command to the lead as a run-command entry under Requests for the lead', () => {
     const three = step(3);
     expect(three).toContain('You hold no shell, so you cannot run the audit command, the project\'s tests or a linter.');
-    expect(three).toContain('put the exact command under `Open items` for the lead to run and return');
+    expect(three).toContain('put the exact command as a `run-command` entry under `Requests for the lead` for the lead to run and return');
   });
 
   it('step 6 calls a fix verified only after an audit result that was read or returned, and hands back through SubagentHandback', () => {

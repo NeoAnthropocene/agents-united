@@ -35,9 +35,9 @@ describe('native interaction-designer: editors, no shell, no measuring', () => {
     for (const shell of ['Bash', 'PowerShell', 'Monitor']) expect(tools(), shell).not.toContain(shell);
   });
 
-  it('step 4 runs the checklist but reports compositor and layout cost as estimates, with the profiling under Open items', () => {
+  it('step 4 runs the checklist but reports compositor and layout cost as estimates, with the profiling as a run-command request', () => {
     const four = /^4\. .*$/m.exec(/\n## How to work\n([\s\S]*?)(?=\n## )/.exec(text())![1]!)![0];
-    expect(four).toContain('You have no browser and no shell, so compositor and layout cost are judged from the code, not profiled: report them as estimates and put the profiling step under `Open items`.');
+    expect(four).toContain('You have no browser and no shell, so compositor and layout cost are judged from the code, not profiled: report them as estimates and put the profiling step as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

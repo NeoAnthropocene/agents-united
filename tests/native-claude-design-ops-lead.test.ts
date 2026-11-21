@@ -44,7 +44,7 @@ describe('native design-ops-lead: editors, no shell', () => {
     expect(tools()).toEqual(expect.arrayContaining(['Read', 'Write', 'Grep', 'Glob']));
     expect(text()).not.toMatch(/cannot edit|no editor/i);
     expect(declared).not.toContain('run_command');
-    expect(text()).toContain('put it under `Open items` for the lead.');
+    expect(text()).toContain('put it as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

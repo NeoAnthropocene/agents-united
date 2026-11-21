@@ -132,7 +132,7 @@ Each request is one entry with these fields, in this order:
 - Long-running builds or watch tasks: `Monitor` streams their output instead of polling. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
-- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead's job.
+- Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 
 ## Session task tracking
 

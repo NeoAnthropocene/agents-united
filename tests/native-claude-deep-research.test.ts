@@ -60,7 +60,7 @@ describe('native deep-research: the canonical tools that are bound and the one t
   it('says nothing about timers, schedules, cron or a command runner, and sends builds and test runs to the lead', () => {
     const body = withoutRequests(text());
     expect(body).not.toMatch(/cron|schedul|run_command|timer|liveness/i);
-    expect(body).toContain('You hold no shell, so builds and test runs go to the lead under `Open items`.');
+    expect(body).toContain('You hold no shell, so builds and test runs go to the lead as `run-command` entries under `Requests for the lead`.');
   });
 });
 

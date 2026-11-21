@@ -63,7 +63,7 @@ describe('native business-panel-experts: the question tool it cannot hold', () =
   });
 
   it('says so in one sentence that names no tool, and records no delta for it', () => {
-    const sentence = 'You cannot put a question to the user yourself in this host. Put any question for the user under `Open items` in your report; the lead asks it.';
+    const sentence = 'You cannot put a question to the user yourself in this host. Put any question for the user as an `ask-user` entry under `Requests for the lead` in your report; the lead asks it and returns the answer to you.';
     expect(text().split(sentence)).toHaveLength(2);
     expect(text()).not.toMatch(/AskUserQuestion/);
     const deltas = fs.readFileSync(path.resolve('registry/hosts/claude/deltas.json'), 'utf8');
@@ -147,7 +147,7 @@ describe('native business-panel-experts: the permission mode and the guard, agai
 
   it('Boundaries say the role has editors and no shell, and where the guard comes from in both modes', () => {
     const body = section('Boundaries of this host');
-    expect(body).toContain('- You hold editors and no shell. When the work needs a command, put it under `Open items` for the lead.');
+    expect(body).toContain('- You hold editors and no shell. When the work needs a command, put it as a `run-command` entry under `Requests for the lead`.');
     expect(body).toContain("it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.");
   });
 });

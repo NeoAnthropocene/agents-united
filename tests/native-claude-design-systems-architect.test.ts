@@ -40,7 +40,7 @@ describe('native design-systems-architect: editors, no shell', () => {
     expect(declared).toEqual(['view_file', 'replace_file_content', 'write_to_file', 'grep_search', 'find_by_name']);
     expect(tools()).toEqual(expect.arrayContaining(['Read', 'Edit', 'Write', 'Grep', 'Glob']));
     expect(declared).not.toContain('run_command');
-    expect(text()).toContain('put it under `Open items` for the lead.');
+    expect(text()).toContain('put it as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

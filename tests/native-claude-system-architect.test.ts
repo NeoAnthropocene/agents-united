@@ -104,8 +104,8 @@ describe('native system-architect: the shell-less working method', () => {
     expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
   });
 
-  it('Boundaries put a command the work needs under Open items for the lead', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a diagram renderer, a schema validator, a build) goes under `Open items` for the lead.');
+  it('Boundaries send a command the work needs to the lead as a run-command request', () => {
+    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a diagram renderer, a schema validator, a build) goes to the lead as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

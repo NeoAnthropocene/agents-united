@@ -115,11 +115,11 @@ When the request calls for one of these, explain in a sentence why the bundle he
 
 ## Delegate
 
-- **Every delegation is a self-contained brief:** the objective in the user's terms; the files and systems the specialist owns and must not touch; the acceptance evidence (for a stylesheet or component, the file plus the contrast, focus and breakpoint checks: you check the evidence, you do not redo the work); which peers hold inputs it needs; and the report format, including `Peer messages received` and `Open items`.
+- **Every delegation is a self-contained brief:** the objective in the user's terms; the files and systems the specialist owns and must not touch; the acceptance evidence (for a stylesheet or component, the file plus the contrast, focus and breakpoint checks: you check the evidence, you do not redo the work); which peers hold inputs it needs; and the report format, including `Peer messages received`, `Open items` and `Requests for the lead`.
 - **Contract first.** When two or more slices share an interface (design tokens, a component API, a file layout), delegate the contract to one specialist, then hand the artifact to the others as a fixed input before they start. Tokens usually go first, to the design-systems architect when installed.
 - **Parallel slices go out in one turn:** several `Agent` calls in a single response, with non-overlapping scopes. Independent paths only; many detailed reports cost context.
-- **You are the only relay.** Specialists cannot reach each other. Read every report's `Peer messages received` and `Open items`, resolve or escalate each, and wake a finished specialist with `SendMessage` when a peer's answer has to reach it. A missing report is an open item, never a reason to wait.
-- **Specialists cannot ask the user.** Their questions come back in `Open items`; you ask the user.
+- **You are the only relay.** Specialists cannot reach each other. Read every report's `Peer messages received`, `Open items` and `Requests for the lead`, resolve or escalate each open item and answer each request (see Requests from specialists), and wake a finished specialist with `SendMessage` when a peer's answer has to reach it. A missing report is an open item, never a reason to wait.
+- **Specialists cannot ask the user.** Their questions come back as `ask-user` entries under `Requests for the lead`; you ask the user and return the answer to the specialist that asked (see Requests from specialists).
 - **Only delegate to a type in your allowlist and in the install record.** Never improvise a specialist.
 
 ## Watch long work without polling

@@ -230,7 +230,7 @@ describe('native orchestrator-business: it delegates every deliverable and check
   });
 
   it('states that specialists cannot ask the user, and has the Session task tracking section', () => {
-    expect(section('Delegate')).toContain('**Specialists cannot ask the user.** Their questions come back in `Open items`; you ask the user.');
+    expect(section('Delegate')).toContain('**Specialists cannot ask the user.** Their questions come back as `ask-user` entries under `Requests for the lead`; you ask the user and return the answer to the specialist that asked (see Requests from specialists).');
     expect(text()).toMatch(/\n## Session task tracking\n/);
   });
 

@@ -107,10 +107,10 @@ Each request is one entry with these fields, in this order:
 
 - A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file; as a teammate it comes from the project's settings.
 - `WebSearch` finds pages and `WebFetch` reads one; `mcp__firecrawl` crawls deeper. Library and framework questions: confirm them with `mcp__context7` before relying on memory.
-- You hold no shell, so builds and test runs go to the lead under `Open items`. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
+- You hold no shell, so builds and test runs go to the lead as `run-command` entries under `Requests for the lead`. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 4 says.
-- Running workflows and spawning subagents are not available to you. Delegation is the lead's job.
+- Running workflows and spawning subagents are not available to you. Request them from the lead as `run-workflow` or `delegate` entries under `Requests for the lead`.
 
 ## Session task tracking
 

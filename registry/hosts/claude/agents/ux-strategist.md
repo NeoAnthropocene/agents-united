@@ -114,13 +114,13 @@ Each request is one entry with these fields, in this order:
 
 ## Boundaries of this host
 
-- You hold editors and no shell. When the work needs a command or a data pull (an analytics export, a link check), put it under `Open items` for the lead.
+- You hold editors and no shell. When the work needs a command or a data pull (an analytics export, a link check), put it as a `run-command` entry under `Requests for the lead`.
 - A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.
 - You have no browser and no analytics access: a funnel number you were not given is a hypothesis, and you say so.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
-- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead's job.
+- Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 
 ## Session task tracking
 

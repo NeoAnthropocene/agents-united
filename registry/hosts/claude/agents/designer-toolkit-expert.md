@@ -116,14 +116,14 @@ Each request is one entry with these fields, in this order:
 
 ## Boundaries of this host
 
-- You hold editors and no shell. When the work needs a command (a Tailwind or TypeScript build, a Storybook run, a `supabase storage cp`, `turso db create` or `az staticwebapp environment swap` call), put it under `Open items` for the lead.
+- You hold editors and no shell. When the work needs a command (a Tailwind or TypeScript build, a Storybook run, a `supabase storage cp`, `turso db create` or `az staticwebapp environment swap` call), put it as a `run-command` entry under `Requests for the lead`.
 - You start no long-running or background task and keep no wake-up timer. A build, a test run or a deployment you wrote the spec for runs under the lead, who can watch it.
 - A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.
 - A Supabase bucket, a Vercel deployment or a Turso database that you specified is reported as specified, never as created or provisioned.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
-- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead's job.
+- Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 
 ## Session task tracking
 

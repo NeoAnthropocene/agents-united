@@ -41,13 +41,13 @@ describe('native design-researcher: editors, no shell, no question tool', () => 
     expect(declared).toEqual(['view_file', 'replace_file_content', 'write_to_file', 'find_by_name', 'ask_question']);
     expect(tools()).toEqual(expect.arrayContaining(['Read', 'Edit', 'Write', 'Glob']));
     expect(declared).not.toContain('run_command');
-    expect(text()).toContain('put it under `Open items` for the lead.');
+    expect(text()).toContain('put it as a `run-command` entry under `Requests for the lead`.');
   });
 
   it('has no AskUserQuestion, and says the questions for the user go to the lead', () => {
     expect(tools()).not.toContain('AskUserQuestion');
     const body = text();
-    expect(body).toContain('Questions for the user go to the lead under `Open items`; you never ask the user directly.');
+    expect(body).toContain('Questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly.');
     expect(body).toContain('The host gives a question tool to the main conversation only and never to a subagent, so you have none.');
     expect(body).not.toMatch(/AskUserQuestion/);
   });

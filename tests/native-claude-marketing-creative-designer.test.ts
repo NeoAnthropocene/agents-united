@@ -65,7 +65,7 @@ describe('native marketing-creative-designer: design, not copy or code', () => {
 
   it('sources licensed stock through the skill and asks the lead to run the fetch, because it holds no shell', () => {
     expect(step(3)).toContain('the skill `commercial-stock-sourcer`');
-    expect(step(3)).toMatch(/you hold editors and no shell, so put its candidate fetch command under `Open items` for the lead/);
+    expect(step(3)).toMatch(/you hold editors and no shell, so put its candidate fetch command as a `run-command` entry under `Requests for the lead`/);
   });
 });
 

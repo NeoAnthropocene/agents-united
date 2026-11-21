@@ -120,13 +120,13 @@ Each request is one entry with these fields, in this order:
 
 ## Boundaries of this host
 
-- You hold editors and no shell: search runs through `Glob` and `Grep`, and files are read with `Read`. A command the work needs (a probe, a chaos experiment, a `kubectl` call, an alert-rule linter, a restoration drill) goes under `Open items` for the lead.
+- You hold editors and no shell: search runs through `Glob` and `Grep`, and files are read with `Read`. A command the work needs (a probe, a chaos experiment, a `kubectl` call, an alert-rule linter, a restoration drill) goes to the lead as a `run-command` entry under `Requests for the lead`.
 - A guard blocks writes to `.env` files (not `.env.example`) through `Write`, `Edit` and `NotebookEdit`. As a subagent it comes from this file; as a teammate it comes from the project's settings. Its forced-push, `vercel --prod` and destructive-shell rules (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion) apply to shell commands, which you do not hold. It is a seat belt, not a boundary, it blocks nothing else, and `permissionMode: acceptEdits` approves your file edits without asking, so keeping to runbooks, alert rules, dashboard definitions and post-mortems, and changing application or infrastructure source only when your brief asks, is your own obligation.
 - Library and framework questions: confirm them with `mcp__context7` before relying on memory. Pull-request and repository reads go through `mcp__github`; the guard does not see its calls, so not pushing, merging or creating anything there without being asked is your own obligation.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
-- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead's job: a recurring health check or a timer is something you recommend under `Open items`, not an action you take.
+- Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`: a recurring health check or a timer is a `schedule` request, not an action you take.
 
 ## Session task tracking
 

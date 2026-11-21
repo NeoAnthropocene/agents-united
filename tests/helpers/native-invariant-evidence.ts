@@ -117,13 +117,13 @@ export const EVIDENCE: Record<string, RegExp> = {
   'Every control status cites the evidence that supports it.': /Every control status cites the evidence that supports it/,
   'Every gap carries a priority, a regulatory citation and a remediation step.': /Every gap carries a priority, a regulatory citation and a remediation step/,
   'Raw personal data met during an audit is never copied into a report.': /Never copy raw personal or health data you meet into a report or a policy/,
-  'Questions for the user go to the calling lead in the final report, never to the user directly.': /Questions for the user go to the lead under `Open items`; you never ask the user directly/,
+  'Questions for the user go to the calling lead in the final report, never to the user directly.': /Questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly/,
 };
 
 /** Per-role overrides: role name, then invariant text. */
 export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   'agency-3d-designer': {
-    'When delegated, route user questions through the calling lead; in direct standalone work, ask the user for missing brief inputs.': /When delegated, questions for the user go to the lead under `Open items`; you never ask the user directly\. In direct standalone use, ask the user for missing brief inputs\./,
+    'When delegated, route user questions through the calling lead; in direct standalone work, ask the user for missing brief inputs.': /When delegated, questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly\. In direct standalone use, ask the user for missing brief inputs\./,
   },
   // The leads hand their result to the user, not to a spawner; each says where.
   'orchestrator-engineering': {

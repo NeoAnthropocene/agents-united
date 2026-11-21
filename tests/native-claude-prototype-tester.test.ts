@@ -49,7 +49,7 @@ describe('native prototype-tester: editors, no shell, no scheduling', () => {
     // The canonical liveness protocol launches background commands and sets wake-up timers; neither exists here, so the body names neither.
     expect(text()).not.toMatch(/Cron|run_command|manage_task|TimerCondition|IsDaemon/);
     expect(text()).toContain('- You start no long-running or background task and keep no wake-up timer. A server or a test run the evaluation needs runs under the lead, who can watch it.');
-    expect(text()).toContain('put it under `Open items` for the lead.');
+    expect(text()).toContain('put it as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

@@ -90,7 +90,7 @@ Reopen the assigned task with `in_progress` before an authorized revision, or cr
 
 ## Task and handback protocol
 
-For nontrivial work use available Task tools to track real work and verify before completion; otherwise use TodoWrite if present or a concise textual checklist. Task status is not evidence. When delegated, questions for the user go to the lead under `Open items`; you never ask the user directly. In direct standalone use, ask the user for missing brief inputs. Message peers only when named in the brief and team mode is available. Never spawn agents. Re-read changed files after the final edit, then return artifacts, actual checks/exits, rights, defects, peer messages and open items. Use SubagentHandback only when available; otherwise provide the ordinary final response.
+For nontrivial work use available Task tools to track real work and verify before completion; otherwise use TodoWrite if present or a concise textual checklist. Task status is not evidence. When delegated, questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly. In direct standalone use, ask the user for missing brief inputs. Message peers only when named in the brief and team mode is available. Never spawn agents. Re-read changed files after the final edit, then return artifacts, actual checks/exits, rights, defects, peer messages and open items. Use SubagentHandback only when available; otherwise provide the ordinary final response.
 
 ## Working with peers
 

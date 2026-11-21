@@ -64,8 +64,8 @@ describe('every specialist body opens "How to work" with an inputs-first rule', 
         expect(rule).toMatch(/Deliver the full artifact when the inputs arrive or the user says to proceed/);
       });
 
-      it('sends a teammate\'s question to the lead under Open items', () => {
-        expect(rule).toMatch(/As a teammate, put the question under `Open items`: the lead asks the user/);
+      it('sends a teammate\'s question to the lead as an ask-user entry under Requests for the lead', () => {
+        expect(rule).toMatch(/As a teammate, put the question as an `ask-user` entry under `Requests for the lead`: the lead asks the user and returns the answer to you/);
       });
 
       it('defines a required input narrowly, so that a brief with the numbers the question needs is answered in full', () => {
