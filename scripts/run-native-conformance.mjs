@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * ADR 0075 - the conformance run of a native-lane batch before its pull request. Contributor tooling, never installed.
  *

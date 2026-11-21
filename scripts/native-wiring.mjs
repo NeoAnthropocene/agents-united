@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * ADR 0075 - the test wiring of a role brought into the Claude native lane, generated from a batch manifest (scripts/factory-batch.schema.json).
  * Contributor tooling: never installed, never run at install time. It plans edits to six test files and prints them; `--write` applies them.
