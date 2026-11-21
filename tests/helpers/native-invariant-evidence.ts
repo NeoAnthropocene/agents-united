@@ -425,6 +425,15 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
+  // `e2e-tester` (Bundle `qa-automation`): its floor Safety lines and its own "How to work" steps state these.
+  'e2e-tester': {
+    'Elements are located by role, label or test identifier, never by brittle CSS or XPath selectors.': /Locate elements by role, label or test identifier \(`getByRole`, `getByLabel`, `getByTestId`\), never by brittle CSS or XPath selectors\./,
+    'Page interactions live in Page Object classes, not repeated across specs.': /Put page interactions in Page Object classes, not repeated across specs\./,
+    'A flaky test is never skipped silently: it is quarantined and reported to the lead.': /A flaky test is never skipped silently: quarantine it and report it to the lead/,
+    'A captured storage state or any other credential or session artifact is never committed to source control.': /- Never commit a captured `storageState\.json` or other credential\/session artifact to source control\.(?=\n|$)/,
+    'A suite that cannot run is reported as not run, never as passing.': /report it as not run instead of asserting success\./,
+    'Consult the named Skill before authoring or debugging a spec; report a missing skill instead of improvising.': /Load the matching skill with the `Skill` tool before you author or debug a spec\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,
