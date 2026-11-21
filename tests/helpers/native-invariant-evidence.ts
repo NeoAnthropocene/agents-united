@@ -50,6 +50,9 @@ export const EVIDENCE: Record<string, RegExp> = {
   [COMMS.report]: /\*\*Report sections, always present:\*\* `Peer messages received`[^\n]*`Open items`/,
   [COMMS.teamMode]: /\*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`/,
   [COMMS.consult]: /\*\*Planning consultation\.\*\* When the lead consults you before the plan is accepted, answer with a bounded scope-of-work statement/,
+  // Two invariants a Tier 1 marketing specialist core may state beside the six shared ones; the Tier 1 peers section carries both as written.
+  'Do not message a peer that has already finished; ask the coordinator to relay instead.': /A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  'If an expected peer input never arrives, proceed on a stated assumption and list the gap under open items.': /\*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
 
   // ── Coordinators (the two leads share most of their wording).
   'Resolve ambiguity with the user before any unverified work.': /\*\*Align first, in proportion to the stakes\.\*\*/,
@@ -130,9 +133,108 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     [COMMS.handBack]: /You synthesise reports in the output contract above/,
     [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
   },
+  // The security lead: the engineering lead's wording for the shared invariants, plus the two security ones it states in its own body.
+  'orchestrator-security': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Assess only systems the user has asked you to assess, defensively; nothing is run against an external or production target.': /\*\*Defensive and authorised work only\.\*\*/,
+    'The bound guard is a seat belt that stops only the common forms of a few commands; holding back everything else, and briefing specialists to do so, is the lead\'s own obligation.': /Holding these back, and briefing every specialist to hold them back, is your own obligation/,
+  },
+  // The design lead (a domain lead): the engineering lead's wording for the shared invariants, its own for the design ones.
+  'orchestrator-design': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Verify-then-deliver: no deliverable ships until its accessibility and responsive audit passes.': /A failed audit goes back to the owning specialist and does not go into a report as done/,
+    'A specialist type that is not installed is handed back to the user with the `agents add` command, never improvised.': /you never pretend to have done it or improvise a specialist/,
+    'Every deliverable honours the four boundary constraints: no cliché tropes, accessibility, compositor-only motion, fluid sizing.': /\*\*Boundary constraints\.\*\* Check every deliverable against all four/,
+  },
+  // The architecture lead: the shared coordinator wording (EVIDENCE) for most, its own for what the engineering lead does not state (no saved workflows, ADRs, bounded contexts, resilience, security routed to the user).
+  'orchestrator-system-architecture': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Consult at least one relevant specialist, read-only, before the delegation map, unless the user waives it.': /\*\*Consult before you map\.\*\* Before the delegation map, consult at least one relevant specialist with a short, read-only brief, unless the user waived it/,
+    "A delegated code slice comes back with the failing-then-passing test output of the specialist's own test-first run.": /for code, the failing-then-passing test output from its own test-first run: you check the evidence, you do not redo the work/,
+    'Verify-then-deliver: no deliverable completes until its deterministic verification criteria pass.': /A red run dispatches diagnosis to the right specialist/,
+    'Every major architectural decision is recorded as an ADR under docs/adr/.': /Record decisions in `CONTEXT\.md` and as ADRs under `docs\/adr\/`/,
+    'Bounded contexts are explicit and modules have no circular dependencies.': /Check every design for explicit bounded contexts with no circular dependencies between modules/,
+    'Every network call in a design has a circuit breaker, a retry backoff and a fallback.': /and for a circuit breaker, a retry backoff and a fallback on every network call/,
+    'Security architecture is recommended to the user as the security-operations bundle, never delegated by this lead.': /\*\*Security architecture is not delegated\.\*\* No type of this domain holds security work/,
+  },
+  // The growth-marketing lead (growth-marketing) shares the engineering lead's wording for what the defaults cover (align first, parallel slices, never loop on status, brief, relay, contract first, consult before you map).
+  // The rest is worded for marketing: the delegation duty, the verify step and the four guardrails of the canonical agent. The five marketing roles need an entry only where their wording differs: their invariants are the agency copies' and
+  // are bound by the default rules above, as long as the authored body keeps those sentences (the Tier 1 peers section of `devops-engineer` carries the comms ones). The one entry is the creative designer's, below.
+  'orchestrator-marketing': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Plan solo; delegate every execution deliverable to a specialist.': /You delegate every marketing deliverable to a specialist/,
+    'Verify-then-deliver: no marketing deliverable ships until its checks pass.': /A failed check goes back to the right specialist/,
+    'No marketing claim is misleading, no statistic is invented and no testimonial is fabricated.': /\*\*Authentic messaging\.\*\* Reject any deliverable with a misleading claim, an invented statistic or a fabricated testimonial/,
+    'Every piece of marketing copy carries exactly one clear call to action.': /\*\*One call to action\.\*\* Every piece of copy carries exactly one clear call to action/,
+    'Search metadata is unique per page: titles under 60 characters, descriptions under 155 characters, valid OpenGraph tags.': /\*\*Search metadata\.\*\* Titles are unique and under 60 characters, descriptions under 155 characters/,
+    'Email work respects consent, GDPR and CAN-SPAM, and user data is never harvested without consent.': /\*\*Consent and compliance\.\*\* Email work respects consent, GDPR and CAN-SPAM/,
+  },
+  // The Tier-1 copy hands the tokens back to orchestrator-marketing because the marketing lead cannot spawn an engineering role: decided during the roll-out and open to the maintainer's review.
+  'marketing-creative-designer': {
+    'Design tokens are handed to engineering as a fixed input before the production build starts.': /Design tokens go back to `orchestrator-marketing` as a fixed input before the production build starts, for whoever builds the page/,
+  },
+  // The research lead: the shared coordinator wording (EVIDENCE) for most, its own for what the engineering lead does not state (evidence gathering is delegated, citations, the two-source spot-check, documentation only, recommended bundles).
+  'orchestrator-research': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Plan solo; delegate evidence gathering, logic audit, code mapping, quantitative work and prior-art search to specialists.': /You delegate evidence gathering, logic audit, code mapping, quantitative work and prior-art search to specialists/,
+    'Consult at least one relevant specialist, read-only, before the delegation map, unless the user waives it.': /\*\*Consult before you map\.\*\* Before the delegation map, consult at least one relevant specialist with a short, read-only brief, unless the user waived it/,
+    'The lead searches only to scope a request and to spot-check key claims; evidence gathering is delegated.': /You search only to scope a request and to spot-check key claims/,
+    'Verify-then-deliver: no report completes until every claim is cited and every key claim passed the two-source spot-check.': /A claim that fails the spot-check goes back to the specialist that supplied it/,
+    'Every empirical claim cites an explicit source, and no source is invented.': /Every empirical claim carries an explicit source URL or document reference; never invent a source/,
+    'Key claims are checked against two independent primary sources before delivery.': /Check each key claim yourself against at least two independent primary sources/,
+    'Project runtime source code is not changed; the output is research documentation only.': /Do not change project runtime source code \(`src\/`\); output research documentation only/,
+    'Work beyond research synthesis is recommended to the user as a bundle, never delegated by this lead.': /\*\*Work beyond research synthesis is recommended, not delegated\.\*\*/,
+  },
+  // The business lead: the shared coordinator wording (EVIDENCE) for most; its own for what no other lead states (one document written by the lead, every figure read, one formula per metric, a cited source, the legal boundary, application source left alone, provisional estimates, types not installed).
+  'orchestrator-business': {
+    [COMMS.handBack]: /You synthesise reports in the output contract above/,
+    [COMMS.boundedExchange]: /wake a finished specialist with `SendMessage` when a peer's answer has to reach it/,
+    'Plan solo; delegate every execution deliverable to a specialist.': /You delegate every deliverable to a specialist/,
+    'Shared definitions and assumptions are fixed once and handed to parallel specialists as fixed inputs.': /\*\*Definitions first\.\*\* When two or more pieces of work share a definition[^\n]*fix it once and hand it to the others as a fixed input before they start/,
+    'The lead writes only the synthesis brief; the specialists write every other deliverable.': /You write only one document yourself: the synthesis brief, built from their reports/,
+    "Every number in the synthesis is checked against the analyst's report and the stated formulas, and a figure the lead has not read is never passed on.": /\*\*Check every number\.\*\* Read each analyst's report and check every figure you synthesise against it and against the stated formulas\. You never pass on a figure you have not read/,
+    'CAC, LTV, ARR and gross margin use one standard formula across all reports, and churn, discount rates and acquisition friction are accounted for.': /\*\*One formula per metric\.\*\* CAC, LTV, ARR and gross margin are standardized across every report\. A projection accounts for churn, discount rates and customer acquisition friction/,
+    'Every strategic claim cites a primary source or a financial model.': /\*\*Cite a primary source or a model\.\*\* Every strategic claim in the brief names the primary source or the financial model behind it/,
+    'Analysis by the legal contract analyst is carried with its boundary: structured technical and operational contract analysis, not formal legal representation or binding legal counsel.': /\*\*Carry the legal boundary\.\*\* Where the brief uses the legal contract analyst's analysis, it states, as a quotation, that this is "structured technical and operational contract analysis to support business decision-making, not formal legal representation or binding legal counsel"/,
+    'The lead modifies no application source code and writes only strategy, documentation and roadmap files.': /\*\*Keep application source untouched\.\*\* No guard stops a write under `src\/`[^\n]*That is your own obligation/,
+    'Provisional estimates during planning are labelled provisional, and a concrete deliverable waits for the accepted delegation map.': /\*\*Give provisional answers as provisional\.\*\* While you plan you may give the user estimates; label each as provisional and name its assumption\. A concrete deliverable waits for the accepted map/,
+    'A specialist type that is not installed is recommended to the user, never improvised.': /\*\*Only delegate to a type in your allowlist and in the install record\.\*\* Never improvise a specialist/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,
+  },
+  // `accessibility-lead`: its floor Safety lines and its own "How to work" steps state these. The comms invariants take the default evidence (the engineering family's peers section).
+  'accessibility-lead': {
+    'Never suppress, skip or lower the severity of an automated accessibility rule to make an audit pass; fix the underlying markup.': /- Never suppress, skip, or lower the severity of an automated accessibility rule to make an audit pass — fix the underlying markup\.(?=\n|$)/,
+    'Semantic HTML is the first remedy and ARIA the fallback.': /- Never rely on `aria-\*` attributes to fix what a native semantic element would fix correctly on its own; semantic HTML is the first remedy, ARIA is the fallback\.(?=\n|$)/,
+    'A fix that needs a design change is reported to the orchestrator, never shipped as a visually inconsistent workaround.': /- Report a fix that requires a design change \(e\.g\. insufficient color contrast in the design system\) to the orchestrator rather than shipping a visually inconsistent workaround\.(?=\n|$)/,
+    'Consult the named Skill before applying its standard; report a missing Skill instead of improvising.': /Load the matching skill with the `Skill` tool before you apply its standard, rather than reasoning about WCAG success criteria from memory\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+  },
+  // `deep-research`: the five research invariants are stated by its floor (scope boundaries and safety); the peer-messaging ones by its peers section, the engineering family's form.
+  'deep-research': {
+    'Prioritize official specs, official framework documentation and primary repositories over secondary sources.': /Always prioritize official specs \(W3C, IETF RFCs, ISO\), official framework documentation, and primary GitHub repositories/,
+    'Cross-reference findings across at least 3 distinct sources before marking a claim as established fact.': /Cross-reference findings across at least 3 distinct sources before marking a claim as established fact/,
+    'Clearly differentiate established specs, experimental features, community workarounds and vendor claims.': /Clearly differentiate between established specs, experimental features, community workarounds, and vendor claims/,
+    'Never report unverified blog posts as technical specification facts.': /- Never report unverified blog posts as technical specification facts\.(?=\n|$)/,
+    'Include publication/retrieval dates for all web citations.': /- Include publication\/retrieval dates for all web citations\.(?=\n|$)/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `business-panel-experts`: its floor (scope boundaries) states the three business invariants, and the engineering family's peers section binds the peer ones under this core's longer texts.
+  'business-panel-experts': {
+    'Every revenue model or cost projection is grounded in industry benchmarks, published case studies, or explicit financial assumptions.': /Every revenue model or cost projection must be grounded in industry benchmarks, published case studies, or explicit financial assumptions\./,
+    'Gross margin per user or transaction is calculated before projecting aggregate revenue.': /Always calculate gross margin per user\/transaction before projecting aggregate revenue\./,
+    'Payback period metrics are provided for all proposed investments.': /Provide clear payback period metrics \(e\.g\. months to recover acquisition\/engineering costs\) for all proposed investments\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\./,
+    "Do not message the coordinator's main conversation mid-run; everything it needs goes into the final report.": /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Never hang on a missing peer; proceed on a stated assumption and list the gap under open items.': /- \*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
   },
   // `devops-engineer` (the factory pilot's first member): its floor Safety lines and its own "How to work" steps state these.
   'devops-engineer': {
@@ -146,9 +248,164 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
+  // `security-engineer`: its floor Safety lines (the canonical agent's three guardrails word for word, plus the two boundary lines) and its own "How to work" steps state these.
+  'security-engineer': {
+    'Never execute destructive exploit payloads against external or production targets.': /- Never execute destructive exploit payloads against external or production targets\.(?=\n|$)/,
+    'Do not output live API keys or production secrets in log files or reports; obscure with `****`.': /- Do not output live API keys or production secrets in log files or reports; obscure with `\*\*\*\*`\.(?=\n|$)/,
+    'Refuse to disable TLS verification (`rejectUnauthorized: false`) in generated code.': /- Refuse to disable TLS verification \(`rejectUnauthorized: false`\) in generated code\.(?=\n|$)/,
+    'Assess only code and systems the user has asked you to review; run a proof of concept only against local or test targets.': /- Assess only code and systems the user has asked you to review; run a proof of concept only against local or test targets\.(?=\n|$)/,
+    'Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown or SQL DROP statements.': /- Do not run destructive shell commands such as recursive deletes, privilege escalation, shutdown or SQL DROP statements\.(?=\n|$)/,
+    'Consult the named Skill before applying its method; report a missing skill instead of improvising from memory.': /Load the matching skill with `Skill` before applying its method\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // The design-systems-ops specialists: their floor Scope Boundaries and their own "How to work" steps state these. The peers invariants take the defaults above.
+  'design-ops-lead': {
+    'The existing component libraries and token files are scanned, and hard-coded styling values searched for, before token files are structured.': /\*\*Audit first\.\*\* List the UI component libraries and design token files[^\n]*search for hard-coded styling values/,
+    'Design tokens sync deterministically between design assets and code tokens.': /Design tokens \(colors, typography, spacing, elevation\) must sync deterministically between design assets and code tokens/,
+    'Every component handoff package specifies variants, interactive states, responsive breakpoints and ARIA patterns.': /Every component handoff package must specify component variants, interactive states \(hover, focus, active, disabled\), responsiveness breakpoints, and ARIA patterns\./,
+    'Clear phase gates separate design exploration, spec freeze, engineering handoff and QA signoff.': /Establish clear phase gates between design exploration, spec freeze, engineering handoff, and QA signoff\./,
+  },
+  'design-systems-architect': {
+    'Existing stylesheets, token manifests and components are read, and token drift identified, before any token is drafted.': /\*\*Inventory first\.\*\* Find the existing stylesheets, token JSON manifests and UI components[^\n]*before you draft anything\./,
+    'Tokens follow a three-tier architecture: primitive, semantic and component tokens.': /Enforce a three-tier token architecture:/,
+    'Every design system specification enforces WCAG 2.1 AAA contrast targets and explicit :focus-visible ring parameters.': /Every design system specification must enforce WCAG 2\.1 AAA contrast targets \(7:1 normal text, 4\.5:1 large text\/UI components\) and explicit \x60:focus-visible\x60 ring parameters\./,
+    'No magic value remains: every property maps to a systematic scale token.': /Eliminate arbitrary pixel paddings, hardcoded hex values, or inline z-index numbers\. All properties must map to systematic scale tokens\./,
+  },
+  // The design-research-testing specialists: their floor Scope Boundaries and their own "How to work" steps state these. The peers invariants take the defaults above.
+  'design-researcher': {
+    'Existing user feedback, product requirements and session notes are read, and the key research questions documented, before synthesis.': /\*\*Ingest the research context first\.\*\* Find the user feedback[^\n]*before you synthesise anything\./,
+    'Every design recommendation cites user data, interview quotes or an established HCI heuristic.': /Every design recommendation must cite user data, interview quotes, or established HCI heuristics/,
+    'Every identified usability problem is paired with a specific, prioritized recommendation.': /Every identified usability problem must pair with a specific, prioritized recommendation\./,
+    'Every usability issue is classified by severity as Critical, Major or Minor.': /Classify every issue as Critical \(blocks task\), Major \(causes significant delay or frustration\) or Minor \(cosmetic or inconvenience\)/,
+  },
+  'designer-toolkit-expert': {
+    'AI-generated prototypes, specs and transcripts are inspected, and arbitrary CSS values searched for, before any token is extracted.': /\*\*Audit the prototype first\.\*\* Find the AI-generated prototype files[^\n]*before you extract anything\./,
+    'Every design choice cites WCAG 2.1 AA accessibility standards, cognitive load principles or usability data.': /Every design choice must cite WCAG 2\.1 AA accessibility standards, cognitive load principles, or usability data\./,
+    'Hardcoded colors, arbitrary spacing and bespoke border-radii of an AI prototype are extracted into centralized design tokens.': /Audit AI-generated prototypes \(v0, Lovable\) to extract hardcoded hex colors, arbitrary spacing \(\x60p-\[13px\]\x60\), and bespoke border-radii into centralized design tokens\./,
+    'Interactive component primitives carry keyboard focus states and ARIA roles.': /Ensure all interactive primitives include keyboard focus states \(\x60focus-visible:ring-2\x60\) and ARIA roles\./,
+    'Every major interface architecture decision is documented as a Design Decision Record with its context, options considered, final decision and expected impact.': /Document every major interface architecture decision: Context, Options Considered \(with Pros\/Cons and accessibility trade-offs\), Final Decision & Rationale, and Expected Impact Metrics\./,
+  },
+  'prototype-tester': {
+    'Prototype specifications, user journey maps and wireframes are read, and the primary and secondary task flows mapped, before any evaluation.': /\*\*Scope the prototype first\.\*\* Find the prototype specifications[^\n]*before you evaluate\./,
+    "Nielsen's 10 usability heuristics are applied to every evaluated screen or interactive flow.": /Apply Nielsen 10 Usability Heuristics to every evaluated screen or interactive flow\./,
+    'Every heuristic violation is assigned a severity from 1 (cosmetic) to 4 (usability catastrophe).': /Assign severity ratings to every violation \(1 = Cosmetic, 2 = Minor, 3 = Major, 4 = Usability Catastrophe\)/,
+    'Friction is quantified with Task Completion Rate, Estimated Time-on-Task, Click-Depth and Error Recovery Speed.': /Quantify friction using Task Completion Rate, Estimated Time-on-Task, Click-Depth, and Error Recovery Speed\./,
+    'Empty states, extreme input lengths, network delay fallbacks and multi-device viewport breakdowns are stress-tested.': /Test empty states, extreme input lengths, network delay fallbacks, and multi-device viewport breakdowns\./,
+    'Every identified UX friction point is paired with a concrete UI redesign recommendation.': /Pair every identified UX friction point with a concrete UI redesign recommendation\./,
+  },
+  // The product-design specialists: their floor Safety lines and Scope Boundaries, and their own "How to work" steps, state these. The peers invariants take the defaults above.
+  'interaction-designer': {
+    'Existing animation code is read, and its name conflicts identified, before new motion is added.': /\*\*Audit the motion first\.\*\* Find the existing components, stylesheets and animation code[^\n]*`@keyframes` names your new ones would collide with\./,
+    'Only transform and opacity are animated; no layout-triggering property is.': /Animate only compositor-promoted properties: `transform` and `opacity`\./,
+    'A prefers-reduced-motion block is written together with every animation.': /Write the `prefers-reduced-motion: reduce` block simultaneously with every animation\./,
+    'No blinking or flashing animation is implemented, and no infinite animation lacks an accessible pause control.': /- Refuse to implement blinking or flashing animations \(WCAG 2\.3\.1 — seizure risk\)\.\n- Never use `animation-iteration-count: infinite` without an accessible pause control\./,
+    'Every View Transitions implementation has a feature-detection guard and a CSS-only fallback.': /\*\*View Transitions API\*\* — [^\n]*Always provide a CSS-only fallback\.[\s\S]*\n- All View Transitions implementations must include a feature-detection guard\./,
+  },
+  // `system-architect`: its floor Safety lines and Scope Boundaries state the domain invariants, its own "How to work" the discovery step; the peers
+  // section is the engineering family's (as `devops-engineer` binds it, under this core's longer invariant texts).
+  'system-architect': {
+    'No architecture with a single point of failure is approved for production.': /- Never approve architectures with single points of failure \(SPOF\) for production environments\.(?=\n|$)/,
+    'Every external data boundary enforces strict input validation and encryption in transit (TLS 1.3).': /- Ensure all external data boundaries enforce strict input validation and encryption in transit \(TLS 1\.3\)\.(?=\n|$)/,
+    'Services do not share a database: each bounded context owns its data.': /Refuse a distributed monolith: services do not share a database; give each bounded context its own data \(database-per-service\)\./,
+    'Every major architectural decision is recorded as an ADR with Context, Decision, Consequences and Status.': /\*\*Architecture Decision Records \(ADRs\)\*\* — Document major architectural decisions following Nygard \/ MADR templates \(Context, Decision, Consequences, Status\)\./,
+    'Map the existing system before designing: read the module layout, APIs and data models first.': /\*\*Map first\.\*\* Read the existing module layout, APIs and data models with `Glob`, `Grep` and `Read` before you design anything\./,
+    'Non-functional requirements carry measurable targets: SLA, SLO, throughput, p99 latency, availability and disaster recovery.': /\*\*Non-Functional Requirements \(NFRs\)\*\* — Enforce SLA, SLO, throughput \(RPS\), latency \(p99\), availability \(99\.99%\), and disaster recovery targets\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `sysops-sre-lead`: its floor Scope Boundaries state the domain invariants (directive 1 and the four forbidden anti-patterns), its own "How to work" the
+  // inspection step; the peers section is the engineering family's, as `system-architect` binds it.
+  'sysops-sre-lead': {
+    'Reliability is governed by Service Level Objectives, Service Level Indicators and error budgets.': /\*\*Uptime & SLA\/SLO Management\*\* — Define Service Level Objectives \(SLOs\), Service Level Indicators \(SLIs\), and error budgets/,
+    'Alerts fire on symptoms that affect SLOs, not on transient blips.': /- Refuse alert fatigue \(noisy non-actionable alerts\)[^\n]*alert on symptoms affecting SLOs, not transient blips\./,
+    'No single point of failure: infrastructure is redundant across zones or regions.': /- Refuse single point of failure \(SPOF\) infrastructure[^\n]*use multi-AZ and multi-region redundancy\./,
+    'No manual, undocumented server change: changes go through managed automation and runbooks.': /- Refuse manual un-documented server changes[^\n]*use managed infrastructure automation and runbooks\./,
+    'A disaster recovery backup counts only after an automated restoration drill has proven it.': /- Refuse untested disaster recovery backups[^\n]*prove them with automated backup restoration drills\./,
+    'Inspect the existing telemetry configuration and SLI metrics before triaging or designing.': /\*\*Inspect first\.\*\* Read the existing telemetry configuration and SLI metrics with `Glob`, `Grep` and `Read` before you triage or design anything: /,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `cloud-infrastructure-architect`: its floor Scope Boundaries state the four Primary Directives (the domain invariants) and its Safety the provisioning handback; its own "How to work" the inspection and skill steps; the peers section is the engineering family's.
+  'cloud-infrastructure-architect': {
+    'Single points of failure are eliminated across availability zones and regions, and stateful tiers fail over automatically across zones.': /\*\*High Availability by Design\.\*\* Eliminate single points of failure across availability zones \(AZs\) and regions\. Architect all stateful tiers with automated multi-AZ failover\./,
+    'Internal databases and services are not exposed to the public internet: inter-service traffic uses private service endpoints.': /\*\*Network Isolation & Zero-Trust Interconnects\.\*\* Mandate PrivateLink and private service endpoints[^\n]*avoid exposing internal databases or microservices to the public internet\./,
+    'Infrastructure-as-code modules declare clear inputs and outputs, state locking and strict semantic versioning.': /\*\*Deterministic IaC Structure\.\*\* Structure all Terraform\/Bicep modules with clear inputs, outputs, state locking \(S3\/DynamoDB or GCS\), and strict semantic versioning\./,
+    'Topologies carry automated health checks, circuit breakers and graceful degradation for regional outages.': /\*\*Resilience & Chaos Engineering\.\*\* Design topologies with automated health checks, circuit breakers, and graceful degradation during regional cloud outages\./,
+    'Inspect the existing network, cluster and infrastructure-as-code layout before designing.': /\*\*Inspect first\.\*\* Read the existing network, cluster and infrastructure-as-code layout with `Glob`, `Grep` and `Read` before you design anything: /,
+    'Consult the matching Skill before designing in a domain it covers; report a missing skill instead of improvising.': /Load the matching skill with `Skill` before you design in a domain it covers\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'No resource in a real cloud account is provisioned or changed by this role; the exact command goes to the orchestrator for explicit user approval unless the brief authorises it.': /- Never apply, provision or change a resource in a real cloud account yourself; hand the exact command to the orchestrator for explicit user approval unless your brief authorises it\.(?=\n|$)/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `database-administrator`: its floor Scope Boundaries state the four Primary Directives (the domain invariants) and its Safety the live-database handback; its own "How to work" the inspection and skill steps; the peers section is the engineering family's.
+  'database-administrator': {
+    'Schema changes never take a blocking lock: no table-rewriting column change and no non-concurrent index creation.': /\*\*Zero-Locking DDL Policy\.\*\* Never execute blocking schema changes \(`ALTER TABLE \.\.\. ADD COLUMN \.\.\. DEFAULT \.\.\.` on large tables without PostgreSQL 11\+ fast-default semantics, or non-concurrent index creation\)\. Always use `CREATE INDEX CONCURRENTLY`\./,
+    'A schema change that spans several deployments follows the three Expand and Contract phases: expand, backfill and switch reads, contract.': /\*\*Expand and Contract Migration Discipline\.\*\* Schema modifications spanning multiple deployments must follow 3 phases: \(1\) Expand \(add nullable column & dual-write\), \(2\) Backfill & Switch reads, \(3\) Contract \(drop deprecated columns safely\)\./,
+    'Queries are optimised by inspecting buffer hit and read ratios, and disk spill sorts are eliminated.': /\*\*Query Optimization via Buffer Inspection\.\*\* Optimize for minimal shared buffer hit\/read ratios and eliminate disk spill sorts\./,
+    'Migration rollbacks and idempotency are verified in isolated test databases.': /\*\*Automated Migration Testing\.\*\* Verify migration rollbacks and idempotency in isolated test databases\./,
+    'Inspect the existing database configuration, migrations and query plans before changing anything.': /\*\*Inspect first\.\*\* Read the existing database configuration, migrations and query plans with `Glob`, `Grep` and `Read` before you change anything: /,
+    'Consult the matching Skill before designing in a domain it covers; report a missing skill instead of improvising.': /Load the matching skill with `Skill` before you design in a domain it covers\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'No migration, schema change or data change runs against a database that is not disposable by this role; the exact command goes to the orchestrator for explicit user approval unless the brief authorises it.': /- Never run a migration, a schema change or a data change against a database that is not disposable \(staging, production, a shared development database\) yourself; hand the exact command to the orchestrator for explicit user approval unless your brief authorises it\.(?=\n|$)/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `finops-cost-engineer`: its floor Scope Boundaries state the four Primary Directives (the domain invariants) and its Safety the spend-changing handback; its own "How to work" the inspection and skill steps; the peers section is the engineering family's.
+  'finops-cost-engineer': {
+    'Rightsizing and spot transitions are never recommended for single-node stateful workloads where they would violate availability SLAs.': /\*\*Safety-First Cost Optimization\.\*\* Never recommend rightsizing or spot transitions for single-node stateful workloads \(like primary relational databases\) that would violate availability SLAs\./,
+    'Every cost metric is formulated in unit economics terms, such as cost per active user, per API query or per thousand tokens generated.': /\*\*Cost-Per-Unit Transparency\.\*\* Formulate cost metrics in unit economics terms \(e\.g\. Cost per active user, cost per API query, cost per 1k token generation\)\./,
+    'Automated threshold alerts on daily cloud billing deltas above 20 percent are architected proactively.': /\*\*Automated Budget Alerts & Anomalies\.\*\* Proactively architect automated Slack\/PagerDuty threshold alerts on daily cloud billing deltas \(>20% anomalies\)\./,
+    'Every recommendation carries clear monthly and annual dollar savings and an implementation effort estimate.': /\*\*Quantified ROI Deliverables\.\*\* Present all recommendations with clear monthly\/annual \\\$ savings and implementation effort estimations\./,
+    'Inspect the existing cost and infrastructure evidence before recommending anything.': /\*\*Inspect first\.\*\* Read the existing cost and infrastructure evidence with `Glob`, `Grep` and `Read` before you recommend anything: /,
+    'Consult the matching Skill before designing in a domain it covers; report a missing skill instead of improvising.': /Load the matching skill with `Skill` before you design in a domain it covers\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'No command that changes spend or capacity runs by this role; the exact command goes to the orchestrator for explicit user approval.': /- Never run a command that changes spend or capacity \(buying Reserved Instances or Savings Plans, resizing, moving workloads to spot capacity, deleting resources\) yourself; hand the exact command to the orchestrator for explicit user approval\.(?=\n|$)/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `literature-patent-analyst`: the five role invariants are bound by sentences of its own "How to review" steps; the peer-messaging ones by the engineering family's peers section.
+  'literature-patent-analyst': {
+    'Cite all reviewed papers using standard BibTeX / APA formats with title, authors, year, conference/journal venue, and DOI or arXiv identifier.': /Cite every paper in BibTeX or APA with title, authors, year, venue and a DOI or arXiv identifier/,
+    'Dissect reported peak metrics alongside hardware configurations, dataset composition, and failure modes.': /Record, beside the reported peak metrics, the hardware \(GPU count, training hours\), the dataset composition and the failure modes/,
+    'Distinguish between independent broad patent claims and narrow dependent limitations.': /separate independent broad claims from narrow dependent limitations/,
+    'Present findings in comparative tables highlighting architecture, dataset, baseline metric delta, and computational cost.': /Present findings in a comparative table \(architecture, dataset, baseline metric delta, computational cost\)/,
+    'Never ask the user clarifying questions directly; escalate domain research scope or query ambiguities to the calling orchestrator in the final report.': /An ambiguity in the scope goes under `Open items`; you never ask the user directly\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,
+  },
+  'ui-designer': {
+    'Existing styles and markup are read, and the audit findings documented, before anything is written.': /\*\*Audit first\.\*\* Find the existing stylesheets, token files and markup[^\n]*as inline comments before you change anything\./,
+    'A colour combination that fails WCAG AA contrast is refused and a corrected alternative is proposed.': /- If a colour combination fails WCAG AA contrast \(4\.5:1 for text\), refuse to implement and propose a corrected alternative\./,
+    'Every design decision lives in a CSS custom property of the primitive, semantic or component tier; no hex value is hard-coded in component CSS.': /All design decisions must live in CSS custom properties\. Follow three-tier taxonomy: `--primitive-\*`, `--semantic-\*`, `--component-\*`\. Never hard-code hex values in component CSS\./,
+    'All motion respects prefers-reduced-motion.': /All motion must respect `prefers-reduced-motion`\./,
+  },
+  'ux-strategist': {
+    'Existing product specifications, research and analytics are read before any strategy is written.': /\*\*Ingest the context first\.\*\* Find the product specifications, user research documents, personas, journey maps and analytics[^\n]*before you write\./,
+    'No dark pattern is recommended: no forced continuity, no roach motel flow, no misdirection.': /- Never recommend dark patterns \(forced continuity, roach motel flows, misdirection\)\./,
+    'Validated user research and strategic hypotheses are labelled as different things in every deliverable.': /- Always distinguish between validated user research and strategic hypotheses\./,
+    'Every critical action path targets fewer than three steps.': /Deconstruct every primary task into atomic steps\. Target <3 steps for any critical action path\./,
+  },
+  // `socratic-mentor`: its four role invariants are bound by sentences of its own "How to mentor" steps; the peer-messaging ones by the engineering family's peers section.
+  'socratic-mentor': {
+    'Read-only operation: never write or mutate files.': /Never write or mutate a file: this role holds no tool that writes a file or runs a command, and as a subagent the guard bound to it blocks any write tool, shell or mutating connected-server tool; as a teammate that guard does not apply, so the read-only rule is yours alone\./,
+    'Guide through targeted questions (1-3 per turn) rather than code dumps.': /Ask one to three targeted questions per turn, never more, and no code dump\./,
+    'Never supply copy-paste code solutions unless explicitly instructed after 3 Socratic turns.': /Never supply a copy-paste code solution unless explicitly instructed after three Socratic turns/,
+    'Keep tone supportive, intellectually curious, and non-judgmental.': /Keep your tone supportive, intellectually curious and non-judgmental/,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  // `statistical-analyst`: the five role invariants are bound by sentences of its own "How to analyze" steps; the peer-messaging ones by the engineering family's peers section.
+  'statistical-analyst': {
+    'Present all statistical formulations using exact KaTeX notation and transparent assumptions.': /write every formula in KaTeX with its assumptions beside it/,
+    'Validate normality, homoscedasticity, and sample independence before choosing parametric vs non-parametric tests.': /Test normality, homoscedasticity and independence of the samples before you choose a parametric or a non-parametric test/,
+    'Never approve an A/B test experiment without computing the required sample size and duration.': /Never approve an A\/B test before you have computed the required sample size per variant and the duration/,
+    'Apply False Discovery Rate (FDR) or Bonferroni adjustments when testing multiple metrics simultaneously.': /Apply a false discovery rate or Bonferroni correction when you test several metrics at once/,
+    'Never ask the user clarifying questions directly; escalate parameter assumptions to the calling orchestrator in the report.': /put each one under `Open items`; you never ask the user directly\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
 };
 

@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-sysops-sre-lead",
+  "workflows": [],
+  "skills": [
+    "telemetry-monitoring",
+    "chaos-engineering",
+    "ci-cd-pipeline-automation",
+    "docker-deployment",
+    "sentry-incident-triage"
+  ],
+  "hooks": []
+}
