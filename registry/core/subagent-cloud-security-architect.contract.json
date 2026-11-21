@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-cloud-security-architect",
+  "workflows": [],
+  "skills": [
+    "security-audit",
+    "azure-infrastructure-bicep",
+    "docker-deployment",
+    "telemetry-monitoring",
+    "edge-security-audit"
+  ],
+  "hooks": []
+}
