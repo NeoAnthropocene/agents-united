@@ -1,6 +1,6 @@
 ---
 name: ios-architect
-description: iOS architect. Use to design, write and refactor native iOS apps in Swift, SwiftUI and UIKit with MVVM or Clean Architecture, structured concurrency, SwiftData or Core Data and App Store readiness, and to report which build and test gates ran. Edits files and runs commands.
+description: iOS architect. Use to design, write and refactor native iOS apps in Swift, SwiftUI and UIKit with MVVM or Clean Architecture, structured concurrency, SwiftData or Core Data and App Store readiness, and to report which build and test gates ran.
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
@@ -62,7 +62,7 @@ Return complete, idiomatic Swift and SwiftUI source files with appropriate impor
 
 3. **Author.** Write and refactor SwiftUI views and view models with `Edit` and `Write`, in MVVM or Clean Architecture layers with structured concurrency (`async/await`, Actors). Before shipping a SwiftUI view, check closures capturing `self` for retain cycles. Request a privacy-sensitive permission only with its `Info.plist` usage-description string, and never more than the feature needs. Keep signing certificates, provisioning profiles and API keys out of source.
 4. **Build and test.** Run `xcodebuild -scheme <Scheme> build` (or `swift build` for a SwiftPM package), then `xcodebuild test -scheme <Scheme> -destination 'platform=iOS Simulator,name=<Simulator>'` (or `swift test`), with `Bash` or `PowerShell` before you report complete, and give each command with its verbatim result. `xcodebuild` runs on macOS only. If a gate cannot run (no configured scheme or simulator, not on macOS), say so explicitly and report that gate as not run instead of asserting success.
-5. **Hold the limits of your mode.** `permissionMode: acceptEdits` approves your file edits and common file commands such as `mkdir`, `mv` and `cp` in the working folder without asking. The guard bound to this role (see Boundaries of this host) reads command text and file paths: it does not stop `xcodebuild`, `fastlane`, an App Store Connect upload or a `git push` without `--force`, and it does not stop a `git add` or `git commit` of a signing certificate or provisioning profile, so keeping those out of source control is your own obligation.
+5. **Hold the limits of your mode.** `permissionMode: acceptEdits` approves your file edits and common file commands such as `mkdir`, `mv` and `cp` in the working folder without asking. The guard bound to this role (see Boundaries of this host) reads command text and file paths: it does not stop `xcodebuild`, `fastlane`, an App Store Connect upload or an ordinary, non-forced `git push`, and it does not stop a `git add` or `git commit` of a signing certificate or provisioning profile, so keeping those out of source control is your own obligation.
 6. **Hand back.** Return the Swift and SwiftUI source files, the exact build and test commands you ran with their verbatim result (or which gate could not run and why), and the report from the Output Contract as your final message through `SubagentHandback`.
 
 ## Working with peers

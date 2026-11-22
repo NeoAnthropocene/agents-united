@@ -27,6 +27,11 @@ const step = (n: number): string => {
 };
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
 const sessionSection = (body: string): string => /\n## Session task tracking\n([\s\S]*)$/.exec(body)![1]!.trim();
+/** The numbered lines and the "- Never" lines of a block, line endings normalised, so lists can be compared exactly. */
+const lf = (block: string): string => block.replace(/\r\n/g, '\n');
+const numberedLines = (block: string): string[] => lf(block).split('\n').filter(line => /^\d+\. /.test(line));
+const neverLines = (block: string): string[] => lf(block).split('\n').filter(line => line.startsWith('- Never '));
+const floorSection = (body: string, heading: string): string => new RegExp('\\n## ' + heading + '\\n([\\s\\S]*?)(?=\\n## )').exec(lf(body))![1]!;
 
 describe('native cross-platform-specialist: the exact tool set, model and effort', () => {
   it('holds exactly this tool set', () => {
@@ -109,7 +114,7 @@ describe('native cross-platform-specialist: what its own steps say', () => {
 describe('native cross-platform-specialist: the guard claims', () => {
   it('step 5 names what the guard reads, and what it does not stop', () => {
     const five = step(5);
-    expect(five).toContain('reads command text and file paths: it does not stop `flutter build`, `eas build`, `eas submit` or a `git push` without `--force`, and it does not stop a `git add` or `git commit` of a keystore or signing key');
+    expect(five).toContain('reads command text and file paths: it does not stop `flutter build`, `eas build`, `eas submit` or an ordinary, non-forced `git push`, and it does not stop a `git add` or `git commit` of a keystore or signing key');
     expect(five).toMatch(/your own obligation/);
   });
 
@@ -137,13 +142,13 @@ describe('native cross-platform-specialist: the guard claims', () => {
     };
 
     it.each(['Bash', 'PowerShell'])('blocks the forms of the canonical agent\'s own guard (rm -rf, sudo, shutdown) and the named forms through %s, the hook having fired once', tool => {
-      for (const command of ['rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'git push --force origin main', 'vercel --prod']) {
+      for (const command of ['rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'git push --force origin main', 'git push -f origin main', 'vercel --prod']) {
         expect(shell(tool, command), `${tool}: ${command}`).toEqual({ blocked: true, fired: 1 });
       }
     });
 
-    it.each(['Bash', 'PowerShell'])('blocks a .env shell redirect, a disk format and a cloud resource-group deletion through %s, the hook having fired once', tool => {
-      for (const command of ['echo API_KEY=1 > .env', 'mkfs.ext4 /dev/sda1', 'az group delete --name rg-prod --yes']) {
+    it.each(['Bash', 'PowerShell'])('blocks a .env shell redirect, a disk format, a recursive delete of a project folder and a cloud resource-group, project and account deletion through %s, the hook having fired once', tool => {
+      for (const command of ['echo API_KEY=1 > .env', 'mkfs.ext4 /dev/sda1', 'rm -Rf .', 'env FOO=1 rm -rf .git', 'az group delete --name rg-prod --yes', 'gcloud projects delete my-project', 'aws organizations close-account --account-id 1']) {
         expect(shell(tool, command), `${tool}: ${command}`).toEqual({ blocked: true, fired: 1 });
       }
     });
@@ -198,20 +203,22 @@ describe('native cross-platform-specialist: the peers section of the engineering
 });
 
 describe('native cross-platform-specialist: the shared scope_boundaries and safety', () => {
-  it('carries the five numbered directives of the canonical agent line for line, and the build and test gates', async () => {
+  it('carries the numbered directives of the canonical agent, the core and the native floor as identical lists, and the build and test gates', async () => {
     const scope = (await loadSemanticCore('registry')).get(STEM)!.scope_boundaries.replace(/\s+/g, ' ');
     const section = /\n## Primary Directives\n([\s\S]*?)(?=\n## )/.exec(canonical())![1]!;
-    const directives = [...section.matchAll(/^(\d+)\. (.+)$/gm)].map(match => `${match[1]}. ${match[2]}`.replace(/\s+/g, ' '));
+    const directives = numberedLines(section);
     expect(directives).toHaveLength(5);
-    for (const directive of directives) expect(scope, directive).toContain(directive);
+    expect(numberedLines((await loadSemanticCore('registry')).get(STEM)!.scope_boundaries)).toEqual(directives);
+    expect(numberedLines(floorSection(text(), 'Scope Boundaries'))).toEqual(directives);
     for (const phrase of ['Audit first', 'Consult the named Skill', 'instead of asserting success']) expect(scope, phrase).toContain(phrase);
   });
 
-  it('carries the three Safety Guardrails of the canonical agent word for word, and its destructive-command guard', async () => {
+  it('carries the Never guardrails of the canonical agent, the core and the native floor as identical lists, and its destructive-command guard', async () => {
     const safety = (await loadSemanticCore('registry')).get(STEM)!.safety;
-    const guardrails = /\n## Safety Guardrails\n([\s\S]*?)(?=\n---\n|\n## )/.exec(canonical())![1]!.split('\n').filter(line => line.startsWith('- '));
+    const guardrails = neverLines(/\n## Safety Guardrails\n([\s\S]*?)(?=\n---\n|\n## )/.exec(canonical())![1]!);
     expect(guardrails).toHaveLength(3);
-    for (const line of guardrails) expect(safety).toContain(line.slice(2));
+    expect(neverLines(safety)).toEqual(guardrails);
+    expect(neverLines(floorSection(text(), 'Safety'))).toEqual(guardrails);
     expect(safety).toContain('- Do not run destructive shell commands such as recursive deletes, privilege escalation or shutdown.');
     expect(canonical()).toContain('Deny run_command if CommandLine matches /(rm -rf|sudo|shutdown)/i');
   });
