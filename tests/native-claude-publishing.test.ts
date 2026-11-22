@@ -178,10 +178,11 @@ describe('the coordinator text', () => {
     expect(text).not.toContain('reviews and edits it in a browser');
   });
 
-  it('takes the go-ahead from a request that already says to publish, and does not ask again', () => {
+  it('takes the go-ahead from a request that names one deliverable and says to publish it, and from nothing wider', () => {
     expect(text).toContain(
-      'ask once for that deliverable; the files are written first in every case. A user whose own request already says to publish this deliverable as a page has given the go-ahead for it: do not ask again.',
+      'ask once for that deliverable; the files are written first in every case. A user whose own request names this deliverable and says to publish it as a page on their claude.ai account has given the go-ahead for that one page: do not ask again for it. A general wish to publish everything, or a request for a web page or a landing page as files, is not a go-ahead.',
     );
+    expect(text).not.toContain('A user whose own request already says to publish this deliverable as a page has given the go-ahead for it: do not ask again.');
   });
 
   it('says in the brief that the user approved the page, and names its URL', () => {
