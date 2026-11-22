@@ -48,6 +48,7 @@ describe('the skill: what it is and where it lives', () => {
     expect(d).toMatch(/Claude Code only/);
     expect(d).toMatch(/trigger phrases:/);
     expect(d).toMatch(/\bskip\b/i);
+    expect(d).toMatch(/Slides/);
     expect(d.length).toBeLessThanOrEqual(1024);
   });
 
@@ -77,13 +78,16 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
     expect(runbook()).toMatch(/the user's go-ahead for that page/);
     expect(runbook()).toMatch(/needs no new go-ahead/);
     expect(runbook()).toMatch(/Keep it private and never change sharing/);
-    expect(section('Execution Triggers')).toMatch(/Share menu/);
+    expect(section('Execution Triggers')).toMatch(/Share control/);
+    expect(section('Execution Triggers')).not.toMatch(/Share menu/);
+    expect(runbook()).toMatch(/the files stand/);
     expect(section('Edge Cases & Error Recovery')).toMatch(/delete or share[\s\S]*not yours/i);
   });
 
   it('loads the placement and token skills before building, and follows the type\'s own instructions rather than memory', () => {
     const r = runbook();
     expect(r).toMatch(/Load the skills that hold the rules before you build/);
+    expect(r).toMatch(/when the page is a design/);
     for (const name of ['ad-creative-design', 'design-system-tokens', 'brand-identity']) expect(r, name).toContain(`\`${name}\``);
     expect(r).toMatch(/type's own instructions/);
     expect(r).toMatch(/not from memory/);
@@ -110,7 +114,7 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
     const r = runbook();
     expect(r).toMatch(/Read back what you published/);
     expect(r).toMatch(/`list`/);
-    expect(r).toMatch(/`read`/);
+    expect(r).toMatch(/`read` each one you wrote/);
     expect(r).toMatch(/count/);
     expect(r).toMatch(/recompute any contrast figure/);
     expect(skill()).toMatch(/11 of 12/);
@@ -167,6 +171,8 @@ describe('the references, the example and the evals', () => {
     expect(bundled.prompt).toMatch(/list of (?:available )?skills/i);
     expect(bundled.prompt).toMatch(/go-ahead/i);
     expect(bundled.expected_output).toMatch(/invokes `design` through `Skill`/);
+    expect(bundled.expected_output).toContain('writes the files');
+    expect(bundled.expected_output).toContain('If the call fails');
     expect(bundled.expected_output).toMatch(/private/);
     // 2: the bundled skill is not in the list: the PetPal canvas through the Design type (old case 1, adapted)
     expect(canvas.prompt).toMatch(/PetPal paid-social set/);
@@ -177,6 +183,7 @@ describe('the references, the example and the evals', () => {
     // 3: a deck through the Slides type, and a request to share it (new; takes over the old share case)
     expect(deck.prompt).toMatch(/deck/i);
     expect(deck.prompt).toMatch(/share/i);
+    expect(deck.prompt).toMatch(/does not show `slides`/);
     expect(deck.expected_output).toMatch(/Slides type/);
     expect(deck.expected_output).toMatch(/does not share|sharing is the user's own act/);
     // 4: an update of the approved design system after a token change (new; takes over the old design-system case)
@@ -191,6 +198,7 @@ describe('the references, the example and the evals', () => {
     expect(declined.expected_output).toMatch(/files only/i);
     expect(declined.expected_output).toMatch(/publishes nothing/i);
     expect(declined.expected_output).toMatch(/why there is no page/i);
+    expect(declined.expected_output).toContain('`ask-user` entry');
   });
 });
 
@@ -219,17 +227,24 @@ describe('the skill for every holder, for decks and for the go-ahead of each pag
       'not established',
       '2026-11-21',
       '`/design consent`',
-      'never ask for `/design-login` or `/design-sync`',
       'Slides type',
       'HTML page',
-      'the URL that your brief names or that you published yourself',
-      'never delete or pin',
+      'the URL of a page the user already approved',
       'runtime capabilities',
       'v2.1.281',
       'A new artifact is visible only to you',
+      'MCP-server contexts',
+      'If the call fails',
+      'does not offer the type you need',
+      'Write the files in the project first',
     ]) {
       expect(r, phrase).toContain(phrase);
     }
+    // These two begin a bullet now, so they are pinned without regard to the case of the first letter.
+    expect(r.toLowerCase()).toContain('never ask for `/design-login` or `/design-sync`');
+    expect(r.toLowerCase()).toContain('never delete or pin');
+    expect(r).not.toContain('the URL that your brief names or that you published yourself');
+    expect(r.split('\n').slice(0, 4).join('\n')).not.toContain('The host rules below are from the host documentation');
     const sentences = r.split(/(?<=[.!?])\s+/);
     expect(sentences.some(s => s.includes('Slides type') && s.includes('has been observed')), 'a sentence that says nothing about the files of the Slides type has been observed').toBe(true);
   });
