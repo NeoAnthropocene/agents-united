@@ -48,8 +48,8 @@ describe('native qa-automation-lead: the exact tool set, model and effort', () =
     for (const forbidden of ['Agent', 'Workflow', 'CronCreate', 'CronDelete', 'CronList', 'AskUserQuestion', 'WebFetch', 'WebSearch']) expect(toolsOf(text()), forbidden).not.toContain(forbidden);
   });
 
-  it('says it cannot delegate or schedule, and recommends a nightly run under Open items', () => {
-    expect(text()).toContain('- Running workflows, scheduling and spawning teammates or subagents are not available to you. Delegation belongs to the lead: a recurring nightly run is something you recommend under `Open items`, not something you set up.');
+  it('says it cannot delegate or schedule, and recommends a nightly run as a schedule request under Requests for the lead', () => {
+    expect(text()).toContain('- Running workflows, scheduling and spawning teammates or subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`: a recurring nightly run is a `schedule` request, not something you set up.');
   });
 });
 
@@ -94,7 +94,7 @@ describe('native qa-automation-lead: the guard claims', () => {
     const sentence = `A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`;
     expect(text().split(sentence)).toHaveLength(2);
     expect(text().split('A guard blocks')).toHaveLength(2);
-    expect(text()).toContain(`${sentence} As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.`);
+    expect(text()).toContain(`${sentence} As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation. Never try to get around it.`);
   });
 
   describe('against the real guard script', () => {
@@ -158,8 +158,8 @@ describe('native qa-automation-lead: the peers section of the engineering family
     expect(body).not.toContain('a brief cannot make you a teammate');
   });
 
-  it('step 9 hands the gate report back through SubagentHandback in the plain form', () => {
-    expect(step(9)).toBe('9. **Hand back.** Return the gate report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 9 hands the gate report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(9)).toBe('9. **Hand back.** Return the gate report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
   });
 
   it("carries the siblings' Session task tracking section byte for byte, as the last section", () => {

@@ -124,7 +124,7 @@ describe('native database-administrator: the guard and live-database claims, aga
 
   it('states what the guard blocks, where it comes from in both modes, and that acceptEdits leaves the limit to the role', () => {
     const boundaries = section(text(), 'Boundaries of this host');
-    expect(boundaries).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(boundaries).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.`);
     expect(boundaries).toContain('`permissionMode: acceptEdits` approves your file edits without asking');
     expect(boundaries).not.toContain('It blocks nothing else');
     expect(text().split('A guard blocks')).toHaveLength(2);
@@ -215,8 +215,8 @@ describe('native database-administrator: the peers section of the engineering fa
     expect(text()).not.toContain('shutdown_request');
   });
 
-  it('step 7 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(7)).toBe('7. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 7 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(7)).toBe('7. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
   });
 
   it('carries the session task tracking section of backend-architect verbatim', () => {

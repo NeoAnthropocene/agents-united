@@ -47,7 +47,7 @@ describe('native e2e-tester: the exact tool set, model and effort', () => {
 
   it('holds no delegation, workflow, scheduling or user-question tool, and says scheduling is not available', () => {
     for (const forbidden of ['Agent', 'Workflow', 'CronCreate', 'CronDelete', 'CronList', 'AskUserQuestion', 'WebFetch', 'WebSearch']) expect(toolsOf(text()), forbidden).not.toContain(forbidden);
-    expect(text()).toContain('- Running workflows, scheduling and spawning teammates or subagents are not available to you. Delegation belongs to the lead: a recurring nightly run is something you recommend under `Open items`, not something you set up.');
+    expect(text()).toContain('- Running workflows, scheduling and spawning teammates or subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`: a recurring nightly run is a `schedule` request, not something you set up.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {
@@ -93,7 +93,7 @@ describe('native e2e-tester: the guard claims', () => {
     const sentence = `A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`;
     expect(text().split(sentence)).toHaveLength(2);
     expect(text().split('A guard blocks')).toHaveLength(2);
-    expect(text()).toContain(`${sentence} As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.`);
+    expect(text()).toContain(`${sentence} As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation. Never try to get around it.`);
   });
 
   describe('against the real guard script', () => {
@@ -145,8 +145,8 @@ describe('native e2e-tester: the peers section of the engineering family', () =>
     expect(body).not.toContain('a brief cannot make you a teammate');
   });
 
-  it('step 7 hands the report back through SubagentHandback', () => {
-    expect(step(7)).toContain('as your final message through `SubagentHandback`.');
+  it('step 7 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(7)).toContain('as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
   });
 
   it("carries the siblings' Session task tracking section byte for byte, as the last section", () => {

@@ -53,7 +53,7 @@ Return a structured Markdown research report (written to `docs/research/[TOPIC]-
 | Naming the concepts and their relationships precisely | `domain-modeling` |
 
 5. **Check before you hand back.** Every claim has a primary source, a date and a status, and nothing rests on fewer than three independent sources without being marked as such. A skill that is not installed is a gap to report in your handoff, not something to improvise. What you could not verify goes under `Open items`.
-6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.
+6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.
 
 ## Working with peers
 
@@ -105,7 +105,7 @@ Each request is one entry with these fields, in this order:
 
 ## Boundaries of this host
 
-- A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file; as a teammate it comes from the project's settings.
+- A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.
 - `WebSearch` finds pages and `WebFetch` reads one; `mcp__firecrawl` crawls deeper. Library and framework questions: confirm them with `mcp__context7` before relying on memory.
 - You hold no shell, so builds and test runs go to the lead as `run-command` entries under `Requests for the lead`. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.

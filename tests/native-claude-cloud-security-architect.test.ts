@@ -49,7 +49,7 @@ describe('native cloud-security-architect: the guard claims', () => {
     expect(body).not.toMatch(/blocks[^.\n]*\bDROP\b/);
     expect(body).not.toMatch(/blocks[^.\n]*\b(terraform|kubectl)\b/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.");
   });
 
   describe('against the real guard script', () => {
@@ -151,8 +151,8 @@ describe('native cloud-security-architect: the peers section of the engineering 
     expect(body).not.toContain('Do not message a peer');
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {
@@ -169,7 +169,7 @@ describe('native cloud-security-architect: the dropped schedule tool', () => {
     const tools = /^tools: (.*)$/m.exec(text())![1]!.split(', ');
     for (const forbidden of ['CronCreate', 'CronDelete', 'CronList', 'RemoteTrigger']) expect(tools, forbidden).not.toContain(forbidden);
     expect(text()).not.toContain('Reactive Wakeup Timers');
-    expect(text()).toContain('- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead\'s job.');
+    expect(text()).toContain('- Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
     expect(text()).toContain('`Monitor` streams their output instead of polling.');
   });
 });

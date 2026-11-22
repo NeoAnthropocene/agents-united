@@ -50,7 +50,7 @@ describe('native accessibility-lead: no command execution, as its canonical agen
     expect(three).toContain('put the exact command as a `run-command` entry under `Requests for the lead` for the lead to run and return');
   });
 
-  it('step 6 calls a fix verified only after an audit result that was read or returned, and hands back through SubagentHandback', () => {
+  it('step 6 calls a fix verified only after an audit result that was read or returned, and hands back conditionally through SubagentHandback', () => {
     const six = step(6);
     expect(six).toContain('A fix is verified only when an audit result after the change was read or returned to you.');
     expect(six).toContain('report it as unverified');
@@ -121,7 +121,7 @@ describe('native accessibility-lead: the guard and permission claims', () => {
   it('Boundaries carry the one guard sentence, say the shell rules do not apply to this role, and say where the guard comes from in both modes', () => {
     const sentence = 'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
     expect(text().split(sentence)).toHaveLength(2);
-    expect(text()).toContain(`- ${sentence} Its shell rules apply only to a shell, which you do not hold. For your \`Write\`, \`Edit\` and \`NotebookEdit\` calls it blocks \`.env\` files and their variants such as \`.env.local\` (\`.env.example\` stays writable), and a call whose input it cannot read; it checks no other file path. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(text()).toContain(`- ${sentence} Its shell rules apply only to a shell, which you do not hold. For your \`Write\`, \`Edit\` and \`NotebookEdit\` calls it blocks \`.env\` files and their variants such as \`.env.local\` (\`.env.example\` stays writable), and a call whose input it cannot read; it checks no other file path. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.`);
     expect(text()).toContain('- You cannot run commands: the audit, the tests and the build are run by the lead or by a role that holds a shell.');
   });
 

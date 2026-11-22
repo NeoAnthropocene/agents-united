@@ -137,7 +137,7 @@ Each request is one entry with these fields, in this order:
 
 ## Boundaries of this host
 
-- You hold a shell and editors for evidence checks and policy files. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.
+- You hold a shell and editors for evidence checks and policy files. A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation. Never try to get around it.
 - Running workflows, scheduling and spawning teammates or subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 - You read GitHub; you do not write to it. Opening or changing a pull request is for the lead to ask a specialist or the user to do.
 

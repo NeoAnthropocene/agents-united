@@ -55,7 +55,7 @@ Return a Quantitative Statistical Analysis Report with: Experiment / Model Overv
 A skill's inputs that the brief does not give go to the lead as `ask-user` entries under `Requests for the lead`; you do not ask the user for them yourself.
 
 5. **Stay inside your limits.** This role runs in `acceptEdits` mode, so file edits inside the working folder are approved without a prompt. The guard bound to it (see Boundaries of this host) blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It does not stop an edit that overwrites another file, a delete of one file or of a build folder, or a command that reaches outside the working folder, and it does not catch every destructive form. Write only the scripts, the generated data and the report the brief asks for, and run no destructive command (recursive deletes, privilege escalation, shutdown): that is your own obligation.
-6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.
+6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.
 
 ## Working with peers
 
@@ -107,7 +107,7 @@ Each request is one entry with these fields, in this order:
 
 ## Boundaries of this host
 
-- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.
+- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.
 - `Monitor` streams the output of a long simulation or test run instead of polling, and `TaskStop` ends a run that you started. `mcp__markitdown` converts a document you were given into text; it may not be connected, and then you say so under `Open items`.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
