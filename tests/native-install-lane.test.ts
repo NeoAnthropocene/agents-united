@@ -50,7 +50,7 @@ describe('native package helpers', () => {
 
   it('finds a role source by its stripped name, and nothing for a legacy-only role', () => {
     expect(nativeRoleSource(REGISTRY, 'claude', 'code-reviewer')).toBe(path.join(REGISTRY, 'hosts', 'claude', 'agents', 'code-reviewer.md'));
-    expect(nativeRoleSource(REGISTRY, 'claude', 'data-engineer')).toBeUndefined();
+    expect(nativeRoleSource(REGISTRY, 'claude', 'ios-architect')).toBeUndefined();
     expect(nativeRoleSource(REGISTRY, 'claude', '../profile')).toBeUndefined();
   });
 
@@ -129,8 +129,8 @@ describe('native install lane (agents add --native)', () => {
 
   it('keeps the legacy projection for a type that has no native agent, in the same workspace', async () => {
     await install(true);
-    await new InstallEngine().install('backend-distributed-systems', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
-    const legacy = await fs.readFile(claudeAgent('data-engineer'), 'utf8');
+    await new InstallEngine().install('mobile-development', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    const legacy = await fs.readFile(claudeAgent('ios-architect'), 'utf8');
     expect(legacy).toContain('profile: claude |');
     expect(legacy).not.toContain('claude-native');
     // The native agents installed earlier are untouched by the second install.
