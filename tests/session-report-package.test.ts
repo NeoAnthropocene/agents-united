@@ -6,7 +6,7 @@ import type { SpawnSyncReturns } from 'node:child_process';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { SessionReportFile, SessionReportResult, SessionReportTrimResult } from '../src/core/types.js';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 
 describe('session reader from an actual offline npm installation', () => {
   let root: string | undefined;
@@ -23,7 +23,7 @@ describe('session reader from an actual offline npm installation', () => {
     root = taskRoot;
     const npmCli = path.join(path.dirname(process.env.npm_execpath ?? ''), 'npm-cli.js');
     if (!await fs.pathExists(npmCli)) throw new Error('Run via npm for its offline package CLI.');
-    const packed = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', taskRoot], { encoding: 'utf8' })) as Array<{ filename: string; files: Array<{ path: string }> }>;
+    const packed = parseNpmPackJson(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', taskRoot], { encoding: 'utf8' }));
     expect(packed[0]!.files.filter(file => file.path.endsWith('.jsonl')).map(file => file.path).sort()).toEqual([
       'registry/skills/remotion-production/assets/setup-evidence.example.jsonl',
     ]);

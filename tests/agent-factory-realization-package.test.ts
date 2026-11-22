@@ -9,7 +9,7 @@ import { FLOOR_START, FLOOR_END, renderFloor } from '../src/core/native-floor.js
 import { requestsFixture } from './helpers/requests-fixture.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 
 describe('production factory delivery from an extracted offline npm package', () => {
   let f: FactoryJobFixture | undefined;
@@ -18,7 +18,7 @@ describe('production factory delivery from an extracted offline npm package', ()
     f = await factoryJobFixture();
     const npmCli = path.join(path.dirname(process.env.npm_execpath ?? ''), 'npm-cli.js');
     if (!await fs.pathExists(npmCli)) throw new Error('Run via npm so its offline package CLI is available.');
-    const pack = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', f.root], { encoding: 'utf8' })) as Array<{ filename: string }>;
+    const pack = parseNpmPackJson(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', f.root], { encoding: 'utf8' }));
     const runtime = path.join(f.root, 'runtime');
     installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(f.root, pack[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');
