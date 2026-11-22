@@ -561,7 +561,7 @@ Safety is layered: policies that every role follows, plus a hook that enforces t
 
 **Least privilege:** each role gets only the tools it needs. For example, `security-engineer` and `appsec-penetration-tester` may run shell commands, but a guard denies `rm -rf`, `DROP`, `shutdown`, and `sudo`.
 
-**Publishing pages (Claude Code):** the roles that make documents (the design roles, the creative and marketing specialists, business and research analysis, and their leads) can publish a prototype, a deck or a one-pager as a private page on your claude.ai account, where you review and edit it in a browser. The lead asks you before each new page, an update to a page you already approved needs no new question, and nothing is shared for you. You turn it off with `"enableArtifact": false` in your Claude Code settings, or by adding `Artifact` to `permissions.deny`.
+**Publishing pages (Claude Code):** the roles that make documents (the design roles, the creative and marketing specialists, business and research analysis, and their leads) can publish a prototype, a deck or a one-pager as a private page on your claude.ai account, where your plan and the session allow it, to review in a browser (a design canvas or a deck you can also edit there). The lead asks you before each new page. An update of a page you already approved needs no new question. Nothing is shared for you: sharing is your own act in the browser. You turn it off with `"enableArtifact": false` in your Claude Code settings, or by adding `Artifact` to `permissions.deny`.
 
 Run `agents doctor` at any time to audit schemas, hooks, and lockfile state.
 
