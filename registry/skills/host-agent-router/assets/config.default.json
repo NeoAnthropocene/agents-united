@@ -36,9 +36,19 @@
         "simple": {
           "models": [
             {
+              "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low", "effort": "low",
+              "efforts": {
+                "low": { "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium" },
+                "medium": { "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium" },
+                "high": { "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high" },
+                "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
+              }
+            },
+            {
               "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium",
               "efforts": {
-                "low": { "label": "Gemini 3.8 Flash (Low)", "model": "gemini-3.8-flash-low" },
+                "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low", "effort": "low" },
+                "medium": { "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium" },
                 "high": { "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high" }
               }
             }
@@ -46,6 +56,23 @@
         },
         "medium": {
           "models": [
+            { "label": "Orchestrator (Argon)", "model": "gemini-pro-orchestrator-g1-pro", "fixedEffort": true, "quotaGroups": ["Gemini Models", "Gemini 4 Argon"] },
+            { "label": "Orchestrator (Neon)", "model": "gemini-pro-orchestrator-neon", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
+            {
+              "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium", "effort": "medium",
+              "efforts": {
+                "low": { "label": "Gemini 4 Argon (Low)", "model": "gemini-4-argon-low" },
+                "high": { "label": "Gemini 4 Argon (High)", "model": "gemini-4-argon-high" }
+              }
+            },
+            {
+              "label": "Gemini 4 Neon (Medium)", "model": "gemini-4-neon-medium", "effort": "medium",
+              "efforts": {
+                "low": { "label": "Gemini 4 Neon (Low)", "model": "gemini-4-neon-low" },
+                "high": { "label": "Gemini 4 Neon (High)", "model": "gemini-4-neon-high" },
+                "extra": { "label": "Gemini 4 Neon (XHigh)", "model": "gemini-4-neon-xhigh" }
+              }
+            },
             {
               "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium", "effort": "medium",
               "efforts": {
@@ -65,15 +92,38 @@
         },
         "high": {
           "models": [
-            { "label": "Orchestrator (Carbon)", "displayName": "Orchestrator (Carbon)", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
-            { "label": "Orchestrator (Neon)", "model": "gemini-pro-orchestrator-neon", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
-            { "label": "Orchestrator (Argon)", "model": "gemini-pro-orchestrator-g1-pro", "fixedEffort": true, "quotaGroups": ["Gemini Models", "Gemini 4 Argon"] },
             {
-              "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high", "effort": "high",
+              "label": "Orchestrator (Argon)", "model": "gemini-pro-orchestrator-g1-pro", "fixedEffort": true, "quotaGroups": ["Gemini Models", "Gemini 4 Argon"],
               "efforts": {
-                "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low" },
-                "medium": { "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium" },
-                "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
+                "extra": { "label": "Orchestrator (Carbon)", "displayName": "Orchestrator (Carbon)", "fixedEffort": true, "quotaGroups": ["Gemini Models"] }
+              }
+            },
+            {
+              "label": "Orchestrator (Neon)", "model": "gemini-pro-orchestrator-neon", "fixedEffort": true, "quotaGroups": ["Gemini Models"],
+              "efforts": {
+                "extra": { "label": "Gemini 4 Neon (XHigh)", "model": "gemini-4-neon-xhigh", "effort": "extra" }
+              }
+            },
+            {
+              "label": "Claude Opus 5.5 (High)", "model": "claude-opus-5-5-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Claude Opus 5.5 (Low)", "model": "claude-opus-5-5-low" },
+                "medium": { "label": "Claude Opus 5.5 (Medium)", "model": "claude-opus-5-5-medium" }
+              }
+            },
+            {
+              "label": "Gemini 4 Argon (High)", "model": "gemini-4-argon-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Gemini 4 Argon (Low)", "model": "gemini-4-argon-low" },
+                "medium": { "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium" }
+              }
+            },
+            {
+              "label": "Gemini 4 Neon (High)", "model": "gemini-4-neon-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Gemini 4 Neon (Low)", "model": "gemini-4-neon-low" },
+                "medium": { "label": "Gemini 4 Neon (Medium)", "model": "gemini-4-neon-medium" },
+                "extra": { "label": "Gemini 4 Neon (XHigh)", "model": "gemini-4-neon-xhigh" }
               }
             }
           ]

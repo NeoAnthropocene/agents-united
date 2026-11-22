@@ -73,7 +73,7 @@ const codexResponse = (rows: Row[], efforts: Record<string, string[]> = {}, extr
 });
 
 /** A `/usage` readout in the shape of the real one (groups with 5h and weekly buckets). The description of Gemini Models follows the 2026-11-19 facts. */
-const usageJson = (o: { gem5h?: number; gemWeekly?: number; argon?: number } = {}): string => JSON.stringify({
+const usageJson = (o: { gem5h?: number; gemWeekly?: number; argon?: number; thirdParty?: number } = {}): string => JSON.stringify({
   status: 'SUCCESS', response: '',
   command: {
     name: 'usage',
@@ -85,8 +85,8 @@ const usageJson = (o: { gem5h?: number; gemWeekly?: number; argon?: number } = {
           { id: 'gemini-5h', name: 'Five Hour Limit Remaining', window: '5h', remaining_fraction: o.gem5h ?? 1, reset_time: '2026-11-19T15:00:00Z' },
         ] },
         { name: 'Claude and GPT models', description: 'Models within this group: Claude Opus, Claude Sonnet, GPT-OSS', buckets: [
-          { id: '3p-weekly', name: 'Weekly Limit Remaining', window: 'weekly', remaining_fraction: 1, reset_time: '2026-11-25T10:00:00Z' },
-          { id: '3p-5h', name: 'Five Hour Limit Remaining', window: '5h', remaining_fraction: 1, reset_time: '2026-11-19T15:00:00Z' },
+          { id: '3p-weekly', name: 'Weekly Limit Remaining', window: 'weekly', remaining_fraction: o.thirdParty ?? 1, reset_time: '2026-11-25T10:00:00Z' },
+          { id: '3p-5h', name: 'Five Hour Limit Remaining', window: '5h', remaining_fraction: o.thirdParty ?? 1, reset_time: '2026-11-19T15:00:00Z' },
         ] },
         { name: 'Gemini 4 Argon', description: 'For paid Pro plans, Argon quota is separate.', buckets: [
           { id: 'gemini-argon-wtu-weekly', name: 'Gemini 4 Argon Weekly Limit', window: 'weekly', remaining_fraction: o.argon ?? 1, reset_time: '2026-11-25T10:00:00Z' },
@@ -131,6 +131,16 @@ describe('reading the account model list from the host', () => {
     expect(agyPool('garbage')).toBeNull();
   });
 
+  it('detects the Antigravity subscription tier from `agy models` rows via agyPlanOf and agyPool().plan', async () => {
+    const { agyPlanOf, agyPool, parseAgyModels } = await lib();
+    expect(agyPool(agyText(WITH_CARBON)).plan).toBe('ultra');
+    expect(agyPool(agyText(AGY_ALL)).plan).toBe('pro');
+    expect(agyPool(agyText([['gemini-pro-orchestrator', 'Orchestrator'], ['gemini-3.7-flash-medium', 'Gemini 3.7 Flash (Medium)']])).plan).toBe('enterprise');
+    expect(agyPool(agyText([['gemini-3.8-flash-medium', 'Gemini 3.8 Flash (Medium)']])).plan).toBe('free');
+    expect(agyPlanOf([])).toBeNull();
+    expect(agyPlanOf(parseAgyModels(agyText(AGY_ALL))!)).toBe('pro');
+  });
+
   it('parses the app-server `model/list` answer, with the efforts each model offers', async () => {
     const { codexPool } = await lib();
     const pool = codexPool(codexResponse(CODEX_ALL));
@@ -173,15 +183,23 @@ describe('the default tiers, as ordered lists', () => {
     return Object.fromEntries(['simple', 'medium', 'high'].map(t => [t, (tierEntries(CFG.hosts[host].tiers[t]) as Any[]).map(e => [e.model, e.displayName, e.effort])]));
   };
 
-  it('Antigravity: Neon high, Argon fallback', async () => {
+  it('Antigravity: two-stage simple (Hydrogen Low / Flash Medium), Orchestrator-first medium and high with separate Argon/3P fallbacks', async () => {
     expect(await table('antigravity')).toEqual({
-      simple: [['gemini-3.8-flash-medium', undefined, 'medium']],
-      medium: [['gemini-4-hydrogen-medium', undefined, 'medium'], ['gemini-3.8-flash-high', undefined, 'high']],
-      high: [
-        [undefined, 'Orchestrator (Carbon)', 'fixed'],
-        ['gemini-pro-orchestrator-neon', undefined, 'fixed'],
+      simple: [['gemini-4-hydrogen-low', undefined, 'low'], ['gemini-3.8-flash-medium', undefined, 'medium']],
+      medium: [
         ['gemini-pro-orchestrator-g1-pro', undefined, 'fixed'],
-        ['gemini-4-hydrogen-high', undefined, 'high'],
+        ['gemini-pro-orchestrator-neon', undefined, 'fixed'],
+        ['gemini-4-argon-medium', undefined, 'medium'],
+        ['gemini-4-neon-medium', undefined, 'medium'],
+        ['gemini-4-hydrogen-medium', undefined, 'medium'],
+        ['gemini-3.8-flash-high', undefined, 'high'],
+      ],
+      high: [
+        ['gemini-pro-orchestrator-g1-pro', undefined, 'fixed'],
+        ['gemini-pro-orchestrator-neon', undefined, 'fixed'],
+        ['claude-opus-5-5-high', undefined, 'high'],
+        ['gemini-4-argon-high', undefined, 'high'],
+        ['gemini-4-neon-high', undefined, 'high'],
       ],
     });
   });
@@ -199,7 +217,7 @@ describe('the default tiers, as ordered lists', () => {
     for (const host of ['claude', 'cline']) for (const t of ['simple', 'medium', 'high']) expect(tierEntries(CFG.hosts[host].tiers[t]), `${host}/${t}`).toHaveLength(1);
   });
 
-  it('no entry names a model that is not in the research facts of 2026-11-19, and the Carbon entry carries no invented slug', async () => {
+  it('no entry names a model that is not in the research facts of 2026-11-22, and the Carbon entry carries no invented slug', async () => {
     const { tierEntries } = await lib();
     const known = new Set([...AGY_ALL.map(([s]) => s), ...CODEX_ALL.map(([m]) => m)]);
     for (const host of ['antigravity', 'codex']) {
@@ -209,18 +227,26 @@ describe('the default tiers, as ordered lists', () => {
         }
       }
     }
-    const carbon = (tierEntries(CFG.hosts.antigravity.tiers.high) as Any[])[0];
+    const argonOrch = (tierEntries(CFG.hosts.antigravity.tiers.high) as Any[])[0];
+    const carbon = argonOrch.efforts?.extra;
     expect(carbon.model).toBeUndefined();
     expect(carbon.displayName).toBe('Orchestrator (Carbon)');
+    expect(carbon.fixedEffort).toBe(true);
+    expect(carbon.quotaGroups).toEqual(['Gemini Models']);
   });
 
   it('the Orchestrator entries have a fixed configuration and the quota groups of the facts', async () => {
     const { tierEntries } = await lib();
-    const [carbon, neon, argon, hyd] = tierEntries(CFG.hosts.antigravity.tiers.high) as Any[];
-    for (const e of [carbon, neon, argon]) expect(e.fixedEffort).toBe(true);
-    expect(hyd.fixedEffort).toBeFalsy();
+    const [argon, neon, opus, argonStandalone, neonStandalone] = tierEntries(CFG.hosts.antigravity.tiers.high) as Any[];
+    for (const e of [argon, neon]) expect(e.fixedEffort).toBe(true);
+    for (const e of [opus, argonStandalone, neonStandalone]) expect(e.fixedEffort).toBeFalsy();
     expect(neon.quotaGroups).toEqual(['Gemini Models']);
     expect(argon.quotaGroups).toEqual(['Gemini Models', 'Gemini 4 Argon']);
+    const [medArgon, medNeon] = tierEntries(CFG.hosts.antigravity.tiers.medium) as Any[];
+    expect(medArgon.fixedEffort).toBe(true);
+    expect(medNeon.fixedEffort).toBe(true);
+    expect(medArgon.quotaGroups).toEqual(['Gemini Models', 'Gemini 4 Argon']);
+    expect(medNeon.quotaGroups).toEqual(['Gemini Models']);
   });
 
   it('is a valid configuration', async () => {
@@ -250,8 +276,17 @@ describe('choosing the first entry that is in the pool', () => {
 
   it('a pool that has everything picks the first entry of each tier', async () => {
     const agy = await agyFull();
-    expect((await plan('antigravity', 'simple', agy)).selected.model).toBe('gemini-3.8-flash-medium');
-    expect((await plan('antigravity', 'medium', agy)).selected.model).toBe('gemini-4-hydrogen-medium');
+    const agySimple = (await plan('antigravity', 'simple', agy)).selected;
+    expect([agySimple.model, agySimple.effort]).toEqual(['gemini-4-hydrogen-low', 'low']);
+    expect(agySimple.alternates.map((a: Any) => a.model)).toEqual(['gemini-3.8-flash-medium']);
+    const agySimpleLow = (await plan('antigravity', 'simple', agy, 'low')).selected;
+    expect([agySimpleLow.model, agySimpleLow.effort]).toEqual(['gemini-3.8-flash-medium', 'medium']);
+    expect(agySimpleLow.alternates.map((a: Any) => [a.model, a.effort])).toEqual([['gemini-4-hydrogen-low', 'low']]);
+    const agyMed = (await plan('antigravity', 'medium', agy)).selected;
+    expect(agyMed.model).toBe('gemini-pro-orchestrator-g1-pro');
+    expect(agyMed.alternates.map((a: Any) => a.model)).toEqual([
+      'gemini-pro-orchestrator-neon', 'gemini-4-argon-medium', 'gemini-4-neon-medium', 'gemini-4-hydrogen-medium', 'gemini-3.8-flash-high',
+    ]);
     const codex = await codexFull();
     const simple = (await plan('codex', 'simple', codex)).selected;
     expect([simple.model, simple.effort]).toEqual(['gpt-6.1-terra', 'medium']);
@@ -262,20 +297,35 @@ describe('choosing the first entry that is in the pool', () => {
     expect(high.skipped_models).toBeUndefined();
   });
 
-  it('Antigravity high: the Neon Orchestrator when the account has no Carbon one, then the Argon one and Hydrogen as fallbacks', async () => {
+  it('Antigravity high: Argon Orchestrator first on Pro, then Neon Orchestrator, Opus 5.5, Argon High and Neon High', async () => {
     const p = await plan('antigravity', 'high', await agyFull());
-    expect(p.selected.model).toBe('gemini-pro-orchestrator-neon');
-    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual(['gemini-pro-orchestrator-g1-pro', 'gemini-4-hydrogen-high']);
-    expect(p.selected.skipped_models).toEqual([{ model: 'Orchestrator (Carbon)', reason: expect.stringMatching(/not in the account's model list/) }]);
+    expect(p.selected.model).toBe('gemini-pro-orchestrator-g1-pro');
+    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual([
+      'gemini-pro-orchestrator-neon', 'claude-opus-5-5-high', 'gemini-4-argon-high', 'gemini-4-neon-high',
+    ]);
+    expect(p.selected.skipped_models).toBeUndefined();
   });
 
-  it('takes the slug of the Carbon Orchestrator from the account list by its display name (the slug is not in the config)', async () => {
+  it('Antigravity high --effort extra: Orchestrator (Carbon) on Ultra, Neon (XHigh) on Pro', async () => {
     const { agyPool } = await lib();
-    const p = await plan('antigravity', 'high', status({ pool: agyPool(agyText(WITH_CARBON)) }));
-    expect(p.selected.model).toBe('fixture-orchestrator-carbon');
-    expect(p.selected.label).toBe('Orchestrator (Carbon)');
-    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual(['gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro', 'gemini-4-hydrogen-high']);
-    expect(p.selected.skipped_models).toBeUndefined();
+    const ultra = await plan('antigravity', 'high', status({ pool: agyPool(agyText(WITH_CARBON)) }), 'extra');
+    expect(ultra.selected.model).toBe('fixture-orchestrator-carbon');
+    expect(ultra.selected.label).toBe('Orchestrator (Carbon)');
+    expect(ultra.selected.effort).toBe('fixed');
+    expect(ultra.selected.effort_note).toBeUndefined();
+    expect(ultra.selected.alternates.map((a: Any) => a.model)).toEqual([
+      'gemini-4-neon-xhigh', 'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon', 'claude-opus-5-5-high', 'gemini-4-argon-high',
+    ]);
+    expect(ultra.selected.skipped_models).toBeUndefined();
+
+    const pro = await plan('antigravity', 'high', await agyFull(), 'extra');
+    expect(pro.selected.model).toBe('gemini-4-neon-xhigh');
+    expect(pro.selected.effort).toBe('extra');
+    expect(pro.selected.effort_note).toBeUndefined();
+    expect(pro.selected.skipped_models).toEqual([{ model: 'Orchestrator (Carbon)', reason: expect.stringMatching(/not in the account's model list/) }]);
+    expect(pro.selected.alternates.map((a: Any) => a.model)).toEqual([
+      'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon', 'claude-opus-5-5-high', 'gemini-4-argon-high',
+    ]);
   });
 
   it('a pool without the first entry picks the second and names the skipped one with the reason', async () => {
@@ -287,14 +337,17 @@ describe('choosing the first entry that is in the pool', () => {
     expect(p.selected.alternates).toBeUndefined();
   });
 
-  it('a pool without the Orchestrator lines falls back to Hydrogen High and still lets --effort move inside it', async () => {
+  it('a pool without the Orchestrator lines falls back to Opus 5.5 High (or Neon XHigh for --effort extra)', async () => {
     const { agyPool } = await lib();
     const st = status({ pool: agyPool(agyText(NO_ORCHESTRATOR)) });
     const p = await plan('antigravity', 'high', st);
-    expect([p.selected.model, p.selected.effort]).toEqual(['gemini-4-hydrogen-high', 'high']);
-    expect(p.selected.skipped_models.map((s: Any) => s.model)).toEqual(['Orchestrator (Carbon)', 'gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro']);
+    expect([p.selected.model, p.selected.effort]).toEqual(['claude-opus-5-5-high', 'high']);
+    expect(p.selected.skipped_models.map((s: Any) => s.model)).toEqual(['gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon']);
     const extra = await plan('antigravity', 'high', st, 'extra');
-    expect([extra.selected.model, extra.selected.effort, extra.selected.effort_note]).toEqual(['gemini-4-hydrogen-xhigh', 'extra', undefined]);
+    expect([extra.selected.model, extra.selected.effort, extra.selected.effort_note]).toEqual(['gemini-4-neon-xhigh', 'extra', undefined]);
+    expect(extra.selected.skipped_models.map((s: Any) => s.model)).toEqual([
+      'Orchestrator (Carbon)', 'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon',
+    ]);
   });
 
   it('a pool with none of a tier entries makes the tier unavailable on that host, says so, and falls through to the next host', async () => {
@@ -312,8 +365,11 @@ describe('choosing the first entry that is in the pool', () => {
     const { buildPlan, unknownPool } = await lib();
     const st = status({ pool: unknownPool('agy models failed') });
     const p = buildPlan(CFG, 'high', { antigravity: { windows: st }, codex: { windows: status({ pool: unknownPool('the app-server did not answer') }) } }, 'windows', ['antigravity', 'codex'], 'read-only');
-    expect(by(p, 'antigravity').model).toBe('gemini-pro-orchestrator-neon'); // Carbon has no model id to start with, so it is skipped
-    expect(by(p, 'antigravity').skipped_models[0]).toEqual({ model: 'Orchestrator (Carbon)', reason: expect.stringMatching(/no model id is configured/) });
+    expect(by(p, 'antigravity').model).toBe('gemini-pro-orchestrator-g1-pro');
+    expect(by(p, 'antigravity').skipped_models).toBeUndefined();
+    const pExtra = buildPlan(CFG, 'high', { antigravity: { windows: st } }, 'windows', ['antigravity'], 'read-only', 'extra');
+    expect(by(pExtra, 'antigravity').model).toBe('gemini-4-neon-xhigh'); // Carbon has no model id to start with, so it is skipped when pool is unknown
+    expect(by(pExtra, 'antigravity').skipped_models[0]).toEqual({ model: 'Orchestrator (Carbon)', reason: expect.stringMatching(/no model id is configured/) });
     expect(by(p, 'codex').model).toBe('gpt-6.2-astra');
     expect(by(p, 'codex').skipped_models).toBeUndefined();
     expect(p.pools['antigravity/windows']).toMatchObject({ source: 'unknown', reason: 'agy models failed' });
@@ -351,12 +407,12 @@ describe('efforts with the pool', () => {
     const { agyPool, buildSpec } = await lib();
     const p = await plan('antigravity', 'high', status({ pool: agyPool(agyText(AGY_ALL)) }), 'high');
     const c = p.selected;
-    expect([c.model, c.effort]).toEqual(['gemini-pro-orchestrator-neon', 'fixed']);
+    expect([c.model, c.effort]).toEqual(['gemini-pro-orchestrator-g1-pro', 'fixed']);
     expect(c.effort_note).toMatch(/--effort "high" was not applied/);
-    expect(c.effort_note).toMatch(/Orchestrator \(Neon\)/);
+    expect(c.effort_note).toMatch(/Orchestrator \(Argon\)/);
     expect(c.effort_note).toMatch(/fixed configuration/);
     const args = buildSpec(CFG, 'antigravity', c, 'x', 'read-only', '/w', 'high').args as string[];
-    expect(args[args.indexOf('--model') + 1]).toBe('gemini-pro-orchestrator-neon');
+    expect(args[args.indexOf('--model') + 1]).toBe('gemini-pro-orchestrator-g1-pro');
     expect(args).not.toContain('--effort');
   });
 
@@ -400,9 +456,13 @@ describe('efforts with the pool', () => {
 // ---------------------------------------------------------------------------------------------------- quota groups
 
 describe('quota groups of the Orchestrator entries', () => {
-  const resolvedHigh = async (): Promise<Any[]> => {
-    const { tierEntries, resolveEntry } = await lib();
-    return (tierEntries(CFG.hosts.antigravity.tiers.high) as Any[]).map(e => resolveEntry(e, 'antigravity', 'high', undefined));
+  const resolvedHigh = async (effort?: string): Promise<Any[]> => {
+    const { resolveTier } = await lib();
+    return resolveTier(CFG.hosts.antigravity.tiers.high, 'antigravity', 'high', effort, CFG.hosts.antigravity).map((p: Any) => p.r);
+  };
+  const resolvedMed = async (): Promise<Any[]> => {
+    const { resolveTier } = await lib();
+    return resolveTier(CFG.hosts.antigravity.tiers.medium, 'antigravity', 'medium', undefined, CFG.hosts.antigravity).map((p: Any) => p.r);
   };
   const groups = CFG.hosts.antigravity.quotaGroups;
 
@@ -421,16 +481,20 @@ describe('quota groups of the Orchestrator entries', () => {
     const by1 = agyUsageByModel(usageJson({ gem5h: 0.9, gemWeekly: 0.8, argon: 0.05 }), await resolvedHigh(), pool, groups) as Record<string, Any>;
     expect(by1['gemini-pro-orchestrator-neon'].binding_pct).toBe(80);
     expect(by1['gemini-pro-orchestrator-g1-pro'].binding_pct).toBe(5);
-    expect(by1['gemini-4-hydrogen-high'].binding_pct).toBe(80);
+    expect(by1['claude-opus-5-5-high'].binding_pct).toBe(100);
+    expect(by1['gemini-4-argon-high'].binding_pct).toBe(5);
+    expect(by1['gemini-4-neon-high'].binding_pct).toBe(80);
     const by2 = agyUsageByModel(usageJson({ gem5h: 0.04, gemWeekly: 0.8, argon: 1 }), await resolvedHigh(), pool, groups) as Record<string, Any>;
     expect(by2['gemini-pro-orchestrator-neon'].binding_pct).toBe(4);
     expect(by2['gemini-pro-orchestrator-g1-pro'].binding_pct).toBe(4);
+    expect(by2['claude-opus-5-5-high'].binding_pct).toBe(100);
+    expect(by2['gemini-4-argon-high'].binding_pct).toBe(100);
   });
 
   it('gives the Carbon entry the usage of its slug from the account list and the groups of its entry', async () => {
     const { agyUsageByModel, agyPool } = await lib();
     const pool = agyPool(agyText(WITH_CARBON));
-    const r = await agyUsageByModel(usageJson({ gemWeekly: 0.7 }), await resolvedHigh(), pool, groups);
+    const r = await agyUsageByModel(usageJson({ gemWeekly: 0.7 }), await resolvedHigh('extra'), pool, groups);
     expect(r['fixture-orchestrator-carbon'].binding_pct).toBe(70);
   });
 
@@ -438,19 +502,42 @@ describe('quota groups of the Orchestrator entries', () => {
     const { agyUsageByModel, agyPool, buildPlan } = await lib();
     const pool = agyPool(agyText(NO_NEON_ORCHESTRATOR));
     const usage_by_model = agyUsageByModel(usageJson({ gem5h: 0.9, gemWeekly: 0.8, argon: 0.05 }), await resolvedHigh(), pool, groups);
-    const p = buildPlan(CFG, 'high', { antigravity: { windows: status({ pool, usage: usage_by_model['gemini-4-hydrogen-high'], usage_by_model }) } }, 'windows', ['antigravity'], 'read-only');
-    expect(p.selected.model).toBe('gemini-4-hydrogen-high');
-    expect(p.selected.binding_pct).toBe(80);
+    const p = buildPlan(CFG, 'high', { antigravity: { windows: status({ pool, usage: usage_by_model['claude-opus-5-5-high'], usage_by_model }) } }, 'windows', ['antigravity'], 'read-only');
+    expect(p.selected.model).toBe('claude-opus-5-5-high');
+    expect(p.selected.binding_pct).toBe(100);
     expect(p.selected.skipped_models).toEqual(expect.arrayContaining([{ model: 'gemini-pro-orchestrator-g1-pro', reason: 'headroom 5% below minimum 10%' }]));
   });
 
-  it('when Gemini Models is below the floor every Orchestrator and Hydrogen entry is out and the host is skipped for headroom', async () => {
+  it('when Gemini Models is below the floor, high falls back to Claude Opus 5.5 (3P bucket) and medium falls back to standalone Argon (Argon bucket)', async () => {
     const { agyUsageByModel, agyPool, buildPlan } = await lib();
     const pool = agyPool(agyText(AGY_ALL));
-    const usage_by_model = agyUsageByModel(usageJson({ gem5h: 0.04 }), await resolvedHigh(), pool, groups);
+    const highUsage = agyUsageByModel(usageJson({ gem5h: 0.04 }), await resolvedHigh(), pool, groups);
+    const ph = buildPlan(CFG, 'high', { antigravity: { windows: status({ pool, usage_by_model: highUsage }) } }, 'windows', ['antigravity'], 'read-only');
+    expect(ph.selected.model).toBe('claude-opus-5-5-high');
+    expect(ph.selected.skipped_models).toEqual([
+      { model: 'gemini-pro-orchestrator-g1-pro', reason: 'headroom 4% below minimum 10%' },
+      { model: 'gemini-pro-orchestrator-neon', reason: 'headroom 4% below minimum 10%' },
+      { model: 'gemini-4-neon-high', reason: 'headroom 4% below minimum 10%' },
+    ]);
+    const medUsage = agyUsageByModel(usageJson({ gem5h: 0.04 }), await resolvedMed(), pool, groups);
+    const pm = buildPlan(CFG, 'medium', { antigravity: { windows: status({ pool, usage_by_model: medUsage }) } }, 'windows', ['antigravity'], 'read-only');
+    expect(pm.selected.model).toBe('gemini-4-argon-medium');
+    expect(pm.selected.skipped_models).toEqual([
+      { model: 'gemini-pro-orchestrator-g1-pro', reason: 'headroom 4% below minimum 10%' },
+      { model: 'gemini-pro-orchestrator-neon', reason: 'headroom 4% below minimum 10%' },
+      { model: 'gemini-4-neon-medium', reason: 'headroom 4% below minimum 10%' },
+      { model: 'gemini-4-hydrogen-medium', reason: 'headroom 4% below minimum 10%' },
+      { model: 'gemini-3.8-flash-high', reason: 'headroom 4% below minimum 10%' },
+    ]);
+  });
+
+  it('when every bucket of the tier is below the floor, every entry is out and the host is skipped for headroom', async () => {
+    const { agyUsageByModel, agyPool, buildPlan } = await lib();
+    const pool = agyPool(agyText(AGY_ALL));
+    const usage_by_model = agyUsageByModel(usageJson({ gem5h: 0.04, argon: 0.05, thirdParty: 0.03 }), await resolvedHigh(), pool, groups);
     const p = buildPlan(CFG, 'high', { antigravity: { windows: status({ pool, usage_by_model }) } }, 'windows', ['antigravity'], 'read-only');
     expect(p.selected).toBeNull();
-    expect(p.skipped[0].reason).toMatch(/headroom 4% below minimum 10%/);
+    expect(p.skipped[0].reason).toMatch(/headroom 5% below minimum 10%/);
   });
 
   it('keeps the host-level prefix map for models without an entry-level list, and a list in the map', async () => {
@@ -580,11 +667,11 @@ describe('the config shape: ordered lists, and the old one model string per tier
 
   it('a user config with only efforts for a tier adds them to the tier as its user map; the shipped maps answer the names it lacks', async () => {
     const { mergeConfig, validateConfig, resolveEffort } = await lib();
-    const merged = mergeConfig(CFG, { hosts: { antigravity: { tiers: { medium: { efforts: { max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
+    const merged = mergeConfig(CFG, { hosts: { antigravity: { tiers: { simple: { efforts: { max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
     expect(validateConfig(merged)).toEqual([]);
-    expect(resolveEffort(merged, 'antigravity', 'medium', 'max').model).toBe('gemini-4-hydrogen-xhigh');
-    expect(resolveEffort(merged, 'antigravity', 'medium', 'extra').model).toBe('gemini-4-hydrogen-xhigh'); // the shipped effort is still there
-    expect(resolveEffort(merged, 'antigravity', 'medium', 'high').model).toBe('gemini-4-hydrogen-high');
+    expect(resolveEffort(merged, 'antigravity', 'simple', 'max').model).toBe('gemini-4-hydrogen-xhigh');
+    expect(resolveEffort(merged, 'antigravity', 'simple', 'extra').model).toBe('gemini-4-hydrogen-xhigh'); // the shipped effort is still there
+    expect(resolveEffort(merged, 'antigravity', 'simple', 'high').model).toBe('gemini-4-hydrogen-high');
   });
 
   it('a new-shape override replaces the list of a tier; entries may be plain model names', async () => {
@@ -641,8 +728,8 @@ describe('on the command line (replayed statuses, nothing is started)', () => {
     const r = run(['plan', '--tier', 'high', '--here', 'windows', '--statuses-file', await replay(NO_ORCHESTRATOR), '--host', 'antigravity', '--host', 'codex']);
     expect(r.status).toBe(0);
     const agy = by(r.json, 'antigravity');
-    expect([agy.model, agy.effort]).toEqual(['gemini-4-hydrogen-high', 'high']);
-    expect(agy.skipped_models.map((s: Any) => s.model)).toEqual(['Orchestrator (Carbon)', 'gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro']);
+    expect([agy.model, agy.effort]).toEqual(['claude-opus-5-5-high', 'high']);
+    expect(agy.skipped_models.map((s: Any) => s.model)).toEqual(['gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon']);
     expect(by(r.json, 'codex').model).toBe('gpt-6.2-astra');
     expect(r.json.pools).toEqual({ 'antigravity/windows': { source: 'cli', models: 21 }, 'codex/windows': { source: 'cli', models: 10 } });
   });
@@ -656,7 +743,7 @@ describe('on the command line (replayed statuses, nothing is started)', () => {
   it('status: the table shows the chosen model of each side and prints a line for every skipped model', async () => {
     const r = run(['status', '--tier', 'high', '--here', 'windows', '--statuses-file', await replay(NO_ORCHESTRATOR), '--host', 'antigravity']);
     expect(r.status).toBe(0);
-    expect(r.out).toContain('gemini-4-hydrogen-high');
+    expect(r.out).toContain('claude-opus-5-5-high');
     expect(r.out).toMatch(/skipped model[^\n]*antigravity[^\n]*gemini-pro-orchestrator-neon[^\n]*not in the account's model list/);
   });
 
@@ -664,8 +751,10 @@ describe('on the command line (replayed statuses, nothing is started)', () => {
     const r = run(['run', '--tier', 'high', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', await replay(), '--host', 'antigravity', '--cwd', tmp()]);
     expect(r.status).toBe(0);
     const t = r.json.would_try[0];
-    expect(t.args[t.args.indexOf('--model') + 1]).toBe('gemini-pro-orchestrator-neon');
-    expect(t.alternates.map((a: Any) => a.model)).toEqual(['gemini-pro-orchestrator-g1-pro', 'gemini-4-hydrogen-high']);
+    expect(t.args[t.args.indexOf('--model') + 1]).toBe('gemini-pro-orchestrator-g1-pro');
+    expect(t.alternates.map((a: Any) => a.model)).toEqual([
+      'gemini-pro-orchestrator-neon', 'claude-opus-5-5-high', 'gemini-4-argon-high', 'gemini-4-neon-high',
+    ]);
     expect(r.json.plan.pools['antigravity/windows']).toEqual({ source: 'cli', models: 23 });
   });
 
@@ -752,13 +841,13 @@ describe('a tier override that gives no model', () => {
     const { mergeConfig, tierEntries } = await lib();
     const cfg = mergeConfig(CFG, over('antigravity', 'high', { effort: 'low' }));
     const entries = tierEntries(cfg.hosts.antigravity.tiers.high) as Any[];
-    expect(entries.map(e => e.effort)).toEqual(['fixed', 'fixed', 'fixed', 'low']);
+    expect(entries.map(e => e.effort)).toEqual(['fixed', 'fixed', 'low', 'low', 'low']);
     const p = await plan(cfg, 'antigravity', 'high', undefined, await agyFull());
-    expect([p.selected.model, p.selected.effort]).toEqual(['gemini-pro-orchestrator-neon', 'fixed']);
+    expect([p.selected.model, p.selected.effort]).toEqual(['gemini-pro-orchestrator-g1-pro', 'fixed']);
     expect(p.selected.effort_note).toMatch(/effort "low" from your config was not applied/);
     expect(p.selected.effort_note).toMatch(/fixed configuration/);
     const h = await plan(cfg, 'antigravity', 'high', undefined, await agyFull(NO_ORCHESTRATOR));
-    expect([h.selected.model, h.selected.effort, h.selected.effort_note]).toEqual(['gemini-4-hydrogen-high', 'low', undefined]); // the entry that takes an effort got it
+    expect([h.selected.model, h.selected.effort, h.selected.effort_note]).toEqual(['claude-opus-5-5-high', 'low', undefined]); // the entry that takes an effort got it
   });
 
   it('a label alone applies to the first entry', async () => {
@@ -774,7 +863,9 @@ describe('a tier override that gives no model', () => {
     const p = await plan(cfg, 'antigravity', 'high', 'high', await agyFull());
     expect([p.selected.model, p.selected.effort, p.selected.label]).toEqual(['gemini-4-argon-high', 'high', 'x']);
     // the shipped list follows as alternates, without a second copy of the chosen model
-    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual(['gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro', 'gemini-4-hydrogen-high']);
+    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual([
+      'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon', 'claude-opus-5-5-high', 'gemini-4-neon-high',
+    ]);
   });
 
   it('the user map named choice is still subject to the headroom (the pool keeps it: it is a model the user named)', async () => {
@@ -784,21 +875,21 @@ describe('a tier override that gives no model', () => {
     const p = await plan(cfg, 'antigravity', 'high', 'high', await agyFull(noArgon));
     expect(p.selected.model).toBe('gemini-4-argon-high');
     expect(p.selected.pool_note).toBe("gemini-4-argon-high is not in the account's model list; kept because your config names it");
-    const usage_by_model = { 'gemini-4-argon-high': usageOf(4), 'gemini-pro-orchestrator-neon': usageOf(80) };
+    const usage_by_model = { 'gemini-4-argon-high': usageOf(4), 'gemini-pro-orchestrator-g1-pro': usageOf(80) };
     const q = await plan(cfg, 'antigravity', 'high', 'high', status({ pool: agyPool(agyText(AGY_ALL)), usage_by_model }));
-    expect(q.selected.model).toBe('gemini-pro-orchestrator-neon');
+    expect(q.selected.model).toBe('gemini-pro-orchestrator-g1-pro');
     expect(q.selected.skipped_models).toEqual(expect.arrayContaining([{ model: 'gemini-4-argon-high', reason: 'headroom 4% below minimum 10%' }]));
   });
 
   it('a name the user map does not have falls back to the shipped per-entry maps', async () => {
     const { mergeConfig } = await lib();
-    const cfg = mergeConfig(CFG, over('antigravity', 'medium', { efforts: { max: { label: 'M', model: 'gemini-4-hydrogen-xhigh' } } }));
-    const m = await plan(cfg, 'antigravity', 'medium', 'max', await agyFull());
+    const cfg = mergeConfig(CFG, over('antigravity', 'simple', { efforts: { max: { label: 'M', model: 'gemini-4-hydrogen-xhigh' } } }));
+    const m = await plan(cfg, 'antigravity', 'simple', 'max', await agyFull());
     expect(m.selected.model).toBe('gemini-4-hydrogen-xhigh');
-    const e = await plan(cfg, 'antigravity', 'medium', 'extra', await agyFull());
+    const e = await plan(cfg, 'antigravity', 'simple', 'extra', await agyFull());
     expect(e.selected.model).toBe('gemini-4-hydrogen-xhigh'); // the shipped Hydrogen map answers `extra`
-    const l = await plan(cfg, 'antigravity', 'medium', 'low', await agyFull());
-    expect(l.selected.model).toBe('gemini-4-hydrogen-low');
+    const l = await plan(cfg, 'antigravity', 'simple', 'low', await agyFull());
+    expect(l.selected.model).toBe('gemini-3.8-flash-medium'); // the shipped two-stage simple map answers `low`
   });
 
   it('a plain effort value in the user map applies to whichever model is chosen', async () => {
@@ -831,7 +922,7 @@ describe('the parsers do not turn noise into a pool', () => {
     const pool = agyPool('error\tnot logged in\n');
     expect(pool).not.toBeNull(); // the parser alone cannot tell; the check against the config can
     const p = buildPlan(CFG, 'medium', { antigravity: { windows: status({ pool }) } }, 'windows', ['antigravity'], 'read-only');
-    expect(p.selected.model).toBe('gemini-4-hydrogen-medium');
+    expect(p.selected.model).toBe('gemini-pro-orchestrator-g1-pro');
     expect(p.pools['antigravity/windows']).toMatchObject({ source: 'unknown' });
     expect(p.pools['antigravity/windows'].reason).toMatch(/none of the \d+ models this config names for antigravity \(1 read\), so it is not trusted/);
     expect(p.skipped).toEqual([]);
@@ -1128,13 +1219,13 @@ describe('duplicates after resolution, and a retried model with its own figures'
     const { buildPlan, agyPool } = await lib();
     const pool = agyPool(agyText(AGY_ALL));
     const usage_by_model = {
-      'gemini-pro-orchestrator-neon': { ...usageOf(80), five_hour_pct: 90, weekly_pct: 80 },
-      'gemini-pro-orchestrator-g1-pro': { ...usageOf(40), five_hour_pct: null, weekly_pct: 40, groups: ['Gemini Models', 'Gemini 4 Argon'], missing_groups: ['Gemini 4 Argon'] },
+      'gemini-pro-orchestrator-g1-pro': { ...usageOf(80), five_hour_pct: 90, weekly_pct: 80 },
+      'gemini-pro-orchestrator-neon': { ...usageOf(40), five_hour_pct: null, weekly_pct: 40, groups: ['Gemini Models', 'Gemini 4 Argon'], missing_groups: ['Gemini 4 Argon'] },
     };
     const p = buildPlan(CFG, 'high', { antigravity: { windows: status({ pool, usage_by_model }) } }, 'windows', ['antigravity'], 'read-only');
     const [alt] = p.selected.alternates;
     expect([p.selected.binding_pct, p.selected.quota_note]).toEqual([80, undefined]);
-    expect([alt.model, alt.binding_pct, alt.weekly_pct]).toEqual(['gemini-pro-orchestrator-g1-pro', 40, 40]);
+    expect([alt.model, alt.binding_pct, alt.weekly_pct]).toEqual(['gemini-pro-orchestrator-neon', 40, 40]);
     expect(alt.quota_note).toBe('headroom judged on Gemini Models only: Gemini 4 Argon was not in the /usage readout');
   });
 
@@ -1161,10 +1252,12 @@ describe('third review: duplicates by slug, fixed on a flag host, small holes', 
     const cfg = mergeConfig(CFG, over('antigravity', 'high', { efforts: { high: { model: 'fixture-orchestrator-carbon' } } }));
     const p = await plan(cfg, 'antigravity', 'high', 'high', status({ pool: agyPool(agyText(WITH_CARBON)) }));
     expect(p.selected.model).toBe('fixture-orchestrator-carbon');
-    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual(['gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro', 'gemini-4-hydrogen-high']);
-    const both = mergeConfig(CFG, over('antigravity', 'high', { models: [{ displayName: 'Orchestrator (Carbon)' }, { model: 'fixture-orchestrator-carbon' }, { model: 'gemini-4-hydrogen-high' }] }));
+    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual([
+      'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon', 'claude-opus-5-5-high', 'gemini-4-argon-high', 'gemini-4-neon-high',
+    ]);
+    const both = mergeConfig(CFG, over('antigravity', 'high', { models: [{ displayName: 'Orchestrator (Carbon)' }, { model: 'fixture-orchestrator-carbon' }, { model: 'gemini-4-neon-high' }] }));
     const q = await plan(both, 'antigravity', 'high', undefined, status({ pool: agyPool(agyText(WITH_CARBON)) }));
-    expect([q.selected.model, q.selected.alternates.map((a: Any) => a.model)]).toEqual(['fixture-orchestrator-carbon', ['gemini-4-hydrogen-high']]);
+    expect([q.selected.model, q.selected.alternates.map((a: Any) => a.model)]).toEqual(['fixture-orchestrator-carbon', ['gemini-4-neon-high']]);
   });
 
   it('2. "fixed" as an effort value is a config error on a host whose effort is a flag, naming the key', async () => {
@@ -1243,7 +1336,7 @@ describe('third review: what the plan and the notes say', () => {
     const h = cfg.hosts.antigravity;
     const by = agyUsageByModel(usageText, await resolvedHigh(cfg), pool, h.quotaGroups, h.userQuotaGroups);
     expect(by['gemini-pro-orchestrator-g1-pro'].replaced_groups).toEqual(['Gemini Models', 'Gemini 4 Argon']);
-    expect(by['gemini-4-hydrogen-high'].replaced_groups).toBeUndefined();
+    expect(by['gemini-4-neon-high'].replaced_groups).toBeUndefined();
     const p = buildPlan(cfg, 'high', { antigravity: { windows: status({ pool, usage_by_model: by }) } }, 'windows', ['antigravity'], 'read-only');
     expect(p.selected.model).toBe('gemini-pro-orchestrator-g1-pro');
     expect(p.selected.quota_note).toBe('your quotaGroups rule replaces this model\'s groups (Gemini Models and Gemini 4 Argon); headroom is read from My Group only, so their quota is not checked');
@@ -1383,7 +1476,15 @@ describe('the documents state the pool, the tiers and the sources', () => {
 
   it('hosts.md has the tier tables of both hosts with the Orchestrator and Codex entries, each dated and sourced', () => {
     const t = doc('references/hosts.md');
-    for (const w of ['gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro', 'Orchestrator (Carbon)', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.2-astra', 'fixed configuration', '`ultra`']) expect(t, w).toContain(w);
+    for (const w of ['gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro', 'Orchestrator (Carbon)', 'claude-opus-5-5-high', 'gemini-4-argon-high', 'gemini-4-neon-high', 'gemini-4-neon-xhigh', 'gemini-4-hydrogen-low', '2026-11-22', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.2-astra', 'fixed configuration', '`ultra`']) expect(t, w).toContain(w);
+  });
+
+  it('validateEfforts accepts displayName, fixedEffort and quotaGroups on effortInModel hosts and refuses them on flag hosts', async () => {
+    const { mergeConfig, validateConfig } = await lib();
+    expect(validateConfig(mergeConfig(CFG, { hosts: { antigravity: { tiers: { high: { efforts: { extra: { displayName: 'Orchestrator (Carbon)', fixedEffort: true, quotaGroups: ['Gemini Models'] } } } } } } }))).toEqual([]);
+    const flagMsg = validateConfig(mergeConfig(CFG, { hosts: { codex: { tiers: { high: { efforts: { extra: { displayName: 'X', fixedEffort: true } } } } } } })).join('\n');
+    expect(flagMsg).toMatch(/codex\/high: efforts\.extra: displayName is only for a host/);
+    expect(flagMsg).toMatch(/codex\/high: efforts\.extra: "fixed" is only for a host/);
   });
 
   it('hosts.md has a "Coming from 1.1.2" section: what gives the same plan, the two changes, and the old and new first models', () => {

@@ -248,9 +248,21 @@ export function parseAgyModels(stdout) {
   return rows.length ? rows : null;
 }
 
+/** The Antigravity subscription tier implied by `agy models` rows: 'ultra' | 'pro' | 'enterprise' | 'free' | null. */
+export function agyPlanOf(rows) {
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const slugs = rows.map(r => r.slug);
+  const names = rows.map(r => String(r.name ?? '').trim().toLowerCase());
+  if (slugs.includes('gemini-pro-orchestrator') || slugs.some(s => /^gemini-3\.(?:7|6|1)-/.test(s))) return 'enterprise';
+  if (slugs.some(s => s.startsWith('gemini-4-carbon')) || names.includes('orchestrator (carbon)')) return 'ultra';
+  if (slugs.some(s => s.startsWith('gemini-4-') || s.startsWith('gemini-pro-orchestrator-'))) return 'pro';
+  if (slugs.some(s => s.startsWith('gemini-3.8-flash'))) return 'free';
+  return null;
+}
+
 export function agyPool(stdout) {
   const rows = parseAgyModels(stdout);
-  return rows ? { source: 'cli', models: rows.map(r => r.slug), names: Object.fromEntries(rows.map(r => [r.slug, r.name])), efforts: {} } : null;
+  return rows ? { source: 'cli', models: rows.map(r => r.slug), names: Object.fromEntries(rows.map(r => [r.slug, r.name])), efforts: {}, plan: agyPlanOf(rows) } : null;
 }
 
 /** The app-server `model/list` answer (the whole response or its result). null for an error, an empty list or a list with a next page: a partial list would drop real models. */
@@ -538,9 +550,14 @@ export function validateEfforts(where, efforts, effortInModel = false) {
       if (!word(e)) errs.push(`${at}: needs an effort value (lowercase letters)`);
       else if (effortInModel) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
     } else if (isPlain(e)) {
-      if (e.model === undefined && e.effort === undefined) errs.push(`${at}: needs a model or an effort`);
+      const hasDisplay = effortInModel && nonEmpty(e.displayName);
+      if (e.model === undefined && e.effort === undefined && !hasDisplay) errs.push(`${at}: needs a model or an effort`);
       if (e.model !== undefined && (typeof e.model !== 'string' || !e.model.trim())) errs.push(`${at}: model must be a non-empty string`);
-      else if (effortInModel && e.model === undefined) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
+      else if (effortInModel && e.model === undefined && !hasDisplay) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
+      if (e.displayName !== undefined && !effortInModel) errs.push(`${at}: displayName is only for a host whose effort is part of the model name`);
+      if (e.fixedEffort !== undefined && typeof e.fixedEffort !== 'boolean') errs.push(`${at}: fixedEffort must be true or false`);
+      else if (e.fixedEffort === true && !effortInModel) errs.push(`${at}: ${FIXED_MESSAGE}`);
+      if (e.quotaGroups !== undefined && !(Array.isArray(e.quotaGroups) && e.quotaGroups.length > 0 && e.quotaGroups.every(nonEmpty))) errs.push(`${at}: quotaGroups must be a list of group names`);
       if (e.effort !== undefined && !word(e.effort)) errs.push(`${at}: effort must be lowercase letters`);
       if (e.label !== undefined && typeof e.label !== 'string') errs.push(`${at}: label must be a string`);
     } else errs.push(`${at}: must be an effort value or an object with a model and/or an effort`);
@@ -571,7 +588,7 @@ export function resolveEntry(entry, host, tier, effort, selector) {
   }
   if (!effort) return base;
   const u = selector?.[effort];
-  const userModel = isPlain(u) && nonEmpty(u.model);
+  const userModel = isPlain(u) && (nonEmpty(u.model) || nonEmpty(u.displayName));
   const e = u !== undefined && !userModel ? u : entry.efforts?.[effort];
   if (typeof e === 'string') return { ...base, effort: e };
   if (isPlain(e)) return { ...base, model: e.model ?? entry.model, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label };
@@ -600,8 +617,10 @@ const fixedModelsFor = hostCfg => new Set([...shippedFixedModels(), ...Object.va
 /**
  * Every entry of a tier resolved for the asked effort, as { r: resolved, defaultEffort }, in the order they are tried. When the user's map
  * for that effort names a model, that model comes first (subject to the pool and headroom like any entry, also when the shipped head of the
- * tier is an Orchestrator). It is a model the user named, so the pool keeps it (`user`); a model that the shipped config gives a fixed
- * configuration stays fixed there. Two entries that resolve to the same model are one: the first stays.
+ * tier is an Orchestrator). When a fixed-effort entry defines a per-effort stage override (`e.efforts[effort]`) and the user's map does not
+ * answer that effort, that override is promoted ahead of the fixed entry with the base entry kept behind it. It is a model the user named,
+ * so the pool keeps it (`user`); a model that the shipped config gives a fixed configuration stays fixed there. Two entries that resolve to
+ * the same model (or display name) are one: the first stays.
  */
 export function resolveTier(tier, host, tierName, effort, hostCfg) {
   const selector = tierSelector(tier);
@@ -610,20 +629,45 @@ export function resolveTier(tier, host, tierName, effort, hostCfg) {
   const asFixed = r => (fixedSet && r.model && fixedSet.has(r.model) && !r.fixed
     ? { ...r, effort: 'fixed', fixed: true, note: effort ? `${host}: --effort ${JSON.stringify(effort)} was not applied: ${r.label} has a fixed configuration, so the ${tierName} tier keeps ${r.model}` : null }
     : r);
-  const all = tierEntries(tier).map(e => ({ r: asFixed({ ...resolveEntry(e, host, tierName, effort, selector), ...(userTier ? { user: true } : {}) }), defaultEffort: e.effort }));
+  const promoted = [];
+  const all = tierEntries(tier).map(e => {
+    const handledFixed = Boolean(effort && e.fixedEffort && selector?.[effort] === undefined && isPlain(e.efforts?.[effort]));
+    if (handledFixed) {
+      const ov = e.efforts[effort];
+      const ovFixed = ov.fixedEffort === true || Boolean(fixedSet && ov.model && fixedSet.has(ov.model));
+      const ovModel = ov.model ?? (ov.displayName ? undefined : e.model);
+      promoted.push({
+        r: {
+          ...(ovModel ? { model: ovModel } : {}),
+          ...(ov.displayName ? { displayName: ov.displayName } : {}),
+          effort: ovFixed ? 'fixed' : (ov.effort ?? effort),
+          label: ov.label ?? ovModel ?? ov.displayName ?? e.label,
+          ...(ov.quotaGroups ? { quotaGroups: ov.quotaGroups } : {}),
+          ...(ovFixed ? { fixed: true } : {}),
+          ...(userTier ? { user: true } : {}),
+          note: null,
+        },
+        defaultEffort: ovFixed ? 'fixed' : (ov.effort ?? effort),
+      });
+    }
+    return { r: asFixed({ ...resolveEntry(e, host, tierName, handledFixed ? undefined : effort, selector), ...(userTier ? { user: true } : {}) }), defaultEffort: e.effort };
+  });
+  const combined = [...promoted, ...all];
   const u = effort ? selector?.[effort] : undefined;
-  if (isPlain(u) && nonEmpty(u.model)) {
-    const label = u.label ?? u.model;
-    const head = fixedModelsFor(hostCfg).has(u.model)
-      ? { r: { model: u.model, effort: 'fixed', label, fixed: true, user: true, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${label} has a fixed configuration, so the ${tierName} tier keeps ${u.model}` }, defaultEffort: 'fixed' }
+  if (isPlain(u) && (nonEmpty(u.model) || nonEmpty(u.displayName))) {
+    const label = u.label ?? u.model ?? u.displayName;
+    const isUFixed = u.fixedEffort === true || Boolean(u.model && fixedModelsFor(hostCfg).has(u.model));
+    const head = isUFixed
+      ? { r: { ...(u.model ? { model: u.model } : {}), ...(u.displayName ? { displayName: u.displayName } : {}), effort: 'fixed', label, ...(u.quotaGroups ? { quotaGroups: u.quotaGroups } : {}), fixed: true, user: true, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${label} has a fixed configuration, so the ${tierName} tier keeps ${u.model ?? u.displayName}` }, defaultEffort: 'fixed' }
       : { r: { model: u.model, effort: u.effort ?? effort, label, user: true, note: null }, defaultEffort: 'medium' };
-    all.unshift(head);
+    combined.unshift(head);
   }
   const seen = new Set();
-  return all.filter(({ r }) => {
-    if (!r.model) return true;
-    if (seen.has(r.model)) return false;
-    seen.add(r.model);
+  return combined.filter(({ r }) => {
+    const key = r.model ?? (r.displayName ? `display:${r.displayName.toLowerCase()}` : null);
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 }
@@ -634,7 +678,7 @@ export function resolveEffort(cfg, host, tier, effort, index = 0) {
   return (all[index] ?? all[0]).r;
 }
 
-/** Every effort name some host in scope offers for `tier`: the default effort and the keys of the `efforts` maps (of each entry, and the tier's own); a fixed-configuration entry offers none. */
+/** Every effort name some host in scope offers for `tier`: the default effort and the keys of the `efforts` maps (of each entry, and the tier's own); a fixed-configuration entry offers its `efforts` keys but not `"fixed"`. */
 export function knownEfforts(cfg, tier, only) {
   const names = new Set();
   for (const host of cfg.priority) {
@@ -642,9 +686,9 @@ export function knownEfforts(cfg, tier, only) {
     const tt = cfg.hosts[host]?.tiers?.[tier];
     for (const n of Object.keys(tierSelector(tt) ?? {})) names.add(n);
     for (const e of tierEntries(tt)) {
+      for (const n of Object.keys(e.efforts ?? {})) names.add(n);
       if (e.fixedEffort) continue;
       names.add(e.effort);
-      for (const n of Object.keys(e.efforts ?? {})) names.add(n);
     }
   }
   return [...names].sort();
@@ -667,9 +711,9 @@ export function configuredModels(cfg, host) {
     const tt = cfg.hosts[host].tiers[tier];
     for (const t of tierEntries(tt)) {
       add(t.model ?? t.displayName);
-      for (const e of Object.values(t.efforts ?? {})) add(isPlain(e) ? e.model : null);
+      for (const e of Object.values(t.efforts ?? {})) add(isPlain(e) ? (e.model ?? e.displayName) : null);
     }
-    for (const e of Object.values(tierSelector(tt) ?? {})) add(isPlain(e) ? e.model : null);
+    for (const e of Object.values(tierSelector(tt) ?? {})) add(isPlain(e) ? (e.model ?? e.displayName) : null);
   }
   return out;
 }
