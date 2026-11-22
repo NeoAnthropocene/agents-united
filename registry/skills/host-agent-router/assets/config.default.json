@@ -17,9 +17,29 @@
     "cline": {
       "provider": "cline-pass",
       "tiers": {
-        "simple": { "label": "DeepSeek V4.1 Flash 1017", "model": "cline-pass/deepseek-v4.1-flash-1017", "effort": "medium" },
-        "medium": { "label": "GLM-5.3", "model": "cline-pass/glm-5.3", "effort": "medium" },
-        "high": { "label": "Kimi K3.1 Pro", "model": "cline-pass/kimi-k3.1-pro", "effort": "medium" }
+        "simple": {
+          "models": [
+            { "label": "DeepSeek V4.1 Flash 1017", "model": "cline-pass/deepseek-v4.1-flash-1017", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "MiniMax-M3.1-Flash", "model": "cline-pass/minimax-m3.1-flash", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "GLM-5.3-Flash", "model": "cline-pass/glm-5.3-flash", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } }
+          ]
+        },
+        "medium": {
+          "models": [
+            { "label": "GLM-5.3", "model": "cline-pass/glm-5.3", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "Qwen 3.8 Max", "model": "cline-pass/qwen3.8-max", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "DeepSeek V4 Pro", "model": "cline-pass/deepseek-v4-pro", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "MiniMax-M3.1-Flash", "model": "cline-pass/minimax-m3.1-flash", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } }
+          ]
+        },
+        "high": {
+          "models": [
+            { "label": "Kimi K3.1 Pro", "model": "cline-pass/kimi-k3.1-pro", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "DeepSeek V4 Pro", "model": "cline-pass/deepseek-v4-pro", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "Qwen 3.8 Max", "model": "cline-pass/qwen3.8-max", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "GLM-5.3", "model": "cline-pass/glm-5.3", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } }
+          ]
+        }
       }
     },
     "antigravity": {

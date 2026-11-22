@@ -226,9 +226,31 @@ describe('the default tiers, as ordered lists', () => {
     });
   });
 
-  it('Claude and Cline keep one model per tier, as before', async () => {
+  it('Cline: Flash fallback chain on simple, GLM-5.3 -> Qwen 3.8 Max -> DeepSeek V4 Pro -> MiniMax-M3.1-Flash on medium, Kimi K3.1 Pro -> DeepSeek V4 Pro -> Qwen 3.8 Max -> GLM-5.3 on high', async () => {
+    expect(await table('cline')).toEqual({
+      simple: [
+        ['cline-pass/deepseek-v4.1-flash-1017', undefined, 'medium'],
+        ['cline-pass/minimax-m3.1-flash', undefined, 'medium'],
+        ['cline-pass/glm-5.3-flash', undefined, 'medium'],
+      ],
+      medium: [
+        ['cline-pass/glm-5.3', undefined, 'medium'],
+        ['cline-pass/qwen3.8-max', undefined, 'medium'],
+        ['cline-pass/deepseek-v4-pro', undefined, 'medium'],
+        ['cline-pass/minimax-m3.1-flash', undefined, 'medium'],
+      ],
+      high: [
+        ['cline-pass/kimi-k3.1-pro', undefined, 'medium'],
+        ['cline-pass/deepseek-v4-pro', undefined, 'medium'],
+        ['cline-pass/qwen3.8-max', undefined, 'medium'],
+        ['cline-pass/glm-5.3', undefined, 'medium'],
+      ],
+    });
+  });
+
+  it('Claude keeps one model per tier, as before', async () => {
     const { tierEntries } = await lib();
-    for (const host of ['claude', 'cline']) for (const t of ['simple', 'medium', 'high']) expect(tierEntries(CFG.hosts[host].tiers[t]), `${host}/${t}`).toHaveLength(1);
+    for (const t of ['simple', 'medium', 'high']) expect(tierEntries(CFG.hosts.claude.tiers[t]), `claude/${t}`).toHaveLength(1);
   });
 
   it('no entry names a model that is not in the research facts of 2026-11-22, and the Carbon entry carries no invented slug', async () => {
@@ -271,6 +293,10 @@ describe('the default tiers, as ordered lists', () => {
   it('lists every configured model once for `models`, display-name entries by their name', async () => {
     const { configuredModels } = await lib();
     expect(configuredModels(CFG, 'codex')).toEqual(['gpt-6.1-terra', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-6-astra']);
+    expect(configuredModels(CFG, 'cline')).toEqual([
+      'cline-pass/deepseek-v4.1-flash-1017', 'cline-pass/minimax-m3.1-flash', 'cline-pass/glm-5.3-flash',
+      'cline-pass/glm-5.3', 'cline-pass/qwen3.8-max', 'cline-pass/deepseek-v4-pro', 'cline-pass/kimi-k3.1-pro',
+    ]);
     const agy = configuredModels(CFG, 'antigravity') as string[];
     expect(agy).toContain('Orchestrator (Carbon)');
     expect(agy).toContain('gemini-pro-orchestrator-g1-pro');
@@ -402,12 +428,15 @@ describe('choosing the first entry that is in the pool', () => {
     expect(p.pools).toEqual({ 'antigravity/windows': { source: 'cli', models: 23 } });
   });
 
-  it('Claude and Cline are untouched: one model per tier, no pool read', async () => {
+  it('Claude keeps one model per tier and Cline keeps its fallback list without probing an account pool', async () => {
     const { buildPlan } = await lib();
     const p = buildPlan(CFG, 'high', { claude: { windows: status() }, cline: { windows: status() } }, 'windows', undefined, 'read-only');
     expect(by(p, 'claude').model).toBe('claude-opus-5-5');
-    expect(by(p, 'cline').model).toBe('cline-pass/kimi-k3.1-pro');
     expect(by(p, 'claude').alternates).toBeUndefined();
+    expect(by(p, 'cline').model).toBe('cline-pass/kimi-k3.1-pro');
+    expect(by(p, 'cline').alternates.map((a: Any) => a.model)).toEqual([
+      'cline-pass/deepseek-v4-pro', 'cline-pass/qwen3.8-max', 'cline-pass/glm-5.3',
+    ]);
     expect(p.pools).toBeUndefined();
   });
 });
@@ -450,6 +479,13 @@ describe('efforts with the pool', () => {
     expect(resolveEffort(CFG, 'codex', 'high', 'extra')).toMatchObject({ model: 'gpt-6.2-astra', effort: 'xhigh', note: null });
     expect(knownEfforts(CFG, 'high', ['codex'])).toEqual(['extra', 'high', 'low', 'max', 'medium', 'xhigh']);
     expect(checkEffort(CFG, 'high', 'ultra', ['codex'])).toMatch(/--effort "ultra" is not offered by the router/);
+  });
+
+  it('Cline offers low, medium, high, extra (as xhigh) and xhigh across its tiers', async () => {
+    const { resolveEffort, knownEfforts } = await lib();
+    expect(resolveEffort(CFG, 'cline', 'medium', 'high')).toMatchObject({ model: 'cline-pass/glm-5.3', effort: 'high', note: null });
+    expect(resolveEffort(CFG, 'cline', 'high', 'extra')).toMatchObject({ model: 'cline-pass/kimi-k3.1-pro', effort: 'xhigh', note: null });
+    expect(knownEfforts(CFG, 'high', ['cline'])).toEqual(['extra', 'high', 'low', 'medium', 'xhigh']);
   });
 
   it('an effort the pool says the model does not offer is not applied: the entry keeps its own, with a note', async () => {

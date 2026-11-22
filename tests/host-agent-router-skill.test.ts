@@ -1583,12 +1583,13 @@ describe('an effort choice inside a tier', () => {
 
   it('puts the effort-adjusted model and a note into the plan, per candidate', async () => {
     const { buildPlan } = await lib2();
-    const st = { cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } };
+    const st = { cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) }, claude: { windows: status({ binding: 50 }) } };
     const plan = buildPlan(CFGE, 'simple', st, 'windows', undefined, 'read-only', 'extra');
     const by = Object.fromEntries(plan.candidates.map(c => [c.host, c]));
     expect([by.antigravity!.model, by.antigravity!.effort, by.antigravity!.effort_note ?? null]).toEqual(['gemini-4-hydrogen-xhigh', 'extra', null]);
-    expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'medium']);
-    expect(by.cline!.effort_note).toMatch(/extra/);
+    expect([by.cline!.model, by.cline!.effort, by.cline!.effort_note ?? null]).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'xhigh', null]);
+    expect([by.claude!.model, by.claude!.effort]).toEqual(['claude-haiku-5-5', 'medium']);
+    expect(by.claude!.effort_note).toMatch(/extra/);
     expect(plan.selected?.host).toBe('cline'); // the effort never changes the order
   });
 
@@ -1656,24 +1657,25 @@ describe('an effort choice inside a tier', () => {
     };
     const replay = (): string => {
       const f = path.join(tmp(), 'statuses.json');
-      fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } }));
+      fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) }, claude: { windows: status({ binding: 50 }) } }));
       return f;
     };
 
-    it('plan --effort extra: Antigravity uses the xhigh slug, Cline keeps its default and says so', () => {
+    it('plan --effort extra: Antigravity uses the xhigh slug, Cline uses xhigh, Claude keeps its default and says so', () => {
       const r = run(['plan', '--tier', 'simple', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
       expect(r.status).toBe(0);
       const by = Object.fromEntries((r.json as unknown as PlanE).candidates.map(c => [c.host, c]));
       expect([by.antigravity!.model, by.antigravity!.effort]).toEqual(['gemini-4-hydrogen-xhigh', 'extra']);
-      expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'medium']);
-      expect(by.cline!.effort_note).toMatch(/extra/);
+      expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'xhigh']);
+      expect([by.claude!.model, by.claude!.effort]).toEqual(['claude-haiku-5-5', 'medium']);
+      expect(by.claude!.effort_note).toMatch(/extra/);
     });
 
     it('status --effort extra: the table shows the adjusted model and prints the note', () => {
       const r = run(['status', '--tier', 'simple', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
       expect(r.status).toBe(0);
       expect(r.out).toContain('gemini-4-hydrogen-xhigh');
-      expect(r.out).toMatch(/note[^\n]*cline[^\n]*extra/);
+      expect(r.out).toMatch(/note[^\n]*claude[^\n]*extra/);
     });
 
     it('run --dry-run --effort high passes the adjusted slug and reports the effort asked for', () => {

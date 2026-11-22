@@ -846,10 +846,10 @@ function orderSides(usable, here, tiePct) {
 }
 
 /** What `pools` says of one side: the source and how many models, or that the list is unknown. null when there is nothing worth saying (a host with one model per tier and no pool). */
-function poolInfo(pool, entryCount) {
+function poolInfo(pool, entryCount, hasAccountPool = true) {
   if (poolKnown(pool)) return { source: pool.source, models: pool.models.length };
   if (pool) return { source: 'unknown', ...(pool.reason ? { reason: pool.reason } : {}) };
-  return entryCount > 1 ? { source: 'unknown' } : null;
+  return hasAccountPool && entryCount > 1 ? { source: 'unknown' } : null;
 }
 
 /**
@@ -947,7 +947,7 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
       else if (st.logged_in === false) skipped.push({ host, side, reason: 'not logged in' });
       else {
         const pool = hostCfg.pool ? configPool(hostCfg.pool) : trustedPool(st.pool ?? null, cfg, host);
-        const info = poolInfo(pool, pairs.length);
+        const info = poolInfo(pool, pairs.length, host === 'antigravity' || host === 'codex');
         if (info) pools[`${host}/${side}`] = info;
         const pick = pickModels({ host, tier, pairs, pool, st, min, flagEffort: !hostCfg.effortInModel, asked: effort });
         if (!pick.chosen) skipped.push({ host, side, reason: pick.reason });
@@ -1072,8 +1072,9 @@ export function antigravityAllowRules(allow, { platform = process.platform, reso
   return { rules: all, full: [...new Set(full)], fullFor, notes };
 }
 
-/** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. `t` is { model, effort }. */
-export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
+/** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. `t` is { model, effort } or a tier entry. */
+export function buildSpec(cfg, host, t0, prompt, access, cwd, tier, extra = {}) {
+  const t = Array.isArray(t0?.models) ? t0.models[0] : t0;
   if (t.effort === 'fixed' && !cfg.hosts[host]?.effortInModel) throw new Error(`${host}: the effort "fixed" is only for a host whose effort is part of the model name; it must never reach a command line`);
   const attached = skillsBlock(extra.skills);
   const full = preamble(access, tier) + attached + prompt;
@@ -1735,6 +1736,12 @@ export async function modelsLocal(payload) {
         const r = await runCmd([...cmd, 'models'], { timeout: 60_000, cwd: os.homedir() });
         const rows = r.rc === 0 ? parseAgyModels(r.stdout) : null;
         if (rows) known = new Set(rows.flatMap(x => [x.slug, x.name]));
+      }
+    } else if (host === 'cline') {
+      const cmd = resolveCmd('cline');
+      if (cmd) {
+        const ids = clineCatalogIds(cmd);
+        if (ids.length) known = new Set(ids);
       }
     }
     const note = known ? null : resolveCmd(host) ? 'unverified (host has no offline model list)' : 'not checked (host not installed on this side)';
