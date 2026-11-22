@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import { execFileSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 import { prepareFactoryNative } from './helpers/factory-native.js';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 
 /** Real npm packaging/install, entirely offline and with lifecycle scripts disabled. */
 describe('factory native binding from an installed npm package', () => {
@@ -17,7 +17,7 @@ describe('factory native binding from an installed npm package', () => {
     const npmCli = path.join(path.dirname(process.env.npm_execpath ?? ''), 'npm-cli.js');
     if (!await fs.pathExists(npmCli)) throw new Error('Package verification requires the npm CLI that launched the test.');
     const packOutput = execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], { cwd: process.cwd(), encoding: 'utf8' });
-    const packed = JSON.parse(packOutput) as Array<{ filename: string }>;
+    const packed = parseNpmPackJson(packOutput);
     const archive = path.join(root, packed[0]!.filename);
     const runtime = path.join(root, 'runtime');
     installPackedPackage({ npmCli, prefix: runtime, tarball: archive });

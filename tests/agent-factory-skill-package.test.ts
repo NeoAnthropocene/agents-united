@@ -10,7 +10,7 @@ import { candidateDigestOf, digest, inventoryOf, prepareSkillTask } from './help
 import type { Json, SkillTaskFixture } from './helpers/skill-task.js';
 import { prepareEvaluationJob, reviewPin } from './helpers/factory-evaluation.js';
 import { COORDINATOR_SUPPORT, cleanFactoryEnv } from './helpers/factory-coordinator.js';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 
 /**
  * P8b stage 1, from the actual offline npm package: the installed checker, the installed `draft.mjs` as the producer
@@ -32,9 +32,9 @@ describe('one Skill draft, checked return and review records from the actual off
     root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'au-skill-pack-')));
     const npmCli = path.join(path.dirname(process.env.npm_execpath ?? ''), 'npm-cli.js');
     if (!await fs.pathExists(npmCli)) throw new Error('Use npm to supply its offline packaging CLI.');
-    const packed = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], {
+    const packed = parseNpmPackJson(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], {
       cwd: process.cwd(), encoding: 'utf8',
-    })) as Array<{ filename: string }>;
+    }));
     const runtime = path.join(root, 'runtime');
     installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(root, packed[0]!.filename) });
     packageRoot = path.join(runtime, 'node_modules/agents-united');
