@@ -36,6 +36,7 @@ Each item names its page and was fetched 2026-11-21.
 - `artifacts.md`, "Start an artifact from a template": "To start from a template, name it or describe what you want ... Claude picks the matching template, fills it from your request and from what the session already has, and gives you the link."
 - `artifacts.md`, "Availability": "Artifacts are available on Pro, Max, Ultra, Team, and Enterprise plans and require a session signed in with `/login`." The session needs Claude Code v2.1.281 or later and the Anthropic API. The tool is "Off by default in the Agent SDK, the GitHub Action, and MCP-server contexts, when you run Claude Code with `-p` from your own terminal or scripts".
 - `sub-agents.md`, "Control subagent capabilities": "A background subagent keeps every MCP tool, and `SubagentHandback` if it reports through that tool. It also keeps `Read`, ... `Skill`, ... `SendMessage`, `Artifact`, ..." The first filter removes `AskUserQuestion` from every subagent, even when it is listed in `tools`.
+- `artifacts.md`, "Start an artifact from a template": "To edit the artifact yourself, open the link, which goes to that template's editor on claude.ai." And `commands.md`, `/design`: "You edit the artboards in a desktop browser, and your edits save automatically." Both were fetched 2026-11-21.
 - `artifacts.md`, "Share an artifact": "A new artifact is visible only to you. To share it, open the artifact in your browser and use the **Share** control in the page header."
 - `artifacts.md`, "When Claude Code asks before publishing": "A new artifact that Claude publishes in response to a prompt you type goes through without a permission prompt or classifier review." The page lists the cases that ask (plan mode, declared runtime capabilities, a publicly shared artifact, a turn started by a scheduled task, a file Claude cannot read without approval). It says nothing about a publish made by a subagent.
 - `artifacts.md`, "Disable artifacts": the user's own switches are `"enableArtifact": false` in the settings and `Artifact` in `permissions.deny`.
@@ -77,7 +78,7 @@ Each item names its page and was fetched 2026-11-21.
 
 ## Consequences
 
-- Positive: the user reviews and edits prototypes, decks and one-pagers in a browser, on a canvas, which files in the project do not offer.
+- Positive: the user reviews prototypes, decks and one-pagers in a browser, and edits a design canvas or a deck in its template's editor there, which files in the project do not offer.
 - Limits:
   - Project material leaves the project for Anthropic-hosted pages.
   - There are 27 holders (native files, built from 22 cores) and no deterministic stop of ours, so the safety rests on the floor line, the lead's question, the request entry and the live check.
