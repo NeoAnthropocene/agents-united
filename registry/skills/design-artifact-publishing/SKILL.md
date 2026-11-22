@@ -26,7 +26,7 @@ Output: one private artifact, its link, a read-back and a report. **Evidence to 
 
 ## Step-by-Step Runbook
 1. **Check the ask.** A new page needs the user's go-ahead for that page (in your brief, or the lead's answer to your request); updating an approved page needs no new go-ahead. No go-ahead: write the files and ask for it. Keep it private and never change sharing.
-2. **Load the skills that hold the rules before you build**: `ad-creative-design` (sizes, safe zones), `design-system-tokens` (list form for tokens), `brand-identity` (brand rules).
+2. **Load the skills that hold the rules before you build**: `ad-creative-design` (sizes, safe zones), `design-system-tokens` (list form for tokens), `brand-identity` (brand rules). A canvas built without them broke the caption zone.
 3. **Follow the type's own instructions** (`Artifact` quickstart and reference files), not from memory: the format changes with the host. Attach no other design system than the one supplied.
 4. **Build everything locally, then publish once.** Write and check all files against the rules, then publish in one call.
 5. **Keep to the source.** Copy word for word; only token colours; figures and claims go to Defne as claims to review; what you infer is written as inferred, never as the brand's. A required timestamp is the date given at `T00:00:00Z`, called a placeholder in the report.
