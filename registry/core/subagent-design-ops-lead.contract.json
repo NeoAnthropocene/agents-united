@@ -1,0 +1,11 @@
+{
+  "definition": "subagent-design-ops-lead",
+  "workflows": [],
+  "skills": [
+    "design-ops-workflow",
+    "design-system-governance",
+    "design-version-control",
+    "design-tokens-management"
+  ],
+  "hooks": []
+}
