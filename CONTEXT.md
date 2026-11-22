@@ -882,5 +882,5 @@ _Avoid_: Hand-off request, escalation
 ### Publishing pages (ADR 0077)
 
 **Publish Artifact** (the go-ahead for a page):
-The user's approval of one new page published to their claude.ai account through the `Artifact` tool (the label the user sees is **Publish Artifact**). The lead asks the user for it; the answer reaches a specialist in its brief or as the answer to its `ask-user` entry; an update to a page the user already approved needs none, and the files in the project are always delivered first. A published page is private; who can see it is the user's own act in the browser (ADR 0077).
+The user's approval of one new page published to their claude.ai account through the `Artifact` tool (the label the user sees is **Publish Artifact**). The lead asks the user for it; the answer reaches a specialist in its brief or as the answer to its `ask-user` entry; an update to a page the user already approved needs none, a `/design` or `/slides` line the user typed counts as the go-ahead for the one page it asks for, and the files in the project are always delivered first. A published page is private; who can see it is the user's own act in the browser (ADR 0077).
 _Avoid_: Share, deploy, public link
