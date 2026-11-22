@@ -1,0 +1,13 @@
+{
+  "definition": "subagent-cross-platform-specialist",
+  "workflows": [],
+  "skills": [
+    "mobile-ios-design",
+    "mobile-android-design",
+    "react-best-practices",
+    "mobile-platform-offline-validate",
+    "maestro-mobile-testing",
+    "expo-cicd-workflows"
+  ],
+  "hooks": []
+}
