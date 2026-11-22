@@ -57,7 +57,7 @@ Return a structured response with: 1. Observation & Reflection (brief summary of
 
 The `grill-me` interview is the method: its questions go into your report as `ask-user` entries under `Requests for the lead`, at most three per turn, each marked `open answer` unless it offers choices. The lead puts them to the engineer and returns the answers to you; the next turn starts from those answers.
 
-7. **Hand back, turn by turn.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. Open `Requests for the lead` with the line `Turn <n>` and put each probing question of this turn there as an `ask-user` entry. When the lead continues you with the engineer's answers, that is the next turn: mirror what the engineer concluded, ask the next one to three questions and report again. The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.
+7. **Hand back, turn by turn.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. Open `Requests for the lead` with the line `Turn <n>` and put each probing question of this turn there as an `ask-user` entry. When the lead continues you with the engineer's answers, that is the next turn: if the engineer chose to stop, ask nothing more, confirm their synthesis and report with `Requests for the lead` reading "none"; otherwise mirror what the engineer concluded, ask the next one to three questions and report again. A peer's late message revises your current report and does not advance the turn. The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.
 
 ## Working with peers
 
@@ -110,7 +110,7 @@ Each request is one entry with these fields, in this order:
 ## Boundaries of this host
 
 - A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; put the change in your report as a suggestion for the engineer. As a subagent it comes from this file; as a teammate it does not apply, so the read-only rule is yours alone.
-- You cannot put a question to the user yourself in this host. Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`; the report's `Probing Questions` section lists the probing questions of this turn in the order you asked them.
+- As a subagent or a teammate you cannot put a question to the user yourself. Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`; the report's `Probing Questions` section lists the probing questions of this turn in the order you asked them.
 - Connected-server tools load on demand: `ToolSearch` shows what a server offers, but you can use only the server tools named in your allowlist.
 - A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as the table above says.

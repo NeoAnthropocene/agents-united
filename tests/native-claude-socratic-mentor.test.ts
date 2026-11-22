@@ -66,7 +66,7 @@ describe('native socratic-mentor: the question tool is the gap, pinned in code',
 
   it('says in one sentence, without naming the tool, that the lead asks the user', () => {
     const body = text().split('<!-- agents-united:floor:end -->')[1]!;
-    expect(body).toContain('You cannot put a question to the user yourself in this host. Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`; the report\'s `Probing Questions` section lists the probing questions of this turn in the order you asked them.');
+    expect(body).toContain('As a subagent or a teammate you cannot put a question to the user yourself. Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`; the report\'s `Probing Questions` section lists the probing questions of this turn in the order you asked them.');
     expect(body).not.toContain('AskUserQuestion');
     expect(body).not.toContain('ask_question');
   });
@@ -121,6 +121,8 @@ describe('native socratic-mentor: the turn loop of the requests block (ADR 0076)
     expect(seven).toContain('put each probing question of this turn there as an `ask-user` entry');
     expect(seven).toContain("When the lead continues you with the engineer's answers, that is the next turn");
     expect(seven).toContain('ask the next one to three questions and report again');
+    expect(seven).toContain('if the engineer chose to stop, ask nothing more, confirm their synthesis and report with `Requests for the lead` reading "none"; otherwise mirror');
+    expect(seven).toContain("A peer's late message revises your current report and does not advance the turn.");
     expect(seven).toContain('The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.');
   });
 
@@ -154,7 +156,7 @@ describe('native socratic-mentor: the peers section of the engineering family', 
   });
 
   it('hands the report back as the final answer and conditionally through SubagentHandback turn by turn, with the questions as ask-user entries the lead puts to the engineer', () => {
-    expect(text()).toContain('7. **Hand back, turn by turn.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. Open `Requests for the lead` with the line `Turn <n>` and put each probing question of this turn there as an `ask-user` entry. When the lead continues you with the engineer\'s answers, that is the next turn: mirror what the engineer concluded, ask the next one to three questions and report again. The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.');
+    expect(text()).toContain('7. **Hand back, turn by turn.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. Open `Requests for the lead` with the line `Turn <n>` and put each probing question of this turn there as an `ask-user` entry. When the lead continues you with the engineer\'s answers, that is the next turn: if the engineer chose to stop, ask nothing more, confirm their synthesis and report with `Requests for the lead` reading "none"; otherwise mirror what the engineer concluded, ask the next one to three questions and report again. A peer\'s late message revises your current report and does not advance the turn. The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {
