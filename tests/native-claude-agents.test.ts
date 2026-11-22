@@ -86,6 +86,8 @@ const ROLES: RoleSpec[] = [
   // The design lead (Tier 1, a domain lead): the engineering lead's cut minus the code-intelligence, workflow and report classes (no code, no saved workflow, no reviewer findings).
   // It holds the seven design servers under their plugin or connector routes; Playwright is held beyond the canonical lead (prototype-tester declares it).
   // It has no image tool and no mode-line gate: product-design is a domain bundle (ADR 0053 covers organization leads).
+  { name: 'ml-platform-engineer', stem: 'subagent-ml-platform-engineer', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
+  { name: 'ai-model-architect', stem: 'subagent-ai-model-architect', guard: 'destructive', permissionMode: 'acceptEdits', skills: [], serverTools: ['mcp__context7'], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'Skill', 'SendMessage', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'sonnet', effort: 'medium' },
   {
     name: 'orchestrator-design',
     stem: 'orchestrator-design',

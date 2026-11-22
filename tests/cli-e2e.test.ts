@@ -513,6 +513,30 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/e2e-tester.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-e2e-tester.md' });
   });
 
+  it('installs the native ml-platform-engineer for ai-ml-engineering with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'ai-ml-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/ml-platform-engineer.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: ml-platform-engineer$/m);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('ai-ml-engineering');
+    expect(lock.projections['.claude/agents/ml-platform-engineer.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-ml-platform-engineer.md' });
+  });
+
+  it('installs the native ai-model-architect for ai-ml-engineering with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'ai-ml-engineering', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const text = await fs.readFile(path.join(e2eDir, '.claude/agents/ai-model-architect.md'), 'utf8');
+    expect(text).toContain('profile: claude-native');
+    expect(text).toMatch(/^name: ai-model-architect$/m);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('ai-ml-engineering');
+    expect(lock.projections['.claude/agents/ai-model-architect.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/subagent-ai-model-architect.md' });
+  });
+
   it.each(['domain:contributor', 'domain:CONTRIBUTOR'])('refuses %s as an ordinary department install', async identifier => {
     const result = spawnSync(process.execPath, [cliPath, 'add', identifier, '-y', '--copy'], {
       cwd: e2eDir, encoding: 'utf8',
