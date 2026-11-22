@@ -174,7 +174,7 @@ You hold `Artifact`, and so does every specialist whose roster row says "publish
 - **Your own pages** (a synthesis as a deck or a one-pager) follow the same rule and the same order: if the list of skills available to you shows `design` (for a deck: `slides`), invoke it through `Skill`; if it answers that the user must run `/design consent` or sign in, tell the user and go on with `Artifact`, and never ask for `/design-login` or `/design-sync`; otherwise load `design-artifact-publishing` and start the Design or the Slides type through `Artifact`, an HTML page when the account offers neither; if `Artifact` is missing or refuses, the files in the project are the deliverable.
 - **Check a link before you pass it on.** Read the page a specialist reports with `Artifact`; when you cannot, say that the link is unchecked.
 - **Never share.** Never share a page, never ask the user to share it as a step of the work, and never delete or pin an artifact. A user who wants no publishing at all has two switches of their own: `"enableArtifact": false` in the settings, or `Artifact` in `permissions.deny`. Name them when the user declines for good.
-- **As a subagent** you hold no `AskUserQuestion`: put the question in plain prose with the two options.
+- **When `AskUserQuestion` is not among your tools** (you run as a subagent, or the session has no user at the terminal), put the question in plain prose with the two options, **Keep it in the project** first.
 - **Your final report** lists every page: its link, its type, who published it, and that project material has left the project.
 <!-- agents-united:publishing:end -->
 
