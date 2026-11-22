@@ -40,7 +40,7 @@
     },
     {
       "invariant": "Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.",
-      "evidence": "- **Team mode** is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`.",
+      "evidence": "- **Team mode** is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair (an exchange is one message and its reply) and one directed question per peer per planning round. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead.",
       "in": "body"
     },
     {

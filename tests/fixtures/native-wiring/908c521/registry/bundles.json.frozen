@@ -1,0 +1,119 @@
+{
+  "$schema": "https://agents-united.dev/schema/bundles.v1.json",
+  "version": 1,
+  "bundles": {
+    "devops-engineering": {
+      "name": "devops-engineering",
+      "tier": "domain",
+      "domain": "engineering",
+      "category": "CI/CD & Delivery Pipeline Engineering",
+      "parentBundle": "software-engineering",
+      "aliases": [
+        "devops",
+        "ci-cd"
+      ],
+      "description": "CI/CD automation, Docker/K8s, Infrastructure as Code & release engineering",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-devops-engineer.md"
+      ],
+      "skills": [
+        "azure-infrastructure-bicep",
+        "ci-cd-pipeline-automation",
+        "docker-deployment",
+        "git-guardrails",
+        "workflow-deploy-staging",
+        "workflow-build",
+        "workflow-git",
+        "telemetry-monitoring",
+        "architecture-design",
+        "code-refactoring",
+        "grill-me",
+        "grill-with-docs",
+        "subagent-driven-development",
+        "test-driven-development",
+        "terraform-test-patterns",
+        "terraform-style-guide",
+        "host-agent-router",
+        "handoff"
+      ],
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
+    },
+    "software-engineering": {
+      "name": "software-engineering",
+      "tier": "domain",
+      "domain": "engineering",
+      "status": "stable",
+      "category": "Core Software Development",
+      "aliases": [
+        "software-engineering-essentials",
+        "engineering-essentials",
+        "engineering"
+      ],
+      "recommendedAddons": [
+        "mobile-development",
+        "frontend-engineering",
+        "backend-distributed-systems",
+        "qa-automation",
+        "devops-engineering",
+        "ai-ml-engineering"
+      ],
+      "description": "Autonomous dev lead, backend/frontend architects, TDD & git guardrails",
+      "orchestrator": "orchestrator-engineering.md",
+      "agents": [
+        "subagent-backend-architect.md",
+        "subagent-frontend-architect.md",
+        "subagent-code-reviewer.md",
+        "subagent-repo-index.md"
+      ],
+      "skills": [
+        "architecture-design",
+        "backend-api-design",
+        "code-refactoring",
+        "database-design",
+        "dependency-management",
+        "diagnosing-bugs",
+        "finishing-a-development-branch",
+        "git-guardrails",
+        "performance-optimization",
+        "receiving-code-review",
+        "requesting-code-review",
+        "security-audit",
+        "subagent-driven-development",
+        "systematic-debugging",
+        "technical-documentation",
+        "test-driven-development",
+        "workflow-implement",
+        "workflow-test",
+        "workflow-review",
+        "workflow-build",
+        "workflow-cleanup",
+        "workflow-git",
+        "workflow-grill",
+        "workflow-spec",
+        "workflow-diagnose",
+        "design-handoff-spec",
+        "domain-modeling",
+        "frontend-component-design",
+        "frontend-design",
+        "grill-me",
+        "grill-with-docs",
+        "handoff",
+        "modern-web-guidance",
+        "react-best-practices",
+        "to-spec",
+        "to-tickets",
+        "host-agent-router"
+      ],
+      "version": "1.0.0",
+      "planningLoop": {
+        "enabled": true,
+        "mode": "planner-orchestrator"
+      }
+    }
+  }
+}
