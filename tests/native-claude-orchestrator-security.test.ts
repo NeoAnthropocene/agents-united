@@ -33,12 +33,28 @@ describe('native orchestrator-security: its delegation grant', () => {
     expect(agent).toBe('Agent(appsec-penetration-tester, cloud-security-architect, compliance-grc-specialist, security-engineer)');
   });
 
-  it('holds no workflow, web or findings tool, and says in its body why it has no saved workflow', () => {
-    for (const absent of ['Workflow', 'WebFetch', 'WebSearch', 'ReportFindings']) {
+  it('holds no web or findings tool', () => {
+    for (const absent of ['WebFetch', 'WebSearch', 'ReportFindings']) {
       expect(tools(), absent).not.toContain(absent);
       expect(text().split('<!-- agents-united:floor:end -->')[1], absent).not.toContain(`\`${absent}\``);
     }
-    expect(section('No saved workflows')).toContain('the only one they can install, `workflow-test`, repairs a red run by spawning a backend type that no security Bundle installs');
+  });
+
+  it('holds the Workflow tool, because the native workflow-test replaces the Skill of that name whenever a Bundle lists it', async () => {
+    expect(tools()).toContain('Workflow');
+    expect(/^tools: (.*)$/m.exec(text())![1]).toBe('Agent(appsec-penetration-tester, cloud-security-architect, compliance-grc-specialist, security-engineer), AskUserQuestion, Bash, CronCreate, CronDelete, CronList, Edit, EnterWorktree, ExitWorktree, Glob, Grep, LSP, ListAgents, ListMcpResourcesTool, Monitor, NotebookEdit, PowerShell, PushNotification, Read, ReadMcpResourceTool, RemoteTrigger, ScheduleWakeup, SendMessage, SendUserFile, Skill, TaskCreate, TaskGet, TaskList, TaskStop, TaskUpdate, TodoWrite, ToolSearch, WaitForMcpServers, Workflow, Write, mcp__github, mcp__context7, mcp__firecrawl');
+    expect((await loadSemanticCore('registry')).get('orchestrator-security')!.capabilities).toContain('workflow');
+    expect(fs.existsSync(path.resolve('registry/hosts/claude/workflows/workflow-test.js'))).toBe(true);
+  });
+
+  it('has a section for the saved workflow workflow-test in place of the old "No saved workflows" section, and says when to run it and when not', () => {
+    expect(text()).not.toContain('## No saved workflows');
+    const body = section('Saved workflow: workflow-test');
+    expect(body).toContain('Run `workflow-test` only when Step 0 shows it installed (it comes with `secops-application-security`), for a red or unfamiliar test run or a coverage check across suites.');
+    expect(body).toContain('Its Run and Verify phases spawn agents of no specific type; its Repair phase spawns `backend-architect` or `frontend-architect`, which only the `software-engineering` Bundle installs.');
+    expect(body).toContain('When neither is in the install record, do not run it on a red suite: delegate the repair inside the department, to `appsec-penetration-tester` or `security-engineer`, and recommend `agents add software-engineering`.');
+    expect(body).toContain('What the host does when a workflow spawns a type that is not installed is not established.');
+    for (const arg of ['commands', 'coverageTarget', 'size', 'specialist']) expect(body, arg).toContain(`\`${arg}\``);
   });
 
   it('holds the three servers of its canonical agent, and no other', () => {
