@@ -65,7 +65,7 @@ describe('native compliance-grc-specialist: the guard claims', () => {
     expect(body).not.toMatch(/blocks[^.\n]*\bDROP\b/);
     expect(body).not.toMatch(/blocks[^.\n]*\b(nmap|sqlmap|ffuf|curl)\b/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(body).toContain("- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.");
   });
 
   describe('against the real guard script', () => {
@@ -150,7 +150,7 @@ describe('native compliance-grc-specialist: persona-free and bound to the securi
     expect(/^name: (.+)$/m.exec(text())![1]).toBe(ROLE);
     expect(nativeText('orchestrator-security')).toMatch(/Agent\([^)]*\bcompliance-grc-specialist\b[^)]*\)/);
     expect(text()).toContain('- **Relay mode is the default.** You cannot reach a peer by name.');
-    expect(text()).toContain('Questions for the user go to the lead under `Open items`; you never ask the user directly.');
+    expect(text()).toContain('Questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly.');
   });
 
   it('answers a planning consultation with a bounded statement and writes no deliverable', () => {
@@ -181,7 +181,7 @@ describe('native compliance-grc-specialist: the peers section of the security fa
   });
 
   it('step 10 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(10)).toBe('10. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+    expect(step(10)).toBe('10. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {
@@ -198,7 +198,7 @@ describe('native compliance-grc-specialist: tools and servers', () => {
 
   it('holds no scheduling, monitor or delegation tool', () => {
     for (const forbidden of ['CronCreate', 'CronDelete', 'CronList', 'RemoteTrigger', 'Monitor', 'TaskStop', 'Agent', 'Workflow']) expect(toolsOf(ROLE), forbidden).not.toContain(forbidden);
-    expect(text()).toContain('- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead\'s job.');
+    expect(text()).toContain('- Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
   });
 
   it('declares the same servers as the canonical registry agent, and no other', () => {

@@ -52,7 +52,7 @@ describe('native ios-architect: the exact tool set, model and effort', () => {
     const capabilities = (await loadSemanticCore('registry')).get(STEM)!.capabilities;
     expect(capabilities).not.toContain('background-monitor');
     expect(text()).not.toContain('Monitor');
-    expect(text()).toContain('- Running workflows, scheduling and spawning subagents are not available to you. Delegation is the lead\'s job.');
+    expect(text()).toContain('- Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {
@@ -123,7 +123,7 @@ describe('native ios-architect: the guard claims', () => {
     const sentence = `A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`;
     expect(text().split(sentence)).toHaveLength(2);
     expect(text().split('A guard blocks')).toHaveLength(2);
-    expect(text()).toContain(`${sentence} As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.`);
+    expect(text()).toContain(`${sentence} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
   });
 
   describe('against the real guard script', () => {
@@ -193,7 +193,7 @@ describe('native ios-architect: the peers section of the engineering family', ()
   });
 
   it('step 6 hands the report back through SubagentHandback', () => {
-    expect(step(6)).toContain('as your final message through `SubagentHandback`.');
+    expect(step(6)).toContain('as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it("carries the e2e-tester's Session task tracking section byte for byte, as the last section", () => {
