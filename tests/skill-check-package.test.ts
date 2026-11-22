@@ -5,7 +5,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import { contentLines } from '../scripts/skill-quality/measure.ts';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 
 const CORPUS_SHA256 = '39840b497ae274b48be9220684c6d89ea8f886f06a687409e1c2ed887a51b705';
 const digest = (bytes: Buffer): string => createHash('sha256').update(bytes).digest('hex');
@@ -133,9 +133,9 @@ describe('skill-check from the actual offline npm package', () => {
     root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'au-skill-check-pack-')));
     const npmCli = path.join(path.dirname(process.env.npm_execpath ?? ''), 'npm-cli.js');
     if (!await fs.pathExists(npmCli)) throw new Error('Use npm to supply its offline packaging CLI.');
-    const packed = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], {
+    const packed = parseNpmPackJson(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], {
       cwd: process.cwd(), encoding: 'utf8',
-    })) as Array<{ filename: string }>;
+    }));
     const runtime = path.join(root, 'runtime');
     installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(root, packed[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');

@@ -237,7 +237,7 @@ describe('the default config', () => {
     const m = (h: string): Array<string | undefined> => ['simple', 'medium', 'high'].map(t => { const e = firstOf(CFG.hosts[h]!.tiers[t]!); return e.model ?? e.displayName; });
     expect(CFG.priority).toEqual(['cline', 'antigravity', 'codex', 'claude']);
     expect(m('cline')).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'cline-pass/glm-5.3', 'cline-pass/kimi-k3.1-pro']);
-    expect(m('antigravity')).toEqual(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'Orchestrator (Carbon)']);
+    expect(m('antigravity')).toEqual(['gemini-4-hydrogen-low', 'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-g1-pro']);
     expect(m('codex')).toEqual(['gpt-6.1-terra', 'gpt-6.2-sol', 'gpt-6.2-astra']);
     expect(m('claude')).toEqual(['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5']);
   });
@@ -287,8 +287,11 @@ describe('command building: the host CLI flags that carry model, effort and acce
   });
 
   it('Antigravity: the model slug carries the effort, access maps to --mode, and no permission bypass is passed', async () => {
+    const simpleArgs = (await spec('antigravity', 'simple')).args;
+    expect(after(simpleArgs, '--model')).toBe('gemini-4-hydrogen-low');
+    expect(simpleArgs).not.toContain('--effort');
     const a = (await spec('antigravity')).args;
-    expect(after(a, '--model')).toBe('gemini-4-hydrogen-medium');
+    expect(after(a, '--model')).toBe('gemini-pro-orchestrator-g1-pro');
     expect(a).not.toContain('--effort');
     expect(after(a, '--mode')).toBe('plan');
     expect(a).not.toContain('--dangerously-skip-permissions');
@@ -1077,6 +1080,25 @@ describe("the worker contract, enforced with each host's own controls", () => {
     const st = { claude: { windows: status({ binding: 60 }), wsl: status({ binding: 60 }) } };
     expect(buildPlan(CFG, 'medium', st, 'windows', ['claude'], 'edit').candidates.map(c => c.side)).toEqual(['windows', 'wsl']);
   });
+
+  it('adds an editSide fallback note on --access edit when editSide is unavailable and none when it is ready', () => {
+    const runDry = (st: Record<string, unknown>): { status: number | null; would_try: Array<{ side: string; notes?: string[] }> } => {
+      const f = path.join(tmp(), 'statuses.json');
+      fs.writeFileSync(f, JSON.stringify({ codex: st }));
+      const r = spawnSync(process.execPath, [SCRIPT, 'run', '--tier', 'medium', '--access', 'edit', '--host', 'codex', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f, '--cwd', tmp()], { encoding: 'utf8', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+      const j = JSON.parse(r.stdout) as { would_try: Array<{ side: string; notes?: string[] }> };
+      return { status: r.status, would_try: j.would_try };
+    };
+    const winOnly = runDry({ windows: status({ binding: 60 }), wsl: status({ installed: false }) });
+    expect(winOnly.status).toBe(0);
+    expect(winOnly.would_try[0]?.side).toBe('windows');
+    expect(winOnly.would_try[0]?.notes).toContain('codex: editSide is "wsl", running on "windows"; on Windows the Codex sandbox may refuse child processes in test commands, so run the acceptance command yourself');
+
+    const both = runDry({ windows: status({ binding: 60 }), wsl: status({ binding: 60 }) });
+    expect(both.status).toBe(0);
+    expect(both.would_try[0]?.side).toBe('wsl');
+    expect(both.would_try[0]?.notes).toBeUndefined();
+  });
 });
 
 // Seen live: when the guard cancelled `git commit`, Cline ended with exit code 0, finishReason "aborted" and a run_aborted line
@@ -1456,22 +1478,33 @@ type Lib2 = {
 };
 const lib2 = async (): Promise<Lib2> => (await import(pathToFileURL(SCRIPT).href)) as unknown as Lib2;
 const CFGE = CFG as unknown as CfgE;
-const AGY_LISTED = ['gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-4-argon-low', 'gemini-4-argon-medium', 'gemini-4-argon-high',
-  'gemini-3.8-flash-low', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-high', 'gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro']; // the Orchestrator slugs: `agy models` on 2026-11-19
+const AGY_LISTED = ['gemini-4-neon-low', 'gemini-4-neon-medium', 'gemini-4-neon-high', 'gemini-4-neon-xhigh',
+  'gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh',
+  'gemini-4-argon-low', 'gemini-4-argon-medium', 'gemini-4-argon-high',
+  'gemini-3.8-flash-low', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-high',
+  'claude-opus-5-5-low', 'claude-opus-5-5-medium', 'claude-opus-5-5-high',
+  'gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro']; // `agy models` on 2026-11-22
 
-describe('Antigravity tiers (from `agy models` on 2026-11-13)', () => {
-  // Since 1.2.0 the high tier is an ordered list that starts with the Orchestrators (see host-agent-router-model-pool.test.ts); Argon Medium is no longer a tier model.
-  it('uses Flash Medium for simple and Hydrogen for medium as the first model, and Hydrogen High as the last of high', () => {
+describe('Antigravity tiers (from `agy models` on 2026-11-22)', () => {
+  it('uses two-stage Hydrogen Low / Flash Medium for simple, Orchestrator (Argon) first for medium and high, and Neon High last in high', () => {
     const t = CFGE.hosts.antigravity!.tiers;
-    expect([firstOf(t.simple!).model, firstOf(t.simple!).effort]).toEqual(['gemini-3.8-flash-medium', 'medium']);
-    expect([firstOf(t.medium!).model, firstOf(t.medium!).effort, firstOf(t.medium!).label]).toEqual(['gemini-4-hydrogen-medium', 'medium', 'Gemini 4 Hydrogen (Medium)']);
-    expect(t.high!.models!.at(-1)).toMatchObject({ model: 'gemini-4-hydrogen-high', effort: 'high' });
+    expect([firstOf(t.simple!).model, firstOf(t.simple!).effort]).toEqual(['gemini-4-hydrogen-low', 'low']);
+    expect(t.simple!.models![1]).toMatchObject({ model: 'gemini-3.8-flash-medium', effort: 'medium' });
+    expect([firstOf(t.medium!).model, firstOf(t.medium!).fixedEffort, firstOf(t.medium!).label]).toEqual(['gemini-pro-orchestrator-g1-pro', true, 'Orchestrator (Argon)']);
+    expect(t.medium!.models!.at(-1)).toMatchObject({ model: 'gemini-3.8-flash-high', effort: 'high' });
+    expect([firstOf(t.high!).model, firstOf(t.high!).fixedEffort, firstOf(t.high!).label]).toEqual(['gemini-pro-orchestrator-g1-pro', true, 'Orchestrator (Argon)']);
+    expect(t.high!.models!.at(-1)).toMatchObject({ model: 'gemini-4-neon-high', effort: 'high' });
   });
 
-  it('lets Hydrogen go up to high and extra by job complexity', () => {
-    const e = firstOf(CFGE.hosts.antigravity!.tiers.medium!).efforts!;
-    expect(e.high).toMatchObject({ model: 'gemini-4-hydrogen-high' });
-    expect(e.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' });
+  it('lets Hydrogen in simple/medium go up to high and extra by job complexity', () => {
+    const simpleEfforts = firstOf(CFGE.hosts.antigravity!.tiers.simple!).efforts!;
+    expect(simpleEfforts.low).toMatchObject({ model: 'gemini-3.8-flash-medium' });
+    expect(simpleEfforts.medium).toMatchObject({ model: 'gemini-4-hydrogen-medium' });
+    expect(simpleEfforts.high).toMatchObject({ model: 'gemini-4-hydrogen-high' });
+    expect(simpleEfforts.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' });
+    const hydMed = (CFGE.hosts.antigravity!.tiers.medium!.models! as unknown as TierE[]).find(m => m.model === 'gemini-4-hydrogen-medium')!;
+    expect(hydMed.efforts!.high).toMatchObject({ model: 'gemini-4-hydrogen-high' });
+    expect(hydMed.efforts!.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' });
   });
 
   it('names only models that `agy models` lists, in the tiers and in every effort', () => {
@@ -1499,25 +1532,30 @@ describe('Antigravity tiers (from `agy models` on 2026-11-13)', () => {
   it('lists the models to check, efforts included, once each', async () => {
     const { configuredModels } = await lib2();
     const m = configuredModels(CFGE, 'antigravity');
-    expect(m).toEqual(expect.arrayContaining(['gemini-3.8-flash-medium', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh', 'gemini-pro-orchestrator-neon']));
+    expect(m).toEqual(expect.arrayContaining([
+      'gemini-3.8-flash-medium', 'gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high',
+      'gemini-4-hydrogen-xhigh', 'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon',
+      'claude-opus-5-5-high', 'gemini-4-argon-high', 'gemini-4-neon-high', 'gemini-4-neon-xhigh', 'Orchestrator (Carbon)',
+    ]));
     expect(new Set(m).size).toBe(m.length);
     expect(configuredModels(CFGE, 'codex')).toEqual(['gpt-6.1-terra', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-6-astra']);
   });
 });
 
 describe('an effort choice inside a tier', () => {
-  const agyMedium = (): TierE => firstOf(CFGE.hosts.antigravity!.tiers.medium!);
+  const agySimple = (): TierE => firstOf(CFGE.hosts.antigravity!.tiers.simple!);
 
   it('keeps the tier as it is when no effort is asked for', async () => {
     const { resolveEffort } = await lib2();
-    expect(resolveEffort(CFGE, 'antigravity', 'medium', undefined)).toEqual({ model: 'gemini-4-hydrogen-medium', effort: 'medium', label: 'Gemini 4 Hydrogen (Medium)', note: null });
+    expect(resolveEffort(CFGE, 'antigravity', 'simple', undefined)).toEqual({ model: 'gemini-4-hydrogen-low', effort: 'low', label: 'Gemini 4 Hydrogen (Low)', note: null });
+    expect(resolveEffort(CFGE, 'antigravity', 'medium', undefined)).toEqual({ model: 'gemini-pro-orchestrator-g1-pro', effort: 'fixed', label: 'Orchestrator (Argon)', quotaGroups: ['Gemini Models', 'Gemini 4 Argon'], fixed: true, note: null });
   });
 
   it('uses the model and label of an entry, and names the effort as asked', async () => {
     const { resolveEffort } = await lib2();
-    const r = resolveEffort(CFGE, 'antigravity', 'medium', 'extra');
+    const r = resolveEffort(CFGE, 'antigravity', 'simple', 'extra');
     expect([r.model, r.effort, r.note]).toEqual(['gemini-4-hydrogen-xhigh', 'extra', null]);
-    expect(r.label).toBe(agyMedium().efforts!.extra && (agyMedium().efforts!.extra as { label: string }).label);
+    expect(r.label).toBe(agySimple().efforts!.extra && (agySimple().efforts!.extra as { label: string }).label);
   });
 
   it('takes just an effort value from a host whose effort is a flag, and keeps its model', async () => {
@@ -1529,11 +1567,13 @@ describe('an effort choice inside a tier', () => {
 
   it('keeps the default and says so, as a note and not an error, when a host has no such entry', async () => {
     const { resolveEffort } = await lib2();
-    const r = resolveEffort(CFGE, 'codex', 'medium', 'extra');
-    expect([r.model, r.effort]).toEqual(['gpt-6.2-sol', 'medium']);
-    expect(r.note).toMatch(/codex/);
+    const codex = resolveEffort(CFGE, 'codex', 'medium', 'extra');
+    expect([codex.model, codex.effort, codex.note]).toEqual(['gpt-6.2-sol', 'xhigh', null]);
+    const r = resolveEffort(CFGE, 'claude', 'medium', 'extra');
+    expect([r.model, r.effort]).toEqual(['claude-sonnet-5-5', 'medium']);
+    expect(r.note).toMatch(/claude/);
     expect(r.note).toMatch(/extra/);
-    expect(r.note).toMatch(/gpt-6\.2-sol/);
+    expect(r.note).toMatch(/claude-sonnet-5-5/);
   });
 
   it('treats the default effort of a tier as always known, with no note', async () => {
@@ -1543,12 +1583,13 @@ describe('an effort choice inside a tier', () => {
 
   it('puts the effort-adjusted model and a note into the plan, per candidate', async () => {
     const { buildPlan } = await lib2();
-    const st = { cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } };
-    const plan = buildPlan(CFGE, 'medium', st, 'windows', undefined, 'read-only', 'extra');
+    const st = { cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) }, claude: { windows: status({ binding: 50 }) } };
+    const plan = buildPlan(CFGE, 'simple', st, 'windows', undefined, 'read-only', 'extra');
     const by = Object.fromEntries(plan.candidates.map(c => [c.host, c]));
     expect([by.antigravity!.model, by.antigravity!.effort, by.antigravity!.effort_note ?? null]).toEqual(['gemini-4-hydrogen-xhigh', 'extra', null]);
-    expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/glm-5.3', 'medium']);
-    expect(by.cline!.effort_note).toMatch(/extra/);
+    expect([by.cline!.model, by.cline!.effort, by.cline!.effort_note ?? null]).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'xhigh', null]);
+    expect([by.claude!.model, by.claude!.effort]).toEqual(['claude-haiku-5-5', 'medium']);
+    expect(by.claude!.effort_note).toMatch(/extra/);
     expect(plan.selected?.host).toBe('cline'); // the effort never changes the order
   });
 
@@ -1564,8 +1605,8 @@ describe('an effort choice inside a tier', () => {
     const cfg = mergeConfig(CFGE, { hosts: { codex: { tiers: { medium: { efforts: { extra: 'xhigh' } } } } } });
     const c = buildPlan(cfg, 'medium', { codex: { windows: status({ binding: 50 }) } }, 'windows', ['codex'], 'read-only', 'extra').selected!;
     expect(buildSpec(cfg, 'codex', c, 'x', 'read-only', '/w', 'medium').args).toContain('model_reasoning_effort="xhigh"');
-    const a = buildPlan(CFGE, 'medium', { antigravity: { wsl: status({ binding: 50 }) } }, 'windows', ['antigravity'], 'read-only', 'high').selected!;
-    const args = buildSpec(CFGE, 'antigravity', a, 'x', 'read-only', '/w', 'medium').args;
+    const a = buildPlan(CFGE, 'simple', { antigravity: { wsl: status({ binding: 50 }) } }, 'windows', ['antigravity'], 'read-only', 'high').selected!;
+    const args = buildSpec(CFGE, 'antigravity', a, 'x', 'read-only', '/w', 'simple').args;
     expect(args[args.indexOf('--model') + 1]).toBe('gemini-4-hydrogen-high');
     expect(args).not.toContain('--effort');
   });
@@ -1579,18 +1620,19 @@ describe('an effort choice inside a tier', () => {
     expect(bad).toMatch(/--effort/);
     expect(bad).toMatch(/bogus/);
     expect(bad).toMatch(/extra/);
-    expect(checkEffort(CFGE, 'medium', 'extra', ['codex'])).toMatch(/--effort/); // no candidate in scope knows it
+    expect(checkEffort(CFGE, 'medium', 'extra', ['codex'])).toBeNull();
+    expect(checkEffort(CFGE, 'medium', 'extra', ['claude'])).toMatch(/--effort/); // no candidate in scope knows it
   });
 
   it('accepts efforts in a user config key by key: change one model, add one, keep the rest', async () => {
     const { mergeConfig, validateConfig, resolveEffort } = await lib2();
-    const cfg = mergeConfig(CFGE, { hosts: { antigravity: { tiers: { medium: { efforts: { extra: { model: 'gemini-4-hydrogen-high' }, max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
+    const cfg = mergeConfig(CFGE, { hosts: { antigravity: { tiers: { simple: { efforts: { extra: { model: 'gemini-4-hydrogen-high' }, max: { model: 'gemini-4-hydrogen-xhigh' } } } } } } });
     expect(validateConfig(cfg)).toEqual([]);
-    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').model).toBe('gemini-4-hydrogen-high');
-    expect(resolveEffort(cfg, 'antigravity', 'medium', 'extra').label).toBe('gemini-4-hydrogen-high'); // since 1.2.0 the user map is the tier's own: the label of the shipped entry of that name is not inherited (name it, or the model name shows)
-    expect(resolveEffort(cfg, 'antigravity', 'medium', 'max').model).toBe('gemini-4-hydrogen-xhigh');
-    expect(resolveEffort(cfg, 'antigravity', 'medium', 'high').model).toBe('gemini-4-hydrogen-high');
-    expect(agyMedium().efforts!.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' }); // the base is not mutated
+    expect(resolveEffort(cfg, 'antigravity', 'simple', 'extra').model).toBe('gemini-4-hydrogen-high');
+    expect(resolveEffort(cfg, 'antigravity', 'simple', 'extra').label).toBe('gemini-4-hydrogen-high'); // since 1.2.0 the user map is the tier's own: the label of the shipped entry of that name is not inherited (name it, or the model name shows)
+    expect(resolveEffort(cfg, 'antigravity', 'simple', 'max').model).toBe('gemini-4-hydrogen-xhigh');
+    expect(resolveEffort(cfg, 'antigravity', 'simple', 'high').model).toBe('gemini-4-hydrogen-high');
+    expect(agySimple().efforts!.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' }); // the base is not mutated
   });
 
   it('rejects an efforts map that cannot work', async () => {
@@ -1615,28 +1657,29 @@ describe('an effort choice inside a tier', () => {
     };
     const replay = (): string => {
       const f = path.join(tmp(), 'statuses.json');
-      fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) } }));
+      fs.writeFileSync(f, JSON.stringify({ cline: { windows: status() }, antigravity: { wsl: status({ binding: 60 }) }, claude: { windows: status({ binding: 50 }) } }));
       return f;
     };
 
-    it('plan --effort extra: Antigravity uses the xhigh slug, Cline keeps its default and says so', () => {
-      const r = run(['plan', '--tier', 'medium', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
+    it('plan --effort extra: Antigravity uses the xhigh slug, Cline uses xhigh, Claude keeps its default and says so', () => {
+      const r = run(['plan', '--tier', 'simple', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
       expect(r.status).toBe(0);
       const by = Object.fromEntries((r.json as unknown as PlanE).candidates.map(c => [c.host, c]));
       expect([by.antigravity!.model, by.antigravity!.effort]).toEqual(['gemini-4-hydrogen-xhigh', 'extra']);
-      expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/glm-5.3', 'medium']);
-      expect(by.cline!.effort_note).toMatch(/extra/);
+      expect([by.cline!.model, by.cline!.effort]).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'xhigh']);
+      expect([by.claude!.model, by.claude!.effort]).toEqual(['claude-haiku-5-5', 'medium']);
+      expect(by.claude!.effort_note).toMatch(/extra/);
     });
 
     it('status --effort extra: the table shows the adjusted model and prints the note', () => {
-      const r = run(['status', '--tier', 'medium', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
+      const r = run(['status', '--tier', 'simple', '--effort', 'extra', '--here', 'windows', '--statuses-file', replay()]);
       expect(r.status).toBe(0);
       expect(r.out).toContain('gemini-4-hydrogen-xhigh');
-      expect(r.out).toMatch(/note[^\n]*cline[^\n]*extra/);
+      expect(r.out).toMatch(/note[^\n]*claude[^\n]*extra/);
     });
 
     it('run --dry-run --effort high passes the adjusted slug and reports the effort asked for', () => {
-      const r = run(['run', '--tier', 'medium', '--effort', 'high', '--prompt', 'x', '--access', 'edit', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
+      const r = run(['run', '--tier', 'simple', '--effort', 'high', '--prompt', 'x', '--access', 'edit', '--dry-run', '--here', 'windows', '--statuses-file', replay(), '--cwd', tmp()]);
       expect(r.status).toBe(0);
       expect(r.json).toMatchObject({ effort_requested: 'high' });
       const agy = (r.json as unknown as { would_try: Array<{ host: string; model: string; effort: string; args: string[] }> }).would_try.find(t => t.host === 'antigravity')!;
@@ -1650,7 +1693,7 @@ describe('an effort choice inside a tier', () => {
         ['plan', '--tier', 'medium', '--effort', 'bogus', '--here', 'windows', '--statuses-file', f],
         ['status', '--tier', 'medium', '--effort', 'bogus', '--here', 'windows', '--statuses-file', f],
         ['run', '--tier', 'medium', '--effort', 'bogus', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f],
-        ['plan', '--tier', 'medium', '--effort', 'extra', '--host', 'codex', '--here', 'windows', '--statuses-file', f],
+        ['plan', '--tier', 'medium', '--effort', 'extra', '--host', 'claude', '--here', 'windows', '--statuses-file', f],
         ['plan', '--tier', 'medium', '--effort', 'Bad Name', '--here', 'windows', '--statuses-file', f],
       ]) {
         const r = run(args);

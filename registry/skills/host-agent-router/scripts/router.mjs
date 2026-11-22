@@ -248,9 +248,21 @@ export function parseAgyModels(stdout) {
   return rows.length ? rows : null;
 }
 
+/** The Antigravity subscription tier implied by `agy models` rows: 'ultra' | 'pro' | 'enterprise' | 'free' | null. */
+export function agyPlanOf(rows) {
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const slugs = rows.map(r => r.slug);
+  const names = rows.map(r => String(r.name ?? '').trim().toLowerCase());
+  if (slugs.includes('gemini-pro-orchestrator') || slugs.some(s => /^gemini-3\.(?:7|6|1)-/.test(s))) return 'enterprise';
+  if (slugs.some(s => s.startsWith('gemini-4-carbon')) || names.includes('orchestrator (carbon)')) return 'ultra';
+  if (slugs.some(s => s.startsWith('gemini-4-') || s.startsWith('gemini-pro-orchestrator-'))) return 'pro';
+  if (slugs.some(s => s.startsWith('gemini-3.8-flash'))) return 'free';
+  return null;
+}
+
 export function agyPool(stdout) {
   const rows = parseAgyModels(stdout);
-  return rows ? { source: 'cli', models: rows.map(r => r.slug), names: Object.fromEntries(rows.map(r => [r.slug, r.name])), efforts: {} } : null;
+  return rows ? { source: 'cli', models: rows.map(r => r.slug), names: Object.fromEntries(rows.map(r => [r.slug, r.name])), efforts: {}, plan: agyPlanOf(rows) } : null;
 }
 
 /** The app-server `model/list` answer (the whole response or its result). null for an error, an empty list or a list with a next page: a partial list would drop real models. */
@@ -267,6 +279,17 @@ export function codexPool(resp) {
     names: Object.fromEntries(rows.filter(m => typeof m.displayName === 'string').map(m => [slugOf(m), m.displayName])),
     efforts: Object.fromEntries(rows.map(m => [slugOf(m), effortsOf(m)]).filter(([, e]) => e.length)),
   };
+}
+
+/** Visible model ids and display names in a Codex `models_cache.json` file (hidden entries such as `gpt-reserve` and `codex-auto-review` are excluded). */
+export function parseCodexCacheModels(text) {
+  try {
+    const rows = JSON.parse(String(text ?? '')).models;
+    if (!Array.isArray(rows)) return null;
+    const visible = rows.filter(m => isPlain(m) && typeof m.slug === 'string' && m.slug.trim() && m.visibility !== 'hide' && m.hidden !== true);
+    if (!visible.length) return null;
+    return [...new Set(visible.flatMap(m => [m.slug.trim(), ...(typeof m.display_name === 'string' && m.display_name.trim() ? [m.display_name.trim()] : [])]))];
+  } catch { return null; }
 }
 
 export const configPool = list => ({ source: 'config', models: [...list], names: {}, efforts: {} });
@@ -538,9 +561,14 @@ export function validateEfforts(where, efforts, effortInModel = false) {
       if (!word(e)) errs.push(`${at}: needs an effort value (lowercase letters)`);
       else if (effortInModel) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
     } else if (isPlain(e)) {
-      if (e.model === undefined && e.effort === undefined) errs.push(`${at}: needs a model or an effort`);
+      const hasDisplay = effortInModel && nonEmpty(e.displayName);
+      if (e.model === undefined && e.effort === undefined && !hasDisplay) errs.push(`${at}: needs a model or an effort`);
       if (e.model !== undefined && (typeof e.model !== 'string' || !e.model.trim())) errs.push(`${at}: model must be a non-empty string`);
-      else if (effortInModel && e.model === undefined) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
+      else if (effortInModel && e.model === undefined && !hasDisplay) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
+      if (e.displayName !== undefined && !effortInModel) errs.push(`${at}: displayName is only for a host whose effort is part of the model name`);
+      if (e.fixedEffort !== undefined && typeof e.fixedEffort !== 'boolean') errs.push(`${at}: fixedEffort must be true or false`);
+      else if (e.fixedEffort === true && !effortInModel) errs.push(`${at}: ${FIXED_MESSAGE}`);
+      if (e.quotaGroups !== undefined && !(Array.isArray(e.quotaGroups) && e.quotaGroups.length > 0 && e.quotaGroups.every(nonEmpty))) errs.push(`${at}: quotaGroups must be a list of group names`);
       if (e.effort !== undefined && !word(e.effort)) errs.push(`${at}: effort must be lowercase letters`);
       if (e.label !== undefined && typeof e.label !== 'string') errs.push(`${at}: label must be a string`);
     } else errs.push(`${at}: must be an effort value or an object with a model and/or an effort`);
@@ -571,7 +599,7 @@ export function resolveEntry(entry, host, tier, effort, selector) {
   }
   if (!effort) return base;
   const u = selector?.[effort];
-  const userModel = isPlain(u) && nonEmpty(u.model);
+  const userModel = isPlain(u) && (nonEmpty(u.model) || nonEmpty(u.displayName));
   const e = u !== undefined && !userModel ? u : entry.efforts?.[effort];
   if (typeof e === 'string') return { ...base, effort: e };
   if (isPlain(e)) return { ...base, model: e.model ?? entry.model, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label };
@@ -600,8 +628,10 @@ const fixedModelsFor = hostCfg => new Set([...shippedFixedModels(), ...Object.va
 /**
  * Every entry of a tier resolved for the asked effort, as { r: resolved, defaultEffort }, in the order they are tried. When the user's map
  * for that effort names a model, that model comes first (subject to the pool and headroom like any entry, also when the shipped head of the
- * tier is an Orchestrator). It is a model the user named, so the pool keeps it (`user`); a model that the shipped config gives a fixed
- * configuration stays fixed there. Two entries that resolve to the same model are one: the first stays.
+ * tier is an Orchestrator). When a fixed-effort entry defines a per-effort stage override (`e.efforts[effort]`) and the user's map does not
+ * answer that effort, that override is promoted ahead of the fixed entry with the base entry kept behind it. It is a model the user named,
+ * so the pool keeps it (`user`); a model that the shipped config gives a fixed configuration stays fixed there. Two entries that resolve to
+ * the same model (or display name) are one: the first stays.
  */
 export function resolveTier(tier, host, tierName, effort, hostCfg) {
   const selector = tierSelector(tier);
@@ -610,20 +640,45 @@ export function resolveTier(tier, host, tierName, effort, hostCfg) {
   const asFixed = r => (fixedSet && r.model && fixedSet.has(r.model) && !r.fixed
     ? { ...r, effort: 'fixed', fixed: true, note: effort ? `${host}: --effort ${JSON.stringify(effort)} was not applied: ${r.label} has a fixed configuration, so the ${tierName} tier keeps ${r.model}` : null }
     : r);
-  const all = tierEntries(tier).map(e => ({ r: asFixed({ ...resolveEntry(e, host, tierName, effort, selector), ...(userTier ? { user: true } : {}) }), defaultEffort: e.effort }));
+  const promoted = [];
+  const all = tierEntries(tier).map(e => {
+    const handledFixed = Boolean(effort && e.fixedEffort && selector?.[effort] === undefined && isPlain(e.efforts?.[effort]));
+    if (handledFixed) {
+      const ov = e.efforts[effort];
+      const ovFixed = ov.fixedEffort === true || Boolean(fixedSet && ov.model && fixedSet.has(ov.model));
+      const ovModel = ov.model ?? (ov.displayName ? undefined : e.model);
+      promoted.push({
+        r: {
+          ...(ovModel ? { model: ovModel } : {}),
+          ...(ov.displayName ? { displayName: ov.displayName } : {}),
+          effort: ovFixed ? 'fixed' : (ov.effort ?? effort),
+          label: ov.label ?? ovModel ?? ov.displayName ?? e.label,
+          ...(ov.quotaGroups ? { quotaGroups: ov.quotaGroups } : {}),
+          ...(ovFixed ? { fixed: true } : {}),
+          ...(userTier ? { user: true } : {}),
+          note: null,
+        },
+        defaultEffort: ovFixed ? 'fixed' : (ov.effort ?? effort),
+      });
+    }
+    return { r: asFixed({ ...resolveEntry(e, host, tierName, handledFixed ? undefined : effort, selector), ...(userTier ? { user: true } : {}) }), defaultEffort: e.effort };
+  });
+  const combined = [...promoted, ...all];
   const u = effort ? selector?.[effort] : undefined;
-  if (isPlain(u) && nonEmpty(u.model)) {
-    const label = u.label ?? u.model;
-    const head = fixedModelsFor(hostCfg).has(u.model)
-      ? { r: { model: u.model, effort: 'fixed', label, fixed: true, user: true, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${label} has a fixed configuration, so the ${tierName} tier keeps ${u.model}` }, defaultEffort: 'fixed' }
+  if (isPlain(u) && (nonEmpty(u.model) || nonEmpty(u.displayName))) {
+    const label = u.label ?? u.model ?? u.displayName;
+    const isUFixed = u.fixedEffort === true || Boolean(u.model && fixedModelsFor(hostCfg).has(u.model));
+    const head = isUFixed
+      ? { r: { ...(u.model ? { model: u.model } : {}), ...(u.displayName ? { displayName: u.displayName } : {}), effort: 'fixed', label, ...(u.quotaGroups ? { quotaGroups: u.quotaGroups } : {}), fixed: true, user: true, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${label} has a fixed configuration, so the ${tierName} tier keeps ${u.model ?? u.displayName}` }, defaultEffort: 'fixed' }
       : { r: { model: u.model, effort: u.effort ?? effort, label, user: true, note: null }, defaultEffort: 'medium' };
-    all.unshift(head);
+    combined.unshift(head);
   }
   const seen = new Set();
-  return all.filter(({ r }) => {
-    if (!r.model) return true;
-    if (seen.has(r.model)) return false;
-    seen.add(r.model);
+  return combined.filter(({ r }) => {
+    const key = r.model ?? (r.displayName ? `display:${r.displayName.toLowerCase()}` : null);
+    if (!key) return true;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 }
@@ -634,7 +689,7 @@ export function resolveEffort(cfg, host, tier, effort, index = 0) {
   return (all[index] ?? all[0]).r;
 }
 
-/** Every effort name some host in scope offers for `tier`: the default effort and the keys of the `efforts` maps (of each entry, and the tier's own); a fixed-configuration entry offers none. */
+/** Every effort name some host in scope offers for `tier`: the default effort and the keys of the `efforts` maps (of each entry, and the tier's own); a fixed-configuration entry offers its `efforts` keys but not `"fixed"`. */
 export function knownEfforts(cfg, tier, only) {
   const names = new Set();
   for (const host of cfg.priority) {
@@ -642,9 +697,9 @@ export function knownEfforts(cfg, tier, only) {
     const tt = cfg.hosts[host]?.tiers?.[tier];
     for (const n of Object.keys(tierSelector(tt) ?? {})) names.add(n);
     for (const e of tierEntries(tt)) {
+      for (const n of Object.keys(e.efforts ?? {})) names.add(n);
       if (e.fixedEffort) continue;
       names.add(e.effort);
-      for (const n of Object.keys(e.efforts ?? {})) names.add(n);
     }
   }
   return [...names].sort();
@@ -667,9 +722,9 @@ export function configuredModels(cfg, host) {
     const tt = cfg.hosts[host].tiers[tier];
     for (const t of tierEntries(tt)) {
       add(t.model ?? t.displayName);
-      for (const e of Object.values(t.efforts ?? {})) add(isPlain(e) ? e.model : null);
+      for (const e of Object.values(t.efforts ?? {})) add(isPlain(e) ? (e.model ?? e.displayName) : null);
     }
-    for (const e of Object.values(tierSelector(tt) ?? {})) add(isPlain(e) ? e.model : null);
+    for (const e of Object.values(tierSelector(tt) ?? {})) add(isPlain(e) ? (e.model ?? e.displayName) : null);
   }
   return out;
 }
@@ -791,10 +846,10 @@ function orderSides(usable, here, tiePct) {
 }
 
 /** What `pools` says of one side: the source and how many models, or that the list is unknown. null when there is nothing worth saying (a host with one model per tier and no pool). */
-function poolInfo(pool, entryCount) {
+function poolInfo(pool, entryCount, hasAccountPool = true) {
   if (poolKnown(pool)) return { source: pool.source, models: pool.models.length };
   if (pool) return { source: 'unknown', ...(pool.reason ? { reason: pool.reason } : {}) };
-  return entryCount > 1 ? { source: 'unknown' } : null;
+  return hasAccountPool && entryCount > 1 ? { source: 'unknown' } : null;
 }
 
 /**
@@ -892,7 +947,7 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
       else if (st.logged_in === false) skipped.push({ host, side, reason: 'not logged in' });
       else {
         const pool = hostCfg.pool ? configPool(hostCfg.pool) : trustedPool(st.pool ?? null, cfg, host);
-        const info = poolInfo(pool, pairs.length);
+        const info = poolInfo(pool, pairs.length, host === 'antigravity' || host === 'codex');
         if (info) pools[`${host}/${side}`] = info;
         const pick = pickModels({ host, tier, pairs, pool, st, min, flagEffort: !hostCfg.effortInModel, asked: effort });
         if (!pick.chosen) skipped.push({ host, side, reason: pick.reason });
@@ -1017,8 +1072,9 @@ export function antigravityAllowRules(allow, { platform = process.platform, reso
   return { rules: all, full: [...new Set(full)], fullFor, notes };
 }
 
-/** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. `t` is { model, effort }. */
-export function buildSpec(cfg, host, t, prompt, access, cwd, tier, extra = {}) {
+/** Arguments (without the binary) for one headless run. `cwd` must already be valid on the target side. Never a full-access flag. `t` is { model, effort } or a tier entry. */
+export function buildSpec(cfg, host, t0, prompt, access, cwd, tier, extra = {}) {
+  const t = Array.isArray(t0?.models) ? t0.models[0] : t0;
   if (t.effort === 'fixed' && !cfg.hosts[host]?.effortInModel) throw new Error(`${host}: the effort "fixed" is only for a host whose effort is part of the model name; it must never reach a command line`);
   const attached = skillsBlock(extra.skills);
   const full = preamble(access, tier) + attached + prompt;
@@ -1661,7 +1717,18 @@ export async function modelsLocal(payload) {
   for (const [host, models] of Object.entries(payload.models)) {
     let known = null;
     if (host === 'codex') {
-      try { known = new Set(JSON.parse(fs.readFileSync(path.join(os.homedir(), '.codex', 'models_cache.json'), 'utf8')).models.map(m => m.slug)); } catch { /* none */ }
+      const cmd = resolveCmd('codex');
+      if (cmd) {
+        const resp = await codexAppServer(cmd, { 1: 'model/list' });
+        const pool = codexPool(resp[1]);
+        if (pool) known = new Set([...pool.models, ...Object.values(pool.names ?? {})]);
+      }
+      if (!known) {
+        try {
+          const cached = parseCodexCacheModels(fs.readFileSync(path.join(os.homedir(), '.codex', 'models_cache.json'), 'utf8'));
+          if (cached) known = new Set(cached);
+        } catch { /* none */ }
+      }
     } else if (host === 'antigravity') {
       const cmd = resolveCmd('antigravity');
       if (cmd) {
@@ -1669,6 +1736,12 @@ export async function modelsLocal(payload) {
         const r = await runCmd([...cmd, 'models'], { timeout: 60_000, cwd: os.homedir() });
         const rows = r.rc === 0 ? parseAgyModels(r.stdout) : null;
         if (rows) known = new Set(rows.flatMap(x => [x.slug, x.name]));
+      }
+    } else if (host === 'cline') {
+      const cmd = resolveCmd('cline');
+      if (cmd) {
+        const ids = clineCatalogIds(cmd);
+        if (ids.length) known = new Set(ids);
       }
     }
     const note = known ? null : resolveCmd(host) ? 'unverified (host has no offline model list)' : 'not checked (host not installed on this side)';
@@ -2413,6 +2486,17 @@ async function cmdRun(opts, cfg) {
     } catch (e) { return e.message; }
   };
 
+  // Surface a note when `--access edit` has to run away from a host's preferred `editSide` (for example Codex falling back from `wsl` to `windows`).
+  const editSideNoteFor = (c, activeCands = cands) => {
+    const pref = cfg.hosts[c.host]?.editSide;
+    if (access !== 'edit' || !pref || c.side === pref || c.side === 'local') return null;
+    if (activeCands && activeCands.some(o => o.host === c.host && o.side === pref)) return null;
+    const suffix = c.host === 'codex' && c.side === 'windows'
+      ? '; on Windows the Codex sandbox may refuse child processes in test commands, so run the acceptance command yourself'
+      : '';
+    return `${c.host}: editSide is "${pref}", running on "${c.side}"${suffix}`;
+  };
+
   // Antigravity edit runs match an allowed command as a whole line: a brief that tells the worker to run a longer line than the one allowed
   // would end the run at once with nothing done (seen live 2026-11-15). Only the lines the operator passed are checked, not the defaults.
   const routerNotes = [];
@@ -2434,6 +2518,8 @@ async function cmdRun(opts, cfg) {
       const skip = argvTooLong(spec, c.side);
       const tempNote = tempNoteFor(c, tcwd);
       if (tempNote) spec.notes = [...(spec.notes ?? []), tempNote];
+      const editNote = editSideNoteFor(c, cands);
+      if (editNote) spec.notes = [...(spec.notes ?? []), editNote];
       return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}), ...(budgetUsd !== null ? { budget: budgetOf(c.host, budgetUsd) } : {}) };
     });
     // A dry run is where the length is cheap to find out: each attempt carries `skip` (the reason the real run would skip it).
@@ -2479,6 +2565,8 @@ async function cmdRun(opts, cfg) {
     const specNotes = specFor(c, prompt, translateCwd(cwd, here, c.side)).notes;
     if (specNotes) env.notes = [...(env.notes ?? []), ...specNotes];
     if (res.tempNote) env.notes = [...(env.notes ?? []), res.tempNote];
+    const editNote = editSideNoteFor(c, null);
+    if (editNote) env.notes = [...(env.notes ?? []), editNote];
     const cl = c.host === 'cline' ? parseClineJson(res.stdout) : null;
     const ag = c.host === 'antigravity' ? parseAgyRun(res.stdout) : null;
     if (ag) {

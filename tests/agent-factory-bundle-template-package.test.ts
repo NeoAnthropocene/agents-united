@@ -9,7 +9,7 @@ import { RegistryResolver } from '../src/core/registry.js';
 import type { BundleDefinition, ClaudeContractTaskBinding, LockfileManifest } from '../src/core/types.js';
 import { BUNDLE_RULES, BUNDLE_SUPPORT, BUNDLE_TASK_ROOT } from './helpers/factory-bundle-template.js';
 import { REQUIRED_HEADINGS } from './helpers/skill-contract.js';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 
 describe('production bundle templates from an offline npm package', () => {
   let root: string;
@@ -19,7 +19,7 @@ describe('production bundle templates from an offline npm package', () => {
     root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'au-bundle-pack-')));
     const npmCli = process.env.npm_execpath;
     if (!npmCli || !await fs.pathExists(npmCli)) throw new Error('Run via npm for its offline package CLI.');
-    const pack = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], { encoding: 'utf8' })) as Array<{ filename: string }>;
+    const pack = parseNpmPackJson(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], { encoding: 'utf8' }));
     const runtime = path.join(root, 'runtime');
     installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(root, pack[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united'), consumer = path.join(root, 'consumer');

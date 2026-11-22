@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 import type { CommandRunner } from './helpers/packed-package.js';
 
 const base = { npmCli: '/npm/bin/npm-cli.js', prefix: '/tmp/runtime', tarball: '/tmp/agents-united-1.0.0.tgz' };
@@ -51,5 +51,17 @@ describe('installPackedPackage', () => {
     expect(() => installPackedPackage({ ...base, run: r.run, warn: r.warn })).toThrow(/EACCES denied here/);
     expect(r.calls).toHaveLength(1);
     expect(r.warnings).toEqual([]);
+  });
+});
+
+describe('parseNpmPackJson', () => {
+  it('parses npm <= 10 array output', () => {
+    const parsed = parseNpmPackJson('[{"filename":"agents-united-0.15.0.tgz","files":[{"path":"package.json"}]}]');
+    expect(parsed).toEqual([{ filename: 'agents-united-0.15.0.tgz', files: [{ path: 'package.json' }] }]);
+  });
+
+  it('parses npm >= 11 object-keyed output', () => {
+    const parsed = parseNpmPackJson('{"agents-united":{"filename":"agents-united-0.15.0.tgz","files":[{"path":"package.json"}]}}');
+    expect(parsed).toEqual([{ filename: 'agents-united-0.15.0.tgz', files: [{ path: 'package.json' }] }]);
   });
 });
