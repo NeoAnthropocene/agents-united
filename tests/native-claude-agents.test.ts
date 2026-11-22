@@ -447,7 +447,7 @@ beforeAll(async () => {
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
       // ADR 0076: the requests block, after the tools line is set (a specialist's open types are computed from it); the factory's fixed-job roles carry none.
       if (!REQUESTS_EXEMPT_ROLES.includes(role.name)) synced = syncRequests(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
-      // ADR 0077: the publishing block directly before the requests block, only for a role whose tools hold `Artifact` (a role without it carries none).
+      // ADR 0077: the publishing block directly after the requests block, only for a role whose tools hold `Artifact` (a role without it carries none).
       synced = syncPublishing(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
       if (role.mainThread) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);

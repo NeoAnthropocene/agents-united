@@ -102,8 +102,36 @@ describe('the specialist text', () => {
     expect(text).toContain('/design-login');
     expect(text).toContain('/design-sync');
     for (const before of standaloneMentions(text)) expect(before).toContain('never ask for');
-    expect(text).toContain('If it answers that the user must run `/design consent` or sign in, report that and take step 2; never ask for `/design-login` or `/design-sync`.');
+    expect(text).toContain('If the call fails, or it answers that the user must run `/design consent` or sign in, report that and take step 2; never ask for `/design-login` or `/design-sync`.');
     expect(text).not.toContain('publicly');
+  });
+
+  it('says an update is a publish to a page the user already approved, and that any other URL is a new page', () => {
+    expect(text).toContain(
+      '- **An update needs no new go-ahead.** An update is a publish to the URL of a page the user already approved: the URL your brief names as approved, or the page you published yourself in this piece of work with the user\'s go-ahead. A URL that reaches you any other way, a second page and a page of another type are new pages.',
+    );
+    expect(text).not.toContain('the URL that your brief names or that you published yourself');
+  });
+
+  it('says the user edits a design canvas or a deck in the browser, and nothing else', () => {
+    expect(text).toContain('where the user reviews it in a browser and, for a design canvas or a deck, edits it there');
+    expect(text).not.toContain('reviews and edits it in a browser');
+  });
+
+  it('names a failed skill call in step 1 and the type the account does not offer in step 2', () => {
+    expect(text).toContain(
+      '  1. If the list of skills available to you shows `design` (for a deck: `slides`), invoke it through `Skill` with the brief. This host may not offer that skill to you; its absence from your list is not an error. If the call fails, or it answers that the user must run `/design consent` or sign in, report that and take step 2; never ask for `/design-login` or `/design-sync`.',
+    );
+    expect(text).toContain('When the account does not offer the type you need, publish an HTML page.');
+    expect(text).not.toContain('When the account offers neither type');
+    expect(text).not.toContain('If it answers that the user must run');
+  });
+
+  it('names every boundary in the private bullet: no sharing, no delete or pin, no capabilities, no way round a prompt', () => {
+    expect(text).toContain(
+      '- **Private, always.** A new page is private. Never share it, never ask the user to share it as a step of the work, never delete or pin an artifact, declare no runtime capabilities unless the brief asks for them, and never work around a prompt of the host. Who can see the page is the user\'s own act in the browser.',
+    );
+    expect(text).not.toContain('and declare no runtime capabilities unless the brief asks for them. Who can see');
   });
 });
 
@@ -143,6 +171,36 @@ describe('the coordinator text', () => {
     for (const before of standaloneMentions(text)) expect(before).toContain('never ask for');
     expect(text).toContain('tell the user and go on with `Artifact`, and never ask for `/design-login` or `/design-sync`');
     expect(text).not.toContain('publicly');
+  });
+
+  it('says the user edits a design canvas or a deck in the browser, and nothing else', () => {
+    expect(text).toContain('where the user reviews it in a browser and, for a design canvas or a deck, edits it there');
+    expect(text).not.toContain('reviews and edits it in a browser');
+  });
+
+  it('takes the go-ahead from a request that already says to publish, and does not ask again', () => {
+    expect(text).toContain(
+      'ask once for that deliverable; the files are written first in every case. A user whose own request already says to publish this deliverable as a page has given the go-ahead for it: do not ask again.',
+    );
+  });
+
+  it('says in the brief that the user approved the page, and names its URL', () => {
+    expect(text).toContain('when the page exists, the brief names its URL and says that the user approved that page.');
+    expect(text).not.toContain('when the page exists, the brief names its URL.');
+  });
+
+  it('treats a failed skill call like the consent answer and publishes HTML when the account lacks the type needed', () => {
+    expect(text).toContain('invoke it through `Skill`; if the call fails, or it answers that the user must run');
+    expect(text).toContain('an HTML page when the account does not offer the type you need');
+    expect(text).not.toContain('an HTML page when the account offers neither');
+    expect(text).not.toContain('invoke it through `Skill`; if it answers that the user must run');
+  });
+
+  it('names every boundary in the never-share bullet', () => {
+    expect(text).toContain(
+      '- **Never share.** Never share a page, never ask the user to share it as a step of the work, never delete or pin an artifact, declare no runtime capabilities unless the user asks for them, and never work around a prompt of the host. A user who wants no publishing at all has two switches of their own',
+    );
+    expect(text).not.toContain('and never delete or pin an artifact. A user who wants');
   });
 
   it('is the same for every lead', () => {

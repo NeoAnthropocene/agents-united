@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import yaml from 'yaml';
 import { describe, expect, it } from 'vitest';
-import { nativeText, NATIVE_AGENTS_DIR } from './helpers/native-roles.js';
+import { nativeText, NATIVE_AGENTS_DIR, NATIVE_ROLES } from './helpers/native-roles.js';
 
 /**
  * Sitting T (2026-10-12, Claude Code 2.1.296): the digital-agency lead could never find the image server's tool, however often the maintainer restarted. Its `tools` is an allowlist,
@@ -44,7 +44,14 @@ describe('the pool of a coordinator: a teammate gets the MCP tools of the main c
     });
   }
 
-  it.each(['orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-system-architecture'])(
+  // Every native lead, derived so that none can be forgotten: a role named orchestrator-* whose tools line has an Agent(...) list.
+  const leads = NATIVE_ROLES.map(entry => entry.role).filter(role => role.startsWith('orchestrator-') && spawnable(role).length > 0);
+
+  it('derives the leads from the roster, none of them missing', () => {
+    expect(leads).toEqual(expect.arrayContaining(['orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-system-architecture']));
+  });
+
+  it.each(leads)(
     '%s holds Artifact when a role it may spawn does, so that the role keeps the tool (ADR 0077)',
     lead => {
       const publishers = spawnable(lead).filter(exists).filter(role => toolsOf(role).includes('Artifact'));
