@@ -94,7 +94,7 @@ describe('native qa-automation-lead: the guard claims', () => {
     const sentence = `A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`;
     expect(text().split(sentence)).toHaveLength(2);
     expect(text().split('A guard blocks')).toHaveLength(2);
-    expect(text()).toContain(`${sentence} As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation. Never try to get around it.`);
+    expect(text()).toContain(`${sentence} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
   });
 
   describe('against the real guard script', () => {
@@ -159,7 +159,7 @@ describe('native qa-automation-lead: the peers section of the engineering family
   });
 
   it('step 9 hands the gate report back as the final answer and conditionally through SubagentHandback', () => {
-    expect(step(9)).toBe('9. **Hand back.** Return the gate report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
+    expect(step(9)).toBe('9. **Hand back.** Return the gate report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it("carries the siblings' Session task tracking section byte for byte, as the last section", () => {

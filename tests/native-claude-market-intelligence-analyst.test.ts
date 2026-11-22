@@ -198,7 +198,7 @@ describe('native market-intelligence-analyst: the permission mode, the shell and
   it('Boundaries say what the shell is for, and where the guard comes from in both modes', () => {
     const body = section('Boundaries of this host');
     expect(body).toContain('- Your shell (`Bash`, `PowerShell`) is for reading project files and running calculations. Show the command you ran and its output in the report.');
-    expect(body).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.`);
+    expect(body).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });
@@ -223,7 +223,7 @@ describe('native market-intelligence-analyst: the engineering family sections', 
   });
 
   it('step 7 hands the report back as the final answer and conditionally through SubagentHandback', () => {
-    expect(/^7\. .*$/m.exec(section('How to analyse'))![0]).toBe('7. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
+    expect(/^7\. .*$/m.exec(section('How to analyse'))![0]).toBe('7. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {
