@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-ios-architect",
+  "workflows": [],
+  "skills": [
+    "mobile-ios-design",
+    "mobile-platform-offline-validate",
+    "maestro-mobile-testing",
+    "mobile-first-design",
+    "test-driven-development"
+  ],
+  "hooks": []
+}
