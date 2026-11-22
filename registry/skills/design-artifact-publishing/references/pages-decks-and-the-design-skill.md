@@ -4,6 +4,7 @@
 
 ## Which route to take
 - Write the files in the project first on every route: the page is a second copy.
+- Write the brief for the page yourself, from the work done: the subject, the audience or use, the content it must carry, the look or design system to follow, the size or format. Never ask the user to type `/design` or `/slides` so that a page can be made.
 - If the list of skills available to you shows `design` (for a deck: `slides`), invoke it through `Skill` with the brief.
 - The host documentation, read on 2026-11-21, names project, user and plugin skills for a subagent and does not name bundled skills. That a listed bundled skill can be invoked through `Skill` by a subagent is not established either. If the call fails, or the skill answers that the user must run `/design consent` or sign in, report that and go on with the tool.
 - Never ask for `/design-login` or `/design-sync`. Those commands belong to a standalone site that closes by December 14, 2026.
