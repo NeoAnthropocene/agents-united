@@ -37,7 +37,7 @@ const TEAMMATES: Array<{ name: string; stem: string }> = [
 ];
 const LEAD = 'orchestrator-digital-agency';
 /** The agency copies whose persona lives in the body, because their core is shared with a Tier-1 role and carries none. */
-const BODY_PERSONA_TYPES = new Set(['agency-frontend-architect', 'agency-qa-automation-lead']);
+const BODY_PERSONA_TYPES = new Set(['agency-compliance-grc-specialist', 'agency-frontend-architect', 'agency-qa-automation-lead']);
 /** The nine teammates of the AstrolabsAI team and the type that plays each (the four named on 2026-10-04: Selin, Emre, Defne, Deniz, ADR 0039). */
 const PERSONAS: Record<string, string> = {
   Ava: 'agency-growth-strategist',
@@ -97,9 +97,30 @@ describe.each(Object.entries(PERSONAS))('persona %s', (persona, type) => {
     expect(description.length).toBeLessThanOrEqual(300);
   });
 
-  it('is the name the role plays by, in its identity (a core persona) or in its own body (Deniz and Emre share a persona-free core)', () => {
+  it('is the name the role plays by, in its identity (a core persona) or in its own body (Deniz, Emre and Defne each use a persona-free core)', () => {
     const text = BODY_PERSONA_TYPES.has(type) ? afterFloor(type) : read(type);
     expect(text).toMatch(new RegExp(`You are \\*\\*${persona}\\*\\*|In the digital agency you are ${persona}`));
+  });
+});
+
+describe("Defne: the shared GRC core is persona-free and the persona sits in the agency copy's body", () => {
+  const core = fs.readFileSync(path.resolve('registry/core/subagent-compliance-grc-specialist.core.md'), 'utf8').replace(/\r\n/g, '\n');
+  const identity = String(core.match(/^identity: "([^\n]*)"$/m)?.[1]);
+
+  it('names no persona and no company in the core', () => {
+    expect(identity).toMatch(/^You are the \*\*Senior Governance, Risk and Compliance \(GRC\) Specialist\*\* subagent/);
+    expect(core).not.toMatch(/Defne|AstrolabsAI/);
+  });
+
+  it('carries the persona in the agency body, in the form Deniz uses, before the media section', () => {
+    const body = afterFloor('agency-compliance-grc-specialist');
+    expect(body).toMatch(/^In the digital agency you are Defne \(`defne-grc`\), the [^\n]+ of the AstrolabsAI team\. [^\n]+$/m);
+    expect(body.indexOf('In the digital agency you are Defne')).toBeLessThan(body.indexOf('## Media planning consultation'));
+    expect(read('agency-compliance-grc-specialist')).not.toMatch(/You are \*\*Defne\*\*/);
+  });
+
+  it('keeps the name in the description the lead routes by', () => {
+    expect(String(inspectNativeAgent(read('agency-compliance-grc-specialist')).meta.description)).toContain('Defne');
   });
 });
 

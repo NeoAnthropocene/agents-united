@@ -68,7 +68,7 @@ describe('Plan 050 — every declared Bundle carries the dormant router contract
   it('covers every current canonical lead and every native lead surface', () => {
     const canonicalLeads = fs.readdirSync(path.join(registry, 'agents')).filter(file => /^orchestrator-.*\.md$/.test(file)).sort();
     expect(leads).toEqual(canonicalLeads);
-    expect(coreLeadFiles).toEqual(['core/orchestrator-business.core.md', 'core/orchestrator-design.core.md', 'core/orchestrator-digital-agency.core.md', 'core/orchestrator-engineering.core.md', 'core/orchestrator-marketing.core.md', 'core/orchestrator-research.core.md', 'core/orchestrator-security.core.md', 'core/orchestrator-system-architecture.core.md']);
+    expect(coreLeadFiles).toEqual(['core/orchestrator-business.core.md', 'core/orchestrator-design.core.md', 'core/orchestrator-digital-agency.core.md', 'core/orchestrator-engineering.core.md', 'core/orchestrator-marketing.core.md', 'core/orchestrator-research.core.md', 'core/orchestrator-security.core.md', 'core/orchestrator-system-architecture.core.md', 'core/orchestrator-universal.core.md']);
     expect(nativeLeadFiles).toEqual(expect.arrayContaining([
       'hosts/claude/agents/orchestrator-business.md',
       'hosts/claude/agents/orchestrator-design.md',
@@ -77,6 +77,7 @@ describe('Plan 050 — every declared Bundle carries the dormant router contract
       'hosts/claude/agents/orchestrator-digital-agency.md',
       'hosts/claude/agents/orchestrator-system-architecture.md',
       'hosts/claude/agents/orchestrator-marketing.md',
+      'hosts/claude/agents/orchestrator-universal.md',
       'hosts/antigravity/agents/orchestrator-engineering.md',
       'hosts/cline/rules/agents-united-orchestrator-engineering.md',
       'hosts/cline/skills/orchestrator-engineering/SKILL.md',

@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-ml-platform-engineer",
+  "workflows": [],
+  "skills": [
+    "modal-serverless-python",
+    "runpod-gpu-orchestration",
+    "replicate-model-inference",
+    "local-llm-inference",
+    "hf-managed-jobs"
+  ],
+  "hooks": []
+}

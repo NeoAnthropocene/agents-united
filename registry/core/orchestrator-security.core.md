@@ -49,6 +49,7 @@ capabilities:
   - edit
   - shell
   - delegate
+  - workflow
   - ask-user
   - scheduling
   - background-monitor
