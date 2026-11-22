@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import YAML from 'yaml';
 import { describe, expect, it } from 'vitest';
+import { HOLDER_STEMS } from './helpers/artifact-holders.js';
 import { nativeText } from './helpers/native-roles.js';
 
 /**
@@ -55,9 +56,13 @@ describe('the skill: what it is and where it lives', () => {
     expect(fs.existsSync(path.join(DIR, 'scripts'))).toBe(false);
   });
 
-  it('is carried by the digital-agency bundle and loaded from the creative designer\'s table, for a Claude Design canvas or brand book', () => {
-    const bundles = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')) as { bundles: Record<string, { skills?: string[] }> };
-    expect(bundles.bundles['digital-agency']!.skills).toContain(SKILL);
+  it('is carried by every Bundle that has a holder (ADR 0077) and loaded from the creative designer\'s table, for a Claude Design canvas or brand book', () => {
+    const bundles = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')) as { bundles: Record<string, { skills?: string[]; agents?: string[]; orchestrator?: string }> };
+    const withHolder = Object.entries(bundles.bundles).filter(([, bundle]) =>
+      [...(bundle.agents ?? []), ...(bundle.orchestrator ? [bundle.orchestrator] : [])].some(agent => HOLDER_STEMS.includes(agent.replace(/\.md$/, ''))),
+    );
+    expect(withHolder.length, 'Bundles that contain a holder role or a holder lead').toBeGreaterThanOrEqual(16);
+    for (const [name, bundle] of withHolder) expect(bundle.skills, name).toContain(SKILL);
     const row = nativeText('agency-creative-designer').split('\n').find(l => l.startsWith('|') && l.split('|')[2]?.trim() === `\`${SKILL}\``) ?? '';
     expect(row).not.toBe('');
     expect(row).toMatch(/Claude Design/);
@@ -69,7 +74,8 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
 
   it('publishes only when asked, keeps the artifact private and never changes sharing', () => {
     expect(section('Execution Triggers')).toMatch(/asks for a Claude Design/);
-    expect(runbook()).toMatch(/must have asked for a Claude Design artifact/);
+    expect(runbook()).toMatch(/the user's go-ahead for that page/);
+    expect(runbook()).toMatch(/needs no new go-ahead/);
     expect(runbook()).toMatch(/Keep it private and never change sharing/);
     expect(section('Execution Triggers')).toMatch(/Share menu/);
     expect(section('Edge Cases & Error Recovery')).toMatch(/delete or share[\s\S]*not yours/i);
@@ -151,15 +157,97 @@ describe('the references, the example and the evals', () => {
     expect(w).toMatch(/Not checked/);
   });
 
-  it('has evals for a canvas, a design system, a request to share and a missing tool, each with a prompt and an expected output', () => {
+  it('has exactly five evals, each with a prompt and an expected output, pinned by a distinctive phrase each (ADR 0077)', () => {
     const e = JSON.parse(read('evals/evals.json')) as { skill_name: string; evals: Array<{ id: number; prompt: string; expected_output: string }> };
     expect(e.skill_name).toBe(SKILL);
-    expect(e.evals.length).toBeGreaterThanOrEqual(4);
-    const prompts = e.evals.map(x => x.prompt).join('\n');
-    expect(prompts).toMatch(/canvas/i);
-    expect(prompts).toMatch(/design system/i);
-    expect(prompts).toMatch(/share/i);
-    expect(prompts).toMatch(/no Artifact tool|without the Artifact tool|Artifact tool is not/i);
-    for (const x of e.evals) expect(x.expected_output.length, `eval ${x.id}`).toBeGreaterThan(80);
+    expect(e.evals.map(x => x.id)).toEqual([1, 2, 3, 4, 5]);
+    for (const x of e.evals) expect(x.expected_output.length, 'eval ' + x.id).toBeGreaterThan(80);
+    const [bundled, canvas, deck, update, declined] = e.evals as [typeof e.evals[number], typeof e.evals[number], typeof e.evals[number], typeof e.evals[number], typeof e.evals[number]];
+    // 1: the bundled design skill is in the list and the brief carries the go-ahead (new)
+    expect(bundled.prompt).toMatch(/list of (?:available )?skills/i);
+    expect(bundled.prompt).toMatch(/go-ahead/i);
+    expect(bundled.expected_output).toMatch(/invokes `design` through `Skill`/);
+    expect(bundled.expected_output).toMatch(/private/);
+    // 2: the bundled skill is not in the list: the PetPal canvas through the Design type (old case 1, adapted)
+    expect(canvas.prompt).toMatch(/PetPal paid-social set/);
+    expect(canvas.prompt).toMatch(/approved publishing it as a private page/);
+    expect(canvas.expected_output).toMatch(/Design type/);
+    expect(canvas.expected_output).toMatch(/ad-creative-design/);
+    expect(canvas.expected_output).toMatch(/list` and `read/);
+    // 3: a deck through the Slides type, and a request to share it (new; takes over the old share case)
+    expect(deck.prompt).toMatch(/deck/i);
+    expect(deck.prompt).toMatch(/share/i);
+    expect(deck.expected_output).toMatch(/Slides type/);
+    expect(deck.expected_output).toMatch(/does not share|sharing is the user's own act/);
+    // 4: an update of the approved design system after a token change (new; takes over the old design-system case)
+    expect(update.prompt).toMatch(/design system/i);
+    expect(update.prompt).toMatch(/token/i);
+    expect(update.expected_output).toMatch(/no new question/i);
+    expect(update.expected_output).toMatch(/same link/i);
+    expect(update.expected_output).toMatch(/reads the page back/i);
+    // 5: no go-ahead: files only (new; replaces the old missing-tool case, whose rule stays pinned in the Edge Cases test above)
+    expect(declined.prompt).toMatch(/one-pager/i);
+    expect(declined.prompt).toMatch(/Keep it in the project/);
+    expect(declined.expected_output).toMatch(/files only/i);
+    expect(declined.expected_output).toMatch(/publishes nothing/i);
+    expect(declined.expected_output).toMatch(/why there is no page/i);
+  });
+});
+
+describe('the skill for every holder, for decks and for the go-ahead of each page (ADR 0077)', () => {
+  const REF = 'references/pages-decks-and-the-design-skill.md';
+  const CONDITION = 'If the list of skills available to you shows';
+
+  it('says it is for any role that holds the Artifact tool, and still triggers on a Claude Design ask, a deck and a one-pager', () => {
+    expect(section('Overview & Purpose')).toContain('any role that holds the `Artifact` tool');
+    expect(section('Execution Triggers')).toMatch(/asks for a Claude Design/);
+    expect(section('Execution Triggers')).toMatch(/deck/);
+    expect(section('Execution Triggers')).toMatch(/one-pager/);
+  });
+
+  it('has a reference file for pages, decks and the bundled design skill, linked from SKILL.md', () => {
+    expect(fs.existsSync(path.join(DIR, REF)), REF).toBe(true);
+    expect(body()).toContain(REF);
+    expect(body()).toMatch(/\]\(references\/pages-decks-and-the-design-skill\.md\)/);
+  });
+
+  it('states in that reference the condition for the bundled skill, the fallbacks, the update rule, the limits of what is known and the dated sources', () => {
+    const r = read(REF);
+    for (const phrase of [
+      CONDITION + ' `design`',
+      '`slides`',
+      'not established',
+      '2026-11-21',
+      '`/design consent`',
+      'never ask for `/design-login` or `/design-sync`',
+      'Slides type',
+      'HTML page',
+      'the URL that your brief names or that you published yourself',
+      'never delete or pin',
+      'runtime capabilities',
+      'v2.1.281',
+      'A new artifact is visible only to you',
+    ]) {
+      expect(r, phrase).toContain(phrase);
+    }
+    const sentences = r.split(/(?<=[.!?])\s+/);
+    expect(sentences.some(s => s.includes('Slides type') && s.includes('has been observed')), 'a sentence that says nothing about the files of the Slides type has been observed').toBe(true);
+  });
+
+  it('names the bundled skill design or slides next to the word invoke only under the condition on the list of skills', () => {
+    const lines = (skill() + '\n' + read(REF)).split('\n').filter(line => /\binvoke\b/i.test(line) && /`(?:design|slides)`/.test(line));
+    expect(lines.length).toBeGreaterThan(0);
+    for (const line of lines) expect(line, line.slice(0, 80)).toContain(CONDITION);
+  });
+
+  it('says in the edge cases that a bundled skill missing from the list is not an error, and in the checklist that the go-ahead for this page is checked', () => {
+    expect(section('Edge Cases & Error Recovery')).toMatch(/not in your list/);
+    expect(section('Edge Cases & Error Recovery')).toMatch(/not an error/);
+    expect(section('Verification Checklist')).toMatch(/go-ahead for this page/);
+  });
+
+  it('is at version 1.1.0 or later', () => {
+    const [major, minor] = meta().metadata.version.split('.').map(Number) as [number, number];
+    expect(major > 1 || (major === 1 && minor >= 1), meta().metadata.version).toBe(true);
   });
 });
