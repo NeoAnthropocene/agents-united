@@ -106,6 +106,11 @@ describe('the specialist text', () => {
     expect(text).not.toContain('publicly');
   });
 
+  it('counts a typed design or slides command as the go-ahead when the user talks to the role directly', () => {
+    expect(text).toContain('If the user talks to you directly, a `/design` or `/slides` line they typed, with its brief, is the go-ahead for the one page it asks for.');
+    expect(text.trimEnd().split('\n').find(line => line.startsWith('- **Go-ahead first.**'))?.endsWith('If the user talks to you directly, a `/design` or `/slides` line they typed, with its brief, is the go-ahead for the one page it asks for.')).toBe(true);
+  });
+
   it('says an update is a publish to a page the user already approved, and that any other URL is a new page', () => {
     expect(text).toContain(
       '- **An update needs no new go-ahead.** An update is a publish to the URL of a page the user already approved: the URL your brief names as approved, or the page you published yourself in this piece of work with the user\'s go-ahead. A URL that reaches you any other way, a second page and a page of another type are new pages.',
@@ -176,6 +181,12 @@ describe('the coordinator text', () => {
   it('says the user edits a design canvas or a deck in the browser, and nothing else', () => {
     expect(text).toContain('where the user reviews it in a browser and, for a design canvas or a deck, edits it there');
     expect(text).not.toContain('reviews and edits it in a browser');
+  });
+
+  it('counts a typed design or slides command, with its brief, as the go-ahead for the one page it asks for', () => {
+    expect(text).toContain(
+      'A user whose own request names this deliverable and says to publish it as a page on their claude.ai account has given the go-ahead for that one page: do not ask again for it. A `/design` or `/slides` line that the user typed, with its brief, is such a go-ahead for the one page it asks for; a second page or a page of another type from the same request is new. A general wish to publish everything',
+    );
   });
 
   it('takes the go-ahead from a request that names one deliverable and says to publish it, and from nothing wider', () => {
