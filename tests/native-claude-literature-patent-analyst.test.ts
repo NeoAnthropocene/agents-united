@@ -16,7 +16,7 @@ import { nativeText } from './helpers/native-roles.js';
 const ROLE = 'literature-patent-analyst';
 const STEM = 'subagent-literature-patent-analyst';
 const text = (): string => nativeText(ROLE);
-/** The generated requests block names `schedule` and `Workflow` for every role; these checks read the authored text only. */
+/** The generated requests block names `schedule` and the schedule tools; only the scan for those words leaves it out, every other word is checked against the whole text. */
 const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
@@ -64,7 +64,8 @@ describe('native literature-patent-analyst: the canonical tools that are bound',
   });
 
   it('says nothing about timers, schedules, cron, a command runner, a web tool it does not hold or a question tool', () => {
-    expect(withoutRequests(text())).not.toMatch(/cron|schedul|run_command|timer|liveness|AskUserQuestion|ask_question|WebSearch|WebFetch/i);
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul|AskUserQuestion/i);
+    expect(text()).not.toMatch(/run_command|timer|liveness|ask_question|WebSearch|WebFetch/i);
   });
 
   it('says that web content comes only through the firecrawl server when it is connected', () => {

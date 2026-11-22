@@ -88,9 +88,8 @@ describe('native orchestrator-system-architecture (a main-thread coordinator)', 
   it('holds no Workflow tool and does not run saved workflows, because its plan does not depend on them', () => {
     const tools = splitTools(frontmatter().tools).map(tool => tool.split('(')[0]);
     expect(tools).not.toContain('Workflow');
-    const body = withoutRequests(read());
-    expect(body).not.toContain('`Workflow`');
-    expect(body).not.toMatch(/workflow-(review|implement|test)\b/);
+    expect(withoutRequests(read())).not.toContain('`Workflow`');
+    expect(read()).not.toMatch(/workflow-(review|implement|test)\b/);
     for (const name of ['workflow-review', 'workflow-implement', 'workflow-test']) {
       expect(bundles()[BUNDLE].skills, name).not.toContain(name);
     }

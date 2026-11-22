@@ -32,10 +32,10 @@ const BUNDLE = 'deep-research';
 const ROLE = 'orchestrator-research';
 const file = path.resolve('registry/hosts/claude/agents/orchestrator-research.md');
 const read = (): string => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
-// The generated requests block (ADR 0076) is not authored text: scans of the authored wording leave it out.
+// The generated requests block (ADR 0076) names `Workflow` and `schedule` for the case a lead holds them: only the scans for those words leave it out.
 const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const frontmatter = (): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(read())![1]);
-const body = (): string => withoutRequests(read().split('<!-- agents-united:floor:end -->')[1]!);
+const body = (): string => read().split('<!-- agents-united:floor:end -->')[1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(read())![1]!.trim();
 const normalize = (value: string): string => value.replace(/\s+/g, ' ').trim();
 const canonical = (): string => fs.readFileSync(path.resolve('registry/agents/orchestrator-research.md'), 'utf8').replace(/\r\n/g, '\n');
@@ -177,7 +177,7 @@ describe('native orchestrator-research: the four leave-outs, pinned', () => {
 
   it.each(['Workflow', 'ReportFindings', 'LSP', 'EnterWorktree', 'ExitWorktree'])('holds no %s, and the body names none of them', tool => {
     expect(held()).not.toContain(tool);
-    expect(body()).not.toContain(`\`${tool}\``);
+    expect(tool === 'Workflow' ? withoutRequests(body()) : body()).not.toContain(`\`${tool}\``);
   });
 
   it('does not run saved workflows: the workflow-* names are skills that it loads with Skill, and no native workflow is named', () => {
