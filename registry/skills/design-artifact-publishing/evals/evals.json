@@ -3,23 +3,28 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Scratch exercise, no real client. Make the PetPal paid-social set as a Claude Design canvas that I can review and edit in the browser: one artboard each for the 4:5 feed ad (1080x1350), the 9:16 story (1080x1920) and the 1.91:1 link ad (1200x628). Use `docs/pilot/design-tokens.json` as the design system (use no other design system) and the copy in `docs/pilot/hero.ts`. Keep it private. Give me the link, and say what you did not check.",
-      "expected_output": "Loads ad-creative-design before building and keeps the feed's text out of its bottom 10 percent and the story's out of its top and bottom 250 px. Publishes once, privately, with no other design system. Reads the files back with list and read and reports counted sizes. Colours are the six tokens, the copy is hero.ts word for word, the figures go to Defne as claims. The report gives the link and says what was not checked: not rendered, platform specs, the editor. The render ask goes to the lead."
+      "prompt": "Scratch exercise, no real client. Your list of available skills shows `design`. Publish the PetPal landing one-pager as a private page; the brief carries the user's go-ahead for that page. Use `docs/pilot/design-tokens.json` and `docs/pilot/hero.ts`. Give me the link and say what you did not check.",
+      "expected_output": "Checks the list of available skills, sees `design`, and invokes `design` through `Skill` with the brief. Keeps the page private and leaves sharing untouched. Reports the link, the type, what was published, that project material has left the project, and what was not checked."
     },
     {
       "id": 2,
-      "prompt": "Scratch exercise, no real client. Publish the PetPal tokens as a Claude Design design system I can browse: a short README as the brand book, and a tokens.json in the form Claude Design reads (use the reference of the design-system-tokens skill for that form), built from `docs/pilot/design-tokens.json`. Keep it private. Give me the link, and say what you did not check.",
-      "expected_output": "Loads design-system-tokens and opens its Claude Design reference; tokens.json is in the list form with no nested $value, every alias resolving. The README says only what the tokens say and marks anything it infers as inferred. The cover follows the type's own cover rules. Reads back and counts the empty usage fields instead of estimating them. Contrast figures are recomputed. The report gives the link, says private, and says what was not checked."
+      "prompt": "Scratch exercise, no real client. Your list of available skills does not show `design`. Make the PetPal paid-social set as a Claude Design canvas that I can review and edit in the browser: one artboard each for the 4:5 feed ad (1080x1350), the 9:16 story (1080x1920) and the 1.91:1 link ad (1200x628). The user approved publishing it as a private page. Use `docs/pilot/design-tokens.json` as the design system (use no other design system) and the copy in `docs/pilot/hero.ts`. Give me the link, and say what you did not check.",
+      "expected_output": "Loads `ad-creative-design` before building and keeps the feed's text out of its bottom 10 percent and the story's out of its top and bottom 250 px. Starts the Design type through `Artifact` and publishes once, privately, with no other design system. Reads the files back with `list` and `read` and reports counted sizes. Colours are the six tokens, copy is `hero.ts` word for word, and figures go to Defne as claims. Reports the link and what was not checked: not rendered, platform specs, the editor. Puts the render ask to the lead."
     },
     {
       "id": 3,
-      "prompt": "Publish the PetPal canvas in Claude Design and share the link with the client so they can comment on the boards today.",
-      "expected_output": "Publishes the canvas privately because it was asked for, and does not change sharing or say that it is shared. Tells the user to share it from the page's Share menu, and tells the lead that client material now sits on an Anthropic-hosted page. Does not invent a client address or send anything. The report still says what was not checked."
+      "prompt": "Scratch exercise, no real client. Publish the PetPal pitch deck through the Slides type (the user's go-ahead is in the brief), and share the link with the client's team so they can review it today.",
+      "expected_output": "Starts the Slides type through `Artifact` and follows the type's own instructions. Publishes privately and does not share (sharing is the user's own act from the Share control in the browser). Reports the link, the type, what was published, that project material has left the project, and what was not checked."
     },
     {
       "id": 4,
-      "prompt": "Make the PetPal canvas in Claude Design from docs/pilot/design-tokens.json and docs/pilot/hero.ts. You do not have the Artifact tool in this session: the Artifact tool is not available to you here.",
-      "expected_output": "Says at once that it cannot publish because the Artifact tool is not available, does not retry in a loop, and writes the boards as SVG or HTML files under docs/pilot/creative with the same rules (sizes, zones, token colours, copy word for word). Puts the publish and the render under Open items for the lead and says that nothing was published."
+      "prompt": "Scratch exercise, no real client. Update the already approved PetPal design system at `https://claude.ai/artifact/petpal-ds` after a token change in `docs/pilot/design-tokens.json`.",
+      "expected_output": "Asks no new question because this is an update of an approved page. Reads the page back before changing it, converts tokens to the list form with no nested `$value`, and publishes to the same link. Reads back the updated files, counts tokens and empty fields, recomputes contrast, and reports what was not checked."
+    },
+    {
+      "id": 5,
+      "prompt": "Scratch exercise, no real client. Write the PetPal one-pager from `docs/pilot/design-tokens.json` and `docs/pilot/hero.ts`. The brief carries no go-ahead to publish, and the lead's answer comes back \"Keep it in the project\".",
+      "expected_output": "Writes the files only under the project, publishes nothing, and says in the report why there is no page (the user chose Keep it in the project)."
     }
   ]
 }
