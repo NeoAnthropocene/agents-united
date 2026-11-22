@@ -27,7 +27,7 @@ const COMMON_FORMS = 'the common forms of destructive shell commands (a recursiv
 
 /** The whole tools line: the read, search, edit, shell, messaging, hand-back, skill, task and discovery classes of the core. The two servers of the pair are bound through their routes: firecrawl by its manual name and its connector, markitdown by its name. */
 const EXPECTED_TOOLS = [
-  'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
+  'Artifact', 'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
   'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__firecrawl', 'mcp__claude_ai_Firecrawl', 'mcp__markitdown',
 ];
 

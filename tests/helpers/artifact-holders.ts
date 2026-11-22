@@ -25,6 +25,8 @@ export const HOLDER_STEMS: readonly string[] = [
   // business and research
   'subagent-business-panel-experts',
   'subagent-deep-research',
+  'subagent-market-intelligence-analyst',
+  'subagent-operations-strategist',
   // leads
   'orchestrator-design',
   'orchestrator-marketing',

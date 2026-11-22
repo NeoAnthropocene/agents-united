@@ -27,7 +27,7 @@ const COMMON_FORMS = 'the common forms of destructive shell commands (a recursiv
 
 /** The whole tools line: the read, search, edit, shell, messaging, hand-back, skill, task and discovery classes of the core, and the github server of the canonical agent bound through its routes (the manual name and the plugin). */
 const EXPECTED_TOOLS = [
-  'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
+  'Artifact', 'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
   'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__github', 'mcp__plugin_github_github',
 ];
 
