@@ -15,6 +15,7 @@ Nothing about the files of the Slides type has been observed in this repository:
 ## New page or update
 - An update is a publish to the URL of a page the user already approved: the URL your brief names as approved, or the page you published yourself in this piece of work with the user's go-ahead.
 - A URL that reaches you any other way, a second page and a page of another type are new pages, and each needs the user's go-ahead for that page.
+- A `/design` or `/slides` line that the user typed, with its brief, is the user's go-ahead for the one page it asks for. A second page or a page of another type from the same request is new.
 
 ## What you never do
 - Never share a page and never ask the user to share it as a step of the work.

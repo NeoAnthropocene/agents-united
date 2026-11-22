@@ -191,7 +191,7 @@ describe('the coordinator text', () => {
 
   it('takes the go-ahead from a request that names one deliverable and says to publish it, and from nothing wider', () => {
     expect(text).toContain(
-      'ask once for that deliverable; the files are written first in every case. A user whose own request names this deliverable and says to publish it as a page on their claude.ai account has given the go-ahead for that one page: do not ask again for it. A general wish to publish everything, or a request for a web page or a landing page as files, is not a go-ahead.',
+      'ask once for that deliverable; the files are written first in every case. A user whose own request names this deliverable and says to publish it as a page on their claude.ai account has given the go-ahead for that one page: do not ask again for it. A `/design` or `/slides` line that the user typed, with its brief, is such a go-ahead for the one page it asks for; a second page or a page of another type from the same request is new. A general wish to publish everything, or a request for a web page or a landing page as files, is not a go-ahead.',
     );
     expect(text).not.toContain('A user whose own request already says to publish this deliverable as a page has given the go-ahead for it: do not ask again.');
   });
