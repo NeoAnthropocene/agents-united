@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import yaml from 'yaml';
@@ -8,6 +9,7 @@ import { InstallEngine } from '../src/core/installer.js';
 import { listNativeRoles, nativeRoleSource, nativeWorkflowSource, renderNativeRole, renderNativeWorkflow, listNativeWorkflows } from '../src/core/native-package.js';
 import { HostProjector } from '../src/core/projector.js';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
+import { RegistryResolver } from '../src/core/registry.js';
 import { UninstallEngine } from '../src/core/uninstaller.js';
 import { lintWorkflow } from './helpers/workflow-lint.js';
 
@@ -50,7 +52,8 @@ describe('native package helpers', () => {
 
   it('finds a role source by its stripped name, and nothing for a legacy-only role', () => {
     expect(nativeRoleSource(REGISTRY, 'claude', 'code-reviewer')).toBe(path.join(REGISTRY, 'hosts', 'claude', 'agents', 'code-reviewer.md'));
-    expect(nativeRoleSource(REGISTRY, 'claude', 'data-engineer')).toBeUndefined();
+    // A made-up name: the case must not depend on which real roles have a native file.
+    expect(nativeRoleSource(REGISTRY, 'claude', 'role-without-a-native-file')).toBeUndefined();
     expect(nativeRoleSource(REGISTRY, 'claude', '../profile')).toBeUndefined();
   });
 
@@ -103,6 +106,7 @@ describe('native install lane (agents add --native)', () => {
     new InstallEngine().install(BUNDLE, { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane, ...extra });
   const expected = (role: string): string =>
     renderNativeRole(fs.readFileSync(nativeRoleSource(REGISTRY, 'claude', role)!, 'utf8'), canonicalOf(role));
+  let fixtureRoot: string | undefined;
 
   beforeEach(async () => {
     await fs.remove(workspace);
@@ -110,6 +114,10 @@ describe('native install lane (agents add --native)', () => {
   });
   afterEach(async () => {
     await fs.remove(workspace);
+    if (fixtureRoot) {
+      await fs.remove(fixtureRoot);
+      fixtureRoot = undefined;
+    }
   });
 
   it('is off by default: the legacy projection is written for every role', async () => {
@@ -128,13 +136,21 @@ describe('native install lane (agents add --native)', () => {
   });
 
   it('keeps the legacy projection for a type that has no native agent, in the same workspace', async () => {
-    await install(true);
-    await new InstallEngine().install('backend-distributed-systems', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
-    const legacy = await fs.readFile(claudeAgent('data-engineer'), 'utf8');
+    // Use a fixture registry because every real role may have a native file; the legacy branch must stay tested for a canonical agent that arrives before its native file.
+    fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'native-install-lane-fixture-'));
+    const fixtureRegistry = path.join(fixtureRoot, 'registry');
+    await fs.copy(REGISTRY, fixtureRegistry);
+    await fs.remove(path.join(fixtureRegistry, 'hosts', 'claude', 'agents', 'financial-analyst.md'));
+    expect(nativeRoleSource(fixtureRegistry, 'claude', 'financial-analyst')).toBeUndefined();
+    expect(nativeRoleSource(fixtureRegistry, 'claude', 'business-panel-experts')).toBeDefined();
+
+    await new InstallEngine(new RegistryResolver(fixtureRegistry)).install('business-financial-modeling', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    const legacy = await fs.readFile(claudeAgent('financial-analyst'), 'utf8');
     expect(legacy).toContain('profile: claude |');
     expect(legacy).not.toContain('claude-native');
-    // The native agents installed earlier are untouched by the second install.
-    expect(await fs.readFile(claudeAgent('code-reviewer'), 'utf8')).toBe(expected('code-reviewer'));
+    expect(await fs.readFile(claudeAgent('business-panel-experts'), 'utf8')).toBe(
+      renderNativeRole(fs.readFileSync(nativeRoleSource(fixtureRegistry, 'claude', 'business-panel-experts')!, 'utf8'), canonicalOf('business-panel-experts')),
+    );
   });
 
   it('installs the native product-design roles with the design lead, recorded as managed roles of their canonical agents, the lead at the coordinator posture', async () => {
