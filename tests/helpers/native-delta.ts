@@ -16,6 +16,7 @@ import { inspectNativeAgent, nativeGuardProblem } from '../../src/core/native-gu
 import { listNativeRoles, nativeRoleSource } from '../../src/core/native-package.js';
 import { loadSemanticCore } from '../../src/core/semantic-core.js';
 import { bundles } from './native-coordinator.js';
+import { NATIVE_ROLES } from './native-roles.js';
 import type { ClaudeFactoryBinding } from '../../src/core/types.js';
 
 export interface NativeDeltaRow {
@@ -67,8 +68,8 @@ export async function nativeDeltaRows(registryDir: string, host: string, options
     const factoryBinding = factories.find(factory => factory.roles.some(binding => binding.name === role));
     const factoryRole = factoryBinding?.roles.find(binding => binding.name === role);
     const core = cores.get(factoryRole?.definition ?? scopedCoreStem(role) ?? `subagent-${role}`) ?? cores.get(role);
-    // A coordinator (it can delegate) runs as the main thread, whose ceiling includes what a subagent never gets.
-    const coordinator = core?.capabilities?.includes('delegate') ?? false;
+    // A coordinator (it can delegate) runs as the main thread, whose ceiling includes what a subagent never gets. So does a lead that routes and holds no `delegate` class (the Prime Orchestrator): the role table says it is one.
+    const coordinator = (core?.capabilities?.includes('delegate') ?? false) || (NATIVE_ROLES.find(entry => entry.role === role)?.coordinator ?? false);
     const kind: NativeKind = factoryRole ? 'factory-worker' : coordinator ? 'coordinator' : 'specialist';
 
     let floor: NativeDeltaRow['floor'] = 'ok';

@@ -226,6 +226,19 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Provisional estimates during planning are labelled provisional, and a concrete deliverable waits for the accepted delegation map.': /\*\*Give provisional answers as provisional\.\*\* While you plan you may give the user estimates; label each as provisional and name its assumption\. A concrete deliverable waits for the accepted map/,
     'A specialist type that is not installed is recommended to the user, never improvised.': /\*\*Only delegate to a type in your allowlist and in the install record\.\*\* Never improvise a specialist/,
   },
+  // The Prime Orchestrator (universal-orchestration): a front door that routes and holds no Agent tool. The route and consent invariants are bound in its own body; the four delegation invariants
+  // (consult before a delegation map, delegate an in-session piece of work, the delegation brief, the relay) are not bound on this host and are declared in `registry/hosts/claude/deltas.json`.
+  'orchestrator-universal': {
+    'Resolve ambiguity with the user, in structured options, before routing: the domain, the deliverable and the scope are pinned first.': /to pin down the domain, the deliverable and the scope before you route/,
+    'A request is classified into exactly one Department Domain through the Domain Atlas, never through the scope details of a department.': /Classify the request into exactly one Department Domain through the Atlas, never through the scope details of a department/,
+    'When the Atlas has no match or looks stale, the installed registry is queried, and any drift is reported with the update command.': /query the installed registry with `agents find "<task>" --json`[^\n]*run `agents update universal-orchestration`/,
+    "Nothing is installed without the user's explicit consent in the session.": /\*\*Ask for consent before every `agents add`\.\*\* Name the Bundle[^\n]*ask for an explicit yes in this session/,
+    'When the user declines, the Atlas recommendation and the exact command for later are given, and no domain work is half-attempted.': /\*\*If the user declines,\*\* give the Atlas recommendation[^\n]*Do not install, and do not half-attempt the department's work/,
+    'A department lead runs as the main agent of a fresh session: this orchestrator never takes its place and never loads its prompt into its own context.': /Never take its place in this session and never load its prompt into your own context/,
+    'Every route ends with a structured hand-off: the route decision, the fit rationale, the consent and install status, the exact start command, a drift note if any, and the handoff reference.': /\*\*End every route with the structured hand-off\.\*\* Close with the route decision/,
+    "An organizational bundle is routed to only when the user explicitly asks for it, and is never recommended on the orchestrator's own initiative.": /Never recommend it or install it on your own initiative/,
+    "Work on another host CLI runs only on the user's explicit request, through host-agent-router, after consent for the hosts named.": /\*\*Work on another host CLI only when the user asks for it\.\*\* Load `\/host-agent-router`[^\n]*get a yes before its first run/,
+  },
   'orchestrator-digital-agency': {
     [COMMS.handBack]: /Deliver the output standard of the Output Contract/,
     [COMMS.boundedExchange]: /at most two exchanges per pair/,

@@ -305,6 +305,20 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     expect(lock.projections['.claude/agents/orchestrator-business.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-business.md' });
   });
 
+  it('installs the native Prime Orchestrator for universal-orchestration with -t claude --native', async () => {
+    const result = spawnSync(process.execPath, [cliPath, 'add', 'universal-orchestration', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
+    expect(result.status, result.stdout + result.stderr).toBe(0);
+    const lock = await fs.readJson(path.join(e2eDir, '.claude/.agents-united/agents-united.json'));
+    expect(lock.nativeLane).toBe(true);
+    expect(lock.installed.bundles).toContain('universal-orchestration');
+    const lead = await fs.readFile(path.join(e2eDir, '.claude/agents/orchestrator-universal.md'), 'utf8');
+    expect(lead).toContain('profile: claude-native');
+    expect(lead).toMatch(/^name: orchestrator-universal$/m);
+    expect(lead).toContain('claude --agent orchestrator-universal');
+    expect(lock.projections['.claude/agents/orchestrator-universal.md']).toMatchObject({ host: 'claude', kind: 'role', canonical: 'agents/orchestrator-universal.md' });
+    expect(await fs.pathExists(path.join(e2eDir, '.claude/hooks/agents-united-guard.js'))).toBe(true);
+  });
+
   it('installs the native design-systems-architect and design-ops-lead for design-systems-ops with -t claude --native', async () => {
     const result = spawnSync(process.execPath, [cliPath, 'add', 'design-systems-ops', '-t', 'claude', '--native', '-y', '--copy'], { cwd: e2eDir, encoding: 'utf8' });
     expect(result.status, result.stdout + result.stderr).toBe(0);
