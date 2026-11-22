@@ -128,12 +128,33 @@ describe('the leads\' rosters', () => {
 });
 
 describe('the authored text that used to say one role publishes, only when asked', () => {
-  it('no longer has the agency lead call publishing an optional extra, "never by default", or the creative designer "the one role that can publish"', () => {
+  it('no longer has the agency lead\'s paragraph about publishing to Claude Design, sentence by sentence, as it read before ADR 0077', () => {
     const body = authored(LEAD);
-    expect(body).not.toMatch(/Publishing to Claude Design is an optional extra/);
-    expect(body).not.toMatch(/never by default[^.]*canvas|canvas[^.]*never by default/);
-    expect(body).not.toMatch(/the one role that can publish/);
-    expect(body).toMatch(/Photographs\./);
+    for (const removed of [
+      '**Publishing to Claude Design.**',
+      'Publishing to Claude Design is an optional extra: offer it only when the brief calls for a canvas, a design system or a brand book there, never by default.',
+      'Ask for a go-ahead for each publish.',
+      'When the user picks it, brief Jamileh (`agency-creative-designer`, the one role that can publish) to publish it privately and to leave sharing to the user, and say in your report that client material has left the project.',
+      'the one role that can publish',
+    ]) {
+      expect(body, removed).not.toContain(removed);
+    }
+    expect(body).toContain('**Photographs.** Generating a photograph is an optional extra: raise it only when the plan holds a photograph-like asset that nobody supplied, never by default;');
+  });
+
+  it('has every lead say what the agency lead\'s removed paragraph said, now in the generated block: the question, its two options and their explanation', () => {
+    for (const lead of HOLDER_LEADS) {
+      const text = nativeText(lead);
+      expect(text, lead).toMatch(/`AskUserQuestion`/);
+      expect(text, lead).toMatch(/\*\*Publish Artifact\*\*/);
+      expect(text, lead).toMatch(/\*\*Keep it in the project\*\*/);
+      expect(text, lead).toMatch(/private page on your claude\.ai account/);
+      expect(text, lead).toMatch(/Pro or higher plan/);
+      expect(text, lead).toMatch(/signed-in Claude Code/);
+      expect(text, lead).toMatch(/unless you share it/);
+      expect(text, lead).toMatch(/Anthropic-hosted page/);
+      expect(text, lead).toMatch(/go-ahead for each new page/);
+    }
   });
 
   it('keeps the agency creative designer\'s table row for the skill design-artifact-publishing', () => {
