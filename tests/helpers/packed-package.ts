@@ -28,6 +28,19 @@ function failureText(error: unknown): string {
 const installArgs = (mode: '--offline' | '--prefer-offline', options: InstallPackedOptions): string[] =>
   [options.npmCli, 'install', mode, '--ignore-scripts', '--no-audit', '--no-fund', '--prefix', options.prefix, options.tarball];
 
+export interface PackedTarballEntry {
+  filename: string;
+  files: Array<{ path: string }>;
+}
+
+/** Normalizes `npm pack --json` output across npm <= 10 (array) and npm >= 11 (object keyed by package name). */
+export function parseNpmPackJson(stdout: string): PackedTarballEntry[] {
+  const parsed: unknown = JSON.parse(stdout);
+  if (Array.isArray(parsed)) return parsed as PackedTarballEntry[];
+  if (parsed && typeof parsed === 'object') return Object.values(parsed as Record<string, PackedTarballEntry>);
+  throw new Error('Unexpected npm pack --json output shape.');
+}
+
 /**
  * Installs a packed tarball into a temp prefix, offline. A lockfile install (`npm ci`) caches the dependency
  * tarballs but not the registry metadata documents that resolving a tarball's dependency ranges needs, so a

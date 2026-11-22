@@ -5,7 +5,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'fs-extra';
 import { afterEach, describe, expect, it } from 'vitest';
 import { canonical } from './helpers/factory-job.js';
-import { installPackedPackage } from './helpers/packed-package.js';
+import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
 
 describe('production contract helper from an offline npm package', () => {
   let root: string;
@@ -16,7 +16,7 @@ describe('production contract helper from an offline npm package', () => {
     const pin = async (file: string) => ({ path: file, sha256: hash(await fs.readFile(file)) });
     const npmCli = path.join(path.dirname(process.env.npm_execpath ?? ''), 'npm-cli.js');
     if (!await fs.pathExists(npmCli)) throw new Error('Run via npm for its offline package CLI.');
-    const pack = JSON.parse(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], { encoding: 'utf8' })) as Array<{ filename: string }>;
+    const pack = parseNpmPackJson(execFileSync(process.execPath, [npmCli, 'pack', '--offline', '--ignore-scripts', '--json', '--pack-destination', root], { encoding: 'utf8' }));
     const runtime = path.join(root, 'runtime');
     installPackedPackage({ npmCli, prefix: runtime, tarball: path.join(root, pack[0]!.filename) });
     const packageRoot = path.join(runtime, 'node_modules/agents-united');

@@ -17,9 +17,29 @@
     "cline": {
       "provider": "cline-pass",
       "tiers": {
-        "simple": { "label": "DeepSeek V4.1 Flash 1017", "model": "cline-pass/deepseek-v4.1-flash-1017", "effort": "medium" },
-        "medium": { "label": "GLM-5.3", "model": "cline-pass/glm-5.3", "effort": "medium" },
-        "high": { "label": "Kimi K3.1 Pro", "model": "cline-pass/kimi-k3.1-pro", "effort": "medium" }
+        "simple": {
+          "models": [
+            { "label": "DeepSeek V4.1 Flash 1017", "model": "cline-pass/deepseek-v4.1-flash-1017", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "MiniMax-M3.1-Flash", "model": "cline-pass/minimax-m3.1-flash", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "GLM-5.3-Flash", "model": "cline-pass/glm-5.3-flash", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } }
+          ]
+        },
+        "medium": {
+          "models": [
+            { "label": "GLM-5.3", "model": "cline-pass/glm-5.3", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "Qwen 3.8 Max", "model": "cline-pass/qwen3.8-max", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "DeepSeek V4 Pro", "model": "cline-pass/deepseek-v4-pro", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "MiniMax-M3.1-Flash", "model": "cline-pass/minimax-m3.1-flash", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } }
+          ]
+        },
+        "high": {
+          "models": [
+            { "label": "Kimi K3.1 Pro", "model": "cline-pass/kimi-k3.1-pro", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "DeepSeek V4 Pro", "model": "cline-pass/deepseek-v4-pro", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "Qwen 3.8 Max", "model": "cline-pass/qwen3.8-max", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } },
+            { "label": "GLM-5.3", "model": "cline-pass/glm-5.3", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh" } }
+          ]
+        }
       }
     },
     "antigravity": {
@@ -36,9 +56,19 @@
         "simple": {
           "models": [
             {
+              "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low", "effort": "low",
+              "efforts": {
+                "low": { "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium" },
+                "medium": { "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium" },
+                "high": { "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high" },
+                "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
+              }
+            },
+            {
               "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium", "effort": "medium",
               "efforts": {
-                "low": { "label": "Gemini 3.8 Flash (Low)", "model": "gemini-3.8-flash-low" },
+                "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low", "effort": "low" },
+                "medium": { "label": "Gemini 3.8 Flash (Medium)", "model": "gemini-3.8-flash-medium" },
                 "high": { "label": "Gemini 3.8 Flash (High)", "model": "gemini-3.8-flash-high" }
               }
             }
@@ -46,6 +76,23 @@
         },
         "medium": {
           "models": [
+            { "label": "Orchestrator (Argon)", "model": "gemini-pro-orchestrator-g1-pro", "fixedEffort": true, "quotaGroups": ["Gemini Models", "Gemini 4 Argon"] },
+            { "label": "Orchestrator (Neon)", "model": "gemini-pro-orchestrator-neon", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
+            {
+              "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium", "effort": "medium",
+              "efforts": {
+                "low": { "label": "Gemini 4 Argon (Low)", "model": "gemini-4-argon-low" },
+                "high": { "label": "Gemini 4 Argon (High)", "model": "gemini-4-argon-high" }
+              }
+            },
+            {
+              "label": "Gemini 4 Neon (Medium)", "model": "gemini-4-neon-medium", "effort": "medium",
+              "efforts": {
+                "low": { "label": "Gemini 4 Neon (Low)", "model": "gemini-4-neon-low" },
+                "high": { "label": "Gemini 4 Neon (High)", "model": "gemini-4-neon-high" },
+                "extra": { "label": "Gemini 4 Neon (XHigh)", "model": "gemini-4-neon-xhigh" }
+              }
+            },
             {
               "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium", "effort": "medium",
               "efforts": {
@@ -65,15 +112,38 @@
         },
         "high": {
           "models": [
-            { "label": "Orchestrator (Carbon)", "displayName": "Orchestrator (Carbon)", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
-            { "label": "Orchestrator (Neon)", "model": "gemini-pro-orchestrator-neon", "fixedEffort": true, "quotaGroups": ["Gemini Models"] },
-            { "label": "Orchestrator (Argon)", "model": "gemini-pro-orchestrator-g1-pro", "fixedEffort": true, "quotaGroups": ["Gemini Models", "Gemini 4 Argon"] },
             {
-              "label": "Gemini 4 Hydrogen (High)", "model": "gemini-4-hydrogen-high", "effort": "high",
+              "label": "Orchestrator (Argon)", "model": "gemini-pro-orchestrator-g1-pro", "fixedEffort": true, "quotaGroups": ["Gemini Models", "Gemini 4 Argon"],
               "efforts": {
-                "low": { "label": "Gemini 4 Hydrogen (Low)", "model": "gemini-4-hydrogen-low" },
-                "medium": { "label": "Gemini 4 Hydrogen (Medium)", "model": "gemini-4-hydrogen-medium" },
-                "extra": { "label": "Gemini 4 Hydrogen (XHigh)", "model": "gemini-4-hydrogen-xhigh" }
+                "extra": { "label": "Orchestrator (Carbon)", "displayName": "Orchestrator (Carbon)", "fixedEffort": true, "quotaGroups": ["Gemini Models"] }
+              }
+            },
+            {
+              "label": "Orchestrator (Neon)", "model": "gemini-pro-orchestrator-neon", "fixedEffort": true, "quotaGroups": ["Gemini Models"],
+              "efforts": {
+                "extra": { "label": "Gemini 4 Neon (XHigh)", "model": "gemini-4-neon-xhigh", "effort": "extra" }
+              }
+            },
+            {
+              "label": "Claude Opus 5.5 (High)", "model": "claude-opus-5-5-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Claude Opus 5.5 (Low)", "model": "claude-opus-5-5-low" },
+                "medium": { "label": "Claude Opus 5.5 (Medium)", "model": "claude-opus-5-5-medium" }
+              }
+            },
+            {
+              "label": "Gemini 4 Argon (High)", "model": "gemini-4-argon-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Gemini 4 Argon (Low)", "model": "gemini-4-argon-low" },
+                "medium": { "label": "Gemini 4 Argon (Medium)", "model": "gemini-4-argon-medium" }
+              }
+            },
+            {
+              "label": "Gemini 4 Neon (High)", "model": "gemini-4-neon-high", "effort": "high",
+              "efforts": {
+                "low": { "label": "Gemini 4 Neon (Low)", "model": "gemini-4-neon-low" },
+                "medium": { "label": "Gemini 4 Neon (Medium)", "model": "gemini-4-neon-medium" },
+                "extra": { "label": "Gemini 4 Neon (XHigh)", "model": "gemini-4-neon-xhigh" }
               }
             }
           ]
@@ -85,21 +155,22 @@
       "tiers": {
         "simple": {
           "models": [
-            { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium", "efforts": { "low": { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium" }, "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium", "efforts": { "low": { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium" }, "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+            { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium", "efforts": { "low": { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium" }, "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium", "efforts": { "low": { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium" }, "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } }
           ]
         },
         "medium": {
           "models": [
-            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6.1 Sol", "model": "gpt-6.1-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.1 Sol", "model": "gpt-6.1-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } }
           ]
         },
         "high": {
           "models": [
-            { "label": "GPT-6.2 Astra", "model": "gpt-6.2-astra", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6 Astra", "model": "gpt-6-astra", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+            { "label": "GPT-6.2 Astra", "model": "gpt-6.2-astra", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6 Astra", "model": "gpt-6-astra", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } }
           ]
         }
       }
