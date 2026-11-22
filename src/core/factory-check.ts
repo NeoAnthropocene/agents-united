@@ -12,7 +12,7 @@ import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
-import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, nativeToolOrder, nativeToolsWanted, postureProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
+import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -81,6 +81,7 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       findings.push(...postureProblems(facts.meta, kind));
       if (core.capabilities?.includes('task-tracking')) findings.push(...sessionTrackingProblems(text, { coordinator }));
       findings.push(...requestsBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
+      findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
       let canonicalText: string | undefined;
       const defaultCanonical = path.join(registry, 'agents', `${input.definition}.md`);
       if (input.canonicalFile !== undefined) {

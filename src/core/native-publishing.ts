@@ -6,7 +6,7 @@
  * Pure string work: no I/O, no clock.
  */
 import { anchorHeadingPoint, checkBlock, removeBlock, writeBlock, type BlockMarkers } from './native-blocks.js';
-import { REQUESTS_START } from './native-requests.js';
+import { REQUESTS_END } from './native-requests.js';
 
 export const PUBLISHING_START =
   '<!-- agents-united:publishing:start (generated from src/core/native-publishing.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->';
@@ -57,10 +57,12 @@ export function renderPublishing(kind: PublishingKind): string {
   return (kind === 'coordinator' ? COORDINATOR_TEXT : SPECIALIST_TEXT).join('\n');
 }
 
-/** Places a new block before the requests block when the file has one, else before the boundaries (else the session task tracking) section. */
+/** Places a new block directly after the requests block when the file has one, else before the boundaries (else the session task tracking) section. */
 function insertionPoint(source: string): number {
-  const requests = source.indexOf(REQUESTS_START);
-  return requests >= 0 ? requests : anchorHeadingPoint(source, MARKERS);
+  const requests = source.indexOf(REQUESTS_END);
+  if (requests < 0) return anchorHeadingPoint(source, MARKERS);
+  const after = requests + REQUESTS_END.length;
+  return after + (source.startsWith('\n\n', after) ? 2 : source.startsWith('\n', after) ? 1 : 0);
 }
 
 /** Writes the block of a holder (replace or insert) and takes it out of a role that holds no `Artifact`. */

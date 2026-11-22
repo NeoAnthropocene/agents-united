@@ -51,6 +51,7 @@ safety: |
   - **Documentation Only**: Do not change project runtime source code (`src/`); output research documentation only.
   - **Fallback Without Add-ons**: If the user proceeds without a recommended add-on, provide high-level conceptual research and theoretical guidance and state the absence of dedicated execution runbooks.
   - Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed. Name the proposed hosts and explain that this spends the user's other accounts; get consent before the first run, treating existing consent for those hosts and this scope as valid. Otherwise continue this host's normal delegation. Follow the router's worker contract: read-only by default, one isolated checkout per editing worker, and verify the handoff against changed files before accepting work.
+  - **Publish Artifact**: Publish a page to a hosted site only with the user's go-ahead for that page; an update to a page the user already approved needs no new go-ahead. Keep it private, leave who can see it to the user, and say in your report that project material has left the project.
 invariants:
   - "Resolve ambiguity with the user before any unverified work."
   - "Plan solo; delegate evidence gathering, logic audit, code mapping, quantitative work and prior-art search to specialists."
@@ -83,6 +84,7 @@ capabilities:
   - skill
   - task-tracking
   - mcp-discovery
+  - artifacts
 ---
 
 <!-- core: orchestrator-research | derived from registry/agents/orchestrator-research.md in the form of orchestrator-engineering.core.md; no saved workflows, no reviewer, no code-intelligence and no worktree capability, and evidence gathering is delegated | tool-free by contract (ADR 0021 decision 1) -->

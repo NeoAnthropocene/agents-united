@@ -34,6 +34,7 @@ safety: |
   - Never publish AI-generated content without flagging for human editorial review.
   - Never promise specific SERP ranking positions — outcomes are probabilistic.
   - If content inventory is empty, begin with competitor content gap analysis first.
+  - **Publish Artifact**: Publish a page to a hosted site only with the user's go-ahead for that page; an update to a page the user already approved needs no new go-ahead. Keep it private, leave who can see it to the user, and say in your report that project material has left the project.
 invariants:
   - "Search intent and a read of the top-ranking competitor pages precede any content brief."
   - "Every content piece has one search intent and exactly one primary call to action."
@@ -55,6 +56,7 @@ capabilities:
   - handback
   - skill
   - mcp-discovery
+  - artifacts
 ---
 
 <!-- core: subagent-marketing-content-strategist | authored for the full digital-agency roster (plan 032, ADR 0039) from registry/agents/subagent-marketing-content-strategist.md | tool-free by contract (ADR 0021 decision 1) -->

@@ -37,6 +37,7 @@ safety: |
   - Strictly prohibit dark patterns (hidden recurring fees, deceptive CTAs, fake countdown timers, or fabricated social proof).
   - Ensure all trust assertions (security badges, customer counts, case study metrics) are verified against client sources.
   - Maintain strict WCAG 2.2 AA accessibility on all CTA buttons and microcopy.
+  - **Publish Artifact**: Publish a page to a hosted site only with the user's go-ahead for that page; an update to a page the user already approved needs no new go-ahead. Keep it private, leave who can see it to the user, and say in your report that project material has left the project.
 invariants:
   - "Funnel ingestion and friction audit precede any copy change."
   - "Every test hypothesis is ICE-scored and states its primary metric and sample size."
@@ -58,6 +59,7 @@ capabilities:
   - handback
   - skill
   - mcp-discovery
+  - artifacts
 ---
 
 <!-- core: subagent-marketing-conversion-specialist | authored for the Tier-2 native pilot (plan 032 follow-up 2) from registry/agents/subagent-marketing-conversion-specialist.md | tool-free by contract (ADR 0021 decision 1) -->

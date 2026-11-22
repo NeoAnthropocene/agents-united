@@ -54,6 +54,7 @@ output_contract: |
 safety: |
   - Never recommend dark patterns or deceptive viral mechanics (e.g. contact scraping without permission).
   - Never recommend paid ad spend without verifying product-market fit metrics and positive unit economics ($LTV:CAC \ge 3:1$).
+  - **Publish Artifact**: Publish a page to a hosted site only with the user's go-ahead for that page; an update to a page the user already approved needs no new go-ahead. Keep it private, leave who can see it to the user, and say in your report that project material has left the project.
 invariants:
   - "Funnel and unit-economics audit precedes any channel or experiment recommendation."
   - "Every experiment is a falsifiable hypothesis with a primary metric, a control and a variant."
@@ -74,6 +75,7 @@ capabilities:
   - handback
   - skill
   - mcp-discovery
+  - artifacts
 ---
 
 <!-- core: subagent-marketing-growth-strategist | authored for the Tier-2 native pilot (plan 032 follow-up 2) from registry/agents/subagent-marketing-growth-strategist.md | tool-free by contract (ADR 0021 decision 1) -->
