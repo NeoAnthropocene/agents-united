@@ -81,10 +81,15 @@ describe.each(active.filter(entry => !entry.coordinator))('specialist $role', ({
   });
 });
 
-describe('ask-user and use-server are always open to a specialist', () => {
-  it('holds even for a specialist with every other tool', () => {
+describe('use-server stays open, and ask-user is open when the tools line has no AskUserQuestion', () => {
+  it('keeps use-server open even for a specialist with every other tool', () => {
     expect(openRequestTypes(['Read', 'Bash', 'Monitor', 'CronCreate', 'Workflow', 'Agent', 'AskUserQuestion'])).toContain('use-server');
     expect(openRequestTypes(['Read'])).toEqual(['ask-user', 'run-command', 'watch', 'schedule', 'run-workflow', 'delegate', 'use-server']);
+  });
+
+  it('does not leave ask-user open for a tools list that holds AskUserQuestion', () => {
+    expect(openRequestTypes(['Read', 'AskUserQuestion'])).not.toContain('ask-user');
+    expect(openRequestTypes(['Read', 'AskUserQuestion'])).toEqual(['run-command', 'watch', 'schedule', 'run-workflow', 'delegate', 'use-server']);
   });
 });
 

@@ -58,9 +58,9 @@ describe('native deep-research: the canonical tools that are bound and the one t
   });
 
   it('says nothing about timers, schedules, cron or a command runner, and sends builds and test runs to the lead', () => {
-    const body = withoutRequests(text());
-    expect(body).not.toMatch(/cron|schedul|run_command|timer|liveness/i);
-    expect(body).toContain('You hold no shell, so builds and test runs go to the lead as `run-command` entries under `Requests for the lead`.');
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul/i);
+    expect(text()).not.toMatch(/run_command|timer|liveness/i);
+    expect(text()).toContain('You hold no shell, so builds and test runs go to the lead as `run-command` entries under `Requests for the lead`.');
   });
 });
 
@@ -96,7 +96,7 @@ describe('native deep-research: the permission mode and the guard, against the r
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain("- A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.");
+    expect(text()).toContain("- A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.");
   });
 });
 
@@ -106,7 +106,7 @@ describe('native deep-research: the peers section of the engineering family', ()
   });
 
   it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
-    expect(/^6\. .*$/m.exec(section('How to research'))![0]).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
+    expect(/^6\. .*$/m.exec(section('How to research'))![0]).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

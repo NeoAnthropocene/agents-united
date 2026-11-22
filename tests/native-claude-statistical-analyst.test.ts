@@ -16,7 +16,7 @@ import { nativeText } from './helpers/native-roles.js';
 const ROLE = 'statistical-analyst';
 const STEM = 'subagent-statistical-analyst';
 const text = (): string => nativeText(ROLE);
-/** The generated requests block names `schedule` and `Workflow` for every role; these checks read the authored text only. */
+/** The generated requests block names `schedule` and the schedule tools; only the scan for those words leaves it out, every other word is checked against the whole text. */
 const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
@@ -63,7 +63,8 @@ describe('native statistical-analyst: the canonical tools that are bound and the
   });
 
   it('says nothing about timers, schedules, cron, a command runner or a question tool', () => {
-    expect(withoutRequests(text())).not.toMatch(/cron|schedul|run_command|manage_task|timer|liveness|AskUserQuestion|ask_question/i);
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul|AskUserQuestion/i);
+    expect(text()).not.toMatch(/run_command|manage_task|timer|liveness|ask_question/i);
   });
 });
 
@@ -108,7 +109,7 @@ describe('native statistical-analyst: acceptEdits, the guard and the obligations
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.`);
+    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });
@@ -157,7 +158,7 @@ describe('native statistical-analyst: the peers section of the engineering famil
   });
 
   it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

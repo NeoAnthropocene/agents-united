@@ -551,12 +551,12 @@ describe.each(ROLES)('native Claude $name', role => {
   });
 
   it('names no tool outside its grant, and only skills that exist, in the authored guidance', () => {
-    // The generated requests block (ADR 0076) is checked by its own suite: a lead's text names `Workflow` and the schedule tools for the case it holds them.
+    // The generated requests block (ADR 0076): a specialist's block names no tool, so it stays in the scan. A lead's block names `Workflow`, `Bash`, `Monitor` and the schedule tools
+    // for the case the lead holds them (its tools line may lack some), so for a lead the scan leaves the block out; its own suite checks it.
     // The generated publishing block (ADR 0077) is checked by its own suite: it names the bundled skills design and slides, which only a role that lists them can invoke.
-    const body = read()
-      .split('<!-- agents-united:floor:end -->')[1]
-      .replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/, '')
-      .replace(/<!-- agents-united:publishing:start[^>]*-->[\s\S]*?<!-- agents-united:publishing:end -->/, '');
+    const authored = read().split('<!-- agents-united:floor:end -->')[1];
+    const withoutRequests = role.mainThread ? authored.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/, '') : authored;
+    const body = withoutRequests.replace(/<!-- agents-united:publishing:start[^>]*-->[\s\S]*?<!-- agents-united:publishing:end -->/, '');
     const catalog = new Set(loadToolPolicy('registry', 'claude').catalog.map(entry => entry.name));
     const held = new Set(declaredNames());
     for (const match of body.matchAll(/`([A-Za-z_][\w-]*)`/g)) {

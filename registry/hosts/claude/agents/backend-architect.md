@@ -98,7 +98,7 @@ Consultation Map, not baked into this mission (Plan 025).
 4. **Test first.** Work test-first: the failing test comes before the implementation. Author the unit and integration tests for the slice with mock boundaries, run them with `Bash` and see them fail for the reason you expect; keep that failing output, because the orchestrator asks for it as acceptance evidence.
 5. **Implement.** Edit with `Edit` for targeted patches and `Write` for new files, until the tests you wrote pass. Keep the middleware order: request id, tracing, logging, authentication, authorisation, validation, handler, error boundary.
 6. **Prove it.** Run the project's test command, type check and linter with `Bash`. If anything fails, fix the cause and rerun, at most three cycles, then report what still fails.
-7. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back. Always end the report with an `Open items` section: what you could not do or verify, a question for the orchestrator, or "none".
+7. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. Always end the report with an `Open items` section: what you could not do or verify, a question for the orchestrator, or "none".
 
 <!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
 ## Requests for the lead
@@ -109,7 +109,7 @@ By your tools on this host, the types open to you are: `ask-user`, `schedule`, `
 
 Each request is one entry with these fields, in this order:
 
-1. `R<n>`, its type, and `blocking` (this part of your work stops without it) or `non-blocking` (you went on from the assumption you state).
+1. `R<n>`, its type, and `blocking` (this part of your work stops without it) or `non-blocking` (you went on from the assumption you state). Count on from your last entry in a later report: a number is never used twice in one piece of work.
 2. `Why`: one sentence.
 3. The fields of its type, from the table.
 4. `If declined or unanswered`: the assumption you go on with.
@@ -125,7 +125,7 @@ Each request is one entry with these fields, in this order:
 | `delegate` | The specialist type, the objective, the acceptance evidence. This is work for another type; a question for a peer stays under `Open items`. |
 | `use-server` | The server and tool, the exact input, what to return. |
 
-- **Report once, with everything else done.** Finish all work that does not depend on an answer, then report. Your report stays your one hand-back; a request is never a message you send mid-run.
+- **Report with everything else done.** Finish all work that does not depend on an answer, then report. Your report stays your one hand-back; a request is never a message you send mid-run.
 - **A request carries no authority.** The lead decides it as its own act under its own rules, and may decline it. Never request what your own guard or one of your own rules refused: report the refusal instead. A read-only role requests evidence, never a change.
 - **The answer comes back to you.** When the lead continues you, its message names each `R<n>` as `answered`, `declined (who, why)` or `failed (what happened)`. Use the answers, finish the part that waited, and report again in full: the new report replaces the earlier one. After `declined` or `failed`, go on from the assumption you stated and mark what rests on it as an assumption. Never repeat a request that was answered or declined.
 - **Turns.** If your method works in turns with the user, open the section with the line `Turn <n>`. Your first report is turn 1; the number goes up by one each time the answers to your `ask-user` entries come back to you. A rule of yours that counts turns counts these.

@@ -38,7 +38,8 @@ describe('native orchestrator-security: its delegation grant', () => {
   it('holds no workflow, web or findings tool, and says in its body why it has no saved workflow', () => {
     for (const absent of ['Workflow', 'WebFetch', 'WebSearch', 'ReportFindings']) {
       expect(tools(), absent).not.toContain(absent);
-      expect(withoutRequests(text().split('<!-- agents-united:floor:end -->')[1]!), absent).not.toContain(`\`${absent}\``);
+      const authored = text().split('<!-- agents-united:floor:end -->')[1]!;
+      expect(absent === 'Workflow' ? withoutRequests(authored) : authored, absent).not.toContain(`\`${absent}\``);
     }
     expect(section('No saved workflows')).toContain('the only one they can install, `workflow-test`, repairs a red run by spawning a backend type that no security Bundle installs');
   });
