@@ -19,7 +19,7 @@ import { NATIVE_ROLES, nativeText } from './helpers/native-roles.js';
 
 /** The tools a lead must hold for its block to be true (`Workflow` is optional: the block states both paths). */
 const LEAD_TOOLS = ['AskUserQuestion', 'Bash', 'PowerShell', 'Monitor', 'TaskStop', 'CronCreate', 'ScheduleWakeup', 'Agent', 'SendMessage', 'Skill', 'ToolSearch'];
-const EXEMPT = ['factory-realizer', 'factory-evaluator', 'factory-sync', 'orchestrator-agent-factory'];
+const EXEMPT = ['factory-realizer', 'factory-evaluator', 'factory-sync', 'orchestrator-agent-factory', 'orchestrator-universal'];
 const BOUNDARIES = '## Boundaries of this host';
 const TRACKING = '## Session task tracking';
 
@@ -34,7 +34,7 @@ const openLine = (block: string): string => /the types open to you are: (.*)\. N
 const active = NATIVE_ROLES.filter(entry => !EXEMPT.includes(entry.role));
 
 describe('the exempt roles', () => {
-  it('are exactly the four fixed-job roles of the factory', () => {
+  it('are exactly the four factory roles and the universal front door', () => {
     expect([...REQUESTS_EXEMPT_ROLES].sort()).toEqual([...EXEMPT].sort());
   });
 

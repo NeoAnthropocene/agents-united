@@ -12,8 +12,8 @@ export const REQUESTS_START =
   '<!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->';
 export const REQUESTS_END = '<!-- agents-united:requests:end -->';
 
-/** Fixed-job roles with their own hand-back contract: the factory's three roles and its coordinator. They carry no block. */
-export const REQUESTS_EXEMPT_ROLES: readonly string[] = ['factory-realizer', 'factory-evaluator', 'factory-sync', 'orchestrator-agent-factory'];
+/** Roles outside the protocol, they carry no block: the factory's three fixed-job roles with their own hand-back contract, its coordinator, and the universal front door (no `Agent` tool, no specialist, it routes and instructs). */
+export const REQUESTS_EXEMPT_ROLES: readonly string[] = ['factory-realizer', 'factory-evaluator', 'factory-sync', 'orchestrator-agent-factory', 'orchestrator-universal'];
 
 /** A specialist asks (`specialist`); a lead (`coordinator`) acts. */
 export type RequestsKind = 'specialist' | 'coordinator';

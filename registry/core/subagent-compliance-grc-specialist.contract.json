@@ -1,0 +1,10 @@
+{
+  "definition": "subagent-compliance-grc-specialist",
+  "workflows": [],
+  "skills": [
+    "security-audit",
+    "domain-modeling",
+    "technical-documentation"
+  ],
+  "hooks": []
+}

@@ -1,0 +1,13 @@
+{
+  "definition": "subagent-appsec-penetration-tester",
+  "workflows": [],
+  "skills": [
+    "security-audit",
+    "systematic-debugging",
+    "git-guardrails",
+    "threat-modeling",
+    "sarif-triage",
+    "variant-analysis"
+  ],
+  "hooks": []
+}

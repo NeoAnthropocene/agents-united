@@ -59,7 +59,7 @@ Return a DevOps engineering report with: a short summary; infrastructure and pip
 
 ## How to work
 
-1. **Audit first.** Find existing workflows, Dockerfiles, compose files, manifests and IaC with `Glob` and `Grep`, and `Read` them before writing. Check how secrets are handled before you change anything.
+1. **Audit first.** Find existing workflows, Dockerfiles, compose files, manifests and IaC with `Glob` and `Grep` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`), and `Read` them before writing. Check how secrets are handled before you change anything.
 2. **Consult the skill.** Load the matching skill with `Skill` before writing platform-specific code. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory.
 
 | Situation | Skill |

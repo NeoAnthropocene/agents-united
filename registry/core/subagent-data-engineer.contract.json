@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-data-engineer",
+  "workflows": [],
+  "skills": [
+    "database-design",
+    "rag-vector-pipeline",
+    "vector-database-design",
+    "telemetry-monitoring",
+    "postgres-best-practices"
+  ],
+  "hooks": []
+}
