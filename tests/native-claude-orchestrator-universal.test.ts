@@ -48,7 +48,7 @@ const canonicalMatrix = (): string[][] => tableRows(/### 1\. Department Domain R
 const canonicalOrganizational = (): string[][] => tableRows(/### 2\. Organizational Bundles[^\n]*\n([\s\S]*?)(?=\n---\n|\n## )/.exec(canonical())![1]!);
 const nativeAtlas = (): string => section('Domain Atlas');
 const nativeMatrix = (): string[][] => tableRows(nativeAtlas().split('\n\n').filter(block => block.startsWith('| Capability trigger'))[0]!);
-const nativeOrganizational = (): string[][] => tableRows(nativeAtlas().split('\n\n').filter(block => block.startsWith('| Bundle | Status'))[0]!);
+const nativeOrganizational = (): string[][] => tableRows(nativeAtlas().split('\n\n').filter(block => block.startsWith('| Bundle | Rule'))[0]!);
 const registryBundles = (): Record<string, any> => bundles();
 
 /**
@@ -148,7 +148,9 @@ describe('native orchestrator-universal: the bundle facts it relies on', () => {
       expect(shipped.has(skill), skill).toBe(true);
       expect(fs.existsSync(path.resolve('registry/skills', skill, 'SKILL.md')), skill).toBe(true);
     }
-    for (const match of text().matchAll(/`\/([a-z0-9-]+)`/g)) expect(shipped.has(match[1]!), `/${match[1]} is a skill of the Bundle`).toBe(true);
+    const slashSkills = [...text().matchAll(/`\/([a-z0-9-]+)`/g)];
+    expect(slashSkills.length).toBeGreaterThan(0);
+    for (const match of slashSkills) expect(shipped.has(match[1]!), `/${match[1]} is a skill of the Bundle`).toBe(true);
   });
 });
 
@@ -163,12 +165,18 @@ describe('native orchestrator-universal: the Domain Atlas', () => {
   });
 
   it('lists the organizational table like the canonical agent, and names digital-agency nowhere else', () => {
-    expect(nativeOrganizational().map(row => row.map(strip).slice(0, 2))).toEqual(canonicalOrganizational().map(row => row.map(strip).slice(0, 2)));
+    expect(nativeOrganizational().map(row => strip(row[0]!))).toEqual(canonicalOrganizational().map(row => strip(row[0]!)));
     expect(nativeOrganizational().map(row => strip(row[0]!))).toEqual(['digital-agency']);
     expect(nativeMatrix().flat().join(' ')).not.toContain('digital-agency');
     expect(text().split('digital-agency')).toHaveLength(2);
     expect(nativeAtlas()).toContain('Never recommend it or install it on your own initiative');
-    expect(nativeOrganizational()[0]![2]).toContain('Opt-in only.');
+    expect(nativeOrganizational()[0]!).toHaveLength(2);
+    expect(nativeOrganizational()[0]![1]).toContain('Opt-in only.');
+  });
+
+  it('states no status for an organizational Bundle that registry/bundles.json does not declare', () => {
+    const rawBundles = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')).bundles as Record<string, { status?: string }>;
+    expect(text().includes('under-construction')).toBe(rawBundles['digital-agency']?.status === 'under-construction');
   });
 
   it('names a Bundle of the domain tier in every row, with the install line the registry gives', () => {
@@ -284,7 +292,9 @@ describe('native orchestrator-universal: consent, the decline path and the hand-
   });
 
   it('names every install command it gives as a Bundle that exists', () => {
-    for (const match of text().matchAll(/agents add ([a-z][a-z0-9:-]*)/g)) {
+    const installMatches = [...text().matchAll(/agents add ([a-z][a-z0-9:-]*)/g)];
+    expect(installMatches.length).toBeGreaterThan(0);
+    for (const match of installMatches) {
       const name = match[1]!;
       expect(Object.keys(registryBundles()).includes(name), `agents add ${name}`).toBe(true);
     }
@@ -294,7 +304,7 @@ describe('native orchestrator-universal: consent, the decline path and the hand-
 describe('native orchestrator-universal: it routes and neither consults nor executes in session', () => {
   it('says plainly what the lane does not do, and why', () => {
     expect(text()).toContain('On this host this lane routes: it neither consults a specialist nor executes a piece of department work in session.');
-    expect(text()).toMatch(/not bound here: you hold no Agent tool and the Bundle ships no specialist/);
+    expect(text()).toContain('You hold no Agent tool and the Bundle ships no specialist.');
     expect(text()).toContain('You hold no Agent tool, so you start no subagent and no teammate.');
   });
 
@@ -343,7 +353,9 @@ describe('native orchestrator-universal: the canonical numbered directives all r
     expect(count(body)).toBe(32);
     expect([count(core.scope_boundaries), count(core.output_contract)]).toEqual([26, 6]);
     const held = normalize(`${core.scope_boundaries} ${core.output_contract}`);
-    for (const match of body.matchAll(/^\s{0,3}\d+\. \*\*([^*]+)\*\*/gm)) expect(held, match[1]).toContain(match[1]!.trim());
+    const directives = [...body.matchAll(/^\s{0,3}\d+\. \*\*([^*]+)\*\*/gm)];
+    expect(directives.length).toBeGreaterThan(0);
+    for (const match of directives) expect(held, match[1]).toContain(match[1]!.trim());
   });
 
   it('keeps the canonical numbered items in the canonical order', async () => {
@@ -351,6 +363,7 @@ describe('native orchestrator-universal: the canonical numbered directives all r
     const labels = (source: string): string[] => [...source.matchAll(/^\s{0,3}\d+\. \*\*([^*]+)\*\*/gm)].map(match => match[1]!.trim());
     const body = canonical().replace(/^---\n[\s\S]*?\n---\n/, '');
     const wanted = labels(body).filter(label => !['Route Decision', 'Fit Rationale', 'Consent & Install Status', 'Route & Instruct Command', 'Drift Note (if any)', 'Handoff Reference'].includes(label));
+    expect(wanted.length).toBeGreaterThan(0);
     expect(labels(core.scope_boundaries)).toEqual(wanted);
   });
 });
@@ -454,5 +467,18 @@ describe('native orchestrator-universal: the shared core', () => {
     expect(normalize(core.safety)).toContain('Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed.');
     expect(normalize(core.safety)).toContain('Never execute `agents add <bundle> -y` without explicit in-session user confirmation');
     expect(normalize(core.safety)).toContain('Organization Bundles Are Opt-in Only');
+  });
+
+  it('pins key paths, install-choice, delegation-duty, polling and server-check wording below the floor', () => {
+    const below = body();
+    expect(below).toContain('.claude/.agents-united/agents-united.json');
+    expect(below).toContain('.agents/agents-united.json');
+    expect(below).toContain('docs/handoff/');
+    expect(below).toContain('If it fails, say so and show the output; do not go on to the hand-off as if it had worked.');
+    expect(below).toContain('An install that names neither `--native` nor `--no-native` keeps the native choice the workspace recorded.');
+    expect(below).toContain('Four generic duties of the floor above are therefore not bound here: to consult a specialist before a delegation map, to delegate an in-session piece of work to domain specialists, to write delegation briefs, and to relay between specialists.');
+    expect(below).toContain('CronCreate');
+    expect(below).toContain('Never loop on status commands');
+    expect(below).toContain('Check a server with `ToolSearch` before you rely on it.');
   });
 });
