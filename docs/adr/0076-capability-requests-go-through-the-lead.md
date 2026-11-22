@@ -39,4 +39,5 @@ Two shared sentences are corrected with this change, because it already rewrites
 - A repository rule refuses a non-exempt role without the current block, and an exempt role that carries the markers. `factory-check` applies the same rule to a candidate.
 - Not shown until a live sitting: the dialog, team mode, approval prompts, watching and schedules over time, and the `Workflow` path.
 - Bundles that land later regenerate the block and align their own role sentences.
+- One headless loop on the real host (a mentor's `ask-user` entries answered and returned to the same mentor under `Turn 2`, a specialist's `run-command` run and returned to the same specialist) is recorded in `host-library/claude/observations/2026-11-22-claude-2.1.330-capability-requests-headless.md`; it proves no rate.
 - Other Hosts are unchanged.
