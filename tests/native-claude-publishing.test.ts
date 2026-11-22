@@ -121,6 +121,12 @@ describe('the coordinator text', () => {
     expect(text).toContain("- **The user's go-ahead for each new page.** Whenever the work produces a deliverable with a page form (a prototype, a deck, a one-pager or a visual asset), ask once for that deliverable; the files are written first in every case.");
   });
 
+  it('asks in prose whenever the question tool is not among its tools, the option to keep it in the project first', () => {
+    expect(text).toContain('- **When `AskUserQuestion` is not among your tools** (you run as a subagent, or the session has no user at the terminal), put the question in plain prose with the two options, **Keep it in the project** first.');
+    expect(text).not.toContain('**As a subagent** you hold no `AskUserQuestion`');
+    expect(text).not.toContain('As a subagent');
+  });
+
   it('mentions the bundled skill only after a condition on the list of skills, in the same sentence', () => {
     const mentions = sentences(text).filter(sentence => SKILL_MENTION.test(sentence));
     expect(mentions.length).toBeGreaterThan(0);
