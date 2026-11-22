@@ -362,6 +362,8 @@ const ROLES: RoleSpec[] = [
     { name: 'agency-seo-specialist', stem: 'subagent-seo-specialist', serverTools: withRoutes(['mcp__firecrawl', 'mcp__chrome-devtools-mcp']), extra: ['WebFetch', 'WebSearch'] },
     { name: 'agency-qa-automation-lead', stem: 'subagent-qa-automation-lead', serverTools: withRoutes(['mcp__playwright', 'mcp__chrome-devtools-mcp', 'mcp__context7']), extra: ['Monitor', 'TaskCreate', 'TaskUpdate'] },
     { name: 'agency-compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', serverTools: withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__github__search_code', 'mcp__github__get_file_contents', 'mcp__github__list_pull_requests', 'mcp__github__pull_request_read']), extra: ['WebFetch', 'WebSearch'] },
+    // The security copy of the same core (the plain type of the secops-compliance-grc bundle): the same classes and servers, so the same tools.
+    { name: 'compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', serverTools: withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__github__search_code', 'mcp__github__get_file_contents', 'mcp__github__list_pull_requests', 'mcp__github__pull_request_read']), extra: ['WebFetch', 'WebSearch'] },
     { name: 'agency-frontend-architect', stem: 'subagent-frontend-architect', serverTools: withRoutes(['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp']), extra: ['LSP', 'Monitor', 'EnterWorktree', 'ExitWorktree', 'TodoWrite'] },
   ].map(
     ({ extra, ...spec }): RoleSpec => ({

@@ -35,6 +35,7 @@ export const NATIVE_ROLES: ReadonlyArray<{ role: string; stem: string; tier: 1 |
   { role: 'security-engineer', stem: 'subagent-security-engineer', tier: 1, coordinator: false },
   { role: 'cloud-security-architect', stem: 'subagent-cloud-security-architect', tier: 1, coordinator: false },
   { role: 'appsec-penetration-tester', stem: 'subagent-appsec-penetration-tester', tier: 1, coordinator: false },
+  { role: 'compliance-grc-specialist', stem: 'subagent-compliance-grc-specialist', tier: 1, coordinator: false },
   { role: 'orchestrator-security', stem: 'orchestrator-security', tier: 1, coordinator: true },
   { role: 'design-ops-lead', stem: 'subagent-design-ops-lead', tier: 1, coordinator: false },
   { role: 'design-researcher', stem: 'subagent-design-researcher', tier: 1, coordinator: false },
