@@ -198,11 +198,14 @@ describe('the module on synthetic text', () => {
     expect(checkPublishing(synced, 'specialist', tools)).toEqual([]);
   });
 
-  it('sits before the requests block when the file has one', () => {
+  it('sits directly after the requests block when the file has one', () => {
     const requests = `${REQUESTS_START}\n## Requests for the lead\n${REQUESTS_END}\n\n`;
     const text = base.replace(`${BOUNDARIES}\n`, `${requests}${BOUNDARIES}\n`);
     const synced = syncPublishing(text, 'specialist', tools);
-    expect(synced).toContain(`${PUBLISHING_END}\n\n${REQUESTS_START}`);
+    expect(synced).toContain(`${REQUESTS_END}\n\n${PUBLISHING_START}`);
+    expect(synced).toContain(`${PUBLISHING_END}\n\n${BOUNDARIES}`);
+    expect(syncPublishing(synced, 'specialist', tools)).toBe(synced);
+    expect(syncPublishing(synced, 'specialist', ['Read'])).toBe(text);
   });
 
   it('falls back to the session task tracking section', () => {

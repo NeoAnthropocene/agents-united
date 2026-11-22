@@ -10,6 +10,7 @@ import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { inspectNativeAgent, splitTools } from '../src/core/native-guard.js';
 import { NATIVE_ROLES } from './helpers/native-roles.js';
 import { syncRoster } from '../src/core/native-roster.js';
+import { PUBLISHING_START, holdsPublishing, syncPublishing } from '../src/core/native-publishing.js';
 import { REQUESTS_EXEMPT_ROLES, REQUESTS_START, syncRequests } from '../src/core/native-requests.js';
 import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
@@ -17,7 +18,7 @@ import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
-import { nativeToolOrder, requestsBlockProblems } from '../src/core/native-repository-rules.js';
+import { nativeToolOrder, publishingBlockProblems, requestsBlockProblems } from '../src/core/native-repository-rules.js';
 import { withRoutes } from '../src/core/claude-mcp-routes.js';
 
 /**
@@ -439,6 +440,8 @@ beforeAll(async () => {
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
       // ADR 0076: the requests block, after the tools line is set (a specialist's open types are computed from it); the factory's fixed-job roles carry none.
       if (!REQUESTS_EXEMPT_ROLES.includes(role.name)) synced = syncRequests(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
+      // ADR 0077: the publishing block directly before the requests block, only for a role whose tools hold `Artifact` (a role without it carries none).
+      synced = syncPublishing(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
       if (role.mainThread) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
     }
@@ -447,7 +450,8 @@ beforeAll(async () => {
       const file = path.resolve('registry/hosts/claude/agents', `${role}.md`);
       if (ROLES.some(spec => spec.name === role) || REQUESTS_EXEMPT_ROLES.includes(role) || !fs.existsSync(file)) continue;
       const text = fs.readFileSync(file, 'utf8');
-      fs.writeFileSync(file, syncRequests(text, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools));
+      const synced = syncRequests(text, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools);
+      fs.writeFileSync(file, syncPublishing(synced, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools));
     }
   }
   // A project directory where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points: the committed scripts, as installed.
@@ -472,6 +476,11 @@ describe.each(ROLES)('native Claude $name', role => {
     const exempt = REQUESTS_EXEMPT_ROLES.includes(role.name);
     expect(requestsBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared() })).toEqual([]);
     expect(read().includes(REQUESTS_START)).toBe(!exempt);
+  });
+
+  it('carries the publishing block of ADR 0077, exactly as generated, exactly when its tools line holds Artifact', () => {
+    expect(publishingBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared() })).toEqual([]);
+    expect(read().includes(PUBLISHING_START)).toBe(holdsPublishing(declared()));
   });
 
   it('carries its guard, exactly as generated, and the embedded guard really blocks', () => {
@@ -536,7 +545,11 @@ describe.each(ROLES)('native Claude $name', role => {
 
   it('names no tool outside its grant, and only skills that exist, in the authored guidance', () => {
     // The generated requests block (ADR 0076) is checked by its own suite: a lead's text names `Workflow` and the schedule tools for the case it holds them.
-    const body = read().split('<!-- agents-united:floor:end -->')[1].replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/, '');
+    // The generated publishing block (ADR 0077) is checked by its own suite: it names the bundled skills design and slides, which only a role that lists them can invoke.
+    const body = read()
+      .split('<!-- agents-united:floor:end -->')[1]
+      .replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/, '')
+      .replace(/<!-- agents-united:publishing:start[^>]*-->[\s\S]*?<!-- agents-united:publishing:end -->/, '');
     const catalog = new Set(loadToolPolicy('registry', 'claude').catalog.map(entry => entry.name));
     const held = new Set(declaredNames());
     for (const match of body.matchAll(/`([A-Za-z_][\w-]*)`/g)) {

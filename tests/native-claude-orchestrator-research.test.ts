@@ -8,6 +8,7 @@ import { splitTools } from '../src/core/native-guard.js';
 import { checkRoster, domainTypes } from '../src/core/native-roster.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
+import { withoutPublishingBlock } from './helpers/artifact-holders.js';
 import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js';
 
 /**
@@ -44,7 +45,7 @@ const coreFile = (): string => fs.readFileSync(path.resolve('registry/core/orche
 /** The whole tools line: the Agent allowlist, then the classes of the core in alphabetical order, then the four servers by every route that exists. */
 const EXPECTED_TOOLS = [
   `Agent(deep-research, literature-patent-analyst, repo-index, socratic-mentor, statistical-analyst)`,
-  'AskUserQuestion', 'Bash', 'CronCreate', 'CronDelete', 'CronList', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor', 'NotebookEdit', 'PowerShell',
+  'Artifact', 'AskUserQuestion', 'Bash', 'CronCreate', 'CronDelete', 'CronList', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor', 'NotebookEdit', 'PowerShell',
   'PushNotification', 'Read', 'ReadMcpResourceTool', 'RemoteTrigger', 'ScheduleWakeup', 'SendMessage', 'SendUserFile', 'Skill', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskStop',
   'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WaitForMcpServers', 'WebFetch', 'WebSearch', 'Write',
   ...withRoutes(['mcp__github', 'mcp__context7', 'mcp__firecrawl', 'mcp__markitdown']),
@@ -111,7 +112,7 @@ describe('native orchestrator-research (a main-thread coordinator)', () => {
   });
 
   it('refers only to slash commands that exist as skills, and to bundles that exist', () => {
-    for (const match of body().matchAll(/`\/([a-z0-9-]+)`/g)) {
+    for (const match of withoutPublishingBlock(body()).matchAll(/`\/([a-z0-9-]+)`/g)) {
       if (match[1] === 'reload-skills') continue; // a Claude Code command, not a skill of ours
       expect(fs.existsSync(path.resolve('registry/skills', match[1]!, 'SKILL.md')), `/${match[1]}`).toBe(true);
     }

@@ -8,6 +8,7 @@ import { splitTools } from '../src/core/native-guard.js';
 import { checkRoster, domainTypes } from '../src/core/native-roster.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
+import { withoutPublishingBlock } from './helpers/artifact-holders.js';
 import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js';
 import { nativeText } from './helpers/native-roles.js';
 
@@ -76,8 +77,8 @@ describe('native orchestrator-marketing: posture and tools', () => {
 
   it('holds no image server and no image tool, no saved-workflow tool, no code intelligence, no structured findings and no worktree tool', () => {
     expect(tools().filter(tool => /image/i.test(tool))).toEqual([]);
-    for (const absent of ['Workflow', 'LSP', 'ReportFindings', 'EnterWorktree', 'ExitWorktree', 'Artifact']) expect(toolNames(), absent).not.toContain(absent);
-    for (const present of ['Agent', 'AskUserQuestion', 'Bash', 'CronCreate', 'Edit', 'Monitor', 'SendMessage', 'Skill', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write']) {
+    for (const absent of ['Workflow', 'LSP', 'ReportFindings', 'EnterWorktree', 'ExitWorktree']) expect(toolNames(), absent).not.toContain(absent);
+    for (const present of ['Agent', 'Artifact', 'AskUserQuestion', 'Bash', 'CronCreate', 'Edit', 'Monitor', 'SendMessage', 'Skill', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write']) {
       expect(toolNames(), present).toContain(present);
     }
   });
@@ -157,7 +158,7 @@ describe('native orchestrator-marketing: the sub-bundle recommendations are the 
 describe('native orchestrator-marketing: the skills it names', () => {
   it('names only slash commands that are skills of the growth-marketing bundle (or host commands), and each skill exists', () => {
     const skills = new Set(bundles()[BUNDLE].skills as string[]);
-    const named = [...body().matchAll(/`\/([a-z0-9-]+)`/g)].map(match => match[1]!).filter(name => name !== 'reload-skills' && name !== 'config');
+    const named = [...withoutPublishingBlock(body()).matchAll(/`\/([a-z0-9-]+)`/g)].map(match => match[1]!).filter(name => name !== 'reload-skills' && name !== 'config');
     expect(named.length).toBeGreaterThan(5);
     for (const name of named) {
       expect(skills.has(name), `/${name} is not a skill of ${BUNDLE}`).toBe(true);

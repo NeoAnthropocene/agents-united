@@ -12,7 +12,7 @@ describeMarketingRole({
   type: 'subagent-marketing-growth-strategist',
   agency: 'agency-growth-strategist',
   servers: ['firecrawl'],
-  artifact: false,
+  artifact: true,
   peers: ['marketing-conversion-specialist', 'marketing-content-strategist', 'marketing-campaign-specialist', 'marketing-creative-designer', 'plg-strategist', 'paid-acquisition-specialist'],
   returns: 'the playbook',
 });

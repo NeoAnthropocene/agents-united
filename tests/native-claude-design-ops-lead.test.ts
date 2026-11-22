@@ -23,7 +23,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 
 describe('native design-ops-lead: editors, no shell', () => {
   it('holds exactly this tools set, so a stray tool fails', () => {
-    expect([...tools()].sort()).toEqual(['Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch'].sort());
+    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch'].sort());
   });
 
   it('holds the posture of a native specialist: sonnet model, medium effort', () => {

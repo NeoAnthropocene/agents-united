@@ -44,6 +44,14 @@ describe('the pool of a coordinator: a teammate gets the MCP tools of the main c
     });
   }
 
+  it.each(['orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-engineering', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-system-architecture'])(
+    '%s holds Artifact when a role it may spawn does, so that the role keeps the tool (ADR 0077)',
+    lead => {
+      const publishers = spawnable(lead).filter(exists).filter(role => toolsOf(role).includes('Artifact'));
+      if (publishers.length > 0) expect(toolsOf(lead), `${lead} may spawn ${publishers.join(', ')}`).toContain('Artifact');
+    },
+  );
+
   it('names the image tool in the lead, and as the one tool and not the server', () => {
     const held = toolsOf('orchestrator-digital-agency');
     expect(held).toContain('mcp__image-gen__generate_image');

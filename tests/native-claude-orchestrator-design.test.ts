@@ -7,6 +7,7 @@ import { integrationOf, withRoutes } from '../src/core/claude-mcp-routes.js';
 import { splitTools } from '../src/core/native-guard.js';
 import { checkRoster, domainTypes } from '../src/core/native-roster.js';
 import { attempt } from './helpers/claude-host-hooks.js';
+import { withoutPublishingBlock } from './helpers/artifact-holders.js';
 import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js';
 import { NATIVE_AGENTS_DIR, nativeText } from './helpers/native-roles.js';
 
@@ -37,7 +38,7 @@ const DESIGN_TYPES = [
  */
 const EXPECTED_TOOLS = [
   `Agent(${DESIGN_TYPES.join(', ')})`,
-  'AskUserQuestion', 'Bash', 'CronCreate', 'CronDelete', 'CronList', 'Edit', 'EnterWorktree', 'ExitWorktree', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor',
+  'Artifact', 'AskUserQuestion', 'Bash', 'CronCreate', 'CronDelete', 'CronList', 'Edit', 'EnterWorktree', 'ExitWorktree', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor',
   'NotebookEdit', 'PowerShell', 'PushNotification', 'Read', 'ReadMcpResourceTool', 'RemoteTrigger', 'ScheduleWakeup', 'SendMessage', 'SendUserFile', 'Skill', 'TaskCreate',
   'TaskGet', 'TaskList', 'TaskStop', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WaitForMcpServers', 'WebFetch', 'WebSearch', 'Write',
   ...withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__playwright', 'mcp__stitch']),
@@ -180,7 +181,7 @@ describe('native orchestrator-design: its domain map', () => {
   });
 
   it('refers only to slash commands that exist as skills, and to bundles that exist', () => {
-    for (const match of text().matchAll(/`\/([a-z0-9-]+)`/g)) {
+    for (const match of withoutPublishingBlock(text()).matchAll(/`\/([a-z0-9-]+)`/g)) {
       if (match[1] === 'reload-skills' || match[1] === 'config') continue;
       expect(fs.existsSync(path.resolve('registry/skills', match[1]!, 'SKILL.md')), `/${match[1]}`).toBe(true);
     }

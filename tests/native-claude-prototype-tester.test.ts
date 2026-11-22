@@ -24,7 +24,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 
 describe('native prototype-tester: editors, no shell, no scheduling', () => {
   it('holds exactly this tools set, so a stray tool fails', () => {
-    expect([...tools()].sort()).toEqual(['Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__chrome-devtools-mcp', 'mcp__playwright', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools', 'mcp__plugin_playwright_playwright'].sort());
+    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__chrome-devtools-mcp', 'mcp__playwright', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools', 'mcp__plugin_playwright_playwright'].sort());
   });
 
   it('holds the posture of a native specialist: sonnet model, medium effort', () => {

@@ -12,7 +12,7 @@ describeMarketingRole({
   type: 'subagent-marketing-conversion-specialist',
   agency: 'agency-conversion-specialist',
   servers: ['playwright', 'chrome-devtools-mcp'],
-  artifact: false,
+  artifact: true,
   peers: ['marketing-growth-strategist', 'marketing-creative-designer', 'marketing-content-strategist', 'marketing-campaign-specialist', 'plg-strategist'],
   returns: 'the audit report, the props',
 });

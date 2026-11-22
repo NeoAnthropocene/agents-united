@@ -8,6 +8,7 @@ import { splitTools } from '../src/core/native-guard.js';
 import { checkRoster, domainTypes } from '../src/core/native-roster.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { attempt } from './helpers/claude-host-hooks.js';
+import { withoutPublishingBlock } from './helpers/artifact-holders.js';
 import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js';
 import { NATIVE_AGENTS_DIR, nativeText } from './helpers/native-roles.js';
 
@@ -40,7 +41,7 @@ const BUSINESS_TYPES = ['business-panel-experts', 'financial-analyst', 'legal-co
  */
 const EXPECTED_TOOLS = [
   `Agent(${BUSINESS_TYPES.join(', ')})`,
-  'AskUserQuestion', 'Bash', 'CronCreate', 'CronDelete', 'CronList', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor', 'NotebookEdit', 'PowerShell',
+  'Artifact', 'AskUserQuestion', 'Bash', 'CronCreate', 'CronDelete', 'CronList', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'Monitor', 'NotebookEdit', 'PowerShell',
   'PushNotification', 'Read', 'ReadMcpResourceTool', 'RemoteTrigger', 'ScheduleWakeup', 'SendMessage', 'SendUserFile', 'Skill', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskStop',
   'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WaitForMcpServers', 'WebFetch', 'WebSearch', 'Write',
   ...withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__firecrawl', 'mcp__github']),
@@ -158,7 +159,7 @@ describe('native orchestrator-business: its domain map and cross-bundle table', 
   });
 
   it('refers only to slash commands that exist as skills, to skills of the business bundles, and to bundles that exist', () => {
-    const body = text();
+    const body = withoutPublishingBlock(text());
     const businessSkills = new Set(Object.entries(bundles()).filter(([, bundle]: [string, any]) => bundle.domain === 'business').flatMap(([, bundle]: [string, any]) => bundle.skills ?? []));
     for (const match of body.matchAll(/`\/([a-z0-9-]+)`/g)) {
       if (match[1] === 'reload-skills') continue; // a Claude Code command, not a skill of ours
