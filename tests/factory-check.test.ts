@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { validateCoreSchema } from '../src/core/semantic-core.js';
 import { FLOOR_START, FLOOR_END, renderFloor } from '../src/core/native-floor.js';
+import { requestsFixture } from './helpers/requests-fixture.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 
@@ -49,6 +50,8 @@ describe('factory-check: actual shared/native validators through the packaged CL
     body = `${FLOOR_START}
 ${renderFloor(core)}
 ${FLOOR_END}
+
+${requestsFixture(String(meta.tools).split(', '))}
 
 Return the bounded review to the caller.
 Report incomplete evidence plainly.

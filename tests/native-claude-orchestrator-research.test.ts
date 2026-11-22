@@ -32,6 +32,8 @@ const BUNDLE = 'deep-research';
 const ROLE = 'orchestrator-research';
 const file = path.resolve('registry/hosts/claude/agents/orchestrator-research.md');
 const read = (): string => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+// The generated requests block (ADR 0076) names `Workflow` and `schedule` for the case a lead holds them: only the scans for those words leave it out.
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const frontmatter = (): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(read())![1]);
 const body = (): string => read().split('<!-- agents-united:floor:end -->')[1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(read())![1]!.trim();
@@ -157,12 +159,25 @@ describe('native orchestrator-research (a main-thread coordinator)', () => {
   });
 });
 
+describe('native orchestrator-research: the answers go back to the same mentor (ADR 0076)', () => {
+  it('the owner row of socratic-mentor says its questions come back as ask-user entries, turn by turn, and the answers return to the same mentor', () => {
+    const row = /^\| `socratic-mentor` \| `deep-research` \| Logical consistency auditing[^\n]*$/m.exec(body())![0];
+    expect(row).toContain('Read-only; its probing questions come back as `ask-user` entries, turn by turn: you put them to the user and return the answers to the same mentor.');
+  });
+
+  it('the lead block returns every result to the same specialist and never launches a second agent of that type', () => {
+    const block = /<!-- agents-united:requests:start[^>]*-->\n([\s\S]*?)\n<!-- agents-united:requests:end -->/.exec(read())![1]!;
+    expect(block).toContain('Return every result to the same specialist');
+    expect(block).toContain('Never launch a second agent of that type to carry an answer');
+  });
+});
+
 describe('native orchestrator-research: the four leave-outs, pinned', () => {
   const held = (): string[] => splitTools(frontmatter().tools).map(tool => tool.split('(')[0]!);
 
   it.each(['Workflow', 'ReportFindings', 'LSP', 'EnterWorktree', 'ExitWorktree'])('holds no %s, and the body names none of them', tool => {
     expect(held()).not.toContain(tool);
-    expect(body()).not.toContain(`\`${tool}\``);
+    expect(tool === 'Workflow' ? withoutRequests(body()) : body()).not.toContain(`\`${tool}\``);
   });
 
   it('does not run saved workflows: the workflow-* names are skills that it loads with Skill, and no native workflow is named', () => {
@@ -247,7 +262,7 @@ describe('native orchestrator-research: the shared core carries the canonical le
 
   it('never uses the word schedule in the core or the native file: the canonical lead\'s wake-up timers are not bound here', () => {
     expect(coreFile()).not.toMatch(/\bschedule\b/i);
-    expect(read()).not.toMatch(/\bschedule\b/i);
+    expect(withoutRequests(read())).not.toMatch(/\bschedule\b/i);
     expect(read()).not.toMatch(/TimerCondition|IsDaemon/);
   });
 

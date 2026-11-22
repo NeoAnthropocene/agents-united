@@ -7,15 +7,17 @@ import { GUARD_SCRIPT } from '../src/core/guard.js';
 import { HANDBACK_CHECK_REFERENCE, HANDBACK_CHECK_ROLE, expectedWorkerHooks } from '../src/core/handback-check.js';
 import { checkFloor, checkHooks, syncFloor, syncHooks } from '../src/core/native-floor.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
-import { splitTools } from '../src/core/native-guard.js';
+import { inspectNativeAgent, splitTools } from '../src/core/native-guard.js';
+import { NATIVE_ROLES } from './helpers/native-roles.js';
 import { syncRoster } from '../src/core/native-roster.js';
+import { REQUESTS_EXEMPT_ROLES, REQUESTS_START, syncRequests } from '../src/core/native-requests.js';
 import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
 import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
-import { nativeToolOrder } from '../src/core/native-repository-rules.js';
+import { nativeToolOrder, requestsBlockProblems } from '../src/core/native-repository-rules.js';
 import { withRoutes } from '../src/core/claude-mcp-routes.js';
 
 /**
@@ -471,9 +473,18 @@ beforeAll(async () => {
       const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool));
       const toolsLine = `tools: ${nativeToolOrder(tools, role.serverTools).join(', ')}`;
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
+      // ADR 0076: the requests block, after the tools line is set (a specialist's open types are computed from it); the factory's fixed-job roles carry none.
+      if (!REQUESTS_EXEMPT_ROLES.includes(role.name)) synced = syncRequests(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
       // A roster block belongs to a lead that spawns the roster: only a main-thread role that holds `Agent` carries one.
       if (role.mainThread && ceilingOf(role).includes('Agent')) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
+    }
+    // A committed specialist that is not in ROLES above (its floor and hooks are kept by its own suite) still gets the requests block, from its own tools line.
+    for (const { role, coordinator } of NATIVE_ROLES) {
+      const file = path.resolve('registry/hosts/claude/agents', `${role}.md`);
+      if (ROLES.some(spec => spec.name === role) || REQUESTS_EXEMPT_ROLES.includes(role) || !fs.existsSync(file)) continue;
+      const text = fs.readFileSync(file, 'utf8');
+      fs.writeFileSync(file, syncRequests(text, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools));
     }
   }
   // A project directory where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points: the committed scripts, as installed.
@@ -492,6 +503,12 @@ describe.each(ROLES)('native Claude $name', role => {
 
   it('honors the Contract Floor from the Semantic Core, exactly as generated', () => {
     expect(checkFloor(read(), cores.get(role.stem)!)).toEqual([]);
+  });
+
+  it('carries the requests block of ADR 0076, exactly as generated, unless it is a fixed-job factory role', () => {
+    const exempt = REQUESTS_EXEMPT_ROLES.includes(role.name);
+    expect(requestsBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared() })).toEqual([]);
+    expect(read().includes(REQUESTS_START)).toBe(!exempt);
   });
 
   it('carries its guard, exactly as generated, and the embedded guard really blocks', () => {
@@ -555,7 +572,10 @@ describe.each(ROLES)('native Claude $name', role => {
   });
 
   it('names no tool outside its grant, and only skills that exist, in the authored guidance', () => {
-    const body = read().split('<!-- agents-united:floor:end -->')[1];
+    // The generated requests block (ADR 0076): a specialist's block names no tool, so it stays in the scan. A lead's block names `Workflow`, `Bash`, `Monitor` and the schedule tools
+    // for the case the lead holds them (its tools line may lack some), so for a lead the scan leaves the block out; its own suite checks it.
+    const authored = read().split('<!-- agents-united:floor:end -->')[1];
+    const body = role.mainThread ? authored.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/, '') : authored;
     const catalog = new Set(loadToolPolicy('registry', 'claude').catalog.map(entry => entry.name));
     const held = new Set(declaredNames());
     for (const match of body.matchAll(/`([A-Za-z_][\w-]*)`/g)) {

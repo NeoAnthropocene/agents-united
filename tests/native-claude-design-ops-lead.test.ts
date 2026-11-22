@@ -44,7 +44,7 @@ describe('native design-ops-lead: editors, no shell', () => {
     expect(tools()).toEqual(expect.arrayContaining(['Read', 'Write', 'Grep', 'Glob']));
     expect(text()).not.toMatch(/cannot edit|no editor/i);
     expect(declared).not.toContain('run_command');
-    expect(text()).toContain('put it under `Open items` for the lead.');
+    expect(text()).toContain('put it as a `run-command` entry under `Requests for the lead`.');
   });
 });
 
@@ -53,7 +53,7 @@ describe('native design-ops-lead: the guard and acceptEdits claims', () => {
     const body = text();
     expect(body).toContain('so the only thing the guard bound to this role can stop is a write to a `.env` file (`.env.example` passes)');
     expect(body).toContain('is your own obligation');
-    expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.`);
+    expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
     expect(body.split(GUARD_SENTENCE)).toHaveLength(2);
   });
 
@@ -95,10 +95,10 @@ describe('native design-ops-lead: the peers section of the Tier 1 form', () => {
     expect(peersSection(text()).split('\n')).toEqual(peersSection(nativeText('devops-engineer')).split('\n'));
   });
 
-  it('declares messaging, and step 8 hands the report back through SubagentHandback in the plain form', async () => {
+  it('declares messaging, and step 8 hands the report back as the final answer and conditionally through SubagentHandback', async () => {
     expect(tools()).toEqual(expect.arrayContaining(['ListAgents', 'SendMessage']));
     expect((await loadSemanticCore('registry')).get('subagent-design-ops-lead')!.capabilities).toContain('messaging');
-    expect(text()).toMatch(/^8\. \*\*Hand back\.\*\* Return the report from the Output Contract as your final message through `SubagentHandback`\.$/m);
+    expect(text()).toMatch(/^8\. \*\*Hand back\.\*\* Return the report from the Output Contract as your final message: your final answer is the hand-back\. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back\.$/m);
   });
 });
 

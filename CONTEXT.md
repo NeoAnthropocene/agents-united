@@ -872,3 +872,9 @@ _Avoid_: Daily refresh, age limit, a specialist refreshing the sheet
 **Check**:
 `check` of the `system-specs` Skill: a read-only test that starts no process and compares the current fingerprint (found or not, file size and modification time of each probed tool and shell, PATH entries, OS release, architecture, memory; hashes only) with the stored one. Exit 0 unchanged, 3 changed (names only), 1 no usable sheet or another format. It cannot see an in-place update with identical size and time, a shim manager (pyenv, volta, asdf, rustup, corepack) switching versions, WSL, the GPU or the macOS developer-tools state.
 _Avoid_: Version check, health check, proof that nothing changed
+
+### Requests for the lead (ADR 0076)
+
+**Request for the lead**:
+A numbered entry (`R<n>`) in a specialist's report section `Requests for the lead`, of one of seven types (`ask-user`, `run-command`, `watch`, `schedule`, `run-workflow`, `delegate`, `use-server`), for something its work needs and its tools on the Claude host do not give it. The lead acts on it with its own tool under its own rules, may decline it, and returns the result to the same specialist with `SendMessage` (ADR 0076).
+_Avoid_: Hand-off request, escalation

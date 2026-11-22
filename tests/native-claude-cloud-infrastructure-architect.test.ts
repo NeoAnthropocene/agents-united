@@ -43,7 +43,7 @@ describe('native cloud-infrastructure-architect: the tools its canonical agent h
   });
 
   it('says that a recurring check or timer is a recommendation under Open items, not an action', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is something you recommend under `Open items`, not an action you take.');
+    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is a `schedule` request, not an action you take.');
   });
 
   it('search through Bash is stated for macOS, Linux and WSL', () => {
@@ -118,7 +118,7 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('states what the guard blocks, where it comes from in both modes, and that acceptEdits leaves the limit to the role', () => {
     const boundaries = section(text(), 'Boundaries of this host');
-    expect(boundaries).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(boundaries).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(boundaries).toContain('`permissionMode: acceptEdits` approves your file edits without asking');
     expect(boundaries).toContain('keeping to infrastructure code, topology documents and ADRs, and changing application source only when your brief asks, is your own obligation.');
     expect(boundaries).not.toContain('It blocks nothing else');
@@ -188,8 +188,8 @@ describe('native cloud-infrastructure-architect: the peers section of the engine
     expect(text()).not.toContain('shutdown_request');
   });
 
-  it('step 7 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(7)).toBe('7. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 7 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(7)).toBe('7. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('carries the session task tracking section of backend-architect verbatim', () => {

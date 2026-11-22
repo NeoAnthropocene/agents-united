@@ -14,6 +14,8 @@ import { nativeText } from './helpers/native-roles.js';
 
 const ROLE = 'deep-research';
 const text = (): string => nativeText(ROLE);
+// The generated requests block (ADR 0076) is not authored text: scans of the authored wording leave it out.
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
@@ -56,9 +58,9 @@ describe('native deep-research: the canonical tools that are bound and the one t
   });
 
   it('says nothing about timers, schedules, cron or a command runner, and sends builds and test runs to the lead', () => {
-    const body = text();
-    expect(body).not.toMatch(/cron|schedul|run_command|timer|liveness/i);
-    expect(body).toContain('You hold no shell, so builds and test runs go to the lead under `Open items`.');
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul/i);
+    expect(text()).not.toMatch(/run_command|timer|liveness/i);
+    expect(text()).toContain('You hold no shell, so builds and test runs go to the lead as `run-command` entries under `Requests for the lead`.');
   });
 });
 
@@ -94,7 +96,7 @@ describe('native deep-research: the permission mode and the guard, against the r
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain("- A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(text()).toContain("- A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.");
   });
 });
 
@@ -103,8 +105,8 @@ describe('native deep-research: the peers section of the engineering family', ()
     expect(peersSection(text()).split('\n')).toEqual(peersSection(nativeText('devops-engineer')).split('\n'));
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(/^6\. .*$/m.exec(section('How to research'))![0]).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(/^6\. .*$/m.exec(section('How to research'))![0]).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

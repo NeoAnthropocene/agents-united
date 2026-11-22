@@ -16,6 +16,8 @@ import { nativeText } from './helpers/native-roles.js';
 const ROLE = 'literature-patent-analyst';
 const STEM = 'subagent-literature-patent-analyst';
 const text = (): string => nativeText(ROLE);
+/** The generated requests block names `schedule` and the schedule tools; only the scan for those words leaves it out, every other word is checked against the whole text. */
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to review'))![0];
@@ -62,7 +64,8 @@ describe('native literature-patent-analyst: the canonical tools that are bound',
   });
 
   it('says nothing about timers, schedules, cron, a command runner, a web tool it does not hold or a question tool', () => {
-    expect(text()).not.toMatch(/cron|schedul|run_command|timer|liveness|AskUserQuestion|ask_question|WebSearch|WebFetch/i);
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul|AskUserQuestion/i);
+    expect(text()).not.toMatch(/run_command|timer|liveness|ask_question|WebSearch|WebFetch/i);
   });
 
   it('says that web content comes only through the firecrawl server when it is connected', () => {
@@ -112,7 +115,7 @@ describe('native literature-patent-analyst: acceptEdits, the guard and the oblig
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });
@@ -132,7 +135,7 @@ describe('native literature-patent-analyst: what its steps say', () => {
   });
 
   it('puts scope ambiguities under Open items and never asks the user', () => {
-    expect(step(1)).toContain('An ambiguity in the scope goes under `Open items`; you never ask the user directly.');
+    expect(step(1)).toContain('An ambiguity in the scope goes to the lead as an `ask-user` entry under `Requests for the lead`; you never ask the user directly.');
   });
 
   it('names the skills of its contract in a table of situations it can do with its tools, and they exist', () => {
@@ -158,8 +161,8 @@ describe('native literature-patent-analyst: the peers section of the engineering
     );
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

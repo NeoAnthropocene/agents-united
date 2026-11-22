@@ -66,7 +66,7 @@ describe('native socratic-mentor: the question tool is the gap, pinned in code',
 
   it('says in one sentence, without naming the tool, that the lead asks the user', () => {
     const body = text().split('<!-- agents-united:floor:end -->')[1]!;
-    expect(body).toContain('You cannot put a question to the user yourself in this host. Your own clarifying questions to the user go under `Open items` and the lead asks them; your probing questions go in the report\'s `Probing Questions` section.');
+    expect(body).toContain('As a subagent or a teammate you cannot put a question to the user yourself. Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`; the report\'s `Probing Questions` section lists the probing questions of this turn in the order you asked them.');
     expect(body).not.toContain('AskUserQuestion');
     expect(body).not.toContain('ask_question');
   });
@@ -108,7 +108,45 @@ describe('native socratic-mentor: read-only, against the real script', () => {
     expect(text()).toContain('this role holds no tool that writes a file or runs a command, and as a subagent the guard bound to it blocks any write tool, shell or mutating connected-server tool; as a teammate that guard does not apply, so the read-only rule is yours alone.');
     expect(text()).toContain('unless explicitly instructed after three Socratic turns');
     expect(text()).toContain('ask the engineer to state their own conclusions');
-    expect(text()).toContain('The `grill-me` interview is the method: its questions go into your report, at most three, and the lead puts them to the engineer.');
+    expect(text()).toContain('The `grill-me` interview is the method: its questions go into your report as `ask-user` entries under `Requests for the lead`, at most three per turn, each marked `open answer` unless it offers choices. The lead puts them to the engineer and returns the answers to you; the next turn starts from those answers.');
+  });
+});
+
+describe('native socratic-mentor: the turn loop of the requests block (ADR 0076)', () => {
+  const line = (pattern: RegExp): string => pattern.exec(text())![0];
+
+  it('step 7 opens the section with the Turn line, puts each probing question there as an ask-user entry, and ends only when the engineer stops or confirms a synthesis', () => {
+    const seven = line(/^7\. \*\*Hand back, turn by turn\.\*\*[^\n]*$/m);
+    expect(seven).toContain('Open `Requests for the lead` with the line `Turn <n>`');
+    expect(seven).toContain('put each probing question of this turn there as an `ask-user` entry');
+    expect(seven).toContain("When the lead continues you with the engineer's answers, that is the next turn");
+    expect(seven).toContain('ask the next one to three questions and report again');
+    expect(seven).toContain('if the engineer chose to stop, ask nothing more, confirm their synthesis and report with `Requests for the lead` reading "none"; otherwise mirror');
+    expect(seven).toContain("A peer's late message revises your current report and does not advance the turn.");
+    expect(seven).toContain('The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.');
+  });
+
+  it('the grill-me line sends the questions as ask-user entries, at most three per turn, and takes the answers back', () => {
+    const grill = line(/^The `grill-me` interview is the method:[^\n]*$/m);
+    expect(grill).toContain('as `ask-user` entries under `Requests for the lead`');
+    expect(grill).toContain('at most three per turn, each marked `open answer` unless it offers choices');
+    expect(grill).toContain('returns the answers to you; the next turn starts from those answers');
+  });
+
+  it('the Boundaries line sends probing and clarifying questions to the engineer as ask-user entries, and keeps the Probing Questions section', () => {
+    const boundaries = /\n## Boundaries of this host\n([\s\S]*?)(?=\n## )/.exec(text())![1]!;
+    expect(boundaries).toContain('Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`');
+    expect(boundaries).toContain("the report's `Probing Questions` section lists the probing questions of this turn in the order you asked them");
+  });
+
+  it('step 5 counts the three Socratic turns as the Turn line counts them', () => {
+    expect(line(/^5\. \*\*Stay read-only and question-led\.\*\*[^\n]*$/m)).toContain('after three Socratic turns, counted as your `Turn <n>` line counts them');
+  });
+
+  it('the types open to it include ask-user, because it holds no AskUserQuestion', () => {
+    const open = /By your tools on this host, the types open to you are: ([^\n]*)\. Never request/.exec(text())![1]!;
+    expect(open.split(', ')).toContain('`ask-user`');
+    expect(toolsLine().split(', ')).not.toContain('AskUserQuestion');
   });
 });
 
@@ -117,8 +155,8 @@ describe('native socratic-mentor: the peers section of the engineering family', 
     expect(peersSection(text()).split('\n')).toEqual(peersSection(nativeText('devops-engineer')).split('\n'));
   });
 
-  it('hands the report back through SubagentHandback and has the lead put the questions to the engineer', () => {
-    expect(text()).toContain('Return the report from the Output Contract as your final message through `SubagentHandback`; the lead puts your probing questions to the engineer.');
+  it('hands the report back as the final answer and conditionally through SubagentHandback turn by turn, with the questions as ask-user entries the lead puts to the engineer', () => {
+    expect(text()).toContain('7. **Hand back, turn by turn.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. Open `Requests for the lead` with the line `Turn <n>` and put each probing question of this turn there as an `ask-user` entry. When the lead continues you with the engineer\'s answers, that is the next turn: if the engineer chose to stop, ask nothing more, confirm their synthesis and report with `Requests for the lead` reading "none"; otherwise mirror what the engineer concluded, ask the next one to three questions and report again. A peer\'s late message revises your current report and does not advance the turn. The session ends when the engineer chooses to stop, or has stated a final synthesis that you confirmed.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

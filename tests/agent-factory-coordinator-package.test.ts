@@ -9,6 +9,7 @@ import { prepareEvaluationJob, reviewPin, evaluationResult } from './helpers/fac
 import type { LockfileManifest } from '../src/core/types.js';
 import { validateCoreSchema } from '../src/core/semantic-core.js';
 import { FLOOR_START, FLOOR_END, renderFloor } from '../src/core/native-floor.js';
+import { requestsFixture } from './helpers/requests-fixture.js';
 import { readOnlyGuardFileHooks } from '../src/core/readonly-guard.js';
 import { loadToolPolicy, resolveGrant } from '../src/core/host-profile.js';
 import { installPackedPackage, parseNpmPackJson } from './helpers/packed-package.js';
@@ -96,7 +97,7 @@ describe('coordinator journey plumbing from the actual offline npm package', () 
     const pair = spawnSync(pairCheck.executable, pairCheck.argv, { cwd: pairCheck.cwd, encoding: 'utf8' });
     const pairEndedAt = new Date().toISOString();
     expect(pair.status, pair.stdout + pair.stderr).toBe(0);
-    const text = `---\n${YAML.stringify({ name: 'example', description: 'Review the supplied original document.', model: 'sonnet', effort: 'medium', background: false, tools: resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools.join(', '), hooks: readOnlyGuardFileHooks() })}---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\nReturn bounded findings to the caller.\nReport missing evidence.\n`;
+    const text = `---\n${YAML.stringify({ name: 'example', description: 'Review the supplied original document.', model: 'sonnet', effort: 'medium', background: false, tools: resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools.join(', '), hooks: readOnlyGuardFileHooks() })}---\n${FLOOR_START}\n${renderFloor(core)}\n${FLOOR_END}\n\n${requestsFixture(resolveGrant(loadToolPolicy(f.registry, 'claude'), core.capabilities ?? [], { subagent: true, background: false }).tools)}\n\nReturn bounded findings to the caller.\nReport missing evidence.\n`;
     await fs.outputFile(path.join(f.draft, f.job.artifact.paths[0]!), text);
     const covRel = 'hosts/claude/agents/example.coverage.json';
     const covText = `${JSON.stringify({ version: 1, role: 'example', definition: 'subagent-example', invariants: [{ invariant: 'Report missing evidence.', evidence: 'Report missing evidence.', in: 'body' }] }, null, 2)}\n`;

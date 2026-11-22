@@ -16,6 +16,8 @@ import { nativeText } from './helpers/native-roles.js';
 const ROLE = 'statistical-analyst';
 const STEM = 'subagent-statistical-analyst';
 const text = (): string => nativeText(ROLE);
+/** The generated requests block names `schedule` and the schedule tools; only the scan for those words leaves it out, every other word is checked against the whole text. */
+const withoutRequests = (value: string): string => value.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->\n?/, '');
 const toolsLine = (): string => /^tools: (.*)$/m.exec(text())![1]!;
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())![1]!.trim();
 const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to analyze'))![0];
@@ -61,7 +63,8 @@ describe('native statistical-analyst: the canonical tools that are bound and the
   });
 
   it('says nothing about timers, schedules, cron, a command runner or a question tool', () => {
-    expect(text()).not.toMatch(/cron|schedul|run_command|manage_task|timer|liveness|AskUserQuestion|ask_question/i);
+    expect(withoutRequests(text())).not.toMatch(/cron|schedul|AskUserQuestion/i);
+    expect(text()).not.toMatch(/run_command|manage_task|timer|liveness|ask_question/i);
   });
 });
 
@@ -106,7 +109,7 @@ describe('native statistical-analyst: acceptEdits, the guard and the obligations
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });
@@ -121,7 +124,7 @@ describe('native statistical-analyst: what its steps say', () => {
 
   it('puts the assumed significance level, power and effect size under Open items and never asks the user', () => {
     const three = step(3);
-    expect(three).toContain('State the significance level, the power and the minimum detectable effect as assumptions in the report and put each one under `Open items`; you never ask the user directly.');
+    expect(three).toContain('State the significance level, the power and the minimum detectable effect as assumptions in the report and put each one as a non-blocking `ask-user` entry under `Requests for the lead`; you never ask the user directly.');
   });
 
   it('computes with a script through the shell it holds and reports the command', () => {
@@ -134,7 +137,7 @@ describe('native statistical-analyst: what its steps say', () => {
     expect(rows.map(row => row[2])).toEqual(['technical-documentation', 'growth-experiment-design']);
     const contract = JSON.parse(fs.readFileSync(path.resolve(`registry/core/${STEM}.contract.json`), 'utf8')) as { skills: string[] };
     expect(rows.map(row => row[2]).sort()).toEqual([...contract.skills].sort());
-    expect(section('How to analyze')).toContain("A skill's inputs that the brief does not give go under `Open items`; you do not ask the user for them.");
+    expect(section('How to analyze')).toContain("A skill's inputs that the brief does not give go to the lead as `ask-user` entries under `Requests for the lead`; you do not ask the user for them yourself.");
   });
 
   it('says what the watcher and the converter are for, and that the converter may not be connected', () => {
@@ -154,8 +157,8 @@ describe('native statistical-analyst: the peers section of the engineering famil
     );
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

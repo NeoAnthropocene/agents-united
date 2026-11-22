@@ -76,8 +76,8 @@ describe('native operations-strategist: the question tool it never had', () => {
     expect(toolsLine().split(', ')).not.toContain('AskUserQuestion');
   });
 
-  it('sends strategic trade-offs and capacity bottlenecks to Open items in one sentence that names no tool, and records no delta', () => {
-    const sentence = '- You hold no tool for asking the user. Strategic trade-offs and capacity bottlenecks (a headcount ceiling, a vendor budget, a competing objective) go under `Open items` in your report; the lead decides.';
+  it('sends strategic trade-offs and capacity bottlenecks as ask-user entries under Requests for the lead in one sentence that names no tool, and records no delta', () => {
+    const sentence = '- You hold no tool for asking the user. Strategic trade-offs and capacity bottlenecks (a headcount ceiling, a vendor budget, a competing objective) go as `ask-user` entries under `Requests for the lead` in your report; the lead asks the user or decides, and returns the answer to you.';
     expect(text().split(sentence)).toHaveLength(2);
     expect(text()).not.toMatch(/AskUserQuestion/);
     expect(fs.readFileSync(path.resolve('registry/hosts/claude/deltas.json'), 'utf8')).not.toContain(ROLE);
@@ -192,7 +192,7 @@ describe('native operations-strategist: the permission mode, the shell and the g
   it('Boundaries say what the shell is for, and where the guard comes from in both modes', () => {
     const body = section('Boundaries of this host');
     expect(body).toContain('- Your shell (`Bash`, `PowerShell`) is for reading project files and running calculations. Show the command you ran and its output in the report.');
-    expect(body).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(body).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });
@@ -216,8 +216,8 @@ describe('native operations-strategist: the engineering family sections', () => 
     expect(one).toContain('with `Glob` and `Grep` (on macOS, Linux and WSL this role holds `Bash`, so those two are unavailable there and search runs through `Bash`)');
   });
 
-  it('step 8 hands the report back through SubagentHandback in the plain form', () => {
-    expect(/^8\. .*$/m.exec(section('How to plan'))![0]).toBe('8. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 8 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(/^8\. .*$/m.exec(section('How to plan'))![0]).toBe('8. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

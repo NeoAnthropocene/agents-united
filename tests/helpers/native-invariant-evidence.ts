@@ -120,13 +120,13 @@ export const EVIDENCE: Record<string, RegExp> = {
   'Every control status cites the evidence that supports it.': /Every control status cites the evidence that supports it/,
   'Every gap carries a priority, a regulatory citation and a remediation step.': /Every gap carries a priority, a regulatory citation and a remediation step/,
   'Raw personal data met during an audit is never copied into a report.': /Never copy raw personal or health data you meet into a report or a policy/,
-  'Questions for the user go to the calling lead in the final report, never to the user directly.': /Questions for the user go to the lead under `Open items`; you never ask the user directly/,
+  'Questions for the user go to the calling lead in the final report, never to the user directly.': /Questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly/,
 };
 
 /** Per-role overrides: role name, then invariant text. */
 export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
   'agency-3d-designer': {
-    'When delegated, route user questions through the calling lead; in direct standalone work, ask the user for missing brief inputs.': /When delegated, questions for the user go to the lead under `Open items`; you never ask the user directly\. In direct standalone use, ask the user for missing brief inputs\./,
+    'When delegated, route user questions through the calling lead; in direct standalone work, ask the user for missing brief inputs.': /When delegated, questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly\. In direct standalone use, ask the user for missing brief inputs\./,
   },
   'ai-model-architect': {
     'Context passages below the similarity threshold trigger fallback responses rather than fabricated completions.': /- \*\*Hallucination Zero-Tolerance\*\*: Context passages with similarity score below threshold must trigger fallback responses rather than fabricated completions\./,
@@ -471,7 +471,7 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Dissect reported peak metrics alongside hardware configurations, dataset composition, and failure modes.': /Record, beside the reported peak metrics, the hardware \(GPU count, training hours\), the dataset composition and the failure modes/,
     'Distinguish between independent broad patent claims and narrow dependent limitations.': /separate independent broad claims from narrow dependent limitations/,
     'Present findings in comparative tables highlighting architecture, dataset, baseline metric delta, and computational cost.': /Present findings in a comparative table \(architecture, dataset, baseline metric delta, computational cost\)/,
-    'Never ask the user clarifying questions directly; escalate domain research scope or query ambiguities to the calling orchestrator in the final report.': /An ambiguity in the scope goes under `Open items`; you never ask the user directly\./,
+    'Never ask the user clarifying questions directly; escalate domain research scope or query ambiguities to the calling orchestrator in the final report.': /An ambiguity in the scope goes to the lead as an `ask-user` entry under `Requests for the lead`; you never ask the user directly\./,
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },
@@ -563,7 +563,7 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'Validate normality, homoscedasticity, and sample independence before choosing parametric vs non-parametric tests.': /Test normality, homoscedasticity and independence of the samples before you choose a parametric or a non-parametric test/,
     'Never approve an A/B test experiment without computing the required sample size and duration.': /Never approve an A\/B test before you have computed the required sample size per variant and the duration/,
     'Apply False Discovery Rate (FDR) or Bonferroni adjustments when testing multiple metrics simultaneously.': /Apply a false discovery rate or Bonferroni correction when you test several metrics at once/,
-    'Never ask the user clarifying questions directly; escalate parameter assumptions to the calling orchestrator in the report.': /put each one under `Open items`; you never ask the user directly\./,
+    'Never ask the user clarifying questions directly; escalate parameter assumptions to the calling orchestrator in the report.': /put each one as a non-blocking `ask-user` entry under `Requests for the lead`; you never ask the user directly\./,
     'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
     'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
   },

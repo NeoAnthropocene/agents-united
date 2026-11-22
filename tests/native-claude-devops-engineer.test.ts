@@ -53,7 +53,7 @@ describe('native devops-engineer: the guard and production claims', () => {
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file; as a teammate it comes from the project's settings.`);
+    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
   });
 
   it('keeps the destructive-command rule in the Safety floor', () => {
@@ -78,8 +78,8 @@ describe('native devops-engineer: the peers section of the engineering family', 
     expect(body).not.toContain('Do not message a peer');
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
   it('holds the two messaging tools its capability gives, and the core declares the capability', async () => {

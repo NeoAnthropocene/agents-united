@@ -52,7 +52,7 @@ describe('native system-architect: the guard claims, against the real script', (
   };
 
   it('states what the guard blocks, and where it comes from in both modes', () => {
-    expect(text()).toContain("- A guard blocks writes to `.env` files (not `.env.example`) through `Write`, `Edit` and `NotebookEdit`. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(text()).toContain("- A guard blocks writes to `.env` files (not `.env.example`) through `Write`, `Edit` and `NotebookEdit`. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.");
   });
 
   it.each([
@@ -100,12 +100,12 @@ describe('native system-architect: the shell-less working method', () => {
     expect(step(5)).toContain('report diagrams and contracts as not rendered or validated');
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
-  it('Boundaries put a command the work needs under Open items for the lead', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a diagram renderer, a schema validator, a build) goes under `Open items` for the lead.');
+  it('Boundaries send a command the work needs to the lead as a run-command request', () => {
+    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a diagram renderer, a schema validator, a build) goes to the lead as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

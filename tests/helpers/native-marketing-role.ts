@@ -143,10 +143,10 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
 
       it('states where the guard comes from in both modes, and its permission-mode limit', () => {
         const boundaries = section('Boundaries of this host');
-        expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+        expect(boundaries).toContain('As a subagent it comes from this file, when the host runs this file\'s hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.');
         expect(boundaries).toMatch(/Your permission mode is `acceptEdits`: edits to project files go through without a prompt/);
         expect(boundaries).toContain('You hold a shell.');
-        expect(boundaries).toContain('Delegation is the lead\'s job.');
+        expect(boundaries).toContain('Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
       });
     } else {
       it('offers the role no shell at all, so the shell forms of the one guard sentence are the script\'s, not the role\'s, and the Safety rules are its own obligation', () => {
@@ -160,10 +160,10 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
 
       it('states where the guard comes from in both modes, and its permission-mode limit', () => {
         const boundaries = section('Boundaries of this host');
-        expect(boundaries).toContain("As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+        expect(boundaries).toContain('As a subagent it comes from this file, when the host runs this file\'s hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.');
         expect(boundaries).toMatch(/Your permission mode is `acceptEdits`: edits to project files go through without a prompt/);
         expect(boundaries).toContain('You hold editors and no shell.');
-        expect(boundaries).toContain('Delegation is the lead\'s job.');
+        expect(boundaries).toContain('Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.');
       });
     }
   });
@@ -206,12 +206,12 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
   });
 
   describe(`native ${spec.role}: how to work`, () => {
-    it('opens with the inputs-first rule, consults the skill at step 2 and hands back at the last step through SubagentHandback after a re-read', () => {
+    it('opens with the inputs-first rule, consults the skill at step 2 and hands back at the last step as its final answer (with SubagentHandback only where supplied) after a re-read', () => {
       expect(section('How to work').trimStart().startsWith('**Inputs first.**')).toBe(true);
       expect(step(2)).toMatch(/^2\. \*\*Consult the skill\.\*\* Load the matching skill with the `Skill` tool/);
       const hand = section('How to work').split('\n').find(line => /^\d+\. \*\*Hand back\.\*\*/.test(line)) ?? '';
       expect(hand).toContain('Re-read what you wrote with `Read` before you report');
-      expect(hand).toContain(`Return ${spec.returns} and the paths of what you wrote as your final message through \`SubagentHandback\`.`);
+      expect(hand).toContain(`Return ${spec.returns} and the paths of what you wrote as your final message: your final answer is the hand-back. Deliver it through \`SubagentHandback\` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.`);
     });
 
     it('names only skills of a bundle that installs this role (growth-marketing, or the child add-on that lists it), each of which exists', () => {

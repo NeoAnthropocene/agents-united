@@ -40,8 +40,8 @@ describe('native sysops-sre-lead: no shell, as its canonical agent', () => {
     expect(toolsOf(text())).toEqual(expect.arrayContaining(['TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate']));
   });
 
-  it('says that a recurring check or timer is a recommendation under Open items, not an action', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is something you recommend under `Open items`, not an action you take.');
+  it('says that a recurring check or timer is a schedule request, not an action', () => {
+    expect(section(text(), 'Boundaries of this host')).toContain('a recurring health check or a timer is a `schedule` request, not an action you take.');
   });
 });
 
@@ -58,7 +58,7 @@ describe('native sysops-sre-lead: the guard claims, against the real script', ()
   };
 
   it('states what the guard blocks, and where it comes from in both modes', () => {
-    expect(text()).toContain("- A guard blocks writes to `.env` files (not `.env.example`) through `Write`, `Edit` and `NotebookEdit`. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(text()).toContain("- A guard blocks writes to `.env` files (not `.env.example`) through `Write`, `Edit` and `NotebookEdit`. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.");
   });
 
   it.each([
@@ -106,12 +106,12 @@ describe('native sysops-sre-lead: the shell-less working method', () => {
     expect(step(5)).toContain('report alert rules, dashboards, runbooks and recovery plans as not validated or exercised');
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back.');
   });
 
-  it('Boundaries put a command the work needs under Open items for the lead', () => {
-    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a probe, a chaos experiment, a `kubectl` call, an alert-rule linter, a restoration drill) goes under `Open items` for the lead.');
+  it('Boundaries send a command the work needs to the lead as a run-command request', () => {
+    expect(section(text(), 'Boundaries of this host')).toContain('A command the work needs (a probe, a chaos experiment, a `kubectl` call, an alert-rule linter, a restoration drill) goes to the lead as a `run-command` entry under `Requests for the lead`.');
   });
 });
 

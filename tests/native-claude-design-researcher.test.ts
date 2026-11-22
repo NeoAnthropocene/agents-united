@@ -41,13 +41,13 @@ describe('native design-researcher: editors, no shell, no question tool', () => 
     expect(declared).toEqual(['view_file', 'replace_file_content', 'write_to_file', 'find_by_name', 'ask_question']);
     expect(tools()).toEqual(expect.arrayContaining(['Read', 'Edit', 'Write', 'Glob']));
     expect(declared).not.toContain('run_command');
-    expect(text()).toContain('put it under `Open items` for the lead.');
+    expect(text()).toContain('put it as a `run-command` entry under `Requests for the lead`.');
   });
 
   it('has no AskUserQuestion, and says the questions for the user go to the lead', () => {
     expect(tools()).not.toContain('AskUserQuestion');
     const body = text();
-    expect(body).toContain('Questions for the user go to the lead under `Open items`; you never ask the user directly.');
+    expect(body).toContain('Questions for the user go to the lead as `ask-user` entries under `Requests for the lead`, and the lead returns the answers to you; you never ask the user directly.');
     expect(body).toContain('The host gives a question tool to the main conversation only and never to a subagent, so you have none.');
     expect(body).not.toMatch(/AskUserQuestion/);
   });
@@ -58,7 +58,7 @@ describe('native design-researcher: the guard and acceptEdits claims', () => {
     const body = text();
     expect(body).toContain('so the only thing the guard bound to this role can stop is a write to a `.env` file (`.env.example` passes)');
     expect(body).toContain('is your own obligation');
-    expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.`);
+    expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
     expect(body.split(GUARD_SENTENCE)).toHaveLength(2);
   });
 
@@ -114,10 +114,10 @@ describe('native design-researcher: the peers section of the Tier 1 form', () =>
     expect(peersSection(text()).split('\n')).toEqual(peersSection(nativeText('devops-engineer')).split('\n'));
   });
 
-  it('declares messaging, and step 7 hands the report back through SubagentHandback in the plain form', async () => {
+  it('declares messaging, and step 7 hands the report back as the final answer and conditionally through SubagentHandback', async () => {
     expect(tools()).toEqual(expect.arrayContaining(['ListAgents', 'SendMessage']));
     expect((await loadSemanticCore('registry')).get('subagent-design-researcher')!.capabilities).toContain('messaging');
-    expect(text()).toMatch(/^7\. \*\*Hand back\.\*\* Return the report from the Output Contract as your final message through `SubagentHandback`\.$/m);
+    expect(text()).toMatch(/^7\. \*\*Hand back\.\*\* Return the report from the Output Contract as your final message: your final answer is the hand-back\. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back\.$/m);
   });
 });
 

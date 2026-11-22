@@ -45,7 +45,7 @@ describe('native designer-toolkit-expert: editors, no shell, no scheduling', () 
     // The canonical liveness protocol launches background commands and sets wake-up timers; neither exists here, so the body names neither.
     expect(text()).not.toMatch(/Cron|run_command|manage_task|TimerCondition|IsDaemon/);
     expect(text()).toContain('- You start no long-running or background task and keep no wake-up timer. A build, a test run or a deployment you wrote the spec for runs under the lead, who can watch it.');
-    expect(text()).toContain('put it under `Open items` for the lead.');
+    expect(text()).toContain('put it as a `run-command` entry under `Requests for the lead`.');
   });
 });
 
@@ -64,7 +64,7 @@ describe('native designer-toolkit-expert: the guard and acceptEdits claims', () 
     const body = text();
     expect(body).toContain('so the only thing the guard bound to this role can stop is a write to a `.env` file (`.env.example` passes)');
     expect(body).toContain('is your own obligation');
-    expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file; as a teammate it comes from the project's settings. Never try to get around it.`);
+    expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
     expect(body.split(GUARD_SENTENCE)).toHaveLength(2);
   });
 
@@ -121,10 +121,10 @@ describe('native designer-toolkit-expert: the peers section of the Tier 1 form',
     expect(peersSection(text()).split('\n')).toEqual(peersSection(nativeText('devops-engineer')).split('\n'));
   });
 
-  it('declares messaging, and step 7 hands the report back through SubagentHandback in the plain form', async () => {
+  it('declares messaging, and step 7 hands the report back as the final answer and conditionally through SubagentHandback', async () => {
     expect(tools()).toEqual(expect.arrayContaining(['ListAgents', 'SendMessage']));
     expect((await loadSemanticCore('registry')).get('subagent-designer-toolkit-expert')!.capabilities).toContain('messaging');
-    expect(text()).toMatch(/^7\. \*\*Hand back\.\*\* Return the report from the Output Contract as your final message through `SubagentHandback`\.$/m);
+    expect(text()).toMatch(/^7\. \*\*Hand back\.\*\* Return the report from the Output Contract as your final message: your final answer is the hand-back\. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back\.$/m);
   });
 });
 
