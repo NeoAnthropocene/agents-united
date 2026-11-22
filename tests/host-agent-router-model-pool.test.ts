@@ -173,6 +173,20 @@ describe('reading the account model list from the host', () => {
     expect(configPool(['gpt-6.1-terra'])).toMatchObject({ source: 'config', models: ['gpt-6.1-terra'] });
     expect(unknownPool('the app-server did not answer')).toMatchObject({ source: 'unknown', models: [], reason: 'the app-server did not answer' });
   });
+
+  it('parseCodexCacheModels reads visible slugs and display names from models_cache.json and excludes hidden entries', async () => {
+    const { parseCodexCacheModels } = await lib();
+    const raw = JSON.stringify({
+      models: [
+        { slug: 'gpt-6.2-sol', display_name: 'GPT-6.2-Sol', visibility: 'list' },
+        { slug: 'gpt-reserve', display_name: 'GPT-Reserve', visibility: 'hide' },
+        { slug: 'codex-auto-review', display_name: 'Codex Auto Review', hidden: true },
+      ],
+    });
+    expect(parseCodexCacheModels(raw)).toEqual(['gpt-6.2-sol', 'GPT-6.2-Sol']);
+    expect(parseCodexCacheModels(JSON.stringify({ models: [{ slug: 'x', visibility: 'hide' }] }))).toBeNull();
+    expect(parseCodexCacheModels('not json')).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------------------------------- the default tiers
@@ -204,11 +218,11 @@ describe('the default tiers, as ordered lists', () => {
     });
   });
 
-  it('Codex: Terra then Luna (Luna first with --effort low), Sol 6.2 then Sol 6.1, Astra 6.2 at high then Astra 6 then Sol 6.2 at high', async () => {
+  it('Codex: Terra then Luna (Luna first with --effort low), Sol 6.2 -> Sol 6.1 -> Terra 6.1, Astra 6.2 -> Sol 6.2 -> Astra 6 all at high', async () => {
     expect(await table('codex')).toEqual({
       simple: [['gpt-6.1-terra', undefined, 'medium'], ['gpt-6-luna', undefined, 'medium']],
-      medium: [['gpt-6.2-sol', undefined, 'medium'], ['gpt-6.1-sol', undefined, 'medium']],
-      high: [['gpt-6.2-astra', undefined, 'high'], ['gpt-6-astra', undefined, 'medium'], ['gpt-6.2-sol', undefined, 'high']],
+      medium: [['gpt-6.2-sol', undefined, 'medium'], ['gpt-6.1-sol', undefined, 'medium'], ['gpt-6.1-terra', undefined, 'medium']],
+      high: [['gpt-6.2-astra', undefined, 'high'], ['gpt-6.2-sol', undefined, 'high'], ['gpt-6-astra', undefined, 'high']],
     });
   });
 
@@ -293,7 +307,7 @@ describe('choosing the first entry that is in the pool', () => {
     expect((await plan('codex', 'medium', codex)).selected.model).toBe('gpt-6.2-sol');
     const high = (await plan('codex', 'high', codex)).selected;
     expect([high.model, high.effort]).toEqual(['gpt-6.2-astra', 'high']);
-    expect(high.alternates.map((a: Any) => [a.model, a.effort])).toEqual([['gpt-6-astra', 'medium'], ['gpt-6.2-sol', 'high']]);
+    expect(high.alternates.map((a: Any) => [a.model, a.effort])).toEqual([['gpt-6.2-sol', 'high'], ['gpt-6-astra', 'high']]);
     expect(high.skipped_models).toBeUndefined();
   });
 
@@ -379,7 +393,7 @@ describe('choosing the first entry that is in the pool', () => {
   it('a status with no pool at all (an older replay) behaves like an unknown pool and never blocks', async () => {
     const p = await plan('codex', 'medium', status());
     expect(p.selected.model).toBe('gpt-6.2-sol');
-    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual(['gpt-6.1-sol']);
+    expect(p.selected.alternates.map((a: Any) => a.model)).toEqual(['gpt-6.1-sol', 'gpt-6.1-terra']);
   });
 
   it('reports each pool read, and only for hosts that have one', async () => {
@@ -428,10 +442,13 @@ describe('efforts with the pool', () => {
     expect(knownEfforts(CFG, 'high', ['antigravity'])).toEqual(expect.arrayContaining(['high', 'extra']));
   });
 
-  it('Codex takes low, medium, high, xhigh and max where the model offers it, and the router does not offer ultra', async () => {
+  it('Codex takes low, medium, high, extra (as xhigh), xhigh and max where the model offers it, and the router does not offer ultra', async () => {
     const { resolveEffort, knownEfforts, checkEffort } = await lib();
     for (const e of ['low', 'medium', 'high', 'xhigh', 'max']) expect(resolveEffort(CFG, 'codex', 'medium', e), e).toMatchObject({ model: 'gpt-6.2-sol', effort: e, note: null });
-    expect(knownEfforts(CFG, 'high', ['codex'])).toEqual(['high', 'low', 'max', 'medium', 'xhigh']);
+    expect(resolveEffort(CFG, 'codex', 'simple', 'extra')).toMatchObject({ model: 'gpt-6.1-terra', effort: 'xhigh', note: null });
+    expect(resolveEffort(CFG, 'codex', 'medium', 'extra')).toMatchObject({ model: 'gpt-6.2-sol', effort: 'xhigh', note: null });
+    expect(resolveEffort(CFG, 'codex', 'high', 'extra')).toMatchObject({ model: 'gpt-6.2-astra', effort: 'xhigh', note: null });
+    expect(knownEfforts(CFG, 'high', ['codex'])).toEqual(['extra', 'high', 'low', 'max', 'medium', 'xhigh']);
     expect(checkEffort(CFG, 'high', 'ultra', ['codex'])).toMatch(/--effort "ultra" is not offered by the router/);
   });
 
@@ -449,7 +466,7 @@ describe('efforts with the pool', () => {
     const { codexPool } = await lib();
     const p = await plan('codex', 'high', status({ pool: codexPool(codexResponse(CODEX_ALL)) }), 'max');
     expect([p.selected.model, p.selected.effort]).toEqual(['gpt-6.2-astra', 'max']);
-    expect(p.selected.alternates.map((a: Any) => [a.model, a.effort])).toEqual([['gpt-6-astra', 'max'], ['gpt-6.2-sol', 'max']]);
+    expect(p.selected.alternates.map((a: Any) => [a.model, a.effort])).toEqual([['gpt-6.2-sol', 'max'], ['gpt-6-astra', 'max']]);
   });
 });
 
@@ -628,8 +645,11 @@ describe('an explicit pool in the user config replaces the one the CLI gives', (
     const cfg = mergeConfig(CFG, { hosts: { codex: { pool: ['gpt-6.2-sol'] } } });
     const p = buildPlan(cfg, 'medium', { codex: { windows: status() } }, 'windows', ['codex'], 'read-only');
     expect(p.selected.model).toBe('gpt-6.2-sol');
-    expect(p.selected.alternates).toBeUndefined(); // gpt-6.1-sol is not in the configured pool
-    expect(p.selected.skipped_models).toEqual([{ model: 'gpt-6.1-sol', reason: 'not in the configured pool' }]);
+    expect(p.selected.alternates).toBeUndefined(); // gpt-6.1-sol and gpt-6.1-terra are not in the configured pool
+    expect(p.selected.skipped_models).toEqual([
+      { model: 'gpt-6.1-sol', reason: 'not in the configured pool' },
+      { model: 'gpt-6.1-terra', reason: 'not in the configured pool' },
+    ]);
   });
 
   it('is validated with clear messages, and null clears it', async () => {
@@ -896,7 +916,7 @@ describe('a tier override that gives no model', () => {
     const { mergeConfig } = await lib();
     const cfg = mergeConfig(CFG, over('codex', 'medium', { efforts: { extra: 'xhigh' } }));
     const p = await plan(cfg, 'codex', 'medium', 'extra');
-    expect([p.selected.model, p.selected.effort, p.selected.alternates.map((a: Any) => a.effort)]).toEqual(['gpt-6.2-sol', 'xhigh', ['xhigh']]);
+    expect([p.selected.model, p.selected.effort, p.selected.alternates.map((a: Any) => a.effort)]).toEqual(['gpt-6.2-sol', 'xhigh', ['xhigh', 'xhigh']]);
   });
 
   it('knows the names of the user map, and checks the user map like any efforts map', async () => {
@@ -1435,11 +1455,11 @@ describe('Codex simple tier: Terra for medium to higher scale, Luna for lower sc
     expect([args[args.indexOf('-m') + 1], args.includes('model_reasoning_effort="medium"')]).toEqual(['gpt-6-luna', true]);
   });
 
-  it('the config check accepts the shipped shape, and medium and high of Codex are as before', async () => {
+  it('the config check accepts the shipped shape, with updated Codex medium fallback and high order', async () => {
     const { validateConfig, tierEntries } = await lib();
     expect(validateConfig(CFG)).toEqual([]);
-    expect((tierEntries(CFG.hosts.codex.tiers.medium) as Any[]).map(e => e.model)).toEqual(['gpt-6.2-sol', 'gpt-6.1-sol']);
-    expect((tierEntries(CFG.hosts.codex.tiers.high) as Any[]).map(e => [e.model, e.effort])).toEqual([['gpt-6.2-astra', 'high'], ['gpt-6-astra', 'medium'], ['gpt-6.2-sol', 'high']]);
+    expect((tierEntries(CFG.hosts.codex.tiers.medium) as Any[]).map(e => e.model)).toEqual(['gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.1-terra']);
+    expect((tierEntries(CFG.hosts.codex.tiers.high) as Any[]).map(e => [e.model, e.effort])).toEqual([['gpt-6.2-astra', 'high'], ['gpt-6.2-sol', 'high'], ['gpt-6-astra', 'high']]);
   });
 });
 

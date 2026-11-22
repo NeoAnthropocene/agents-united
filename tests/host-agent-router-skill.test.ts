@@ -1080,6 +1080,25 @@ describe("the worker contract, enforced with each host's own controls", () => {
     const st = { claude: { windows: status({ binding: 60 }), wsl: status({ binding: 60 }) } };
     expect(buildPlan(CFG, 'medium', st, 'windows', ['claude'], 'edit').candidates.map(c => c.side)).toEqual(['windows', 'wsl']);
   });
+
+  it('adds an editSide fallback note on --access edit when editSide is unavailable and none when it is ready', () => {
+    const runDry = (st: Record<string, unknown>): { status: number | null; would_try: Array<{ side: string; notes?: string[] }> } => {
+      const f = path.join(tmp(), 'statuses.json');
+      fs.writeFileSync(f, JSON.stringify({ codex: st }));
+      const r = spawnSync(process.execPath, [SCRIPT, 'run', '--tier', 'medium', '--access', 'edit', '--host', 'codex', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f, '--cwd', tmp()], { encoding: 'utf8', env: { ...process.env, HOST_AGENT_ROUTER_DEPTH: '' } });
+      const j = JSON.parse(r.stdout) as { would_try: Array<{ side: string; notes?: string[] }> };
+      return { status: r.status, would_try: j.would_try };
+    };
+    const winOnly = runDry({ windows: status({ binding: 60 }), wsl: status({ installed: false }) });
+    expect(winOnly.status).toBe(0);
+    expect(winOnly.would_try[0]?.side).toBe('windows');
+    expect(winOnly.would_try[0]?.notes).toContain('codex: editSide is "wsl", running on "windows"; on Windows the Codex sandbox may refuse child processes in test commands, so run the acceptance command yourself');
+
+    const both = runDry({ windows: status({ binding: 60 }), wsl: status({ binding: 60 }) });
+    expect(both.status).toBe(0);
+    expect(both.would_try[0]?.side).toBe('wsl');
+    expect(both.would_try[0]?.notes).toBeUndefined();
+  });
 });
 
 // Seen live: when the guard cancelled `git commit`, Cline ended with exit code 0, finishReason "aborted" and a run_aborted line
@@ -1548,11 +1567,13 @@ describe('an effort choice inside a tier', () => {
 
   it('keeps the default and says so, as a note and not an error, when a host has no such entry', async () => {
     const { resolveEffort } = await lib2();
-    const r = resolveEffort(CFGE, 'codex', 'medium', 'extra');
-    expect([r.model, r.effort]).toEqual(['gpt-6.2-sol', 'medium']);
-    expect(r.note).toMatch(/codex/);
+    const codex = resolveEffort(CFGE, 'codex', 'medium', 'extra');
+    expect([codex.model, codex.effort, codex.note]).toEqual(['gpt-6.2-sol', 'xhigh', null]);
+    const r = resolveEffort(CFGE, 'claude', 'medium', 'extra');
+    expect([r.model, r.effort]).toEqual(['claude-sonnet-5-5', 'medium']);
+    expect(r.note).toMatch(/claude/);
     expect(r.note).toMatch(/extra/);
-    expect(r.note).toMatch(/gpt-6\.2-sol/);
+    expect(r.note).toMatch(/claude-sonnet-5-5/);
   });
 
   it('treats the default effort of a tier as always known, with no note', async () => {
@@ -1598,7 +1619,8 @@ describe('an effort choice inside a tier', () => {
     expect(bad).toMatch(/--effort/);
     expect(bad).toMatch(/bogus/);
     expect(bad).toMatch(/extra/);
-    expect(checkEffort(CFGE, 'medium', 'extra', ['codex'])).toMatch(/--effort/); // no candidate in scope knows it
+    expect(checkEffort(CFGE, 'medium', 'extra', ['codex'])).toBeNull();
+    expect(checkEffort(CFGE, 'medium', 'extra', ['claude'])).toMatch(/--effort/); // no candidate in scope knows it
   });
 
   it('accepts efforts in a user config key by key: change one model, add one, keep the rest', async () => {
@@ -1669,7 +1691,7 @@ describe('an effort choice inside a tier', () => {
         ['plan', '--tier', 'medium', '--effort', 'bogus', '--here', 'windows', '--statuses-file', f],
         ['status', '--tier', 'medium', '--effort', 'bogus', '--here', 'windows', '--statuses-file', f],
         ['run', '--tier', 'medium', '--effort', 'bogus', '--prompt', 'x', '--dry-run', '--here', 'windows', '--statuses-file', f],
-        ['plan', '--tier', 'medium', '--effort', 'extra', '--host', 'codex', '--here', 'windows', '--statuses-file', f],
+        ['plan', '--tier', 'medium', '--effort', 'extra', '--host', 'claude', '--here', 'windows', '--statuses-file', f],
         ['plan', '--tier', 'medium', '--effort', 'Bad Name', '--here', 'windows', '--statuses-file', f],
       ]) {
         const r = run(args);

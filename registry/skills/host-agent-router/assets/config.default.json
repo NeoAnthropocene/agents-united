@@ -135,21 +135,22 @@
       "tiers": {
         "simple": {
           "models": [
-            { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium", "efforts": { "low": { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium" }, "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium", "efforts": { "low": { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium" }, "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+            { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium", "efforts": { "low": { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium" }, "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6 Luna", "model": "gpt-6-luna", "effort": "medium", "efforts": { "low": { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium" }, "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } }
           ]
         },
         "medium": {
           "models": [
-            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6.1 Sol", "model": "gpt-6.1-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.1 Sol", "model": "gpt-6.1-sol", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.1 Terra", "model": "gpt-6.1-terra", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } }
           ]
         },
         "high": {
           "models": [
-            { "label": "GPT-6.2 Astra", "model": "gpt-6.2-astra", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6 Astra", "model": "gpt-6-astra", "effort": "medium", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } },
-            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max" } }
+            { "label": "GPT-6.2 Astra", "model": "gpt-6.2-astra", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6.2 Sol", "model": "gpt-6.2-sol", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } },
+            { "label": "GPT-6 Astra", "model": "gpt-6-astra", "effort": "high", "efforts": { "low": "low", "medium": "medium", "high": "high", "extra": "xhigh", "xhigh": "xhigh", "max": "max" } }
           ]
         }
       }

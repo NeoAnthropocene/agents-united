@@ -281,6 +281,17 @@ export function codexPool(resp) {
   };
 }
 
+/** Visible model ids and display names in a Codex `models_cache.json` file (hidden entries such as `gpt-reserve` and `codex-auto-review` are excluded). */
+export function parseCodexCacheModels(text) {
+  try {
+    const rows = JSON.parse(String(text ?? '')).models;
+    if (!Array.isArray(rows)) return null;
+    const visible = rows.filter(m => isPlain(m) && typeof m.slug === 'string' && m.slug.trim() && m.visibility !== 'hide' && m.hidden !== true);
+    if (!visible.length) return null;
+    return [...new Set(visible.flatMap(m => [m.slug.trim(), ...(typeof m.display_name === 'string' && m.display_name.trim() ? [m.display_name.trim()] : [])]))];
+  } catch { return null; }
+}
+
 export const configPool = list => ({ source: 'config', models: [...list], names: {}, efforts: {} });
 export const unknownPool = reason => ({ source: 'unknown', models: [], names: {}, efforts: {}, ...(reason ? { reason } : {}) });
 
@@ -1705,7 +1716,18 @@ export async function modelsLocal(payload) {
   for (const [host, models] of Object.entries(payload.models)) {
     let known = null;
     if (host === 'codex') {
-      try { known = new Set(JSON.parse(fs.readFileSync(path.join(os.homedir(), '.codex', 'models_cache.json'), 'utf8')).models.map(m => m.slug)); } catch { /* none */ }
+      const cmd = resolveCmd('codex');
+      if (cmd) {
+        const resp = await codexAppServer(cmd, { 1: 'model/list' });
+        const pool = codexPool(resp[1]);
+        if (pool) known = new Set([...pool.models, ...Object.values(pool.names ?? {})]);
+      }
+      if (!known) {
+        try {
+          const cached = parseCodexCacheModels(fs.readFileSync(path.join(os.homedir(), '.codex', 'models_cache.json'), 'utf8'));
+          if (cached) known = new Set(cached);
+        } catch { /* none */ }
+      }
     } else if (host === 'antigravity') {
       const cmd = resolveCmd('antigravity');
       if (cmd) {
@@ -2457,6 +2479,17 @@ async function cmdRun(opts, cfg) {
     } catch (e) { return e.message; }
   };
 
+  // Surface a note when `--access edit` has to run away from a host's preferred `editSide` (for example Codex falling back from `wsl` to `windows`).
+  const editSideNoteFor = (c, activeCands = cands) => {
+    const pref = cfg.hosts[c.host]?.editSide;
+    if (access !== 'edit' || !pref || c.side === pref || c.side === 'local') return null;
+    if (activeCands && activeCands.some(o => o.host === c.host && o.side === pref)) return null;
+    const suffix = c.host === 'codex' && c.side === 'windows'
+      ? '; on Windows the Codex sandbox may refuse child processes in test commands, so run the acceptance command yourself'
+      : '';
+    return `${c.host}: editSide is "${pref}", running on "${c.side}"${suffix}`;
+  };
+
   // Antigravity edit runs match an allowed command as a whole line: a brief that tells the worker to run a longer line than the one allowed
   // would end the run at once with nothing done (seen live 2026-11-15). Only the lines the operator passed are checked, not the defaults.
   const routerNotes = [];
@@ -2478,6 +2511,8 @@ async function cmdRun(opts, cfg) {
       const skip = argvTooLong(spec, c.side);
       const tempNote = tempNoteFor(c, tcwd);
       if (tempNote) spec.notes = [...(spec.notes ?? []), tempNote];
+      const editNote = editSideNoteFor(c, cands);
+      if (editNote) spec.notes = [...(spec.notes ?? []), editNote];
       return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}), ...(budgetUsd !== null ? { budget: budgetOf(c.host, budgetUsd) } : {}) };
     });
     // A dry run is where the length is cheap to find out: each attempt carries `skip` (the reason the real run would skip it).
@@ -2523,6 +2558,8 @@ async function cmdRun(opts, cfg) {
     const specNotes = specFor(c, prompt, translateCwd(cwd, here, c.side)).notes;
     if (specNotes) env.notes = [...(env.notes ?? []), ...specNotes];
     if (res.tempNote) env.notes = [...(env.notes ?? []), res.tempNote];
+    const editNote = editSideNoteFor(c, null);
+    if (editNote) env.notes = [...(env.notes ?? []), editNote];
     const cl = c.host === 'cline' ? parseClineJson(res.stdout) : null;
     const ag = c.host === 'antigravity' ? parseAgyRun(res.stdout) : null;
     if (ag) {
