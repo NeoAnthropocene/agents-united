@@ -34,7 +34,7 @@ const openLine = (block: string): string => /the types open to you are: (.*)\. N
 const active = NATIVE_ROLES.filter(entry => !EXEMPT.includes(entry.role));
 
 describe('the exempt roles', () => {
-  it('are exactly the factory's four roles and the universal front door', () => {
+  it('are exactly the four factory roles and the universal front door', () => {
     expect([...REQUESTS_EXEMPT_ROLES].sort()).toEqual([...EXEMPT].sort());
   });
 
