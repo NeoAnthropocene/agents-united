@@ -58,7 +58,7 @@ describe('native sysops-sre-lead: the guard claims, against the real script', ()
   };
 
   it('states what the guard blocks, and where it comes from in both modes', () => {
-    expect(text()).toContain("- A guard blocks writes to `.env` files (not `.env.example`) through `Write`, `Edit` and `NotebookEdit`. As a subagent it comes from this file; as a teammate it comes from the project's settings.");
+    expect(text()).toContain("- A guard blocks writes to `.env` files (not `.env.example`) through `Write`, `Edit` and `NotebookEdit`. As a subagent it comes from this file. As a teammate it comes from the settings-level session guard, which exists only if it was switched on at install (it is optional); when you cannot tell, rely on no guard and keep its rules as your own obligation.");
   });
 
   it.each([
@@ -106,8 +106,8 @@ describe('native sysops-sre-lead: the shell-less working method', () => {
     expect(step(5)).toContain('report alert rules, dashboards, runbooks and recovery plans as not validated or exercised');
   });
 
-  it('step 6 hands the report back through SubagentHandback in the plain form', () => {
-    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message through `SubagentHandback`.');
+  it('step 6 hands the report back as the final answer and conditionally through SubagentHandback', () => {
+    expect(step(6)).toBe('6. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool (to a subagent, and only in auto mode); where it does not, your ordinary final response is the hand-back.');
   });
 
   it('Boundaries send a command the work needs to the lead as a run-command request', () => {

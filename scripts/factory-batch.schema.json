@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Native-lane batch manifest (ADR 0075)",
+  "description": "One batch of roles brought into the Claude native lane: what each role is, where its files are, and the decisions it depends on. Read by scripts/native-wiring.mjs and scripts/run-native-conformance.mjs; never installed.",
+  "type": "object",
+  "required": ["version", "id", "base", "roles", "leads", "decisions"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "base": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["role", "definition", "bundle", "kind", "tier", "canonical", "pair", "native", "coverage", "lead"],
+        "additionalProperties": false,
+        "properties": {
+          "role": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "definition": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "bundle": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "kind": { "enum": ["specialist", "coordinator"] },
+          "tier": { "enum": [1, 2] },
+          "canonical": { "type": ["string", "null"], "minLength": 1 },
+          "pair": { "enum": ["existing", "new"] },
+          "native": { "type": "string", "minLength": 1 },
+          "coverage": { "type": "string", "minLength": 1 },
+          "lead": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "mustHold": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "leads": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["lead", "bundle", "roster"],
+        "additionalProperties": false,
+        "properties": {
+          "lead": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "bundle": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "roster": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } }
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "answer", "by", "date", "roles"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "question": { "type": "string", "minLength": 1 },
+          "answer": { "type": ["string", "null"] },
+          "by": { "enum": ["maintainer", "ai-session"] },
+          "date": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+          "roles": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } }
+        }
+      }
+    }
+  }
+}

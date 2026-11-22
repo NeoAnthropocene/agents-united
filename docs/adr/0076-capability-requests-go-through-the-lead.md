@@ -30,6 +30,8 @@ What the files showed on 2026-11-21:
 12. The result goes back to the same specialist with `SendMessage`. A second launch happens only when the host refuses the continuation. Prior art: ADR 0054, ADR 0055, the digital-agency lead's sentence, and `host-library/claude/observations/2026-10-19-claude-2.1.301-worker-lifecycle-live.md` (three continuations answered "Resuming agent" with the specialist's earlier context, seen once on Claude Code 2.1.301).
 13. A role that a user's own session runs as its main agent has no lead; its block tells it to ask the user in plain prose.
 
+Two shared sentences are corrected with this change, because it already rewrites them in every role. They came from a review of the shared wording of the native roles by an agent on another host (Codex). First, a role returned its report "as your final message through `SubagentHandback`" without condition; the host supplies that tool only to a subagent in auto mode (`host-library/claude/pages/tools/tools-reference.md`), so the sentence now says that the final answer is the hand-back and the tool is used only where the host supplies it. Second, a role said that as a teammate its guard "comes from the project's settings"; the settings-level session guard is optional at install, so the sentence now says so and tells the role to rely on no guard when it cannot tell.
+
 ## Consequences
 
 - Every lead holds the tools its block names (`AskUserQuestion`, `Bash`, `PowerShell`, `Monitor`, `TaskStop`, `CronCreate`, `ScheduleWakeup`, `Agent`, `SendMessage`, `Skill`, `ToolSearch`); a test checks it.

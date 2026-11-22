@@ -127,6 +127,7 @@ describe.each(SPECIALISTS)('specialist %s: the report route follows the mechanis
     expect(body).toMatch(/A tool in your list can still be missing at runtime/);
     expect(body).not.toMatch(/As a subagent that is your last message through `SubagentHandback`;/);
     expect(body).not.toMatch(/as your final message through `SubagentHandback`\.$/m);
+    expect(body).not.toMatch(/your final answer is the hand-back\. Deliver it through `SubagentHandback`(?! only where the host supplies that tool)/);
   });
 
   it('keeps the host-delivered final report of a coordinated teammate', () => {
