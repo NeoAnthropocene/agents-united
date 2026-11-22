@@ -190,6 +190,23 @@ describe('the coordinator text', () => {
     expect(text).not.toContain('when the page exists, the brief names its URL.');
   });
 
+  it('says in the brief how to publish: the type to start and the skill, and asks for the approval sentence', () => {
+    expect(text).toContain(
+      '- **Say it in the brief.** When the user approved, the brief names the deliverable, says that the user approved publishing it as a private page, and names how to publish it: the type to start (the Design type for a design, the Slides type for a deck, an HTML page when the account does not offer the type) and the skill `design-artifact-publishing`. When the page exists, the brief names its URL and says that the user approved that page. A brief without the approval sentence gives no go-ahead.',
+    );
+    expect(text).not.toContain('- **Say it in the brief.** When the user approved, the brief names the deliverable and says that the user approved publishing it as a private page; when the page exists');
+  });
+
+  it('sends an update of a specialist\'s page back to that specialist, directly after the bullet on updates', () => {
+    const bullet =
+      '- **A specialist\'s page stays the specialist\'s.** An update of a page that a specialist published goes back to that specialist: continue it with `SendMessage`, name the URL and say that the user approved that page. It holds the full set of files the page was published from. Update yourself only a page that you published yourself.';
+    expect(text).toContain(bullet);
+    const lines = text.split('\n');
+    const update = lines.findIndex(line => line.startsWith('- **No question for an update.**'));
+    expect(update).toBeGreaterThan(-1);
+    expect(lines[update + 1]).toBe(bullet);
+  });
+
   it('treats a failed skill call like the consent answer and publishes HTML when the account lacks the type needed', () => {
     expect(text).toContain('invoke it through `Skill`; if the call fails, or it answers that the user must run');
     expect(text).toContain('an HTML page when the account does not offer the type you need');
