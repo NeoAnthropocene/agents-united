@@ -186,7 +186,7 @@ describe('the coordinator text', () => {
   });
 
   it('says in the brief that the user approved the page, and names its URL', () => {
-    expect(text).toContain('when the page exists, the brief names its URL and says that the user approved that page.');
+    expect(text).toContain('When the page exists, the brief names its URL and says that the user approved that page.');
     expect(text).not.toContain('when the page exists, the brief names its URL.');
   });
 
