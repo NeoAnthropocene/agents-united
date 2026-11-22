@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-ai-model-architect",
+  "workflows": [],
+  "skills": [
+    "hf-model-evaluation",
+    "rag-vector-pipeline",
+    "vector-database-design",
+    "local-llm-inference",
+    "hf-model-training"
+  ],
+  "hooks": []
+}
