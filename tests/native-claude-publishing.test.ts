@@ -106,6 +106,15 @@ describe('the specialist text', () => {
     expect(text).not.toContain('publicly');
   });
 
+  it('has the specialist write the design brief itself, directly before the bullet on how to publish, and never ask for a typed command', () => {
+    const bullet =
+      '- **You write the design brief yourself**, from the work you have done: the subject, the audience or use, the content the page must carry, the look or design system to follow, and the size or format. Do not wait for the user to type a command, and never ask the user to type `/design` or `/slides` so that a page can be made. When the work calls for a canvas or a deck that nobody asked for as a page, propose it the same way: one `ask-user` entry, **Keep it in the project** first.';
+    expect(text).toContain(bullet);
+    const lines = text.split('\n');
+    const at = lines.indexOf(bullet);
+    expect(lines[at + 1]).toBe('- **How, the first of these that this session offers:**');
+  });
+
   it('counts a typed design or slides command as the go-ahead when the user talks to the role directly', () => {
     expect(text).toContain('If the user talks to you directly, a `/design` or `/slides` line they typed, with its brief, is the go-ahead for the one page it asks for.');
     expect(text.trimEnd().split('\n').find(line => line.startsWith('- **Go-ahead first.**'))?.endsWith('If the user talks to you directly, a `/design` or `/slides` line they typed, with its brief, is the go-ahead for the one page it asks for.')).toBe(true);
@@ -181,6 +190,16 @@ describe('the coordinator text', () => {
   it('says the user edits a design canvas or a deck in the browser, and nothing else', () => {
     expect(text).toContain('where the user reviews it in a browser and, for a design canvas or a deck, edits it there');
     expect(text).not.toContain('reviews and edits it in a browser');
+  });
+
+  it('has whoever publishes write the design brief, directly after the go-ahead bullet, and never ask for a typed command', () => {
+    const bullet =
+      '- **The design brief is written by whoever publishes**, from the work done: the subject, the audience or use, the content the page must carry, the look or design system to follow, and the size or format. Nobody waits for the user to type a command, and never ask the user to type `/design` or `/slides` so that a page can be made. You may propose a canvas or a deck yourself when the work calls for one: the proposal is the same question, asked once, **Keep it in the project** first.';
+    expect(text).toContain(bullet);
+    const lines = text.split('\n');
+    const first = lines.findIndex(line => line.startsWith("- **The user's go-ahead for each new page.**"));
+    expect(first).toBeGreaterThan(-1);
+    expect(lines[first + 1]).toBe(bullet);
   });
 
   it('counts a typed design or slides command, with its brief, as the go-ahead for the one page it asks for', () => {

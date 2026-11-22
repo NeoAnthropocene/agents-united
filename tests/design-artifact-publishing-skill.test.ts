@@ -245,6 +245,8 @@ describe('the skill for every holder, for decks and for the go-ahead of each pag
     expect(r.toLowerCase()).toContain('never delete or pin');
     expect(r).not.toContain('the URL that your brief names or that you published yourself');
     expect(r).toContain('- A `/design` or `/slides` line that the user typed, with its brief, is the user\'s go-ahead for the one page it asks for. A second page or a page of another type from the same request is new.');
+    expect(r).toContain('- Write the brief for the page yourself, from the work done: the subject, the audience or use, the content it must carry, the look or design system to follow, the size or format. Never ask the user to type `/design` or `/slides` so that a page can be made.');
+    expect(r.indexOf('- Write the brief for the page yourself, from the work done: the subject, the audience or use, the content it must carry, the look or design system to follow, the size or format. Never ask the user to type `/design` or `/slides` so that a page can be made.')).toBe(r.indexOf('- Write the files in the project first on every route: the page is a second copy.\n') + '- Write the files in the project first on every route: the page is a second copy.\n'.length);
     expect(r.split('\n').slice(0, 4).join('\n')).not.toContain('The host rules below are from the host documentation');
     const sentences = r.split(/(?<=[.!?])\s+/);
     expect(sentences.some(s => s.includes('Slides type') && s.includes('has been observed')), 'a sentence that says nothing about the files of the Slides type has been observed').toBe(true);
