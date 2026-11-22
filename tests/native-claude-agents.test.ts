@@ -324,6 +324,24 @@ const ROLES: RoleSpec[] = [
     model: 'opus',
     effort: 'medium',
   },
+  // The Prime Orchestrator (universal-orchestration, a domain bundle with no specialist): a main-thread front door that routes and holds no `Agent` tool, so it has no allowlist and no roster (the harness syncs a roster
+  // only for a role that holds `Agent`). Its core declares none of `delegate`, `web`, `workflow`, `artifacts`, `code-intel`, `worktree`, `report`, `handback` or `plan`; the servers are its canonical three, with the routes.
+  {
+    name: 'orchestrator-universal',
+    stem: 'orchestrator-universal',
+    guard: 'destructive',
+    permissionMode: 'acceptEdits',
+    skills: [],
+    serverTools: withRoutes(['mcp__github', 'mcp__context7', 'mcp__firecrawl']),
+    mutating: true,
+    mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'AskUserQuestion', 'CronCreate', 'SendMessage', 'Skill'],
+    mainThread: true,
+    coordinatorBundle: 'universal-orchestration',
+    searchTools: ['Glob', 'Grep', 'Read'],
+    // The same pin as the other coordinators (plan 032 close-out): opus / medium, not the canonical `inherit` / high.
+    model: 'opus',
+    effort: 'medium',
+  },
   // Tier 2 (plan 032 follow-up 2, ADR 0036): the digital-agency team. Teammates are specialists with editors and no shell, so no `Bash`,
   // `LSP` or worktree; they carry the destructive-command guard in their own frontmatter (it guards them as subagents and the lead's
   // main thread; for an in-process teammate only a settings-level guard applies, see the Tier-2 suite).
@@ -453,7 +471,8 @@ beforeAll(async () => {
       const tools = ceilingOf(role).map(tool => (role.mainThread && tool === 'Agent' ? allowlist(role.coordinatorBundle) : tool));
       const toolsLine = `tools: ${nativeToolOrder(tools, role.serverTools).join(', ')}`;
       let synced = syncHooks(syncFloor(fs.readFileSync(fileOf(role), 'utf8'), cores.get(role.stem)!), guardGroups(role)).replace(/^tools: .*$/m, toolsLine);
-      if (role.mainThread) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
+      // A roster block belongs to a lead that spawns the roster: only a main-thread role that holds `Agent` carries one.
+      if (role.mainThread && ceilingOf(role).includes('Agent')) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
     }
   }
@@ -554,5 +573,21 @@ describe.each(ROLES)('native Claude $name', role => {
       const row = inSkillTable ? /^\|[^|\n]*\|\s*`([a-z0-9-]+)`\s*\|/.exec(line) : null;
       if (row) expect(fs.existsSync(path.resolve('registry/skills', row[1], 'SKILL.md')), `skill ${row[1]}`).toBe(true);
     }
+  });
+});
+
+describe('the roster block of a main-thread role follows its Agent tool', () => {
+  const leads = ROLES.filter(role => role.mainThread);
+  const markers = (text: string, edge: 'start' | 'end'): number => text.split(`<!-- agents-united:roster:${edge}`).length - 1;
+
+  it('finds main-thread roles that hold Agent, so that no test below passes on an empty list', () => {
+    expect(leads.filter(role => ceilingOf(role).includes('Agent')).length).toBeGreaterThan(0);
+  });
+
+  it.each(leads)('$name carries exactly one pair of roster markers when it holds Agent, and none when it does not', role => {
+    const text = fs.readFileSync(fileOf(role), 'utf8').replace(/\r\n/g, '\n');
+    const holdsAgent = splitTools(yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(text)![1]).tools).some(tool => tool.split('(')[0] === 'Agent');
+    expect(holdsAgent).toBe(ceilingOf(role).includes('Agent'));
+    expect([markers(text, 'start'), markers(text, 'end')]).toEqual(holdsAgent ? [1, 1] : [0, 0]);
   });
 });
