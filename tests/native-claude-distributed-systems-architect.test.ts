@@ -25,6 +25,11 @@ const step = (n: number): string => {
 };
 const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]*?)(?=\n## )/.exec(body)![1]!.trim();
 const sessionSection = (body: string): string => /\n## Session task tracking\n([\s\S]*)$/.exec(body)![1]!.trim();
+/** The numbered lines and the "- Never" lines of a block, line endings normalised, so lists can be compared exactly. */
+const lf = (block: string): string => block.replace(/\r\n/g, '\n');
+const numberedLines = (block: string): string[] => lf(block).split('\n').filter(line => /^\d+\. /.test(line));
+const neverLines = (block: string): string[] => lf(block).split('\n').filter(line => line.startsWith('- Never '));
+const floorSection = (body: string, heading: string): string => new RegExp('\\n## ' + heading + '\\n([\\s\\S]*?)(?=\\n## )').exec(lf(body))![1]!;
 
 describe('native distributed-systems-architect: the exact tool set, model and effort', () => {
   it('holds exactly this tool set', () => {
@@ -95,7 +100,7 @@ describe('native distributed-systems-architect: the MCP servers, skills and perm
 describe('native distributed-systems-architect: the guard claims', () => {
   it('step 5 names what the guard reads, and what it does not stop', () => {
     const five = step(5);
-    expect(five).toContain('reads command text and file paths: it does not stop a `git push` without force');
+    expect(five).toContain('reads command text and file paths: it does not stop an ordinary, non-forced `git push`');
     expect(five).toContain('a `protoc` or code-generation run, or a broker administration command such as deleting a Kafka topic');
     expect(five).toContain('keeping a boundary change additive and versioned is your own obligation');
     expect(five).toMatch(/your own obligation/);
@@ -126,11 +131,11 @@ describe('native distributed-systems-architect: the guard claims', () => {
     };
 
     it.each(['Bash', 'PowerShell'])('blocks the forms of the canonical agent\'s own guard (rm -rf, sudo, shutdown) and the named forms through %s', tool => {
-      for (const command of ['rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'git push --force origin main', 'vercel --prod']) expect(run(tool, command), `${tool}: ${command}`).toBe(true);
+      for (const command of ['rm -rf /', 'rm -rf ~', 'sudo ls', 'shutdown now', 'git push --force origin main', 'git push -f origin main', 'vercel --prod']) expect(run(tool, command), `${tool}: ${command}`).toBe(true);
     });
 
-    it.each(['Bash', 'PowerShell'])('blocks a shell redirect to .env, disk formatting and a cloud resource-group, project or account deletion through %s, and the hook fired with status 2', tool => {
-      for (const command of ['echo X > .env', 'mkfs.ext4 /dev/sda1', 'az group delete --name rg-prod --yes', 'gcloud projects delete my-project']) {
+    it.each(['Bash', 'PowerShell'])('blocks a shell redirect to .env, disk formatting, a recursive delete of a project folder, a short-flag forced push and a cloud resource-group, project or account deletion through %s, and the hook fired with status 2', tool => {
+      for (const command of ['echo X > .env', 'mkfs.ext4 /dev/sda1', 'rm -Rf .', 'env FOO=1 rm -rf .git', 'az group delete --name rg-prod --yes', 'gcloud projects delete my-project', 'aws organizations close-account --account-id 1', 'git push -f origin main']) {
         const result = blockedByHook(tool, command);
         expect(result, `${tool}: ${command}`).toEqual({ blocked: true, fired: 1, statuses: [2] });
       }
@@ -183,23 +188,22 @@ describe('native distributed-systems-architect: the peers section of the enginee
 });
 
 describe('native distributed-systems-architect: the shared scope_boundaries and safety', () => {
-  it('carries the five numbered directives of the canonical agent, whitespace-normalised and in the canonical order, and the protocol', async () => {
+  it('carries the numbered directives of the canonical agent, the core and the native floor as identical lists, and the protocol', async () => {
     const scope = (await loadSemanticCore('registry')).get('subagent-distributed-systems-architect')!.scope_boundaries.replace(/\s+/g, ' ');
     const section = /\n## Primary Directives\n([\s\S]*?)(?=\n---\n|\n## )/.exec(canonical())![1]!;
-    const directives = [...section.matchAll(/^(\d+)\. (.+)$/gm)].map(match => `${match[1]}. ${match[2]}`.replace(/\s+/g, ' '));
+    const directives = numberedLines(section);
     expect(directives).toHaveLength(5);
-    for (const directive of directives) expect(scope, directive).toContain(directive);
-    const positions = directives.map(directive => scope.indexOf(directive));
-    expect(positions, 'directives appear in the canonical order').toEqual([...positions].sort((a, b) => a - b));
-    expect(new Set(positions).size).toBe(directives.length);
+    expect(numberedLines((await loadSemanticCore('registry')).get('subagent-distributed-systems-architect')!.scope_boundaries)).toEqual(directives);
+    expect(numberedLines(floorSection(text(), 'Scope Boundaries'))).toEqual(directives);
     for (const phase of ['Audit', 'Design', 'Verification', 'say so explicitly instead of asserting success']) expect(scope, phase).toContain(phase);
   });
 
-  it('carries the three Safety Guardrails of the canonical agent word for word, and its destructive-command guard', async () => {
+  it('carries the Never guardrails of the canonical agent, the core and the native floor as identical lists, and its destructive-command guard', async () => {
     const safety = (await loadSemanticCore('registry')).get('subagent-distributed-systems-architect')!.safety;
-    const guardrails = /\n## Safety Guardrails\n([\s\S]*?)(?=\n---\n|\n## )/.exec(canonical())![1]!.split('\n').filter(line => line.startsWith('- '));
+    const guardrails = neverLines(/\n## Safety Guardrails\n([\s\S]*?)(?=\n---\n|\n## )/.exec(canonical())![1]!);
     expect(guardrails).toHaveLength(3);
-    for (const line of guardrails) expect(safety).toContain(line.slice(2));
+    expect(neverLines(safety)).toEqual(guardrails);
+    expect(neverLines(floorSection(text(), 'Safety'))).toEqual(guardrails);
     expect(safety).toContain('- Do not run destructive shell commands such as recursive deletes, privilege escalation or shutdown.');
     expect(canonical()).toContain('Deny run_command if CommandLine matches /(rm -rf|sudo|shutdown)/i');
   });
