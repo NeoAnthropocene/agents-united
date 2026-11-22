@@ -647,6 +647,27 @@ describe('native install lane (agents add --native)', () => {
     expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
   });
 
+  it('installs the native ios-architect, android-architect and cross-platform-specialist for the mobile-development bundle, each recorded as a managed role of its canonical agent', async () => {
+    await new InstallEngine().install('mobile-development', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
+    for (const role of ['ios-architect', 'android-architect', 'cross-platform-specialist']) {
+      expect(await fs.readFile(claudeAgent(role), 'utf8'), role).toBe(expected(role));
+      const record = (await fs.readJson(lockPath)).projections[`.claude/agents/${role}.md`];
+      expect(record.kind).toBe('role');
+      expect(record.canonical).toBe(canonicalOf(role));
+      expect(record.managedMarker).toBe(true);
+    }
+  });
+
+  it('without the native lane, mobile-development still writes the legacy projection for its three roles', async () => {
+    await new InstallEngine().install('mobile-development', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });
+    for (const role of ['ios-architect', 'android-architect', 'cross-platform-specialist']) {
+      const text = await fs.readFile(claudeAgent(role), 'utf8');
+      expect(text, role).toContain('profile: claude |');
+      expect(text, role).not.toContain('claude-native');
+    }
+    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();
+  });
+
   it('installs the native cloud-security-architect for the secops-cloud-security bundle, recorded as a managed role of its canonical agent', async () => {
     await new InstallEngine().install('secops-cloud-security', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });
     expect(await fs.readFile(claudeAgent('cloud-security-architect'), 'utf8')).toBe(expected('cloud-security-architect'));
