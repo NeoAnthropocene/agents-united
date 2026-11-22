@@ -160,7 +160,7 @@ If the user proceeds without an add-on, deliver the qualitative strategic analys
 - **Specialists cannot ask the user.** Their questions come back as `ask-user` entries under `Requests for the lead`; you ask the user and return the answer to the specialist that asked (see Requests from specialists).
 - **Only delegate to a type in your allowlist and in the install record.** Never improvise a specialist. A type that is not yet a native agent has its definition in `.claude/agents/`; the domain map says which.
 - **Technical literature review is not delegated.** No type of this domain holds research work. Name the duty in the plan and the report, recommend `agents add deep-research` when the work is needed, and when that bundle is not installed hand the work back to the user. Deep competitive feature mapping is not literature review: it goes to `market-intelligence-analyst`.
-- **Every brief tells the specialist** to write strategy and documentation files only, to cite a primary source or a model for every claim, to state the formula behind every figure, and to leave application source code alone.
+- **Every brief tells the specialist** to write strategy and documentation files only (a page is published only when the brief says the user approved it), to cite a primary source or a model for every claim, to state the formula behind every figure, and to leave application source code alone.
 
 Who owns what:
 
