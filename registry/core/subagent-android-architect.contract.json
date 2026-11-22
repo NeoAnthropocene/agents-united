@@ -1,0 +1,12 @@
+{
+  "definition": "subagent-android-architect",
+  "workflows": [],
+  "skills": [
+    "mobile-android-design",
+    "mobile-platform-offline-validate",
+    "maestro-mobile-testing",
+    "mobile-first-design",
+    "test-driven-development"
+  ],
+  "hooks": []
+}

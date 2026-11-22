@@ -470,6 +470,34 @@ export const ROLE_EVIDENCE: Record<string, Record<string, RegExp>> = {
     'A suite that cannot run is reported as not run, never as passing.': /report it as not run instead of asserting success\./,
     'Consult the named Skill before authoring or debugging a spec; report a missing skill instead of improvising.': /Load the matching skill with the `Skill` tool before you author or debug a spec\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
   },
+  // The mobile-development roles (Bundle mobile-development): their floor Safety lines and their own "How to work" steps state these.
+  'ios-architect': {
+    'No signing certificate, provisioning profile or API key is hardcoded or committed into source.': /- Never commit a signing certificate, provisioning profile, or API key into source;/,
+    'Every privacy-sensitive permission has a matching Info.plist usage-description string and requests no more than the feature needs.': /- Never request a privacy-sensitive permission without the matching `Info\.plist` usage-description string, and never request more than the feature needs\./,
+    'Before shipping a SwiftUI view, check closures capturing `self` for retain cycles.': /Before shipping a SwiftUI view, check closures capturing `self` for retain cycles\./,
+    'Build and test verification gates are run before reporting complete, or the inability to run them is stated explicitly.': /say so explicitly and report that gate as not run instead of asserting success\./,
+    'Consult the named Skill before writing platform-specific code; report a missing skill instead of improvising from memory.': /Load the matching skill with the `Skill` tool before you write platform-specific code\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  'android-architect': {
+    'No signing key, keystore password or API key is hardcoded or committed into source.': /- Never commit a signing key, keystore password, or API key into source;/,
+    'Runtime permissions and scoped storage declarations follow least privilege for the feature.': /- Never request a runtime permission the feature does not use; follow least-privilege scoped storage and permission declarations\./,
+    'Every Compose recomposition fix is measured and reported with its measurement, not just the change.': /- Never ship a Compose recomposition fix without measuring it \(Layout Inspector \/ recomposition counts\)/,
+    'Build and test verification gates are run before reporting complete, or the inability to run them is stated explicitly.': /say so explicitly and report that gate as not run instead of asserting success\./,
+    'Consult the named Skill before writing platform-specific code; report a missing skill instead of improvising from memory.': /Load the matching skill with the `Skill` tool before you write platform-specific code\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
+  'cross-platform-specialist': {
+    'A fix verified on one platform (iOS or Android) is never assumed to hold on the other; both are verified or the unverified platform and reason are reported.': /- Never assume a fix verified on one platform \(iOS or Android\) also holds on the other/,
+    'No signing key, keystore or API key is committed into source; secrets use the platform\'s secrets mechanism.': /- Never commit a signing key, keystore, or API key into source;/,
+    'Input crossing the JS/native bridge to native modules is validated.': /- Never bridge to native modules with unvalidated input crossing the JS\/native boundary\./,
+    'Build and test verification gates are run per platform before reporting complete, or the untested platform and reason are stated explicitly.': /say so explicitly and report that platform as not run instead of asserting success\./,
+    'Consult the named Skill before writing platform-specific code; report a missing skill instead of improvising from memory.': /Load the matching skill with the `Skill` tool before you write platform-specific code\. A skill that is not installed is a gap to report in your handoff, not something to improvise from memory\./,
+    'Hand your result back to the coordinator, not across to a peer.': /- \*\*Your final report is your one hand-back\.\*\* Do not use `SendMessage` to push results to the lead mid-run\./,
+    'Message a peer directly only in team mode, when the brief lists that peer; otherwise put peer questions under open items.': /- \*\*Team mode\*\* is only for a live Agent Team, and then your brief lists each peer you may message directly by name with `SendMessage`\. Message a peer only when a peer's answer is genuinely required, at most two exchanges per pair \(an exchange is one message and its reply\) and one directed question per peer per planning round\. A message to a teammate that has gone idle wakes it, but the lead owns the relay: when a peer has finished, ask the lead\./,
+  },
   // `repo-index` states "exhaustive before selective" in its floor.
   'repo-index': {
     'Exhaustive scanning precedes selective judgment.': /Exhaustive before selective\.\*\* Scan the entire repository before drawing conclusions/,
