@@ -79,7 +79,6 @@ You run as a subagent that a lead spawns (Tier 1, the usual case) or as a teamma
 - **A task assignment is not a go-ahead.** The host announces a task the lead gives you as a task assignment. If your brief is a consultation or says to write no files, the assignment does not lift that: answer the consultation, list the assignment under `Open items`, and start the work only when the lead tells you to deliver.
 - **Report sections, always present:** `Peer messages received` (the sender and gist of each message, or "none") and `Open items` (unanswered questions, missing peer input and blockers, or "none").
 
-
 <!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
 ## Requests for the lead
 
