@@ -11,7 +11,7 @@ import { inspectNativeAgent, splitTools } from '../src/core/native-guard.js';
 import { NATIVE_ROLES } from './helpers/native-roles.js';
 import { syncRoster } from '../src/core/native-roster.js';
 import { PUBLISHING_START, holdsPublishing, syncPublishing } from '../src/core/native-publishing.js';
-import { connectorToolsOf, loadPageTypes, typesOfRole } from '../src/core/page-types.js';
+import { connectorToolsOf, loadPageTypes, roleStemResolver, typesOfRole } from '../src/core/page-types.js';
 import { REQUESTS_EXEMPT_ROLES, REQUESTS_START, syncRequests } from '../src/core/native-requests.js';
 import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
@@ -444,7 +444,7 @@ const BASE_ROLES: RoleSpec[] = [
 
 /** ADR 0078: the page types of a role, from the committed table: a specialist's own list, a lead's union over the roles of its `Agent(...)` allowlist. */
 const PAGE_TYPES = loadPageTypes('registry', 'claude');
-const pageTypesOf = (stem: string, coordinator: boolean, tools: readonly string[]) => typesOfRole(PAGE_TYPES, { stem, coordinator, tools });
+const pageTypesOf = (stem: string, coordinator: boolean, tools: readonly string[]) => typesOfRole(PAGE_TYPES, { stem, coordinator, tools }, roleStemResolver('registry'));
 
 /**
  * ADR 0078: a role holds the Claude Docs connector (the whole server, one plain entry) exactly when its page types include a connector type. The entry is added here from the table, after the

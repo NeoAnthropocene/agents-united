@@ -5,7 +5,7 @@ import { checkFloor } from '../src/core/native-floor.js';
 import { publishingBlockProblems } from '../src/core/native-repository-rules.js';
 import { ROSTER_END, ROSTER_START } from '../src/core/native-roster.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
-import { loadPageTypes, typesOfRole } from '../src/core/page-types.js';
+import { loadPageTypes, roleStemResolver, typesOfRole } from '../src/core/page-types.js';
 import {
   CONNECTOR_ENTRY,
   HOLDER_LEADS,
@@ -119,7 +119,7 @@ describe('the publishing block: generated, in every holder and in no other role'
     const table = loadPageTypes('registry', 'claude');
     for (const { role, coordinator, stem } of NATIVE_ROLES) {
       const text = nativeText(role);
-      const types = typesOfRole(table, { stem, coordinator, tools: toolsOf(role) });
+      const types = typesOfRole(table, { stem, coordinator, tools: toolsOf(role) }, roleStemResolver('registry'));
       expect(publishingBlockProblems(text, { kind: coordinator ? 'coordinator' : 'specialist', name: role, tools: toolsOf(role), types, catalogue: table.types }), role).toEqual([]);
       expect(text.includes('agents-united:publishing:start'), role).toBe(HOLDER_STEMS.includes(NATIVE_ROLES.find(entry => entry.role === role)!.stem));
     }

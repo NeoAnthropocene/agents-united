@@ -10,7 +10,7 @@ import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js
 import { GUARD_SCRIPT, NATIVE_GUARD_FILES } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
-import { loadPageTypesIfPresent, typesOfRole } from './page-types.js';
+import { delegateNamesOf, loadPageTypesIfPresent, roleStemResolver, typesOfRole, unknownRosterNames } from './page-types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
 import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
@@ -83,7 +83,13 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       if (core.capabilities?.includes('task-tracking')) findings.push(...sessionTrackingProblems(text, { coordinator }));
       findings.push(...requestsBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
       const pageTypes = loadPageTypesIfPresent(registry, 'claude');
-      const types = typesOfRole(pageTypes, { stem: input.definition, coordinator, tools: facts.tools });
+      const stemOfRole = roleStemResolver(registry);
+      if (coordinator) {
+        for (const name of unknownRosterNames(delegateNamesOf(facts.tools), stemOfRole, stem => fs.existsSync(path.join(registry, 'core', `${stem}.core.md`)))) {
+          findings.push(`Native page types: the Agent roster of ${String(facts.meta.name)} names ${name}, which stands on no core in the registry.`);
+        }
+      }
+      const types = typesOfRole(pageTypes, { stem: input.definition, coordinator, tools: facts.tools }, stemOfRole);
       findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools, types, catalogue: pageTypes.types }));
       let canonicalText: string | undefined;
       const defaultCanonical = path.join(registry, 'agents', `${input.definition}.md`);

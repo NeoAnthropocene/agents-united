@@ -1,5 +1,5 @@
 import { splitTools } from '../../src/core/native-guard.js';
-import { loadPageTypes, typesOfRole } from '../../src/core/page-types.js';
+import { loadPageTypes, roleStemResolver, typesOfRole } from '../../src/core/page-types.js';
 import type { PageType, PageTypeKind } from '../../src/core/types.js';
 import { NATIVE_ROLES, nativeText } from './native-roles.js';
 
@@ -11,6 +11,9 @@ import { NATIVE_ROLES, nativeText } from './native-roles.js';
  */
 
 export const PAGE_TABLE = loadPageTypes('registry', 'claude');
+
+/** The stem of the core of a native role name, from the native role names of the bundles (the agency copies stand on a core of another name). */
+export const STEM_OF_ROLE = roleStemResolver('registry');
 
 /** The one connector entry (the whole server, no route variants) that a role holds exactly when its page types include a connector type. */
 export const CONNECTOR_ENTRY = 'mcp__claude_ai_Claude_Docs';
@@ -50,7 +53,7 @@ export const toolsLineOf = (role: string): string[] => splitTools(/^tools: (.*)$
 /** The page types of a committed native holder: a specialist's own list, a lead's union over the `Agent(...)` allowlist of its tools line. */
 export function pageTypesOfRole(role: string): PageType[] {
   const entry = NATIVE_ROLES.find(candidate => candidate.role === role)!;
-  return typesOfRole(PAGE_TABLE, { stem: entry.stem, coordinator: entry.coordinator, tools: toolsLineOf(role) });
+  return typesOfRole(PAGE_TABLE, { stem: entry.stem, coordinator: entry.coordinator, tools: toolsLineOf(role) }, STEM_OF_ROLE);
 }
 
 /** The holder files whose page types include the type. */

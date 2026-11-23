@@ -277,16 +277,19 @@ describe('the stem of a native role', () => {
     expect(stemOf('ui-designer')).toBe('subagent-ui-designer');
   });
 
-  it('gives every agency role of the committed roster the stem that the roster of native roles gives', () => {
+  it('gives every specialist role of the committed roster, the agency copies and the factory workers among them, the stem that the roster of native roles gives', () => {
     const stemOf = roleStemResolver('registry');
-    const agency = NATIVE_ROLES.filter(entry => entry.role.startsWith('agency-'));
-    expect(agency.length).toBeGreaterThan(10);
-    for (const entry of agency) expect(stemOf(entry.role), entry.role).toBe(entry.stem);
+    const specialists = NATIVE_ROLES.filter(entry => !entry.coordinator);
+    expect(specialists.filter(entry => entry.role.startsWith('agency-')).length).toBeGreaterThan(10);
+    expect(specialists.length).toBeGreaterThan(50);
+    for (const entry of specialists) expect(stemOf(entry.role), entry.role).toBe(entry.stem);
+    expect(stemOf('factory-realizer')).toBe('subagent-realize-for-host');
+    expect(stemOf('factory-sync')).toBe('subagent-host-update-sync');
   });
 
   it('resolves every name in the Agent roster of every lead to a core file that exists', () => {
     const stemOf = roleStemResolver('registry');
-    const exists = (stem: string): boolean => fs.existsSync(path.join('registry', 'agents', `${stem}.md`));
+    const exists = (stem: string): boolean => fs.existsSync(path.join('registry', 'core', `${stem}.core.md`));
     const leads = NATIVE_ROLES.filter(entry => entry.coordinator);
     expect(leads.length).toBeGreaterThan(8);
     for (const lead of leads) {
@@ -298,7 +301,7 @@ describe('the stem of a native role', () => {
 
   it('reports a roster name that stands on no core, and a name that is a prototype key', () => {
     const stemOf = roleStemResolver('registry');
-    const exists = (stem: string): boolean => fs.existsSync(path.join('registry', 'agents', `${stem}.md`));
+    const exists = (stem: string): boolean => fs.existsSync(path.join('registry', 'core', `${stem}.core.md`));
     expect(unknownRosterNames(['ui-designer', 'ui-desinger', 'toString'], stemOf, exists)).toEqual(['ui-desinger', 'toString']);
   });
 });
