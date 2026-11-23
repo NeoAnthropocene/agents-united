@@ -96,28 +96,30 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
 
   it('builds everything locally and publishes once', () => {
     expect(runbook()).toMatch(/Build everything locally, then publish once/);
-    expect(skill()).toMatch(/Publishing after every board/);
+    expect(read('references/publish-and-read-back.md')).toMatch(/Publishing after every board/);
   });
 
-  it('keeps to the source: copy verbatim, token colours only, claims to Defne, inferences written as inferred, no time she was not given', () => {
-    const r = runbook();
+  it('keeps to the source (the rules are in the read-back reference, the runbook points to it): copy verbatim, token colours only, claims to Defne, inferences written as inferred, no time she was not given', () => {
+    expect(runbook()).toMatch(/Keep to the source and read back/);
+    expect(runbook()).toContain('references/publish-and-read-back.md');
+    const r = read('references/publish-and-read-back.md');
     expect(r).toMatch(/word for word/);
     expect(r).toMatch(/only token colours/);
     expect(r).toMatch(/Defne/);
     expect(r).toMatch(/written as inferred/);
     expect(r).toMatch(/T00:00:00Z/);
     expect(r).toMatch(/placeholder/);
-    expect(skill()).toMatch(/`12:00:00Z`/);
+    expect(r).toMatch(/`12:00:00Z`/);
   });
 
   it('reads back what she published, with the list and read calls, and counts instead of estimating', () => {
-    const r = runbook();
+    const r = read('references/publish-and-read-back.md');
     expect(r).toMatch(/Read back what you published/);
     expect(r).toMatch(/`list`/);
     expect(r).toMatch(/`read` each one you wrote/);
     expect(r).toMatch(/count/);
     expect(r).toMatch(/recompute any contrast figure/);
-    expect(skill()).toMatch(/11 of 12/);
+    expect(r).toMatch(/11 of 12/);
   });
 
   it('reports what was not checked, and sends the render ask to the lead because she cannot look', () => {
@@ -161,44 +163,152 @@ describe('the references, the example and the evals', () => {
     expect(w).toMatch(/Not checked/);
   });
 
-  it('has exactly five evals, each with a prompt and an expected output, pinned by a distinctive phrase each (ADR 0077)', () => {
+  it('has exactly five evals, each with a prompt and an expected output, pinned by a distinctive phrase each (ADR 0078)', () => {
     const e = JSON.parse(read('evals/evals.json')) as { skill_name: string; evals: Array<{ id: number; prompt: string; expected_output: string }> };
     expect(e.skill_name).toBe(SKILL);
     expect(e.evals.map(x => x.id)).toEqual([1, 2, 3, 4, 5]);
-    for (const x of e.evals) expect(x.expected_output.length, 'eval ' + x.id).toBeGreaterThan(80);
-    const [bundled, canvas, deck, update, declined] = e.evals as [typeof e.evals[number], typeof e.evals[number], typeof e.evals[number], typeof e.evals[number], typeof e.evals[number]];
-    // 1: the bundled design skill is in the list and the brief carries the go-ahead (new)
-    expect(bundled.prompt).toMatch(/list of (?:available )?skills/i);
-    expect(bundled.prompt).toMatch(/go-ahead/i);
-    expect(bundled.expected_output).toMatch(/invokes `design` through `Skill`/);
-    expect(bundled.expected_output).toContain('writes the files');
-    expect(bundled.expected_output).toContain('If the call fails');
-    expect(bundled.expected_output).toMatch(/private/);
-    // 2: the bundled skill is not in the list: the PetPal canvas through the Design type (old case 1, adapted)
-    expect(canvas.prompt).toMatch(/PetPal paid-social set/);
-    expect(canvas.prompt).toMatch(/approved publishing it as a private page/);
-    expect(canvas.expected_output).toMatch(/Design type/);
-    expect(canvas.expected_output).toMatch(/ad-creative-design/);
-    expect(canvas.expected_output).toMatch(/list` and `read/);
-    // 3: a deck through the Slides type, and a request to share it (new; takes over the old share case)
-    expect(deck.prompt).toMatch(/deck/i);
-    expect(deck.prompt).toMatch(/share/i);
-    expect(deck.prompt).toMatch(/does not show `slides`/);
-    expect(deck.expected_output).toMatch(/Slides type/);
-    expect(deck.expected_output).toMatch(/does not share|sharing is the user's own act/);
-    // 4: an update of the approved design system after a token change (new; takes over the old design-system case)
-    expect(update.prompt).toMatch(/design system/i);
-    expect(update.prompt).toMatch(/token/i);
+    for (const x of e.evals) {
+      expect(x.expected_output.length, 'eval ' + x.id).toBeGreaterThan(80);
+      expect(x.prompt, 'eval ' + x.id).toMatch(/no real client/i);
+    }
+    const [system, memo, sheet, data, update] = e.evals as [typeof e.evals[number], typeof e.evals[number], typeof e.evals[number], typeof e.evals[number], typeof e.evals[number]];
+    // 1: Design System, no go-ahead in the brief: the lead proposes the project's own design system once (decision 6), files first
+    expect(system.prompt).toMatch(/design system/i);
+    expect(system.prompt).toMatch(/no go-ahead/i);
+    expect(system.expected_output).toMatch(/proposes? (?:it|one) once/i);
+    expect(system.expected_output).toContain('**Keep it in the project** first');
+    expect(system.expected_output).toMatch(/files in the project first/i);
+    expect(system.expected_output).toMatch(/does not edit a saved design system/i);
+    // 2: a Docs memo with the go-ahead and the connector present
+    expect(memo.prompt).toMatch(/memo/i);
+    expect(memo.prompt).toMatch(/Claude Docs connector/);
+    expect(memo.expected_output).toMatch(/project file first/i);
+    expect(memo.expected_output).toMatch(/through the Claude Docs connector/);
+    expect(memo.expected_output).toMatch(/no files into the page/i);
+    expect(memo.expected_output).toMatch(/never deletes/i);
+    expect(memo.expected_output).toMatch(/no comment/i);
+    // 3: a Sheets model with no connector among the tools: files, the reason, no request to sign in
+    expect(sheet.prompt).toMatch(/financial model/i);
+    expect(sheet.prompt).toMatch(/not among your tools/);
+    expect(sheet.expected_output).toMatch(/files in the project/i);
+    expect(sheet.expected_output).toMatch(/no page because the connector is missing/);
+    expect(sheet.expected_output).toMatch(/does not ask the user to sign in/i);
+    // 4: a Data dashboard from a CSV, no live query, and the store tool not offered
+    expect(data.prompt).toMatch(/CSV/);
+    expect(data.prompt).toMatch(/store tool/i);
+    expect(data.expected_output).toMatch(/loads the store tool through tool search/i);
+    expect(data.expected_output).toMatch(/keeps the files and says why/i);
+    expect(data.expected_output).toMatch(/no live query/i);
+    expect(data.expected_output).toMatch(/never a stored call that changes anything/i);
+    // 5: an update of an approved page of any type, with a request to share it
+    expect(update.prompt).toMatch(/already approved/i);
+    expect(update.prompt).toMatch(/share/i);
     expect(update.expected_output).toMatch(/no new question/i);
     expect(update.expected_output).toMatch(/same link/i);
-    expect(update.expected_output).toMatch(/reads the page back/i);
-    // 5: no go-ahead: files only (new; replaces the old missing-tool case, whose rule stays pinned in the Edge Cases test above)
-    expect(declined.prompt).toMatch(/one-pager/i);
-    expect(declined.prompt).toMatch(/Keep it in the project/);
-    expect(declined.expected_output).toMatch(/files only/i);
-    expect(declined.expected_output).toMatch(/publishes nothing/i);
-    expect(declined.expected_output).toMatch(/why there is no page/i);
-    expect(declined.expected_output).toContain('`ask-user` entry');
+    expect(update.expected_output).toMatch(/does not share|sharing is the user's own act/);
+    expect(update.expected_output).toMatch(/private/);
+  });
+});
+
+describe('the other page types (ADR 0078): the skill picks the type, three references say how each kind is filled', () => {
+  const REFS = ['references/design-systems.md', 'references/docs-and-sheets.md', 'references/whiteboards-and-dashboards.md'];
+
+  it('is at version 1.2.0 or later, within the layout limits (6,000 characters and 90 lines)', () => {
+    const [major, minor] = meta().metadata.version.split('.').map(Number) as [number, number];
+    expect(major > 1 || (major === 1 && minor >= 2), meta().metadata.version).toBe(true);
+    expect(skill().length).toBeLessThanOrEqual(6000);
+    expect(skill().split('\n').length).toBeLessThanOrEqual(90);
+    expect(meta().description.length).toBeLessThanOrEqual(1024);
+  });
+
+  it('names the five types in its description and its inputs, and keeps Claude Code only and the Artifact tool', () => {
+    const d = meta().description.replace(/\s+/g, ' ');
+    for (const type of ['Docs', 'Sheets', 'Whiteboard', 'Data', 'Design System', 'Slides']) expect(d, type).toContain(type);
+    expect(d).toMatch(/Claude Code only/);
+    expect(section('Input/Output Requirements')).toMatch(/Docs, Sheets, Whiteboard or Data/);
+  });
+
+  it('starts by picking the type from the account\'s own list by title, never a stored link, and links the three references', () => {
+    const r = section('Step-by-Step Runbook');
+    expect(r).toMatch(/Pick the type/);
+    expect(r).toMatch(/`list`/);
+    expect(r).toMatch(/`types`/);
+    expect(r).toMatch(/by title/);
+    expect(r).toMatch(/never a (?:stored|hard-coded) link/);
+    for (const ref of REFS) {
+      expect(fs.existsSync(path.join(DIR, ref)), ref).toBe(true);
+      expect(body(), ref).toContain(`](${ref})`);
+    }
+  });
+
+  it('puts the moved rules into the read-back reference: keep to the source, read back, the anti-patterns', () => {
+    const r = read('references/publish-and-read-back.md');
+    expect(r).toMatch(/## Keep to the source/);
+    expect(r).toMatch(/## Read back what you published/);
+    expect(r).toMatch(/## Anti-patterns, each with its reason/);
+    expect(skill()).not.toMatch(/Anti-patterns, each with its reason/);
+    expect(skill()).toMatch(/anti-patterns are in the same file/i);
+  });
+
+  it('says in every new reference which facts are the vendor\'s and which are this repository\'s rule, and the dates', () => {
+    for (const ref of REFS) {
+      const r = read(ref);
+      expect(r, ref).toMatch(/vendor/i);
+      expect(r, ref).toMatch(/this repository's rule/i);
+      expect(r, ref).toContain('2026-11-22');
+      expect(r, ref).toMatch(/Start the type titled|Find the type/);
+      expect(r, ref).toMatch(/title and no files/);
+      expect(r, ref).toMatch(/another party's text/);
+    }
+  });
+
+  it('design-systems.md: files under the page\'s project folder, the index last, real sources, no edit of a saved design system, the lead\'s one proposal', () => {
+    const r = read('references/design-systems.md');
+    expect(r).toMatch(/index/i);
+    expect(r).toMatch(/last/);
+    expect(r).toMatch(/project's real sources|real sources/);
+    expect(r).toMatch(/Never edit a saved design system unless that is the task/);
+    expect(r).toMatch(/use the one marked default without asking/);
+    expect(r).toMatch(/if some are listed but none is default, name them and ask/i);
+    expect(r).toMatch(/proposes? one once/i);
+    expect(r).toContain('**Keep it in the project** first');
+    expect(r).toMatch(/declined proposal is not repeated/i);
+    expect(r).toMatch(/motion/);
+  });
+
+  it('docs-and-sheets.md: the project file first, the connector, the bans, the missing connector, a document that belongs in the codebase', () => {
+    const r = read('references/docs-and-sheets.md');
+    expect(r).toMatch(/Claude Docs connector/);
+    expect(r).toMatch(/project file first/i);
+    expect(r).toMatch(/connector's own server text/i);
+    expect(r).toMatch(/new page[\s\S]*go-ahead|go-ahead[\s\S]*new page/);
+    expect(r).toMatch(/Never delete a doc or a sheet/);
+    expect(r).toMatch(/never comment|no comment/i);
+    expect(r).toMatch(/never overwrite a cell (?:that )?a person typed/i);
+    expect(r).toMatch(/no page because the connector is missing/);
+    expect(r).toMatch(/never ask the user to sign in or to connect it/i);
+    expect(r).toMatch(/belongs in the codebase[\s\S]*file/);
+    expect(r).toMatch(/500 cells/);
+  });
+
+  it('whiteboards-and-dashboards.md: the store tool through tool search, files when it is not offered, what a Data page may hold, and what is not established', () => {
+    const r = read('references/whiteboards-and-dashboards.md');
+    expect(r).toMatch(/ToolSearch/);
+    expect(r).toMatch(/keep the files and say why/i);
+    expect(r).toMatch(/only files you made and numbers you saved|files the role made and numbers it saved/i);
+    expect(r).toMatch(/live query/i);
+    expect(r).toMatch(/every reader/);
+    expect(r).toMatch(/never store a call that changes anything|never a stored call that changes anything/i);
+    expect(r).toMatch(/not established/i);
+    expect(r).toMatch(/800 elements/);
+    expect(r).toMatch(/never published with `file_path`/);
+  });
+
+  it('uses the same words for the rules as the generated block, so a role reads one wording', () => {
+    const all = [skill(), ...REFS.map(read)].join('\n');
+    expect(all).toContain('Keep it in the project');
+    expect(all).toContain('no page because the connector is missing');
+    expect(all).not.toMatch(/ArtifactData`? (?:is|goes) on (?:a|the) tools line/);
   });
 });
 
