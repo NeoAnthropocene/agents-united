@@ -135,7 +135,7 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
     expect(e).toMatch(/tool is missing or denied/);
     expect(e).toMatch(/write the files/);
     expect(e).toMatch(/a denied or refused call stops/);
-    expect(e).toMatch(/read it back before you change it/);
+    expect(e).toMatch(/read it back before you change it and keep their edits/);
     expect(e).not.toMatch(/re-saves it/);
   });
 
