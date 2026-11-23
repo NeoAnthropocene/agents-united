@@ -23,6 +23,7 @@ const TABLE = loadPageTypes('registry', 'claude');
 const typesOf = (...ids: string[]): PageType[] => TABLE.types.filter(type => ids.includes(type.id));
 /** A designer's list (ui-designer) and the whole catalogue (a lead over the whole table). */
 const DESIGNER = typesOf('design', 'slides', 'design-system');
+const CONNECTOR = 'mcp__claude_ai_Claude_Docs';
 const ALL = typesOf(...TABLE.types.map(type => type.id));
 
 const BOUNDARIES = '## Boundaries of this host';
@@ -269,12 +270,12 @@ describe('the coordinator text', () => {
 });
 
 describe('publishingBlockProblems', () => {
-  const holder = { kind: 'specialist' as const, name: 'x', tools: ['Read', 'Artifact'], types: DESIGNER };
-  const plain = { kind: 'specialist' as const, name: 'x', tools: ['Read'], types: [] as PageType[] };
+  const holder = { kind: 'specialist' as const, name: 'x', tools: ['Read', 'Artifact'], types: DESIGNER, catalogue: TABLE.types };
+  const plain = { kind: 'specialist' as const, name: 'x', tools: ['Read'], types: [] as PageType[], catalogue: TABLE.types };
 
   it('returns nothing for a holder that carries exactly the rendered block', () => {
     expect(publishingBlockProblems(withBlock('specialist'), holder)).toEqual([]);
-    expect(publishingBlockProblems(withBlock('coordinator'), { kind: 'coordinator', name: 'lead', tools: ['Agent', 'Artifact'], types: ALL })).toEqual([]);
+    expect(publishingBlockProblems(withBlock('coordinator'), { kind: 'coordinator', name: 'lead', tools: ['Agent', 'Artifact', 'ToolSearch', CONNECTOR], types: ALL, catalogue: TABLE.types })).toEqual([]);
   });
 
   it('returns nothing for a role without Artifact that carries no markers', () => {
@@ -293,7 +294,7 @@ describe('publishingBlockProblems', () => {
 
   it('returns a problem when a specialist carries the lead text, and the other way round', () => {
     expect(publishingBlockProblems(withBlock('coordinator'), holder)).toEqual([expect.stringContaining('stale')]);
-    expect(publishingBlockProblems(withBlock('specialist'), { kind: 'coordinator', name: 'lead', tools: ['Artifact'], types: ALL })).toEqual([expect.stringContaining('stale')]);
+    expect(publishingBlockProblems(withBlock('specialist'), { kind: 'coordinator', name: 'lead', tools: ['Artifact'], types: typesOf('design'), catalogue: TABLE.types })).toEqual([expect.stringContaining('stale')]);
   });
 
   it('returns a problem for a role without Artifact that carries the markers', () => {
@@ -558,5 +559,53 @@ describe('what the block never says, for any list', () => {
       expect(text).not.toContain('You may propose a canvas or a deck yourself');
       expect(text).not.toContain('the type to start (the Design type for a design, the Slides type for a deck, an HTML page when the account does not offer the type)');
     }
+  });
+});
+
+describe('the page type rule of the repository', () => {
+  const role = (tools: string[], types: PageType[]) => ({ kind: 'specialist' as const, name: 'x', tools, types, catalogue: TABLE.types });
+  const synced = (tools: string[], types: PageType[]): string => syncPublishing(base, 'specialist', tools, types);
+
+  it('accepts a holder whose block, list and tools agree, for every list of the committed table', () => {
+    for (const list of SPECIALIST_LISTS) {
+      const tools = ['Read', 'Artifact', ...(list.some(type => type.filledBy === 'connector') ? [CONNECTOR] : []), ...(list.some(type => type.filledBy === 'store') ? ['ToolSearch'] : [])];
+      expect(publishingBlockProblems(synced(tools, list), role(tools, list)), list.map(type => type.id).join()).toEqual([]);
+    }
+  });
+
+  it('names a holder that has no page type, and a role that has a page type without Artifact, each with its own message', () => {
+    expect(publishingBlockProblems(base, role(['Read', 'Artifact'], []))).toEqual([expect.stringMatching(/^Native page types: x holds Artifact but has no page type/)]);
+    expect(publishingBlockProblems(base, role(['Read'], typesOf('design')))).toEqual([expect.stringMatching(/^Native page types: x has page types \(design\) but its tools line holds no Artifact/)]);
+  });
+
+  it('names a connector type without the connector entry, and the connector entry without a connector type', () => {
+    const missing = ['Read', 'Artifact'];
+    expect(publishingBlockProblems(synced(missing, typesOf('docs')), role(missing, typesOf('docs')))).toEqual([
+      expect.stringMatching(/^Native page types: x holds the connector type docs but its tools line lacks mcp__claude_ai_Claude_Docs/),
+    ]);
+    const extra = ['Read', 'Artifact', CONNECTOR];
+    expect(publishingBlockProblems(synced(extra, typesOf('design')), role(extra, typesOf('design')))).toEqual([
+      expect.stringMatching(/^Native page types: x holds the connector tool mcp__claude_ai_Claude_Docs but no page type that is filled through a connector/),
+    ]);
+  });
+
+  it('names a store type without ToolSearch', () => {
+    const tools = ['Read', 'Artifact'];
+    expect(publishingBlockProblems(synced(tools, typesOf('whiteboard')), role(tools, typesOf('whiteboard')))).toEqual([
+      expect.stringMatching(/^Native page types: x holds the store type whiteboard but its tools line lacks ToolSearch/),
+    ]);
+    expect(publishingBlockProblems(synced([...tools, 'ToolSearch'], typesOf('whiteboard')), role([...tools, 'ToolSearch'], typesOf('whiteboard')))).toEqual([]);
+  });
+
+  it('names a block that differs from the text generated for the list of the role', () => {
+    const tools = ['Read', 'Artifact'];
+    const problems = publishingBlockProblems(synced(tools, typesOf('design')), role(tools, typesOf('design', 'slides')));
+    expect(problems).toEqual([expect.stringMatching(/^Native publishing block stale: /)]);
+  });
+
+  it('reports every broken rule of a role, not only the first', () => {
+    const tools = ['Read', 'Artifact'];
+    const problems = publishingBlockProblems(synced(tools, typesOf('docs', 'whiteboard')), role(tools, typesOf('docs', 'whiteboard')));
+    expect(problems).toHaveLength(2);
   });
 });
