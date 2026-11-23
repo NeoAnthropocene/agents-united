@@ -17,9 +17,7 @@ A report, memo, playbook, financial model, scored backlog, calendar or compariso
 - Without the connector you cannot read or change the cells (vendor).
 
 ## This repository's rule
-- Never delete a doc or a sheet.
-- Never comment and never answer comments.
-- Never overwrite a cell that a person typed.
+- Never delete a doc or a sheet, never comment, and never overwrite a cell that a person typed. Answer no comments either.
 - No page without the go-ahead, although the connector alone could create a doc.
 
 ## The connector is not among your tools

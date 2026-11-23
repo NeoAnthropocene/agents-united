@@ -19,12 +19,11 @@ A flow, journey map or architecture diagram (Whiteboard), or a dashboard built f
 - Data: `dash/meta`, `datasets/<id>`, `files/index.html`. A dataset can be a live query on a connector; it runs again for every reader with that reader's own access, and a stored call goes out as stored.
 
 ## If the store tool is not offered
-Keep the files and say why in the report. Do not try another route.
+Keep the files and say why in your report. Do not try another route.
 
 ## This repository's rule
-- Data holds only files you made and numbers you saved.
-- A live query on a connector only when the user asked for it.
-- Never store a call that changes anything.
+- For Data use only files you made and numbers you saved.
+- Run a live query on a connector only when the user asked for it, and never store a call that changes anything.
 - Never share, delete or pin.
 
 ## Report
