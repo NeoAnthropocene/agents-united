@@ -281,6 +281,22 @@ describe('the factory\'s checks use the same rules', () => {
     expect(await check(committed.replace(/Agent\([^)]*\)/, 'Agent(factory-realizer, factory-evaluator)'))).toContain(fixed);
   });
 
+  it('factory-check measures a lead that holds no delegate class (the front door) as a lead, as the repository\'s tests do', async () => {
+    const registry = await stage(path.join(FIXTURES, 'final'));
+    await fs.outputJson(path.join(registry, 'core/orchestrator-universal.contract.json'), { definition: 'orchestrator-universal', workflows: [], skills: [], hooks: [] });
+    const run = async (text: string): Promise<string[]> => {
+      const file = path.join(scratch, 'orchestrator-universal.md');
+      await fs.writeFile(file, text);
+      return (await checkFactoryArtifact({ registryDir: registry, definition: 'orchestrator-universal', host: 'claude', artifactPath: file, loading: 'main', requiredSkills: [] })).findings;
+    };
+    const committed = nativeOf('orchestrator-universal');
+    // The committed role passes every rule that depends on the kind of role (the candidate's coverage file is absent here, and the tools line is the next test's).
+    const findings = await run(committed);
+    expect(findings.filter(finding => !finding.startsWith('Invariant coverage') && !finding.startsWith('Native tools differ'))).toEqual([]);
+    // A lead's posture is the coordinator posture, so the specialist posture is refused as such.
+    expect((await run(committed.replace(/^model: .*$/m, 'model: sonnet'))).join('\n')).toContain('differs from the coordinator posture');
+  });
+
   it('factory-check refuses a relative canonical or coverage path', async () => {
     const final = path.join(FIXTURES, 'final');
     const registry = await stage(final);
