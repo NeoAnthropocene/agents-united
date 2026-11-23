@@ -4,6 +4,7 @@
  * factory check and still fail the repository's tests. The repository's conformance tests and the factory's checks (factory-check,
  * contract-check) both call these functions. Pure: no I/O, no clock.
  */
+import yaml from 'yaml';
 import { ClaudeProjector } from './claude-projector.js';
 import { checkPublishing } from './native-publishing.js';
 import { REQUESTS_EXEMPT_ROLES, checkRequests } from './native-requests.js';
@@ -22,8 +23,13 @@ export interface NativePosture { model: string; effort: string; }
  */
 export function isLeadRole(core: SemanticCore, canonicalText?: string): boolean {
   if (core.capabilities?.includes('delegate')) return true;
-  const frontmatter = canonicalText === undefined ? undefined : /^---\n([\s\S]*?)\n---/.exec(lf(canonicalText))?.[1];
-  return frontmatter !== undefined && /^type:\s*orchestrator\s*$/m.test(frontmatter);
+  if (canonicalText === undefined) return false;
+  const frontmatter = /^---\n([\s\S]*?)\n---/.exec(lf(canonicalText).replace(/^﻿/, ''))?.[1];
+  if (frontmatter === undefined) return false;
+  try {
+    const meta = yaml.parse(frontmatter) as unknown;
+    return typeof meta === 'object' && meta !== null && (meta as Record<string, unknown>).type === 'orchestrator';
+  } catch { return false; }
 }
 
 const normalize = (text: string): string => text.replace(/\s+/g, ' ').trim();
