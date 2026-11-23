@@ -388,7 +388,7 @@ export function nativeWorkflowLead(
   const mapped = roles !== null && typeof roles === 'object' && !Array.isArray(roles) && Object.hasOwn(roles, leadFile)
     ? (roles as Record<string, unknown>)[leadFile]
     : undefined;
-  const leadRole = typeof mapped === 'string' ? mapped : leadFile.replace(/.md$/i, '').replace(/^subagent-/, '');
+  const leadRole = typeof mapped === 'string' ? mapped : leadFile.replace(/\.md$/i, '').replace(/^subagent-/, '');
   return { skills, leadFile, leadRole };
 }
 
@@ -399,7 +399,7 @@ export function nativeWorkflowLead(
  * problem was found still throws that same raw error; once a problem has been collected, a crash on a malformed later part is not
  * raised, because the old code would have stopped at the problem already found.
  */
-export function collectBundleManifestIssues(manifest: BundlesManifest, registryDir: string, options: { allowUnresolvedLeads?: boolean } = {}): string[] {
+export function collectBundleManifestIssues(manifest: BundlesManifest, registryDir: string, options: { unresolvedLeadsAllowedFor?: ReadonlySet<string> } = {}): string[] {
   const issues: string[] = [];
   const validModes: string[] = ['subagent-first', 'planner-orchestrator'];
 
@@ -501,8 +501,9 @@ export function collectBundleManifestIssues(manifest: BundlesManifest, registryD
     // a native role listing `Workflow`. A bundle with no lead at all (no orchestrator of its own or of its parent) is exempt: it is used from
     // a plain session, which holds `Workflow`, and the user runs `/<name>` there.
     const lead = nativeWorkflowLead(bundle, manifest.bundles, nativeClaudeWorkflows);
-    // `agents bundle-check --allow-unresolved` passes the option: a lead the proposal names but the registry does not have yet is not judged.
-    const unresolvedLead = lead !== undefined && options.allowUnresolvedLeads === true && !fs.existsSync(path.join(registryDir, 'agents', lead.leadFile));
+    // `agents bundle-check --allow-unresolved` passes the proposal's own Bundles: a lead one of them names but the registry does not have yet is
+    // not judged. Every other Bundle, including an existing one that inherits a workflow skill from the proposal, is judged as always.
+    const unresolvedLead = lead !== undefined && options.unresolvedLeadsAllowedFor?.has(name) === true && !fs.existsSync(path.join(registryDir, 'agents', lead.leadFile));
     if (lead !== undefined && !unresolvedLead) {
       if (leadStates.get(lead.leadRole) === undefined) leadStates.set(lead.leadRole, nativeLeadState(registryDir, lead.leadRole));
       if (leadStates.get(lead.leadRole) !== 'holds') {
