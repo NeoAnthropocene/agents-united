@@ -12,6 +12,7 @@ import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
+import { withRoutes } from './claude-mcp-routes.js';
 import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, isLeadRole, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -106,8 +107,12 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
         const grant = resolveGrant(policy, core.capabilities, { subagent: input.loading !== 'main', background: facts.meta.background === true }).tools;
         // The generator's own form (ADR 0072): the class grant sorted, then the canonical agent's server tools in its order. The factory's own
         // coordinator must hold exactly its fixed delegate list (the same function as tests/helpers/native-delta.ts); any other delegating role's
-        // one well-formed `Agent(...)` allowlist stands for `Agent`.
-        const expected = nativeToolOrder(grant, canonicalText === undefined ? [] : canonicalServerTools(canonicalText));
+        // one well-formed `Agent(...)` allowlist stands for `Agent`. The committed roles hold their canonical servers in one of two forms: the
+        // servers alone, or each followed by the names the reviewed routes table lists for it (its plugin and its claude.ai connector). A tools
+        // line that holds any route name is compared with the second form, exactly; no other server entry is accepted.
+        const servers = canonicalText === undefined ? [] : canonicalServerTools(canonicalText);
+        const routed = withRoutes(servers);
+        const expected = nativeToolOrder(grant, facts.tools.some(tool => routed.includes(tool) && !servers.includes(tool)) ? routed : servers);
         let wanted = nativeToolsWanted(expected, facts.tools, { coordinator: delegates });
         if (factorySkill === 'coordinate-artifact') {
           try {

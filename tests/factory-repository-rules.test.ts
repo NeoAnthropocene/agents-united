@@ -319,6 +319,8 @@ describe('the factory\'s checks use the same rules', () => {
     const committed = nativeOf('orchestrator-universal');
     expect(committed).toContain('mcp__plugin_github_github');
     expect(await differs(committed)).toBeUndefined();
+    // The servers alone are the other form the committed roles hold.
+    expect(await differs(committed.replace(/^(tools: .*)$/m, line => line.replace(/, mcp__(?:plugin|claude_ai)_[^,]*/g, '')))).toBeUndefined();
     // An integration the canonical agent does not declare, with or without a route of its own, is refused; so is the Claude Docs connector (a grant of a page type, not of a canonical server).
     expect(await differs(committed.replace(/^(tools: .*)$/m, '$1, mcp__stitch'))).toContain('Native tools differ from the generator\'s form');
     expect(await differs(committed.replace(/^(tools: .*)$/m, '$1, mcp__claude_ai_Claude_Docs'))).toContain('Native tools differ from the generator\'s form');
