@@ -152,7 +152,8 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
     const r = section('Step-by-Step Runbook');
     expect(r).toMatch(/Before the first write call, read/);
     expect(r).toContain('](references/publish-and-read-back.md)');
-    expect(r).toMatch(/needs a look[\s\S]*design-systems\.md/);
+    expect(r).toMatch(/design-systems\.md\) \(also for a look\)/);
+    expect(r).toMatch(/and the reference of step 5/);
   });
 
   it('scopes the one-call publish to Design and Slides, and gives the Design System, connector and store types their own sequence (review finding 17)', () => {
@@ -240,7 +241,8 @@ describe('the references, the example and the evals', () => {
     expect(memo.expected_output).toMatch(/through the Claude Docs connector/);
     expect(memo.expected_output).toMatch(/no files into the page/i);
     expect(memo.expected_output).toMatch(/never deletes/i);
-    expect(memo.expected_output).toMatch(/no comment/i);
+    expect(memo.expected_output).toMatch(/never reads, posts or answers comments/i);
+    expect(memo.expected_output).toMatch(/Checks that the Claude Docs connector is among its tools before it creates anything/);
     // 3: a Sheets model with no connector among the tools: files, the reason, no request to sign in
     expect(sheet.prompt).toMatch(/financial model/i);
     expect(sheet.prompt).toMatch(/not among your tools/);
