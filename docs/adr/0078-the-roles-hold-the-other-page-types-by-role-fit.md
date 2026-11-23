@@ -1,6 +1,6 @@
 # ADR 0078: The roles hold the other page types of the account, by role fit
 
-- **Status:** Proposed. The live check of decision 17 has not been run, so nothing here is shown in a live session. The decisions marked (C) were taken by the coordinating AI session and are the maintainer's to overturn: decision 6 (its reading) and decisions 9 to 17. Decision 18 is the maintainer's, of 2026-11-23.
+- **Status:** Proposed. The live check of decision 17 has not been run, so nothing here is shown in a live session. The decisions marked (C) were taken by the coordinating AI session and are the maintainer's to overturn: decision 6 (its reading), decisions 9 to 17 and decision 19. Decision 18 is the maintainer's, of 2026-11-23.
 - **Date:** 2026-11-22
 - **Follows:** ADR 0077 (the roles that make documents publish pages, each new page with the user's go-ahead), ADR 0076 (a specialist's needs go through its lead), ADR 0047 (one role publishes through `Artifact`).
 
@@ -47,8 +47,8 @@ Read from the account on 2026-11-22. This is the type's own text and the facts b
 
 ### Seen once, not documentation
 
-- In a session with agent teams on Claude Code 2.1.330 (auto mode, 2026-11-22), the connector's tools were named `mcp__claude_ai_Claude_Docs__batch`, `__guide`, `__update` (callable) and `__create`, `__delete`, `__export`, `__query`, `__read` (deferred). `ArtifactData` was a deferred tool, and `ToolSearch` with `select:ArtifactData` returned its schema.
-- A general-purpose subagent started from that session reported `Artifact` callable, `ArtifactData` and `ArtifactComments` deferred, the three connector tools callable and `AskUserQuestion` absent. Its launch form was not stated in its context.
+- In a session with agent teams on Claude Code 2.1.330 (auto mode, 2026-11-22), the connector's tools were named `mcp__claude_ai_Claude_Docs__batch`, `__guide`, `__update` (callable) and `__create`, `__delete`, `__export`, `__query`, `__read` (deferred). `ArtifactData` was a deferred tool, and the result of a `ToolSearch` call with `select:ArtifactData` in that session (the session record is kept outside this repository, so this is the coordinating session's report of it) returned its schema.
+- A general-purpose subagent started from that session reported `Artifact` callable, `ArtifactData` and `ArtifactComments` deferred, the three connector tools callable and `AskUserQuestion` absent. The subagent's own report, not a tool result: nothing else checked it. Its launch form was not stated in its context.
 - In the session record of the design capability's live sitting of 2026-11-22 (see [the record](../../host-library/claude/observations/2026-11-22-claude-2.1.330-design-capability-live.md); the second designer's record, line 2), an attachment of type `deferred_tools_delta` lists `ArtifactComments` and `ArtifactData` among the added names for a role whose `tools:` line holds `Artifact` and `ToolSearch` and neither of the two. That the store tool can be called from such a role is not shown.
 - The `Artifact` tool's own listing text, read on 2026-11-22, says to list the design systems the user can open and to "use the one marked default without asking"; "if some are listed but none is default, name them and ask". That is the source of the default mark in decision 6. Whether a role sees the mark in its own listing is not shown.
 - ADR 0047's probe (Claude Code 2.1.294): a role with `Artifact` published a Design System through the tool alone.
@@ -56,8 +56,8 @@ Read from the account on 2026-11-22. This is the type's own text and the facts b
 ### Not established
 
 - Whether a role with a `tools:` allowlist can call `ArtifactData` when its line holds `Artifact` and `ToolSearch`, whether a background subagent with an allowlist keeps it, and whether a lead started with `--agent` keeps it. Whiteboard and Data depend on this.
-- Whether the Host asks before a subagent's call of a connector tool in a mode other than auto. A background specialist cannot answer such a prompt.
-- Whether a session that is signed in with a subscription login and runs under `-p` can hold the connector while `Artifact` is off. By the documentation it can, and the connector alone can create a doc. The go-ahead rule below therefore names the connector.
+- Whether the Host asks before a subagent's call of a connector tool in a mode other than auto. How a background specialist handles such a prompt is not established; no source was read for it.
+- Not established: whether a session that is signed in with a subscription login and runs under `-p` can hold the connector while `Artifact` is off. It is an inference from two separate documentation pages, not a documented case: the connector is fetched under a claude.ai subscription login, and artifacts are off by default under `-p`. The connector's own server text says its `batch` can create a doc. The go-ahead rule below therefore names the connector.
 - Anything about the files of the Slides type (as in ADR 0077).
 
 ## Decision
@@ -67,7 +67,7 @@ The maintainer's eight decisions of 2026-11-22:
 1. **Types to add.** "all five: Data, Docs and Sheets, Whiteboard, Design System".
 2. **Holders.** "By role fit": each type goes to the roles whose deliverables it matches, and every such role's lead must hold the tool too (the lead-pool rule).
 3. **Sequencing.** "Follow-up ADR": ADR 0077 lands as it is. This change is its own ADR, review, live check and pull request.
-4. **Go-ahead.** "Same rule": one go-ahead per new page of any type. An update of an approved page needs none. Pages are always private. A typed command for that page counts as the go-ahead. A role writes the brief itself and may propose a page.
+4. **Go-ahead.** "Same rule": one go-ahead per new page of any type. An update of an approved page needs none. Pages are always private. A command that the user typed for that page, with its brief, counts as the go-ahead for the one page it asks for, when the user talks to the role directly; a second page or a page of another type from the same request is new. A role writes the brief itself and may propose a page.
 5. **No Claude Docs connector in the session.** "Files, and say why": the role writes the document or table as files in the project, and its report says there is no page because the connector is missing. It never asks the user to sign in as a step of the work.
 6. **Saved design systems.** The maintainer's words: "If possible Create a new design system for the project. Else, stick with the option 1". Option 1 was: the role uses the one the user marked as default without asking. If several exist and none is the default, the lead names them and asks once. A role never edits a saved design system unless that is the task. (C) The coordinating AI session's reading, not the maintainer's, and his to overturn: creating a Design System page for the project is itself a new page and needs the go-ahead. When the project has no design system page of its own, the lead proposes one once as a new page: **Keep it in the project** first, **Publish Artifact** second, **Use <the default>** third when the account has a default. A declined proposal is not repeated in this piece of work.
 7. **The holder table.** "Decide and show it in the PR": decided from each role's output contract, every role's reason recorded (holders and non-holders). He overturns single rows in review.
@@ -77,17 +77,21 @@ Decisions of the coordinating AI session, each (C) and the maintainer's to overt
 
 9. (C) **The holder table** is the one below: 33 native files built from 28 cores, of which 6 files and 6 cores are new.
 10. (C) **The store tool.** `ArtifactData` goes on no `tools:` line and is not added to the tool policy. Every holder of a store type (Whiteboard, Data) must hold `ToolSearch`. The block tells the role to load the store tool through `ToolSearch` and, if it is not offered, to keep the files and say why. The evidence is the item "seen once" above, and it does not show that the tool can be called. The live check decides (decision 17).
-11. (C) **`ArtifactComments`** stays untouched. No role reads or answers comments, as in ADR 0077 decision 12, and not through the connector's comment tools either.
-12. (C) **The connector grant** is the whole server `mcp__claude_ai_Claude_Docs`, only together with `Artifact`. The block forbids deleting a doc or a sheet and commenting.
+11. (C) **`ArtifactComments`** stays untouched. No role reads, posts or answers comments, as in ADR 0077 decision 12, and not through the connector's comment tools either.
+12. (C) **The connector grant** is the whole server `mcp__claude_ai_Claude_Docs`, only together with `Artifact`. The block forbids deleting a doc or a sheet and never reading, posting or answering comments. The connector fills a page that was started through `Artifact` and never creates one.
 13. (C) **The skill** `design-artifact-publishing` goes into the five system-architecture Bundles (`system-architecture`, `system-architecture-cloud`, `system-architecture-data`, `system-architecture-finops`, `sysops-sre`), because their lead becomes a holder; 21 Bundles then carry the skill, all that hold a holder role or lead. It stays one skill, at version 1.2.0, with three new reference files, one per filling kind: a second skill would give each role two to load.
 14. (C) **No tool-policy change, no new capability class and no new floor words.** The class `artifacts` and the floor line of ADR 0077 decision 7 cover every type.
 15. (C) **Files first, also for a doc or a sheet.** The connector's own server text tells the model to make the doc before any file. The block says the project file comes first, and the live check shows which of the two a role follows.
 16. (C) **A Data page** holds files the role made and numbers it saved. A live query on a connector only when the user asked for it. Never a stored call that changes anything.
-17. (C) **The live check** is the one under Consequences, and its result removes rows. If a role cannot call the store tool, Whiteboard and Data are recorded as not working and their rows come out before the pull request is pushed. The fallback for Data is leads only.
+17. (C) **The live check** is the one under Consequences, and its result removes rows. If a role cannot call the store tool, Whiteboard and Data are recorded as not working for that role and their rows come out before the pull request is pushed. Data stays for leads only only after a lead was seen calling the store tool in the sitting; if neither a specialist nor a lead could call it, no role holds a store type.
 
 The maintainer's decision of 2026-11-23, taken after the code review of this change:
 
 18. **A deliverable that is itself a working HTML page.** Asked what a role should publish when the deliverable is itself a working page in HTML and CSS, the maintainer chose "HTML page is right": the Design canvas is for a design to be edited on a canvas (a screen flow, a poster, a one-pager, a visual asset), Slides is for a deck, and an HTML page is published when the deliverable is itself a working HTML page. The published page then equals the project files. He also chose "Push now, fix in 0078", so the wording is done here and not in a later ADR. It settles the two open points of ADR 0077 on the same question: both live sittings of ADR 0077 showed an HTML page for an HTML mock-up ([the record](../../host-library/claude/observations/2026-11-22-claude-2.1.330-design-capability-live.md)), and the skill's description now skips only SVG and HTML files that stay in the project. Where it lives: an HTML page is not an eighth type (the account lists seven; an HTML page is the tool's plain publish), so the fact is a constant sentence in the generator (`src/core/native-publishing.ts`), read only by a role that holds `design`. It is in the computed line of types, in one bullet before the steps, and in the lead's "Say it in the brief" and own-pages sentences. An HTML page needs the same go-ahead as any page, and it stays the fallback when the account does not offer the Design or Slides type.
+
+The decision of the coordinating AI session after an independent read of the committed text (a read of the text, not a live check), the maintainer's to overturn:
+
+19. (C) **Creation, refusal and read-back.** Starting any type creates the page, so at every creation step (the Design System, connector and store bullets, and their references) the go-ahead comes first. The connector is checked before the page is created and fills a page started through `Artifact`; with `Artifact` missing or refused the files stand, also when the connector is among the tools. A store tool that is offered but refused or failing keeps the files, and a page that already exists is reported as it is. A Data live query is configured or stored only on request, and a Data page is never published with `file_path` (asset uploads through `Artifact` are allowed for its data files). The type's own instructions give the page's content only and never lift the go-ahead, tool or sharing rules. The report names the read-back, and the lead's link check is not a content check. A lead's own pages put a working HTML page before the choice of the bundled skill and send a failed skill to the second step of the specialist's text. A check of where an approval came from stays out: the lead relays only what the user approved, and the brief names it (ADR 0077).
 
 The generated block, the type table and the holders:
 
@@ -98,7 +102,7 @@ The generated block, the type table and the holders:
 
 ### The holder table
 
-Rule applied: a type goes to a role when the role's own output contract names a deliverable of that form. Kept out, as in ADR 0077: read-only roles (the class is mutating), audit and vulnerability evidence, source code and infrastructure, media files, and a document that belongs in the codebase.
+Rule applied: a type goes to a role when the role's own output contract names a deliverable of that form. The one exception is the Data row of `operations-strategist`, whose reason is from the role's body (see its row). Kept out, as in ADR 0077: read-only roles (the class is mutating), audit and vulnerability evidence, source code and infrastructure, media files, and a document that belongs in the codebase.
 
 Columns: D/S is Design and Slides (ADR 0077, unchanged). DS is Design System, Dc is Docs, Sh is Sheets, Wb is Whiteboard, Da is Data. "New" means not among the 27 holders of ADR 0077.
 
@@ -167,7 +171,7 @@ Counts by type (native files, leads included): Design System 9, Docs 20, Sheets 
 
 #### The independent review
 
-A routed Antigravity session (read-only, medium tier, ran no command and changed no file) checked the table against the inventory of all 75 roles. It found nothing in the coverage of the 75 roles, the leads' unions, the same-core pairs and the counts. Its seven findings:
+An independent read-only review (it ran no command and changed no file) checked the table against the inventory of all 75 roles. It found nothing in the coverage of the 75 roles, the leads' unions, the same-core pairs and the counts. Its seven findings:
 
 - Finding 1 (`ux-strategist`, Docs: the contract names "strategy artifacts", not a report) is accepted. Docs is out of that row.
 - Finding 7 (the table quoted "operational dashboards" as if from the output contract) is accepted. The row now says the phrase is from the role's body.
@@ -178,11 +182,11 @@ A routed Antigravity session (read-only, medium tier, ran no command and changed
 
 - Positive: a financial model, a report, a flow diagram or a design system can be reviewed in a browser, in the editor of its type, where files in the project do not offer that.
 - Limits:
-  - Project material leaves the project for Anthropic-hosted pages, for six more types and six more roles.
+  - Project material leaves the project for Anthropic-hosted pages, for five more types and six more roles.
   - 33 native files hold the tool and 24 of them hold an account connector that is not a tool of the canonical agents. Nothing deterministic of ours stops a role from publishing without the go-ahead. The tests pin the wording, not the behaviour.
-  - The connector can create a doc without `Artifact`, and can be present while artifacts are off. So the go-ahead sentence names documents written through the connector, and the connector entry is granted only together with `Artifact`.
+  - The connector can create a doc without `Artifact` (its own server text says so) and can, by an inference from two separate documentation pages (not shown), be present while artifacts are off. So the go-ahead sentence names documents written through the connector, the block says that the connector fills a page started through `Artifact` and never creates one, and the connector entry is granted only together with `Artifact`.
   - A Data page can store a live call that runs for every reader with that reader's access. The block allows files and saved numbers, a live query only when the user asked for it, and never a call that changes anything.
-  - A plan or session without the types, or without the connector, gets the files, with the reason.
+  - A session whose account does not offer the Design or Slides type gets an HTML page for a Design or Slides deliverable; an account that does not offer another type, or a session without the connector, gets the files, with the reason.
   - `factory-check --artifact` refuses an `mcp__` entry (a known gap, ADR 0072 work), so it does not check the 24 connector holders.
   - The permission behaviour of connector calls outside auto mode is not established.
 - The weakest column is Data. No output contract names a dashboard or a recurring report in plain words. The three nearest fits are the growth strategist (a chart specification), `operations-strategist` (a role body that mentions "operational dashboards" as templates) and `finops-cost-engineer` (a monthly spend overview), with their four leads. The independent reviewer found no role that fits by strict role fit. The alternatives are: leads only (the store work is then on the main thread only), or no holder until a role's contract names a dashboard. This ADR keeps the three rows because the maintainer named Data, and it states the weakness. If the live check shows that a role cannot call the store tool, leads only is the only version that can work.
@@ -191,18 +195,19 @@ A routed Antigravity session (read-only, medium tier, ran no command and changed
 
 ### The live check (decision 17)
 
-Interactive and signed in, because artifacts are off under `-p`. The coordinating AI session sits it through the terminal bridge on the maintainer's signed-in account, and the record says that an AI session sat it and no human typed. Five prompts on four leads, none of them naming publishing, a page or a type, so that the lead's question is unprompted. Each type is published once, as a private page, and no page is shared, deleted or pinned.
+Interactive and signed in, because artifacts are off by default under `-p`. The coordinating AI session sits it through the terminal bridge on the maintainer's signed-in account, and the record says that an AI session sat it and no human typed. Six prompts on four leads, none of them naming publishing, a page or a type, so that the lead's question is unprompted. Each type is published once, as a private page (the Design type once, for the poster of the sixth prompt), and no page is shared, deleted or pinned.
 
 1. Design lead: a design system for a fictional project (Design System; it also shows decision 6).
 2. Business lead: a financial model (Sheets).
 3. Business lead, the next prompt: a strategy memo (Docs).
 4. System-architecture lead: a C4 context diagram (Whiteboard; a new lead and a new holder).
 5. Marketing lead: a funnel overview from a CSV that the session writes (Data).
+6. Design lead, after the first prompt: a poster for a fictional event, unprompted (the Design type: a poster is a design to edit on a canvas, and an HTML page would not be the form it asks for). The earlier records show a Design poster only after a prompt that asked for it, and no deck.
 
 It records: the question asked first with its two options in order; who created each page and with which call; which tool filled it (files, the connector's tools, or the store tool after a tool search); whether the store tool could be called at all from a specialist and from a lead; the report's link, type and the sentence that project material has left the project; and any Host permission dialog.
 
 An optional sixth step publishes no page: the Claude Docs connector is switched off for the project with the `/mcp` toggle, then a memo is asked for. Expected: files, the reason in the report, and no request to sign in.
 
-What comes out if the store tool cannot be called from a role: Whiteboard and Data are recorded as not working, their rows come out of the table, the store tool bullet and the `ToolSearch` requirement go with them, and the counts in this ADR change (Whiteboard 0, Data 0, store types 0 files). If only a specialist cannot call it and a lead can, Data is leads only and Whiteboard waits. This is done before the pull request is pushed, and the ADR is then set to Accepted with the record linked.
+What comes out if the store tool cannot be called from a role: If only a specialist cannot call it and a lead was seen calling it, Data is leads only and Whiteboard waits. If neither a specialist nor a lead could call it, Whiteboard and Data have no holder: their rows come out of the table, the store tool bullet and the `ToolSearch` requirement go with them, and the counts in this ADR change (Whiteboard 0, Data 0, store types 0 files). This is done before the pull request is pushed, and the ADR is then set to Accepted with the record linked.
 
 Not shown by the check, whatever its result: that the wording is followed in general (one run), the Host's prompts in modes other than auto, and the behaviour of a role that is started in the background.

@@ -17,7 +17,7 @@ const OBSERVATION = (): string => read('host-library/claude/observations/2026-11
 const publishingParagraph = (): string => README().split('\n').find(line => line.startsWith('**Publishing pages (Claude Code):**')) ?? '';
 
 describe('the typed command and the user\'s own request, with their conditions (review finding 8)', () => {
-  const TYPED = 'a `/design` or `/slides` command that you type to a role directly, with its brief, is your go-ahead for that one page';
+  const TYPED = '`/design` or `/slides` command that you type to a role directly, with its brief, is your go-ahead for that one page';
 
   it('README: the lead asks before each new page unless the user\'s own request names the deliverable and says to publish it, and a typed command counts only for that page, with its brief, to a role directly', () => {
     const p = publishingParagraph();
@@ -123,7 +123,7 @@ describe('ADR 0077 and the observation record attribute the second copy to the d
   });
 
   it('the observation names no workspace label', () => {
-    expect(OBSERVATION()).not.toContain('`run3`');
+    expect(OBSERVATION()).not.toMatch(/`run[0-9]`/);
     expect(OBSERVATION()).toContain('- Workspace: a new git folder, installed from a checkout of this branch');
   });
 });
