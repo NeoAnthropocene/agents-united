@@ -107,7 +107,7 @@ describe('the publishing block: generated, in every holder and in no other role'
     for (const { role, coordinator, stem } of NATIVE_ROLES) {
       const text = nativeText(role);
       const types = typesOfRole(table, { stem, coordinator, tools: toolsOf(role) });
-      expect(publishingBlockProblems(text, { kind: coordinator ? 'coordinator' : 'specialist', name: role, tools: toolsOf(role), types }), role).toEqual([]);
+      expect(publishingBlockProblems(text, { kind: coordinator ? 'coordinator' : 'specialist', name: role, tools: toolsOf(role), types, catalogue: table.types }), role).toEqual([]);
       expect(text.includes('agents-united:publishing:start'), role).toBe(HOLDER_STEMS.includes(NATIVE_ROLES.find(entry => entry.role === role)!.stem));
     }
   });

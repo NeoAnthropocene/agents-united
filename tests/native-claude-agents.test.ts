@@ -523,7 +523,7 @@ describe.each(ROLES)('native Claude $name', role => {
   });
 
   it('carries the publishing block of ADR 0077, exactly as generated, exactly when its tools line holds Artifact', () => {
-    expect(publishingBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared(), types: pageTypesOf(role.stem, role.mainThread ?? false, declared()) })).toEqual([]);
+    expect(publishingBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared(), types: pageTypesOf(role.stem, role.mainThread ?? false, declared()), catalogue: PAGE_TYPES.types })).toEqual([]);
     expect(read().includes(PUBLISHING_START)).toBe(holdsPublishing(declared()));
   });
 
