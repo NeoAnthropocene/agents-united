@@ -153,7 +153,7 @@ const ROLES: RoleSpec[] = [
   // The security lead (Tier 1, domain bundle): a main-thread coordinator of the security domain. Same ceiling as the engineering lead except
   // that it holds no web tool (its canonical agent has none; Firecrawl is its web route) and no `ReportFindings` (the reviewer's). It holds
   // `Workflow` because the projector replaces the Skill workflow-test with the native workflow of that name whenever a Bundle lists it
-  // (secops-application-security does) without checking that the lead holds the tool.
+  // (secops-application-security does), and the registry check requires the lead of such a Bundle to hold the tool.
   {
     name: 'orchestrator-security',
     stem: 'orchestrator-security',
