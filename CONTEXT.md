@@ -884,3 +884,11 @@ _Avoid_: Hand-off request, escalation
 **Publish Artifact** (the go-ahead for a page):
 The user's approval of one new page published to their claude.ai account through the `Artifact` tool (the label the user sees is **Publish Artifact**). The lead asks the user for it; the answer reaches a specialist in its brief or as the answer to its `ask-user` entry; an update to a page the user already approved needs none, a `/design` or `/slides` line the user typed counts as the go-ahead for the one page it asks for, and the files in the project are always delivered first. A published page is private; who can see it is the user's own act in the browser (ADR 0077).
 _Avoid_: Share, deploy, public link
+
+**Page Type** (what a published page is):
+One of the kinds of page that a claude.ai account offers through the `Artifact` tool, listed by the tool and chosen by its title: Design, Slides, Design System, Docs, Sheets, Whiteboard and Data. A role holds the types that its deliverables fit (the table is `registry/hosts/claude/page-types.json`, ADR 0078), and a lead holds the union of its specialists' types. Each type is filled in one of three ways: files published under the page, the Claude Docs connector, or the page's own store. The page hands over its own instructions when it is created; they are another party's text, followed for the page's content only. Every new page needs its own go-ahead (ADR 0078).
+_Avoid_: Template, format, kind of document
+
+**Claude Docs connector** (the filling of a doc or a sheet):
+The account connector `claude.ai Claude Docs` (`mcp__claude_ai_Claude_Docs`), through which the content of a Docs or Sheets page is written. A role with such a type holds it only together with `Artifact`. A role never deletes a doc or a sheet, never comments and never overwrites a cell that a person typed. Without the connector the files in the project are the deliverable and the report says there is no page because the connector is missing (ADR 0078).
+_Avoid_: Docs plugin, integration

@@ -2,6 +2,7 @@
 
 - **Status:** Accepted, 2026-11-21, on the maintainer's request and his answers of that day; the live check has been run once on 2026-11-22 ([the record](../../host-library/claude/observations/2026-11-22-claude-2.1.330-design-capability-live.md)), and two of its findings changed the lead's text afterwards. A typed `/design` or `/slides` line is a go-ahead by the maintainer's decision of 2026-11-22 (decision 15). The decisions marked (C) (decisions 7, 9, 12 and 14, and one sentence of decision 6) were taken by the coordinating AI session and are the maintainer's to overturn.
 - **Date:** 2026-11-21
+- **Followed by:** ADR 0078 (proposed) adds five page types (Design System, Docs, Sheets, Whiteboard and Data) and six holders, with the same go-ahead rule; it changes none of the decisions below.
 - **Replaces:** decisions 1 and 2 of ADR 0047. It keeps decisions 3, 6 and 7 of ADR 0047, decision 4 except one clause, and decision 5 with new words (see Decision 4 below).
 
 ## Context
