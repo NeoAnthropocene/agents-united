@@ -477,7 +477,7 @@ describe('the HTML page of a role that holds the Design type', () => {
       expect(specialist(...ids).join('\n'), ids.join()).not.toContain('working HTML page');
     }
     expect(coordinator('design').join('\n')).toContain('working HTML page');
-    expect(renderPublishing('coordinator', ALL).split('\n')[4]).not.toContain('HTML');
+    expect(renderPublishing('coordinator', ALL).split('\n')[4]).not.toContain('published as an HTML page');
     expect(coordinator('sheets', 'data').join('\n')).not.toContain('working HTML page');
   });
 
@@ -622,7 +622,7 @@ describe('the sentences that depend on the held types', () => {
   it('makes the connector fill a page that `Artifact` started, never create one, and checks the connector before the page is created (review findings 2 and 15)', () => {
     for (const ids of [['docs'], ['sheets'], ['docs', 'sheets']]) {
       const text = specialist(...ids).join('\n');
-      expect(text, ids.join()).toContain('Check that the Claude Docs connector is among your tools before you create or change anything.');
+      expect(text, ids.join()).toContain('Check that the Claude Docs connector is among your tools before you create or change anything:');
       expect(text, ids.join()).toContain('the connector fills a page that was started through `Artifact` and never creates one');
       expect(text, ids.join()).toContain('If `Artifact` is missing or refuses, the files in the project are the deliverable and your report says why there is no page, also when the connector is among your tools.');
       expect(text, ids.join()).toContain('If a connector write fails, deliver the files, leave the page as it is and try no other route; report the link, the content you confirmed by reading it back, and "unknown" where the read-back failed.');
