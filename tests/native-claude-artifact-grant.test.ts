@@ -244,6 +244,8 @@ describe('the page types (ADR 0078): who holds which, and what each kind needs',
   });
 
   it('counts the native files that hold each type, leads included', () => {
+    expect(holdersOfType('design')).toHaveLength(27);
+    expect(holdersOfType('slides')).toHaveLength(27);
     expect(holdersOfType('design-system')).toHaveLength(9);
     expect(holdersOfType('docs')).toHaveLength(20);
     expect(holdersOfType('sheets')).toHaveLength(17);
@@ -253,10 +255,29 @@ describe('the page types (ADR 0078): who holds which, and what each kind needs',
     expect(holdersOfKind('store')).toHaveLength(12);
   });
 
-  it('gives every holder file a non-empty list of types, and no other native file any', () => {
+  it('splits the connector and the store holders into specialists and leads: 18 and 6, 7 and 5', () => {
+    const leads = (roles: readonly string[]): string[] => roles.filter(role => HOLDER_LEADS.includes(role));
+    const specialists = (roles: readonly string[]): string[] => roles.filter(role => !HOLDER_LEADS.includes(role));
+    expect(specialists(holdersOfKind('connector'))).toHaveLength(18);
+    expect(leads(holdersOfKind('connector'))).toHaveLength(6);
+    expect(specialists(holdersOfKind('store'))).toHaveLength(7);
+    expect(leads(holdersOfKind('store'))).toHaveLength(5);
+  });
+
+  it('gives each of the five specialists of ADR 0078 its own list', () => {
+    const listOf = (role: string): string[] => pageTypesOfRole(role).map(type => type.id);
+    expect(listOf('paid-acquisition-specialist')).toEqual(['sheets']);
+    expect(listOf('plg-strategist')).toEqual(['whiteboard']);
+    expect(listOf('financial-analyst')).toEqual(['sheets']);
+    expect(listOf('system-architect')).toEqual(['whiteboard']);
+    expect(listOf('finops-cost-engineer')).toEqual(['sheets', 'data']);
+  });
+
+  it('gives every native file that holds Artifact a non-empty list of types and a publishing block, and no other native file either', () => {
     for (const { role } of NATIVE_ROLES) {
-      const types = pageTypesOfRole(role);
-      expect(types.length > 0, role).toBe(HOLDER_ROLES.includes(role));
+      const holds = toolsLineOf(role).includes('Artifact');
+      expect(pageTypesOfRole(role).length > 0, role).toBe(holds);
+      expect(nativeText(role).includes('agents-united:publishing:start'), role).toBe(holds);
     }
   });
 
@@ -281,10 +302,10 @@ describe('the page types (ADR 0078): who holds which, and what each kind needs',
     for (const role of holdersOfKind('store')) expect(toolsLineOf(role), role).toContain('ToolSearch');
   });
 
-  it('puts no store tool and no comment tool on any tools line, and none in the tool policy', () => {
-    for (const { role } of NATIVE_ROLES) for (const name of ['ArtifactData', 'ArtifactComments']) expect(toolsLineOf(role), `${role} ${name}`).not.toContain(name);
+  it('puts no store tool and no comment tool, in any form, on any tools line, and none in the tool policy', () => {
+    for (const { role } of NATIVE_ROLES) expect(toolsLineOf(role).join(', '), role).not.toMatch(/ArtifactData|ArtifactComments/);
     const policy = fs.readFileSync(path.resolve('registry/hosts/claude/tool-policy.json'), 'utf8');
-    expect(policy).not.toContain('ArtifactData');
+    expect(policy).not.toMatch(/ArtifactData|ArtifactComments/);
   });
 
   it('has no block that says a role may comment, delete or share a page', () => {
@@ -297,12 +318,27 @@ describe('the page types (ADR 0078): who holds which, and what each kind needs',
     }
   });
 
-  it('has a block that names the types of the role, and the connector bullets exactly for the connector holders', () => {
+  it('has a block that names the types of the role, and the connector and store bullets of the types the role holds, inside the block', () => {
+    const heading = (ids: readonly string[], first: string, second: string): string | undefined =>
+      ids.includes(first) && ids.includes(second) ? `${first[0]!.toUpperCase()}${first.slice(1)} and ${second[0]!.toUpperCase()}${second.slice(1)}` : ids.includes(first) ? `${first[0]!.toUpperCase()}${first.slice(1)}` : ids.includes(second) ? `${second[0]!.toUpperCase()}${second.slice(1)}` : undefined;
     for (const role of HOLDER_ROLES) {
       const text = nativeText(role);
-      for (const type of pageTypesOfRole(role)) expect(text, `${role} ${type.id}`).toContain(`${type.title} (${type.for})`);
-      expect(text.includes('- **No connector.**'), role).toBe(holdersOfKind('connector').includes(role));
-      expect(text.includes('- **Whiteboard and Data.**'), role).toBe(holdersOfKind('store').includes(role));
+      const block = text.slice(text.indexOf('agents-united:publishing:start'), text.indexOf('agents-united:publishing:end'));
+      const held = pageTypesOfRole(role).map(type => type.id);
+      for (const type of pageTypesOfRole(role)) expect(block, `${role} ${type.id}`).toContain(`${type.title} (${type.for})`);
+      expect(block.includes('- **No connector.**'), role).toBe(holdersOfKind('connector').includes(role));
+      const connector = heading(held, 'docs', 'sheets');
+      const store = heading(held, 'whiteboard', 'data');
+      for (const candidate of ['Docs and Sheets', 'Docs', 'Sheets']) expect(block.includes(`- **${candidate}.**`), `${role} ${candidate}`).toBe(candidate === connector);
+      for (const candidate of ['Whiteboard and Data', 'Whiteboard', 'Data']) expect(block.includes(`- **${candidate}.**`), `${role} ${candidate}`).toBe(candidate === store);
+    }
+  });
+
+  it('reads the HTML page sentence in the block of exactly the files that hold the Design type', () => {
+    for (const role of HOLDER_ROLES) {
+      const text = nativeText(role);
+      const block = text.slice(text.indexOf('agents-united:publishing:start'), text.indexOf('agents-united:publishing:end'));
+      expect(block.includes('working HTML page'), role).toBe(holdersOfType('design').includes(role));
     }
   });
 });

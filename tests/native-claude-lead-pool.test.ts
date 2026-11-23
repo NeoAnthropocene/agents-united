@@ -68,6 +68,12 @@ describe('the pool of a coordinator: a teammate gets the MCP tools of the main c
     expect(toolsOf(lead)).toContain('mcp__claude_ai_Claude_Docs');
   });
 
+  it.each(leads)('%s holds the Claude Docs connector exactly when a role it may spawn does (the other direction of the pool rule, ADR 0078)', lead => {
+    const connector = 'mcp__claude_ai_Claude_Docs';
+    const holders = spawnable(lead).filter(exists).filter(role => toolsOf(role).includes(connector));
+    expect(toolsOf(lead).includes(connector), `${lead} may spawn ${holders.join(', ') || 'no role that holds the connector'}`).toBe(holders.length > 0);
+  });
+
   it('names the image tool in the lead, and as the one tool and not the server', () => {
     const held = toolsOf('orchestrator-digital-agency');
     expect(held).toContain('mcp__image-gen__generate_image');

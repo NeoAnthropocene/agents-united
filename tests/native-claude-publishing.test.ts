@@ -824,6 +824,13 @@ describe('the page type rule of the repository', () => {
   it('reports every broken rule of a role, not only the first', () => {
     const tools = ['Read', 'Artifact'];
     const problems = publishingBlockProblems(synced(tools, typesOf('docs', 'whiteboard')), role(tools, typesOf('docs', 'whiteboard')));
-    expect(problems).toHaveLength(2);
+    expect(problems).toEqual([
+      expect.stringMatching(/^Native page types: x holds the connector type docs but its tools line lacks mcp__claude_ai_Claude_Docs/),
+      expect.stringMatching(/^Native page types: x holds the store type whiteboard but its tools line lacks ToolSearch/),
+    ]);
+    // A block that is stale for the list is a third, separate problem.
+    const stale = publishingBlockProblems(synced(tools, typesOf('docs')), role(tools, typesOf('docs', 'whiteboard')));
+    expect(stale).toHaveLength(3);
+    expect(stale[2]).toMatch(/^Native publishing block stale: /);
   });
 });
