@@ -1,6 +1,6 @@
 # ADR 0078: The roles hold the other page types of the account, by role fit
 
-- **Status:** Proposed. The live check of decision 17 has not been run, so nothing here is shown in a live session. The decisions marked (C) were taken by the coordinating AI session and are the maintainer's to overturn: decision 6 (its reading), decisions 9 to 17 and decision 20. Decisions 18 and 19 are the maintainer's, of 2026-11-23.
+- **Status:** Accepted, 2026-11-23, after the live check of decision 17 was sat once; [the record](../../host-library/claude/observations/2026-11-23-claude-2.1.330-page-types-live.md) is linked, and what it shows and does not show is under Consequences. The decisions marked (C) were taken by the coordinating AI session and are the maintainer's to overturn: decision 6 (its reading), decisions 9 to 17 and decision 20. Decisions 18 and 19 are the maintainer's, of 2026-11-23.
 - **Date:** 2026-11-22
 - **Follows:** ADR 0077 (the roles that make documents publish pages, each new page with the user's go-ahead), ADR 0076 (a specialist's needs go through its lead), ADR 0047 (one role publishes through `Artifact`).
 
@@ -213,3 +213,25 @@ A separate optional check, which is not a prompt of the list, publishes no page:
 What comes out if the store tool cannot be called from a role: If only a specialist cannot call it and a lead was seen calling it, Data is leads only and Whiteboard waits. If neither a specialist nor a lead could call it, Whiteboard and Data have no holder: their rows come out of the table, the store tool bullet and the `ToolSearch` requirement go with them, and the counts in this ADR change (Whiteboard 0, Data 0, store types 0 files). This is done before the pull request is pushed, and the ADR is then set to Accepted with the record linked.
 
 Not shown by the check, whatever its result: that the wording is followed in general (one run), the Host's prompts in modes other than auto, and the behaviour of a role that is started in the background.
+
+### The sitting of 2026-11-23
+
+Sat once by the coordinating AI session through the terminal bridge on commit `9f229ea9`, Claude Code 2.1.330, auto mode; no human typed. The record is [the observation](../../host-library/claude/observations/2026-11-23-claude-2.1.330-page-types-live.md). It repeats the design session once more (a second run).
+
+Shown, once each, in one account in auto mode:
+
+- Sheets (`financial-analyst`, through the connector) and Docs (the business lead, through the connector).
+- Whiteboard (`system-architect`): `ToolSearch`, then `ArtifactData`, 21 writes and 20 documents read back. The store tool is callable from a specialist.
+- The lead asked first, unprompted, with **Keep it in the project** first, in every session.
+- No Host dialog. Nothing was shared, deleted or pinned.
+- With the connector off, no question was asked and the file stayed.
+
+Not shown:
+
+- Design System and Design: the Host's auto-mode classifier refused the specialists' create of the type twice as "Unsanctioned Communication", with no dialog. The roles did not retry and reported it.
+- Data: the lead chose Docs for the funnel overview. The Data column stays the weakest, as above.
+- The lead's store route; the HTML fallback question (the account offers Design); per-page privacy; Slides; other modes.
+
+A lesson for a sitting script. A plan answer of "local work only" was read as narrowing a go-ahead already given. The third option of the design-system proposal, **Use <the default>**, was not seen as the text says.
+
+Decision 17 after the sitting: Whiteboard was shown from a specialist, so no store row comes out. The lead route and Data are not shown, so nothing else is removed on this sitting either.
