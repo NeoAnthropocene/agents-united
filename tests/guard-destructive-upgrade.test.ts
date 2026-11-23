@@ -230,3 +230,20 @@ describe('the role texts say one true sentence about the guard', () => {
     }
   });
 });
+
+describe('the README says when a role guard runs and when it does not', () => {
+  const README = fs.readFileSync(path.resolve('README.md'), 'utf8').replace(/\r\n/g, '\n');
+
+  it('no longer claims the guard always runs while a role is active', () => {
+    expect(README).not.toContain('always runs while an Agents United role is active');
+  });
+
+  it('names the cases where a role guard does not run and points to the session guard', () => {
+    const bullet = README.split('\n').find(line => line.startsWith('- A role\'s own guard'));
+    expect(bullet).toBeDefined();
+    expect(bullet).toContain('teammate');
+    expect(bullet).toContain('claude -p');
+    expect(bullet).toContain('does not run');
+    expect(bullet).toContain('`--session-guard`');
+  });
+});
