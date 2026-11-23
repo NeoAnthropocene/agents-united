@@ -24,7 +24,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 
 describe('native prototype-tester: editors, no shell, no scheduling', () => {
   it('holds exactly this tools set, so a stray tool fails', () => {
-    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__chrome-devtools-mcp', 'mcp__playwright', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools', 'mcp__plugin_playwright_playwright'].sort());
+    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__claude_ai_Claude_Docs', 'mcp__chrome-devtools-mcp', 'mcp__playwright', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools', 'mcp__plugin_playwright_playwright'].sort());
   });
 
   it('holds the posture of a native specialist: sonnet model, medium effort', () => {
@@ -57,7 +57,7 @@ describe('native prototype-tester: the browser servers and the heuristic fallbac
   it('declares the same servers as the canonical registry agent, and holds both with their plugin route', () => {
     expect([...canonical().matchAll(/^  - name: (\S+)$/gm)].map(match => match[1]).sort()).toEqual(['chrome-devtools-mcp', 'playwright']);
     expect(tools().filter(tool => tool.startsWith('mcp__')).sort()).toEqual([
-      'mcp__chrome-devtools-mcp', 'mcp__playwright', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools', 'mcp__plugin_playwright_playwright',
+      'mcp__chrome-devtools-mcp', 'mcp__claude_ai_Claude_Docs', 'mcp__playwright', 'mcp__plugin_chrome-devtools-mcp_chrome-devtools', 'mcp__plugin_playwright_playwright',
     ]);
   });
 

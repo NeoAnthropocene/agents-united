@@ -11,7 +11,7 @@ import { inspectNativeAgent, splitTools } from '../src/core/native-guard.js';
 import { NATIVE_ROLES } from './helpers/native-roles.js';
 import { syncRoster } from '../src/core/native-roster.js';
 import { PUBLISHING_START, holdsPublishing, syncPublishing } from '../src/core/native-publishing.js';
-import { loadPageTypes, typesOfRole } from '../src/core/page-types.js';
+import { connectorToolsOf, loadPageTypes, typesOfRole } from '../src/core/page-types.js';
 import { REQUESTS_EXEMPT_ROLES, REQUESTS_START, syncRequests } from '../src/core/native-requests.js';
 import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
@@ -21,6 +21,7 @@ import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
 import { nativeToolOrder, publishingBlockProblems, requestsBlockProblems } from '../src/core/native-repository-rules.js';
 import { withRoutes } from '../src/core/claude-mcp-routes.js';
+import { HOLDER_STEMS } from './helpers/artifact-holders.js';
 
 /**
  * Plan 032 PR E — the native Claude agents (milestone 1: code-reviewer; milestone 2: backend-architect,
@@ -66,7 +67,7 @@ const WRITER_MUST_HOLD = ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit',
 const MEDIA_VIDEO_SERVERS = ['mcp__higgsfield', 'mcp__klingai'];
 const MEDIA_AUDIO_SERVERS = ['mcp__elevenlabs', 'mcp__fish-audio'];
 
-const ROLES: RoleSpec[] = [
+const BASE_ROLES: RoleSpec[] = [
   { name: 'factory-evaluator', stem: 'subagent-factory-evaluator', guard: 'read-only', skills: ['evaluate-artifact'], serverTools: [], mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
   { name: 'factory-realizer', stem: 'subagent-realize-for-host', guard: 'destructive', skills: ['realize-artifact'], serverTools: [], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
   { name: 'factory-sync', stem: 'subagent-host-update-sync', guard: 'read-only', skills: ['sync-host'], serverTools: [], mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
@@ -441,6 +442,20 @@ const ROLES: RoleSpec[] = [
   },
 ];
 
+/** ADR 0078: the page types of a role, from the committed table: a specialist's own list, a lead's union over the roles of its `Agent(...)` allowlist. */
+const PAGE_TYPES = loadPageTypes('registry', 'claude');
+const pageTypesOf = (stem: string, coordinator: boolean, tools: readonly string[]) => typesOfRole(PAGE_TYPES, { stem, coordinator, tools });
+
+/**
+ * ADR 0078: a role holds the Claude Docs connector (the whole server, one plain entry) exactly when its page types include a connector type. The entry is added here from the table, after the
+ * servers each role declares, so it is not typed 24 times; `tests/native-claude-artifact-grant.test.ts` derives the same set again and pins its size.
+ */
+const ROLES: RoleSpec[] = BASE_ROLES.map(role => {
+  // Only a holder of the class `artifacts` has page types: a lead that spawns publishers without holding Artifact (the universal lead holds no `Agent` list) has none.
+  const types = HOLDER_STEMS.includes(role.stem) ? pageTypesOf(role.stem, role.mainThread ?? false, role.mainThread ? [allowlist(role.coordinatorBundle)] : []) : [];
+  return connectorToolsOf(types).length === 0 ? role : { ...role, serverTools: [...role.serverTools, ...connectorToolsOf(types)] };
+});
+
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
 /** The hooks of a role as generated: its guard, for the factory evaluator also its hand-back entry (ADR 0070, `handback-check.ts`), and for the digital-agency lead also the gate on its first message (Plan 035 N2 slice e, `mode-line-gate.ts`). */
@@ -459,10 +474,6 @@ const SCRIPT_FILES: Array<[string, string]> = [
   ['agents-united-readonly-guard.js', READ_ONLY_GUARD_SCRIPT],
   ['agents-united-mode-line-gate.js', MODE_LINE_GATE_SCRIPT],
 ];
-
-/** ADR 0078: the page types of a role, from the committed table: a specialist's own list, a lead's union over the roles of its `Agent(...)` allowlist. */
-const PAGE_TYPES = loadPageTypes('registry', 'claude');
-const pageTypesOf = (stem: string, coordinator: boolean, tools: readonly string[]) => typesOfRole(PAGE_TYPES, { stem, coordinator, tools });
 
 const ceilingOf = (role: RoleSpec): string[] =>
   resolveGrant(loadToolPolicy('registry', 'claude'), cores.get(role.stem)!.capabilities ?? [], { subagent: !role.mainThread, background: false }).tools;

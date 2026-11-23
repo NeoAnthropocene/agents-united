@@ -23,7 +23,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 
 describe('native design-researcher: editors, no shell, no question tool', () => {
   it('holds exactly this tools set, so a stray tool fails', () => {
-    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__claude_ai_Firecrawl', 'mcp__firecrawl'].sort());
+    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__claude_ai_Claude_Docs', 'mcp__claude_ai_Firecrawl', 'mcp__firecrawl'].sort());
   });
 
   it('holds the posture of a native specialist: sonnet model, medium effort', () => {
@@ -90,7 +90,7 @@ describe('native design-researcher: the guard and acceptEdits claims', () => {
 describe('native design-researcher: the MCP servers of its canonical agent', () => {
   it('declares the same server as the canonical registry agent, and holds it with its connector route', () => {
     expect([...canonical().matchAll(/^  - name: (\S+)$/gm)].map(match => match[1]).sort()).toEqual(['firecrawl']);
-    expect(tools().filter(tool => tool.startsWith('mcp__')).sort()).toEqual(['mcp__claude_ai_Firecrawl', 'mcp__firecrawl']);
+    expect(tools().filter(tool => tool.startsWith('mcp__')).sort()).toEqual(['mcp__claude_ai_Claude_Docs', 'mcp__claude_ai_Firecrawl', 'mcp__firecrawl']);
   });
 
   it('says the server is used when it is connected in the session', () => {

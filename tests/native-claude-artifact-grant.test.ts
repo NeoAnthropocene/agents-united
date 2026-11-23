@@ -6,7 +6,20 @@ import { publishingBlockProblems } from '../src/core/native-repository-rules.js'
 import { ROSTER_END, ROSTER_START } from '../src/core/native-roster.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { loadPageTypes, typesOfRole } from '../src/core/page-types.js';
-import { HOLDER_LEADS, HOLDER_ROLES, HOLDER_STEMS, PUBLISH_FLOOR_LINE, withoutPublishingBlock } from './helpers/artifact-holders.js';
+import {
+  CONNECTOR_ENTRY,
+  HOLDER_LEADS,
+  HOLDER_ROLES,
+  HOLDER_STEMS,
+  NEW_HOLDER_STEMS,
+  PAGE_TABLE,
+  PUBLISH_FLOOR_LINE,
+  holdersOfKind,
+  holdersOfType,
+  pageTypesOfRole,
+  toolsLineOf,
+  withoutPublishingBlock,
+} from './helpers/artifact-holders.js';
 import { NATIVE_ROLES, nativeText } from './helpers/native-roles.js';
 
 /**
@@ -18,7 +31,7 @@ import { NATIVE_ROLES, nativeText } from './helpers/native-roles.js';
  * The holders are the table in tests/helpers/artifact-holders.ts.
  */
 
-const toolsOf = (role: string): string[] => /^tools: (.*)$/m.exec(nativeText(role))![1]!.split(',').map(t => t.trim());
+const toolsOf = toolsLineOf;
 /** The role's own text after the floor: the generated publishing block is left out, because it is checked by its own suite. */
 const authored = (role: string): string => withoutPublishingBlock(nativeText(role).split('<!-- agents-united:floor:end -->')[1] ?? '');
 const HER = 'agency-creative-designer';
@@ -62,8 +75,8 @@ describe('the grant: the roles that make documents hold Artifact', () => {
     for (const needed of ['Edit', 'Write', 'Read', 'Glob', 'Grep', 'Skill', 'SendMessage', 'mcp__figma', 'mcp__stitch']) expect(held, needed).toContain(needed);
   });
 
-  it('gives the five leads the tool, because the class is in their cores and a lead reads back a page before it passes a link on', () => {
-    expect([...HOLDER_LEADS].sort()).toEqual(['orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-marketing', 'orchestrator-research']);
+  it('gives the six leads the tool, because the class is in their cores and a lead reads back a page before it passes a link on', () => {
+    expect([...HOLDER_LEADS].sort()).toEqual(['orchestrator-business', 'orchestrator-design', 'orchestrator-digital-agency', 'orchestrator-marketing', 'orchestrator-research', 'orchestrator-system-architecture']);
     for (const lead of HOLDER_LEADS) expect(toolsOf(lead), lead).toContain('Artifact');
   });
 });
@@ -184,5 +197,121 @@ describe('the state of the record', () => {
     const plan = fs.readFileSync(path.resolve('plans/036-claude-creative-designer-improvement.md'), 'utf8').replace(/\r\n/g, '\n');
     const s12 = plan.split('\n').find(l => /^\| S12 \|/.test(l)) ?? '';
     expect(s12).toMatch(/in review|done/);
+  });
+});
+
+/** The holder stems of ADR 0077: the roles that held Artifact before the page types of ADR 0078. */
+const ADR_0077_STEMS = [
+  'subagent-ui-designer',
+  'subagent-ux-strategist',
+  'subagent-interaction-designer',
+  'subagent-design-systems-architect',
+  'subagent-design-ops-lead',
+  'subagent-design-researcher',
+  'subagent-designer-toolkit-expert',
+  'subagent-prototype-tester',
+  'subagent-marketing-creative-designer',
+  'subagent-marketing-growth-strategist',
+  'subagent-marketing-content-strategist',
+  'subagent-marketing-campaign-specialist',
+  'subagent-marketing-conversion-specialist',
+  'subagent-business-panel-experts',
+  'subagent-deep-research',
+  'subagent-market-intelligence-analyst',
+  'subagent-operations-strategist',
+  'orchestrator-design',
+  'orchestrator-marketing',
+  'orchestrator-digital-agency',
+  'orchestrator-business',
+  'orchestrator-research',
+];
+const ids = (roles: readonly string[]): string[] => [...roles].sort();
+
+describe('the page types (ADR 0078): who holds which, and what each kind needs', () => {
+  it('has 33 holder files on 28 cores, and the new holders are exactly the six named', () => {
+    expect(HOLDER_ROLES).toHaveLength(33);
+    expect(new Set(HOLDER_STEMS).size).toBe(28);
+    expect(HOLDER_STEMS.filter(stem => !ADR_0077_STEMS.includes(stem)).sort()).toEqual([...NEW_HOLDER_STEMS].sort());
+    expect(NEW_HOLDER_STEMS).toEqual([
+      'subagent-paid-acquisition-specialist',
+      'subagent-plg-strategist',
+      'subagent-financial-analyst',
+      'subagent-system-architect',
+      'subagent-finops-cost-engineer',
+      'orchestrator-system-architecture',
+    ]);
+    for (const stem of ADR_0077_STEMS) expect(HOLDER_STEMS, stem).toContain(stem);
+  });
+
+  it('counts the native files that hold each type, leads included', () => {
+    expect(holdersOfType('design-system')).toHaveLength(9);
+    expect(holdersOfType('docs')).toHaveLength(20);
+    expect(holdersOfType('sheets')).toHaveLength(17);
+    expect(holdersOfType('whiteboard')).toHaveLength(6);
+    expect(holdersOfType('data')).toHaveLength(8);
+    expect(holdersOfKind('connector')).toHaveLength(24);
+    expect(holdersOfKind('store')).toHaveLength(12);
+  });
+
+  it('gives every holder file a non-empty list of types, and no other native file any', () => {
+    for (const { role } of NATIVE_ROLES) {
+      const types = pageTypesOfRole(role);
+      expect(types.length > 0, role).toBe(HOLDER_ROLES.includes(role));
+    }
+  });
+
+  it('gives a lead the union of the lists of the roles it may spawn, in catalogue order', () => {
+    for (const lead of HOLDER_LEADS) {
+      const roster = toolsLineOf(lead).find(tool => tool.startsWith('Agent('))!.slice('Agent('.length, -1).split(',').map(name => name.trim());
+      const union = new Set(roster.filter(name => HOLDER_ROLES.includes(name)).flatMap(name => pageTypesOfRole(name).map(type => type.id)));
+      expect(pageTypesOfRole(lead).map(type => type.id), lead).toEqual(PAGE_TABLE.types.map(type => type.id).filter(id => union.has(id)));
+    }
+  });
+
+  it('has the Claude Docs connector, as the whole server and one plain entry, on exactly the roles that hold Docs or Sheets', () => {
+    const wanted = holdersOfKind('connector');
+    expect(ids(NATIVE_ROLES.map(entry => entry.role).filter(role => toolsLineOf(role).includes(CONNECTOR_ENTRY)))).toEqual(ids(wanted));
+    for (const { role } of NATIVE_ROLES) {
+      const variants = toolsLineOf(role).filter(tool => /claude_ai_Claude_Docs|claude-docs|Claude_Docs/i.test(tool));
+      expect(variants, role).toEqual(wanted.includes(role) ? [CONNECTOR_ENTRY] : []);
+    }
+  });
+
+  it('has ToolSearch on every role that holds a store type', () => {
+    for (const role of holdersOfKind('store')) expect(toolsLineOf(role), role).toContain('ToolSearch');
+  });
+
+  it('puts no store tool and no comment tool on any tools line, and none in the tool policy', () => {
+    for (const { role } of NATIVE_ROLES) for (const name of ['ArtifactData', 'ArtifactComments']) expect(toolsLineOf(role), `${role} ${name}`).not.toContain(name);
+    const policy = fs.readFileSync(path.resolve('registry/hosts/claude/tool-policy.json'), 'utf8');
+    expect(policy).not.toContain('ArtifactData');
+  });
+
+  it('has no block that says a role may comment, delete or share a page', () => {
+    for (const role of HOLDER_ROLES) {
+      const text = nativeText(role);
+      const block = text.slice(text.indexOf('agents-united:publishing:start'), text.indexOf('agents-united:publishing:end'));
+      expect(block, role).not.toContain('ArtifactData');
+      expect(block, role).not.toMatch(/\b(?:you may|may|can) (?:comment|delete|share)\b/i);
+      expect(block, role).toContain('never delete or pin an artifact');
+    }
+  });
+
+  it('has a block that names the types of the role, and the connector bullets exactly for the connector holders', () => {
+    for (const role of HOLDER_ROLES) {
+      const text = nativeText(role);
+      for (const type of pageTypesOfRole(role)) expect(text, `${role} ${type.id}`).toContain(`${type.title} (${type.for})`);
+      expect(text.includes('- **No connector.**'), role).toBe(holdersOfKind('connector').includes(role));
+      expect(text.includes('- **Whiteboard and Data.**'), role).toBe(holdersOfKind('store').includes(role));
+    }
+  });
+});
+
+describe('the system-architecture lead', () => {
+  it('holds Artifact and the connector entry, because its roster holds a role that publishes pages and a role that fills a sheet through the connector', () => {
+    const tools = toolsLineOf('orchestrator-system-architecture');
+    expect(tools).toContain('Artifact');
+    expect(tools).toContain(CONNECTOR_ENTRY);
+    expect(pageTypesOfRole('orchestrator-system-architecture').map(type => type.id)).toEqual(['sheets', 'whiteboard', 'data']);
   });
 });

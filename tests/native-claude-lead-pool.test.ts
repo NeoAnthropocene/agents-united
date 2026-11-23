@@ -59,6 +59,15 @@ describe('the pool of a coordinator: a teammate gets the MCP tools of the main c
     },
   );
 
+  it('has the system-architecture lead hold Artifact and the Claude Docs connector, because its roster holds a role that publishes pages and a role that fills a sheet through the connector (ADR 0078)', () => {
+    const lead = 'orchestrator-system-architecture';
+    const publishers = spawnable(lead).filter(exists).filter(role => toolsOf(role).includes('Artifact'));
+    expect(publishers.sort()).toEqual(['finops-cost-engineer', 'system-architect']);
+    expect(toolsOf(lead)).toContain('Artifact');
+    expect(toolsOf('finops-cost-engineer')).toContain('mcp__claude_ai_Claude_Docs');
+    expect(toolsOf(lead)).toContain('mcp__claude_ai_Claude_Docs');
+  });
+
   it('names the image tool in the lead, and as the one tool and not the server', () => {
     const held = toolsOf('orchestrator-digital-agency');
     expect(held).toContain('mcp__image-gen__generate_image');
