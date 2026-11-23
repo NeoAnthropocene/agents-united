@@ -57,12 +57,12 @@ describe('the skill: what it is and where it lives', () => {
     expect(fs.existsSync(path.join(DIR, 'scripts'))).toBe(false);
   });
 
-  it('is carried by every Bundle that has a holder (ADR 0077) and loaded from the creative designer\'s table, for a Claude Design canvas or brand book', () => {
+  it('is carried by every Bundle that has a holder (ADR 0077, ADR 0078) and loaded from the creative designer\'s table, for a Claude Design canvas or brand book', () => {
     const bundles = JSON.parse(fs.readFileSync(path.resolve('registry/bundles.json'), 'utf8')) as { bundles: Record<string, { skills?: string[]; agents?: string[]; orchestrator?: string }> };
     const withHolder = Object.entries(bundles.bundles).filter(([, bundle]) =>
       [...(bundle.agents ?? []), ...(bundle.orchestrator ? [bundle.orchestrator] : [])].some(agent => HOLDER_STEMS.includes(agent.replace(/\.md$/, ''))),
     );
-    expect(withHolder.length, 'Bundles that contain a holder role or a holder lead').toBeGreaterThanOrEqual(16);
+    expect(withHolder.length, 'Bundles that contain a holder role or a holder lead').toBeGreaterThanOrEqual(21);
     for (const [name, bundle] of withHolder) expect(bundle.skills, name).toContain(SKILL);
     const row = nativeText('agency-creative-designer').split('\n').find(l => l.startsWith('|') && l.split('|')[2]?.trim() === `\`${SKILL}\``) ?? '';
     expect(row).not.toBe('');
