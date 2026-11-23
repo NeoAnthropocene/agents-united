@@ -326,7 +326,8 @@ describe('the page types (ADR 0078): who holds which, and what each kind needs',
       const block = text.slice(text.indexOf('agents-united:publishing:start'), text.indexOf('agents-united:publishing:end'));
       const held = pageTypesOfRole(role).map(type => type.id);
       for (const type of pageTypesOfRole(role)) expect(block, `${role} ${type.id}`).toContain(`${type.title} (${type.for})`);
-      expect(block.includes('- **No connector.**'), role).toBe(holdersOfKind('connector').includes(role));
+      expect(block.includes('no page because the connector is missing'), role).toBe(holdersOfKind('connector').includes(role));
+      expect(block.includes('- **No connector.**'), role).toBe(false);
       const connector = heading(held, 'docs', 'sheets');
       const store = heading(held, 'whiteboard', 'data');
       for (const candidate of ['Docs and Sheets', 'Docs', 'Sheets']) expect(block.includes(`- **${candidate}.**`), `${role} ${candidate}`).toBe(candidate === connector);
