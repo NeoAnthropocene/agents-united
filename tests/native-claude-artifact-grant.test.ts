@@ -5,6 +5,7 @@ import { checkFloor } from '../src/core/native-floor.js';
 import { publishingBlockProblems } from '../src/core/native-repository-rules.js';
 import { ROSTER_END, ROSTER_START } from '../src/core/native-roster.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
+import { loadPageTypes, typesOfRole } from '../src/core/page-types.js';
 import { HOLDER_LEADS, HOLDER_ROLES, HOLDER_STEMS, PUBLISH_FLOOR_LINE, withoutPublishingBlock } from './helpers/artifact-holders.js';
 import { NATIVE_ROLES, nativeText } from './helpers/native-roles.js';
 
@@ -102,9 +103,11 @@ describe('the floor: what leaves the project', () => {
 
 describe('the publishing block: generated, in every holder and in no other role', () => {
   it('is carried exactly by the roles whose tools line holds Artifact, as the block of their kind', () => {
-    for (const { role, coordinator } of NATIVE_ROLES) {
+    const table = loadPageTypes('registry', 'claude');
+    for (const { role, coordinator, stem } of NATIVE_ROLES) {
       const text = nativeText(role);
-      expect(publishingBlockProblems(text, { kind: coordinator ? 'coordinator' : 'specialist', name: role, tools: toolsOf(role) }), role).toEqual([]);
+      const types = typesOfRole(table, { stem, coordinator, tools: toolsOf(role) });
+      expect(publishingBlockProblems(text, { kind: coordinator ? 'coordinator' : 'specialist', name: role, tools: toolsOf(role), types }), role).toEqual([]);
       expect(text.includes('agents-united:publishing:start'), role).toBe(HOLDER_STEMS.includes(NATIVE_ROLES.find(entry => entry.role === role)!.stem));
     }
   });

@@ -10,6 +10,7 @@ import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js
 import { GUARD_SCRIPT, NATIVE_GUARD_FILES } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
+import { loadPageTypesIfPresent, typesOfRole } from './page-types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
 import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
@@ -81,7 +82,8 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       findings.push(...postureProblems(facts.meta, kind));
       if (core.capabilities?.includes('task-tracking')) findings.push(...sessionTrackingProblems(text, { coordinator }));
       findings.push(...requestsBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
-      findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
+      const types = typesOfRole(loadPageTypesIfPresent(registry, 'claude'), { stem: input.definition, coordinator, tools: facts.tools });
+      findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools, types }));
       let canonicalText: string | undefined;
       const defaultCanonical = path.join(registry, 'agents', `${input.definition}.md`);
       if (input.canonicalFile !== undefined) {

@@ -11,6 +11,7 @@ import { inspectNativeAgent, splitTools } from '../src/core/native-guard.js';
 import { NATIVE_ROLES } from './helpers/native-roles.js';
 import { syncRoster } from '../src/core/native-roster.js';
 import { PUBLISHING_START, holdsPublishing, syncPublishing } from '../src/core/native-publishing.js';
+import { loadPageTypes, typesOfRole } from '../src/core/page-types.js';
 import { REQUESTS_EXEMPT_ROLES, REQUESTS_START, syncRequests } from '../src/core/native-requests.js';
 import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
@@ -459,6 +460,10 @@ const SCRIPT_FILES: Array<[string, string]> = [
   ['agents-united-mode-line-gate.js', MODE_LINE_GATE_SCRIPT],
 ];
 
+/** ADR 0078: the page types of a role, from the committed table: a specialist's own list, a lead's union over the roles of its `Agent(...)` allowlist. */
+const PAGE_TYPES = loadPageTypes('registry', 'claude');
+const pageTypesOf = (stem: string, coordinator: boolean, tools: readonly string[]) => typesOfRole(PAGE_TYPES, { stem, coordinator, tools });
+
 const ceilingOf = (role: RoleSpec): string[] =>
   resolveGrant(loadToolPolicy('registry', 'claude'), cores.get(role.stem)!.capabilities ?? [], { subagent: !role.mainThread, background: false }).tools;
 
@@ -477,18 +482,20 @@ beforeAll(async () => {
       // ADR 0076: the requests block, after the tools line is set (a specialist's open types are computed from it); the factory's fixed-job roles carry none.
       if (!REQUESTS_EXEMPT_ROLES.includes(role.name)) synced = syncRequests(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
       // ADR 0077: the publishing block directly after the requests block, only for a role whose tools hold `Artifact` (a role without it carries none).
-      synced = syncPublishing(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
+      const lineTools = nativeToolOrder(tools, role.serverTools);
+      synced = syncPublishing(synced, role.mainThread ? 'coordinator' : 'specialist', lineTools, pageTypesOf(role.stem, role.mainThread ?? false, lineTools));
       // A roster block belongs to a lead that spawns the roster: only a main-thread role that holds `Agent` carries one.
       if (role.mainThread && ceilingOf(role).includes('Agent')) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
     }
     // A committed specialist that is not in ROLES above (its floor and hooks are kept by its own suite) still gets the requests block, from its own tools line.
-    for (const { role, coordinator } of NATIVE_ROLES) {
+    for (const { role, coordinator, stem } of NATIVE_ROLES) {
       const file = path.resolve('registry/hosts/claude/agents', `${role}.md`);
       if (ROLES.some(spec => spec.name === role) || REQUESTS_EXEMPT_ROLES.includes(role) || !fs.existsSync(file)) continue;
       const text = fs.readFileSync(file, 'utf8');
       const synced = syncRequests(text, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools);
-      fs.writeFileSync(file, syncPublishing(synced, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools));
+      const ownTools = inspectNativeAgent(text).tools;
+      fs.writeFileSync(file, syncPublishing(synced, coordinator ? 'coordinator' : 'specialist', ownTools, pageTypesOf(stem, coordinator, ownTools)));
     }
   }
   // A project directory where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points: the committed scripts, as installed.
@@ -516,7 +523,7 @@ describe.each(ROLES)('native Claude $name', role => {
   });
 
   it('carries the publishing block of ADR 0077, exactly as generated, exactly when its tools line holds Artifact', () => {
-    expect(publishingBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared() })).toEqual([]);
+    expect(publishingBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared(), types: pageTypesOf(role.stem, role.mainThread ?? false, declared()) })).toEqual([]);
     expect(read().includes(PUBLISHING_START)).toBe(holdsPublishing(declared()));
   });
 

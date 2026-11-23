@@ -79,6 +79,11 @@ export function loadPageTypes(registryDir: string, host: string = 'claude'): Pag
   return parsePageTypes(parsed);
 }
 
+/** The table of a registry, or an empty table when the registry carries none (a role then has no page type, and one that holds `Artifact` is refused). */
+export function loadPageTypesIfPresent(registryDir: string, host: string = 'claude'): PageTypeTable {
+  return fs.existsSync(path.join(registryDir, 'hosts', host, 'page-types.json')) ? loadPageTypes(registryDir, host) : { semantics: '', types: [], holders: {} };
+}
+
 const inCatalogueOrder = (table: PageTypeTable, ids: ReadonlySet<PageTypeId>): PageType[] => table.types.filter(type => ids.has(type.id));
 
 /** The types a specialist holds, by the stem of its core, in catalogue order; nothing for a stem without an entry. */
