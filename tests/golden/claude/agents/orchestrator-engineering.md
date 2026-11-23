@@ -34,7 +34,7 @@ model: opus
 effort: high
 hooks:
   PreToolUse:
-    - matcher: Bash
+    - matcher: Bash|PowerShell
       hooks:
         - type: command
           command: node
@@ -167,7 +167,7 @@ hooks:
               outside the agent session. If you mean it, run it yourself in your
               own terminal.\\n\");process.exit(2)}})"
           onFailure: block
-    - matcher: Write|Edit|NotebookEdit
+    - matcher: Write|Edit|MultiEdit|NotebookEdit
       hooks:
         - type: command
           command: node
