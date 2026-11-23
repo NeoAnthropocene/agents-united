@@ -20,9 +20,9 @@ A role or a lead needs a design system as a page: tokens, component primitives a
 Take tokens, copy and components from the files the project already holds, not from memory. Mark what you infer as inferred. Attach no other design system than the one supplied.
 
 ## Which design system a page follows (this repository's rule)
-- Use the design system the user marked as default, where the account's list shows one, and do not ask. The `Artifact` tool's own listing text of 2026-11-22 says to use the one marked default without asking, and if some are listed but none is default, name them and ask.
+- When the project has no design system page of its own and no such proposal was declined in this piece of work, propose one once as a new page: **Keep it in the project** first, **Publish Artifact** second, **Use <the default>** third when the account has a default.
+- Otherwise use the design system the user marked as default, where the account's list shows one, and do not ask. The `Artifact` tool's own listing text of 2026-11-22 says to use the one marked default without asking, and if some are listed but none is default, name them and ask.
 - When several are saved and none is the default, name them and ask once.
-- When the project has no design system page of its own, propose one once as a new page: **Keep it in the project** first, **Publish Artifact** second, **Use <the default>** third when the account has a default. A declined proposal is not repeated in this piece of work.
 - Never edit a saved design system unless that is the task.
 - Name the design system to follow in the brief.
 
