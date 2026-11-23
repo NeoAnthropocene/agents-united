@@ -1386,6 +1386,64 @@ describe('checkBundle', () => {
       expectDrift(drifted(f, () => fs.rmSync(path.join(f.registry, 'rules', 'skill-attribution.md'))), 'REGISTRY_DRIFT');
     });
 
+    describe('the native workflow rule reads the registry too', () => {
+      /** An organization proposal whose first skill has a native Claude workflow, and whose lead is a native role that holds Workflow. */
+      const withWorkflowLead = (): { f: Fixture; skill: string; workflow: string; lead: string } => {
+        const proposal = organizationProposal();
+        const skill = bundleOf(proposal).skills[0] as string;
+        const f = build(proposal, {}, registry => {
+          fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'workflows'), { recursive: true });
+          fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'agents'), { recursive: true });
+          fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'workflows', `${skill}.js`), "export const meta = { name: 'demo' }\n");
+          fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'agents', 'orchestrator-digital-agency.md'), '---\nname: orchestrator-digital-agency\ndescription: Lead.\ntools: Read, Workflow\n---\nLead.\n');
+        });
+        return { f, skill, workflow: path.join(f.registry, 'hosts', 'claude', 'workflows', `${skill}.js`), lead: path.join(f.registry, 'hosts', 'claude', 'agents', 'orchestrator-digital-agency.md') };
+      };
+
+      it('passes while those files stay as they were', () => {
+        const { f } = withWorkflowLead();
+        const r = run(f);
+        expect(r.status).toBe('passed');
+        expect(r.registryDigest).toMatch(/^[0-9a-f]{64}$/);
+      });
+
+      it('reports REGISTRY_DRIFT when the lead role file loses the Workflow tool after the checks', () => {
+        const { f, lead } = withWorkflowLead();
+        expectDrift(drifted(f, () => fs.writeFileSync(lead, '---\nname: orchestrator-digital-agency\ndescription: Lead.\ntools: Read\n---\nLead.\n')), 'REGISTRY_DRIFT');
+      });
+
+      it('reports REGISTRY_DRIFT when the native workflow folder gains or loses a workflow after the checks', () => {
+        const { f, workflow } = withWorkflowLead();
+        expectDrift(drifted(f, () => fs.rmSync(workflow)), 'REGISTRY_DRIFT');
+        const added = withWorkflowLead();
+        expectDrift(drifted(added.f, () => fs.writeFileSync(path.join(added.f.registry, 'hosts', 'claude', 'workflows', 'late-workflow.js'), "export const meta = {}\n")), 'REGISTRY_DRIFT');
+      });
+
+      it('changes the registry digest when the set of native workflows changes between two runs', () => {
+        const { f } = withWorkflowLead();
+        const before = run(f).registryDigest;
+        expect(before).toMatch(/^[0-9a-f]{64}$/);
+        expect(run(f).registryDigest).toBe(before);
+        fs.writeFileSync(path.join(f.registry, 'hosts', 'claude', 'workflows', 'late-workflow.js'), 'export const meta = {}\n');
+        expect(run(f).registryDigest).not.toBe(before);
+      });
+
+      it('leaves a lead that does not exist yet to --allow-unresolved, and refuses it otherwise', () => {
+        const proposal = organizationProposal();
+        const skill = bundleOf(proposal).skills[0] as string;
+        bundleOf(proposal).orchestrator = 'orchestrator-late.md';
+        rebind(proposal);
+        const f = build(proposal, {}, registry => {
+          fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'workflows'), { recursive: true });
+          fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'workflows', `${skill}.js`), "export const meta = { name: 'demo' }\n");
+          fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'agents'), { recursive: true });
+          fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'agents', 'orchestrator-digital-agency.md'), '---\nname: orchestrator-digital-agency\ndescription: Lead.\ntools: Read, Workflow\n---\nLead.\n');
+        });
+        expect(checkOf(run(f), 'registry-rules').status).toBe('failed');
+        expect(checkOf(run(f, { allowUnresolved: true }), 'registry-rules').status).toBe('passed');
+      });
+    });
+
     it('reports both codes when the proposal and the registry both change', () => {
       const f = build();
       const r = drifted(f, () => {

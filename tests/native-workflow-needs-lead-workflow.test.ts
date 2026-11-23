@@ -43,7 +43,7 @@ const bundle = (name: string, extra: Partial<BundleDefinition> = {}): BundleDefi
   ...extra,
 } as BundleDefinition);
 const manifestOf = (...bundles: BundleDefinition[]): BundlesManifest => ({ version: 1, bundles: Object.fromEntries(bundles.map(b => [b.name, b])) } as BundlesManifest);
-const leadIssues = (manifest: BundlesManifest, dir: string): string[] => collectBundleManifestIssues(manifest, dir).filter(issue => /Workflow/.test(issue));
+const leadIssues = (manifest: BundlesManifest, dir: string): string[] => collectBundleManifestIssues(manifest, dir);
 
 describe('the manifest check: a skill with a native workflow needs a lead that holds the Workflow tool', () => {
   it('accepts a Bundle whose native lead lists Workflow among entries with a parenthesised list', () => {
@@ -87,6 +87,84 @@ describe('the manifest check: a skill with a native workflow needs a lead that h
     const dir = registryWith({ 'orchestrator-demo': 'Read', 'demo-scoped': 'Read, Workflow' });
     const scoped = bundle('x', { agents: ['orchestrator-demo.md'], nativeRoles: { 'orchestrator-demo.md': 'demo-scoped' } });
     expect(leadIssues(manifestOf(scoped), dir)).toEqual([]);
+  });
+
+  it('resolves the parent Bundle by alias, as the resolver does', () => {
+    const dir = registryWith({ 'orchestrator-demo': 'Read' });
+    const parent = bundle('parent', { aliases: ['parent-alias'] });
+    const child = bundle('child', { parentBundle: 'parent-alias', orchestrator: undefined, skills: [] });
+    const issues = leadIssues(manifestOf(parent, child), dir);
+    expect(issues.some(issue => issue.includes('bundle "child"'))).toBe(true);
+  });
+
+  it('refuses a nativeRoles-mapped lead that lacks Workflow even when the default role would hold it', () => {
+    const dir = registryWith({ 'orchestrator-demo': 'Read, Workflow', 'demo-scoped': 'Read' });
+    const scoped = bundle('x', { agents: ['orchestrator-demo.md'], nativeRoles: { 'orchestrator-demo.md': 'demo-scoped' } });
+    const issues = leadIssues(manifestOf(scoped), dir);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('"demo-scoped"');
+  });
+
+  it('uses the default role name when a nativeRoles value is not a string, without a second error about a made-up role', () => {
+    const dir = registryWith({ 'orchestrator-demo': 'Read, Workflow' });
+    const odd = bundle('x', { agents: ['orchestrator-demo.md'], nativeRoles: { 'orchestrator-demo.md': 123 as unknown as string } });
+    const issues = leadIssues(manifestOf(odd), dir);
+    expect(issues.filter(issue => /lead "/.test(issue))).toEqual([]);
+  });
+
+  it('checks the own orchestrator of a child, not the one of its parent', () => {
+    const dir = registryWith({ 'orchestrator-demo': 'Read', 'orchestrator-other': 'Read, Workflow' });
+    const child = bundle('child', { parentBundle: 'parent', orchestrator: 'orchestrator-other.md', skills: [] });
+    const issues = leadIssues(manifestOf(bundle('parent'), child), dir);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('bundle "parent"');
+    const reverse = leadIssues(manifestOf(bundle('parent', { orchestrator: 'orchestrator-other.md' }), bundle('child', { parentBundle: 'parent', orchestrator: 'orchestrator-demo.md', skills: [] })), dir);
+    expect(reverse).toHaveLength(1);
+    expect(reverse[0]).toContain('bundle "child"');
+  });
+
+  it('falls back to the parent lead when the own orchestrator is empty, as the resolver does', () => {
+    const dir = registryWith({ 'orchestrator-demo': 'Read' });
+    const child = bundle('child', { parentBundle: 'parent', orchestrator: '', skills: [] });
+    expect(leadIssues(manifestOf(bundle('parent'), child), dir).some(issue => issue.includes('bundle "child"'))).toBe(true);
+  });
+
+  it('exempts a Bundle with no lead of its own or inherited: a plain session holds Workflow and the user runs the command', () => {
+    const dir = registryWith();
+    expect(leadIssues(manifestOf(bundle('x', { orchestrator: undefined })), dir)).toEqual([]);
+  });
+
+  it('reads the role of a subagent-prefixed lead file without the prefix', () => {
+    const holds = registryWith({ 'demo-lead': 'Read, Workflow' });
+    expect(leadIssues(manifestOf(bundle('x', { orchestrator: 'subagent-demo-lead.md' })), holds)).toEqual([]);
+    const lacks = registryWith({ 'demo-lead': 'Read' });
+    const issues = leadIssues(manifestOf(bundle('x', { orchestrator: 'subagent-demo-lead.md' })), lacks);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('"demo-lead"');
+  });
+
+  it('is inert in a registry that has no Claude native workflows at all', () => {
+    const dir = registryWith({ 'orchestrator-demo': 'Read' });
+    fs.removeSync(path.join(dir, 'hosts/claude/workflows'));
+    expect(leadIssues(manifestOf(bundle('x')), dir)).toEqual([]);
+  });
+
+  it('says which skills it resolves, in the singular or the plural', () => {
+    const dir = registryWith({ 'orchestrator-demo': 'Read' });
+    fs.outputFileSync(path.join(dir, 'hosts/claude/workflows/workflow-other.js'), "export const meta = { name: 'workflow-other' }\n");
+    const one = leadIssues(manifestOf(bundle('x')), dir)[0]!;
+    expect(one).toContain('resolves the skill "workflow-demo", which a native Claude workflow replaces');
+    const two = leadIssues(manifestOf(bundle('x', { skills: ['workflow-demo', 'workflow-other'] })), dir)[0]!;
+    expect(two).toContain('resolves the skills "workflow-demo", "workflow-other", which native Claude workflows replace');
+  });
+
+  it('leaves a lead that the proposal has not created yet alone only when asked to allow unresolved leads', () => {
+    const dir = registryWith();
+    const late = bundle('x', { orchestrator: 'orchestrator-late.md' });
+    expect(collectBundleManifestIssues(manifestOf(late), dir)).toHaveLength(1);
+    expect(collectBundleManifestIssues(manifestOf(late), dir, { allowUnresolvedLeads: true })).toEqual([]);
+    fs.outputFileSync(path.join(dir, 'agents/orchestrator-late.md'), canonicalLead('orchestrator-late'));
+    expect(collectBundleManifestIssues(manifestOf(late), dir, { allowUnresolvedLeads: true })).toHaveLength(1);
   });
 
   it('needs nothing from a Bundle whose skills have no native workflow', () => {
