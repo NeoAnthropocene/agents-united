@@ -227,3 +227,56 @@ describe('the second review: README, the table header, the live check plan and t
     expect(ADR_0078()).toContain('the three connector tools listed as callable in its own tool list');
   });
 });
+
+describe('the live check of ADR 0078, sat on 2026-11-23: the record and what the ADR says of it', () => {
+  const RECORD_PATH = 'host-library/claude/observations/2026-11-23-claude-2.1.330-page-types-live.md';
+  const RECORD = (): string => read(RECORD_PATH);
+
+  it('the record says who sat it, on which commit, host version and mode, and what was graded', () => {
+    const text = RECORD();
+    expect(text).toContain('An AI session (the coordinating session\'s sitter) sat it, through a terminal bridge');
+    expect(text).toContain('No human typed in any session.');
+    expect(text).toContain('commit `9f229ea9`');
+    expect(text).toContain('Claude Code 2.1.330');
+    expect(text).toContain('Permission mode: `auto`');
+    for (const heading of ['## How it was run', '## Answers given', '## What was seen, by prompt', '## The central question: could the store tool be called at all?', '## Pages created', '## Findings, slips and deviations', '## Second run (the design session, P1 then P7)', '## What this shows and what it does not']) {
+      expect(text, heading).toContain(heading);
+    }
+    expect(text).toContain('Unsanctioned Communication');
+    expect(text).toContain('Sitter\'s slip, business P6.');
+  });
+
+  it('the record carries no page link, scratch folder, session id, local path, routing metadata or em dash', () => {
+    const text = RECORD();
+    expect(text).not.toMatch(/https?:\/\/claude\.ai\/(?:code\/)?artifact\//);
+    expect(text).not.toMatch(/[A-Za-z]:\\/);
+    expect(text).not.toMatch(/pages-live|pageslive|sit-0078|session_0/);
+    expect(text).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
+    expect(text).not.toMatch(/Antigravity|Codex|router/i);
+    expect(text).not.toContain(String.fromCharCode(0x2014));
+  });
+
+  it('ADR 0078 is Accepted with the record linked, and its Consequences say what was shown and not shown', () => {
+    const text = ADR_0078();
+    const status = text.split('\n').find(line => line.startsWith('- **Status:**')) ?? '';
+    expect(status).toMatch(/^- \*\*Status:\*\* Accepted, 2026-11-23, after the live check of decision 17 was sat once; \[the record\]\(\.\.\/\.\.\/host-library\/claude\/observations\/2026-11-23-claude-2\.1\.330-page-types-live\.md\) is linked/);
+    expect(status).not.toContain('has not been run');
+    expect(text).toContain('### The sitting of 2026-11-23');
+    expect(text).toContain('Sat once by the coordinating AI session through the terminal bridge on commit `9f229ea9`, Claude Code 2.1.330, auto mode; no human typed.');
+    for (const shown of [
+      'Sheets (`financial-analyst`, through the connector) and Docs (the business lead, through the connector)',
+      'Whiteboard (`system-architect`): `ToolSearch`, then `ArtifactData`, 21 writes and 20 documents read back. The store tool is callable from a specialist.',
+      'The lead asked first, unprompted, with **Keep it in the project** first, in every session.',
+      'No Host dialog. Nothing was shared, deleted or pinned.',
+      'With the connector off, no question was asked and the file stayed.',
+    ]) expect(text, shown).toContain(shown);
+    for (const notShown of [
+      'Design System and Design: the Host\'s auto-mode classifier refused the specialists\' create of the type twice as "Unsanctioned Communication", with no dialog. The roles did not retry and reported it.',
+      'Data: the lead chose Docs for the funnel overview. The Data column stays the weakest, as above.',
+      'The lead\'s store route; the HTML fallback question (the account offers Design); per-page privacy; Slides; other modes.',
+    ]) expect(text, notShown).toContain(notShown);
+    expect(text).toContain('A plan answer of "local work only" was read as narrowing a go-ahead already given.');
+    expect(text).toContain('The third option of the design-system proposal, **Use <the default>**, was not seen as the text says.');
+    expect(text).toContain('Decision 17 after the sitting: Whiteboard was shown from a specialist, so no store row comes out.');
+  });
+});
