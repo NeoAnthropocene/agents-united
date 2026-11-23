@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults, PlanningLoopMode } from './types.js';
 import { isEmptyContributorBundle } from './types.js';
 import { validateBundleHostAvailability } from './bundle-host-availability.js';
+import { inspectNativeAgent } from './native-guard.js';
+import { listNativeWorkflows, nativeRoleSource } from './native-package.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -391,6 +393,7 @@ export function collectBundleManifestIssues(manifest: BundlesManifest, registryD
     if (issues.length === 0) throw error;
   }
 
+  const nativeClaudeWorkflows = new Set(listNativeWorkflows(registryDir, 'claude'));
   const inspect = (name: string, bundle: BundleDefinition): void => {
     try {
       validateBundleHostAvailability(bundle);
@@ -452,6 +455,28 @@ export function collectBundleManifestIssues(manifest: BundlesManifest, registryD
           if (clash) {
             issues.push(`Registry validation error: bundle "${name}" native role "${role}" for "${file}" collides with the default role name of "${clash[0]}".`);
           }
+        }
+      }
+    }
+
+    // A native Claude workflow stands in for the skill of the same name, and a saved workflow runs only through the `Workflow` tool, which
+    // the host gives to the main session alone and only when its role lists it. So a bundle that resolves such a skill needs a lead (its
+    // orchestrator, else its parent's, as `resolve` inherits it) that is a native role listing `Workflow`.
+    const inherited = bundle.parentBundle !== undefined
+      ? manifest.bundles[bundle.parentBundle] ?? bundles.find(candidate => candidate.aliases?.includes(bundle.parentBundle as string))
+      : undefined;
+    const workflowSkills = [...new Set([...(bundle.skills ?? []), ...(inherited?.skills ?? [])])].filter(skill => nativeClaudeWorkflows.has(skill));
+    if (workflowSkills.length > 0) {
+      const leadFile = bundle.orchestrator ?? inherited?.orchestrator;
+      if (leadFile !== undefined) {
+        const leadRole = bundle.nativeRoles?.[leadFile] ?? leadFile.replace(/\.md$/i, '').replace(/^subagent-/, '');
+        const source = nativeRoleSource(registryDir, 'claude', leadRole);
+        const holdsWorkflow = source !== undefined && inspectNativeAgent(fs.readFileSync(source, 'utf8')).tools.includes('Workflow');
+        if (!holdsWorkflow) {
+          issues.push(
+            `Registry validation error: bundle "${name}" lists ${workflowSkills.map(skill => `"${skill}"`).join(', ')}, which a native Claude workflow replaces, ` +
+            `so its lead "${leadRole}" must be a native role (registry/hosts/claude/agents/${leadRole}.md) that lists the Workflow tool.`
+          );
         }
       }
     }
