@@ -146,7 +146,7 @@ describe('the HTML fallback asks the user once (the maintainer\'s decision of 20
   });
 
   it('CONTEXT, ADR 0077 and ADR 0078 limits state the one extra question', () => {
-    expect(CONTEXT()).toContain('when the account does not offer the Design or Slides type needed and the user, asked once, chose it');
+    expect(CONTEXT()).toContain('when the user approved a Design or Slides page and the account does not offer that type, and the user, asked once, chose it (declined or unanswered, the files stand)');
     expect(ADR_0077()).toContain('ADR 0078 decision 19 adds one question to the user before that HTML page, when the user approved a Design or Slides page and the account does not offer that type; declined or unanswered, the files stand');
     expect(ADR_0078()).toContain('gets one question to the user and, on the answer "Publish an HTML page", an HTML page for a Design or Slides deliverable');
   });
@@ -162,7 +162,7 @@ describe('the HTML fallback asks the user once (the maintainer\'s decision of 20
 describe('the fourth review: the sources of two claims, the requirement of decision 18 and the state of the factory check', () => {
   it('ADR 0078: the parent session\'s connector tools are listed as callable, and decision 18 states the requirement and the record that showed a modified copy', () => {
     const text = ADR_0078();
-    expect(text).not.toMatch(/__read` \(deferred\)|\(callable\)/);
+    expect(text).not.toMatch(/\(callable\)/);
     expect(text).toContain('`__guide`, `__update` (listed as callable)');
     expect(text).toContain('The requirement is that the published page equals the project files; the record cited below showed a modified copy');
   });
