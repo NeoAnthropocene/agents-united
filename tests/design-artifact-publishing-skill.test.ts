@@ -272,7 +272,7 @@ describe('the other page types (ADR 0078): the skill picks the type, three refer
     expect(r).toMatch(/if some are listed but none is default, name them and ask/i);
     expect(r).toMatch(/proposes? one once/i);
     expect(r).toContain('**Keep it in the project** first');
-    expect(r).toMatch(/declined proposal is not repeated/i);
+    expect(r).toMatch(/no such proposal was declined in this piece of work/i);
     expect(r).toMatch(/motion/);
   });
 
@@ -295,7 +295,8 @@ describe('the other page types (ADR 0078): the skill picks the type, three refer
     const r = read('references/whiteboards-and-dashboards.md');
     expect(r).toMatch(/ToolSearch/);
     expect(r).toMatch(/keep the files and say why/i);
-    expect(r).toMatch(/only files you made and numbers you saved|files the role made and numbers it saved/i);
+    expect(r).toMatch(/For Data, use files you made and numbers you saved; run a live query on a connector only when the user asked for it, and never store a call that changes anything/);
+    expect(r).not.toMatch(/use only files you made/i);
     expect(r).toMatch(/live query/i);
     expect(r).toMatch(/every reader/);
     expect(r).toMatch(/never store a call that changes anything|never a stored call that changes anything/i);
