@@ -146,6 +146,8 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
     expect(e).toMatch(/approved publish that partly landed/);
     expect(e).toMatch(/same URL, through the same tool/);
     expect(e).toMatch(/only when the result can be checked/);
+    expect(e).toMatch(/Design and Slides only/);
+    expect(e).toMatch(/After a connector or store write fails, the type's own rule holds: leave the page as it is and try no other route/);
   });
 
   it('reads the reference of the kind and the read-back reference before the first write call, and the look reference when a look is needed (review finding 21)', () => {
@@ -233,6 +235,7 @@ describe('the references, the example and the evals', () => {
     expect(system.expected_output).toMatch(/proposes? (?:it|one) once/i);
     expect(system.expected_output).toContain('**Keep it in the project** first');
     expect(system.expected_output).toMatch(/files in the project first/i);
+    expect(system.expected_output).toMatch(/lists the files and reads back each file it wrote/i);
     expect(system.expected_output).toMatch(/does not edit a saved design system/i);
     // 2: a Docs memo with the go-ahead and the connector present
     expect(memo.prompt).toMatch(/memo/i);
@@ -261,7 +264,8 @@ describe('the references, the example and the evals', () => {
     expect(data.expected_output).toMatch(/no live query/i);
     expect(data.expected_output).toMatch(/never a stored call that changes anything/i);
     expect(data.expected_output).toMatch(/If the store call works, reports the dataset counts counted from the store/);
-    expect(data.expected_output).toMatch(/If the store call is refused or fails, reports the private empty page and what landed, leaves the page as it is and tries no other route/);
+    expect(data.expected_output).toMatch(/If the store call is refused or fails, leaves the page as it is, tries no other route and reports the link, the content it confirmed by reading back and unknown where the read-back failed/);
+    expect(data.expected_output).not.toMatch(/private empty page/);
     expect(data.expected_output).not.toMatch(/Reports the link, the type, the dataset counts/);
     // 5: an update of an approved Whiteboard, read back through the store tool, with a request to share it
     expect(update.prompt).toMatch(/already approved/i);
@@ -270,7 +274,8 @@ describe('the references, the example and the evals', () => {
     expect(update.expected_output).toMatch(/no new question/i);
     expect(update.expected_output).toMatch(/same link/i);
     expect(update.expected_output).toMatch(/reads the board back through the store tool/i);
-    expect(update.expected_output).toMatch(/sharing is the user's own act, so the lead tells the user/);
+    expect(update.expected_output).toMatch(/the lead says sharing is the user's own act/);
+    expect(update.expected_output).not.toMatch(/Share control/);
     expect(update.expected_output).toMatch(/sharing as it was/);
     expect(update.expected_output).toMatch(/who can see it only when a tool result shows it/);
     expect(update.expected_output).not.toMatch(/hands the share request to the lead|the page is private and sharing untouched/);
@@ -370,8 +375,11 @@ describe('the other page types (ADR 0078): the skill picks the type, three refer
     expect(r).toMatch(/Starting the type creates the new page, so the go-ahead comes first/);
     expect(r).toMatch(/never a second way to create a page/);
     expect(r).toMatch(/With `Artifact` missing or refused: the files and the reason, also when the connector is among your tools/);
-    expect(r).toMatch(/Check that the connector is among your tools before you create the page/);
+    expect(r).toMatch(/Check that the connector is among your tools before you create or change anything/);
+    expect(r).toMatch(/An update of a page the user already approved goes to its existing URL and never starts the type again/);
+    expect(r.indexOf('The project file comes first')).toBeLessThan(r.indexOf('Then create it with a title and no files'));
     expect(r).toMatch(/A listed connector whose write fails: the files and the reason/);
+    expect(r).toMatch(/Leave the page as it is and try no other route; report the link, the content you confirmed by reading it back, and "unknown" where the read-back failed/);
     expect(r).not.toMatch(/`batch` creates and binds|although the connector alone could create a doc/);
     expect(r).toMatch(/no page because the connector is missing/);
     expect(r).toMatch(/never ask the user to sign in or to connect it/i);
@@ -383,7 +391,7 @@ describe('the other page types (ADR 0078): the skill picks the type, three refer
     const r = read('references/whiteboards-and-dashboards.md');
     expect(r).toMatch(/ToolSearch/);
     expect(r).toMatch(/keep the files and say why/i);
-    expect(r).toMatch(/For Data, use files you made and numbers you saved; configure or store a live query on a connector only when the user asked for it, and never store a call that changes anything/);
+    expect(r).toMatch(/For Data, use files you made and numbers you saved; run, configure or store a live query on a connector only when the user asked for it, and never store a call that changes anything/);
     expect(r).not.toMatch(/use only files you made/i);
     expect(r).toMatch(/live query/i);
     expect(r).toMatch(/every reader/);
@@ -398,7 +406,11 @@ describe('the other page types (ADR 0078): the skill picks the type, three refer
   it('whiteboards-and-dashboards.md: a store tool that is not offered, refused or failing keeps the files, and an existing page is reported as it is (review finding 5)', () => {
     const r = read('references/whiteboards-and-dashboards.md');
     expect(r).toMatch(/## If the store tool is not offered, refused or failing/);
-    expect(r).toMatch(/report the private empty page and what landed, deliver the files and leave the page as it is/);
+    expect(r).toMatch(/Leave any page as it is and try no other route; report the link of a page that was created, the content you confirmed by reading it back, and "unknown" where the read-back failed/);
+    expect(r).not.toMatch(/private empty page/);
+    expect(r).toMatch(/An update of a page the user already approved goes to its existing URL and never starts the type again/);
+    expect(r.indexOf('Write the files in the project first')).toBeLessThan(r.indexOf('Then create it with a title and no files'));
+    expect(r).toMatch(/run, configure or store a live query/);
   });
 
   it('uses the same words for the rules as the generated block, so a role reads one wording', () => {

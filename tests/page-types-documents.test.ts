@@ -132,3 +132,44 @@ describe('ADR 0077 and the observation record attribute the second copy to the d
     expect(OBSERVATION()).toContain('- Workspace: a new git folder, installed from a checkout of this branch');
   });
 });
+
+describe('the second review: README, the table header, the live check plan and the fallback of the look (review round two)', () => {
+  it('README: no second question for a user who named the deliverable, and the exceptions stated once', () => {
+    const p = publishingParagraph();
+    expect(p).not.toContain('the lead asks you before each of them as well');
+    expect(p).not.toContain('with the same question first');
+    expect(p).toContain('each is a new page with its own go-ahead');
+    expect(p).toContain('with the same go-ahead as any page (ADR 0078)');
+    expect(p.split('then it does not ask again for that one page')).toHaveLength(2);
+    expect(p.split('is your go-ahead for that one page')).toHaveLength(2);
+  });
+
+  it('ADR 0078: the table header says one reason is not from the output contract, and the store fallback is conditional on what a lead could call', () => {
+    const text = ADR_0078();
+    expect(text).toContain('| Reason (from the output contract; one exception noted in its row) |');
+    expect(text).toContain('If the live check shows that only a lead can call the store tool, leads only is the only version that can work.');
+    expect(text).not.toContain('If the live check shows that a role cannot call the store tool, leads only is the only version that can work.');
+  });
+
+  it('ADR 0078: some saved design systems without a default are named and asked about, in decision 6 and in the block paragraph', () => {
+    const text = ADR_0078();
+    expect(text).toContain('If some exist and none is the default, the lead names them and asks once.');
+    expect(text).toContain('when some are saved and none is the default, the lead names them and asks once');
+    expect(text).not.toContain('If several exist and none is the default');
+  });
+
+  it('ADR 0078: the live check names the six pages it attempts, no Slides page, a failed store call leading to removal, and the connector-off check apart', () => {
+    const text = ADR_0078();
+    expect(text).toContain('Six pages are attempted, one per prompt: Design System, Docs, Sheets, Whiteboard, Data and the unprompted Design poster (the Design type). No Slides page is attempted.');
+    expect(text).toContain('Each is attempted once, and a page that succeeds is private');
+    expect(text).toContain('A failed store call leads to the removal below.');
+    expect(text).toContain('A separate optional check, which is not a prompt of the list, publishes no page');
+    expect(text).not.toContain('Each type is published once');
+    expect(text).not.toContain('An optional sixth step');
+    expect(text).toContain('The plan as it now stands, with six pages and no Slides page, is under "The live check"');
+  });
+
+  it('ADR 0078: the subagent\'s tool list is reported, not asserted', () => {
+    expect(ADR_0078()).toContain('the three connector tools listed as callable in its own tool list');
+  });
+});

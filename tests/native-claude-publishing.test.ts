@@ -92,18 +92,18 @@ const LEAD_SAY_IT_ALL =
 const YOUR_OWN_PAGES_ALL =
   '- **Your own pages** (a synthesis as a deck or a one-pager) follow the same rule and the same order for the Design and Slides types. A deliverable that is itself a working HTML page is published as an HTML page, not through this order. Otherwise, if the list of skills available to you shows `design` (for a deck: `slides`), invoke it through `Skill`. If the call fails, or it answers that the user must run `/design consent` or sign in, tell the user and take the next route; never ask for `/design-login` or `/design-sync`. The next route, also when the list does not show that skill: load `design-artifact-publishing` and start the Design or the Slides type through `Artifact`, an HTML page when the account does not offer the Design or Slides type you need; every other type you hold is started through `Artifact` with `design-artifact-publishing`, as the bullets below say; if `Artifact` is missing or refuses, do not look for a way round it: the files in the project are the deliverable, and your report says why there is no page.';
 const FILES_BULLET =
-  '- **Design System.** The project files come first. Starting the type creates the new page, so the go-ahead comes first. Then start the type titled Design System through `Artifact` with a title and no files, write the files under the page\'s own project folder as its instructions say, the index file last, and read them back.';
+  '- **Design System.** The project files come first. An update of a page the user already approved goes to its existing URL and never starts the type again. Starting the type creates the new page, so the go-ahead comes first. For a new page, start the type titled Design System through `Artifact` with a title and no files. Then write the files under the page\'s own project folder as its instructions say, the index file last, and read them back.';
 const CONNECTOR_START =
-  'The project file comes first. Check that the Claude Docs connector is among your tools before you create anything. Starting the type creates the new page, so the go-ahead comes first, also when the content is written through the connector; an update of a page the user already approved needs none. Start the type through `Artifact` with a title and no files and write its content through the Claude Docs connector, never as files: the connector fills a page started through `Artifact` and never creates one. If `Artifact` is missing or refuses, the files in the project are the deliverable and your report says why there is no page, also when the connector is among your tools. If a connector write fails, deliver the files and report the private page and what landed; leave the page as it is.';
+  'The project file comes first. Check that the Claude Docs connector is among your tools before you create or change anything. An update of a page the user already approved goes to its existing URL and never starts the type again. Starting the type creates the new page, so the go-ahead comes first, also when the content is written through the connector. For a new page, start the type through `Artifact` with a title and no files; write the content of a new or an existing page through the Claude Docs connector, never as files: the connector fills a page that was started through `Artifact` and never creates one. If `Artifact` is missing or refuses, the files in the project are the deliverable and your report says why there is no page, also when the connector is among your tools. If a connector write fails, deliver the files, leave the page as it is and try no other route; report the link, the content you confirmed by reading it back, and "unknown" where the read-back failed.';
 const CONNECTOR_BANS = 'Never delete one and never read, post or answer comments.';
 const CONNECTOR_CELLS = 'Read the range before you write it, never overwrite a cell that a person typed, and leave a cell alone when you cannot tell who wrote it.';
 const CONNECTOR_DOCS_AND_SHEETS = `- **Docs and Sheets.** ${CONNECTOR_START} ${CONNECTOR_BANS} ${CONNECTOR_CELLS}`;
 const CONNECTOR_DOCS = `- **Docs.** ${CONNECTOR_START} ${CONNECTOR_BANS}`;
 const CONNECTOR_SHEETS = `- **Sheets.** ${CONNECTOR_START} ${CONNECTOR_BANS} ${CONNECTOR_CELLS}`;
 const STORE_START =
-  'The project file comes first. Starting the type creates the new page, so the go-ahead comes first. Start the type through `Artifact` with a title and no files, then load the store tool through `ToolSearch`. If it is not offered, refused or failing, keep the files and say why in your report; when the page already exists, report the private empty page and what landed, and leave it as it is. Fill the page\'s content only through that tool.';
+  'The project file comes first. An update of a page the user already approved goes to its existing URL and never starts the type again. Starting the type creates the new page, so the go-ahead comes first. For a new page, start the type through `Artifact` with a title and no files. Then load the store tool through `ToolSearch`. If it is not offered, refused or failing, keep the files, say why in your report, try no other route and leave any page as it is; report the link of a page that was created, the content you confirmed by reading it back, and "unknown" where the read-back failed. Fill the page\'s content only through that tool.';
 const DATA_SENTENCE =
-  'For Data, use files you made and numbers you saved; configure or store a live query on a connector only when the user asked for it, and never store a call that changes anything. Data files may go up as asset uploads through `Artifact`; never publish a Data page with `file_path`.';
+  'For Data, use files you made and numbers you saved; run, configure or store a live query on a connector only when the user asked for it, and never store a call that changes anything. Data files may go up as asset uploads through `Artifact`; never publish a Data page with `file_path`.';
 const STORE_WHITEBOARD_AND_DATA = `- **Whiteboard and Data.** ${STORE_START} ${DATA_SENTENCE}`;
 const STORE_WHITEBOARD = `- **Whiteboard.** ${STORE_START}`;
 const STORE_DATA = `- **Data.** ${STORE_START} ${DATA_SENTENCE}`;
@@ -112,9 +112,9 @@ const OWN_INSTRUCTIONS_BULLET =
 const NO_CONNECTOR_BULLET =
   '- **No connector.** If the Claude Docs connector is not among your tools, the files in the project are the deliverable and your report says there is no page because the connector is missing. Never ask the user to sign in or to connect it.';
 const LOOK_WITH_DESIGN_SYSTEM =
-  '- **A look for the page.** When a design, a deck or a dashboard needs a look: when the project has no design system page of its own and no such proposal was declined in this piece of work, propose one once as a new page, with **Keep it in the project** first, **Publish Artifact** second, and **Use <the default>** third when the account has a default. Otherwise use the design system the user marked as default, where the account\'s list shows one, and do not ask; when several are saved and none is the default, name them and ask once. Name the design system to follow in the brief. Never edit a saved design system unless that is the task.';
+  '- **A look for the page.** When a design, a deck or a dashboard needs a look: when the project has no design system page of its own and no such proposal was declined in this piece of work, propose one once as a new page, with **Keep it in the project** first, **Publish Artifact** second, and **Use <the default>** third when the account has a default. Otherwise use the design system the user marked as default, where the account\'s list shows one, and do not ask; when some are saved and none is the default, name them and ask once. Name the design system to follow in the brief. Never edit a saved design system unless that is the task.';
 const LOOK_WITHOUT_DESIGN_SYSTEM =
-  '- **A look for the page.** When a dashboard needs a look, use the design system the user marked as default, where the account\'s list shows one, and do not ask. When several are saved and none is the default, name them and ask once. Name the design system to follow in the brief. Never edit a saved design system unless that is the task.';
+  '- **A look for the page.** When a dashboard needs a look, use the design system the user marked as default, where the account\'s list shows one, and do not ask. When some are saved and none is the default, name them and ask once. Name the design system to follow in the brief. Never edit a saved design system unless that is the task.';
 
 describe('the specialist text', () => {
   const text = renderPublishing('specialist', DESIGNER);
@@ -301,6 +301,13 @@ describe('the coordinator text', () => {
     expect(text).not.toContain('invoke it through `Skill`; if it answers that the user must run');
   });
 
+  it('has the lead relay a specialist\'s publish question with its options, not with two fixed ones, and reads some saved systems without a default as the case to ask about (review findings 11 and 12)', () => {
+    expect(text).toContain('ask it with its options and return the answer to the same specialist');
+    expect(text).not.toContain('with these two options');
+    expect(text).toContain('when some are saved and none is the default, name them and ask once');
+    expect(text).not.toContain('when several are saved');
+  });
+
   it('names every boundary in the never-share bullet', () => {
     expect(text).toContain(
       '- **Never share.** Never share a page, never ask the user to share it as a step of the work, never delete or pin an artifact, declare no runtime capabilities unless the user asks for them, and never work around a prompt of the host. A user who wants no publishing at all has two switches of their own',
@@ -447,7 +454,7 @@ describe('the computed line of page types', () => {
     );
     const lead = renderPublishing('coordinator', ALL);
     expect(lead).toContain(
-      '\nThe page types open to you and to your specialists: Design (a prototype or screen flow, a poster or a one-pager), Slides (a deck), Design System (tokens and a brand book), Docs (a report, a memo or a playbook), Sheets (a model, a scored backlog or a table), Whiteboard (a flow or an architecture diagram), Data (a dashboard built from saved numbers). A deliverable that is itself a working HTML page is published as an HTML page that equals the project files. A deliverable of another form stays a file in the project.\n',
+      '\nThe page types open to you and to your specialists: Design (a prototype or screen flow, a poster or a one-pager), Slides (a deck), Design System (tokens and a brand book), Docs (a report, a memo or a playbook), Sheets (a model, a scored backlog or a table), Whiteboard (a flow or an architecture diagram), Data (a dashboard built from saved numbers). A deliverable of another form stays a file in the project.\n',
     );
     expect(lines(lead)[4]).toMatch(/^The page types open to you and to your specialists: /);
   });
@@ -471,7 +478,8 @@ describe('the HTML page of a role that holds the Design type', () => {
     for (const ids of [['slides'], ['sheets'], ['design-system'], ['whiteboard', 'data'], ['docs', 'sheets']]) {
       expect(specialist(...ids).join('\n'), ids.join()).not.toContain('working HTML page');
     }
-    expect(coordinator('design').join('\n')).toContain(HTML_SENTENCE);
+    expect(coordinator('design').join('\n')).toContain('working HTML page');
+    expect(renderPublishing('coordinator', ALL).split('\n')[4]).not.toContain('HTML');
     expect(coordinator('sheets', 'data').join('\n')).not.toContain('working HTML page');
   });
 
@@ -590,8 +598,9 @@ describe('the sentences that depend on the held types', () => {
 
   it('says how a doc or a sheet comes to exist and is written, the go-ahead first, also when made through the connector, and an update needs none', () => {
     const text = specialist('docs', 'sheets').join('\n');
-    expect(text).toContain('Start the type through `Artifact` with a title and no files and write its content through the Claude Docs connector, never as files');
-    expect(text).toContain('Starting the type creates the new page, so the go-ahead comes first, also when the content is written through the connector; an update of a page the user already approved needs none.');
+    expect(text).toContain('For a new page, start the type through `Artifact` with a title and no files; write the content of a new or an existing page through the Claude Docs connector, never as files');
+    expect(text).toContain('Starting the type creates the new page, so the go-ahead comes first, also when the content is written through the connector.');
+    expect(text).toContain('An update of a page the user already approved goes to its existing URL and never starts the type again.');
     expect(text).not.toContain('it needs the go-ahead before you create it, also through the connector');
     expect(text).not.toContain('A doc or a sheet is a new page');
   });
@@ -599,11 +608,13 @@ describe('the sentences that depend on the held types', () => {
   it('makes the connector fill a page that `Artifact` started, never create one, and checks the connector before the page is created (review findings 2 and 15)', () => {
     for (const ids of [['docs'], ['sheets'], ['docs', 'sheets']]) {
       const text = specialist(...ids).join('\n');
-      expect(text, ids.join()).toContain('Check that the Claude Docs connector is among your tools before you create anything.');
-      expect(text, ids.join()).toContain('the connector fills a page started through `Artifact` and never creates one');
+      expect(text, ids.join()).toContain('Check that the Claude Docs connector is among your tools before you create or change anything.');
+      expect(text, ids.join()).toContain('the connector fills a page that was started through `Artifact` and never creates one');
       expect(text, ids.join()).toContain('If `Artifact` is missing or refuses, the files in the project are the deliverable and your report says why there is no page, also when the connector is among your tools.');
-      expect(text, ids.join()).toContain('If a connector write fails, deliver the files and report the private page and what landed; leave the page as it is.');
-      expect(text.indexOf('Check that the Claude Docs connector'), ids.join()).toBeLessThan(text.indexOf('Start the type through `Artifact`'));
+      expect(text, ids.join()).toContain('If a connector write fails, deliver the files, leave the page as it is and try no other route; report the link, the content you confirmed by reading it back, and "unknown" where the read-back failed.');
+      expect(text, ids.join()).not.toMatch(/private page|private empty page/);
+      expect(text.indexOf('Check that the Claude Docs connector'), ids.join()).toBeLessThan(text.indexOf('For a new page, start the type through `Artifact`'));
+      expect(text.indexOf('never starts the type again'), ids.join()).toBeLessThan(text.indexOf('For a new page, start the type'));
     }
   });
 
@@ -643,14 +654,18 @@ describe('the sentences that depend on the held types', () => {
     expect(specialist('data')).toContain(STORE_DATA);
     expect(specialist('design', 'sheets', 'data')).toContain(STORE_DATA);
     for (const ids of [['design'], ['docs', 'sheets'], ['design-system']]) expect(specialist(...ids).join('\n'), ids.join()).not.toContain('Load the store tool through `ToolSearch`');
-    expect(STORE_DATA).toContain('then load the store tool through `ToolSearch`. If it is not offered, refused or failing, keep the files and say why in your report;');
+    expect(STORE_DATA).toContain('Then load the store tool through `ToolSearch`. If it is not offered, refused or failing, keep the files, say why in your report, try no other route and leave any page as it is;');
   });
 
-  it('covers a store tool that is offered but refused or failing, reports the private empty page that already exists, and names the asset uploads of a Data page (review findings 5 and 19)', () => {
+  it('covers a store tool that is offered but refused or failing, leaves an existing page as it is without calling it empty or private, branches an update from a new page, and names the asset uploads of a Data page (review findings 5 and 19)', () => {
     for (const ids of [['whiteboard'], ['data'], ['whiteboard', 'data']]) {
       expect(specialist(...ids).join('\n'), ids.join()).toContain(
-        'If it is not offered, refused or failing, keep the files and say why in your report; when the page already exists, report the private empty page and what landed, and leave it as it is. Fill the page\'s content only through that tool.',
+        'If it is not offered, refused or failing, keep the files, say why in your report, try no other route and leave any page as it is; report the link of a page that was created, the content you confirmed by reading it back, and "unknown" where the read-back failed. Fill the page\'s content only through that tool.',
       );
+    }
+    for (const ids of [['whiteboard'], ['data'], ['design-system']]) {
+      expect(specialist(...ids).join('\n'), ids.join()).toContain('An update of a page the user already approved goes to its existing URL and never starts the type again.');
+      expect(specialist(...ids).join('\n'), ids.join()).not.toMatch(/private empty page/);
     }
     expect(specialist('data').join('\n')).toContain('Data files may go up as asset uploads through `Artifact`; never publish a Data page with `file_path`.');
     expect(specialist('whiteboard').join('\n')).not.toContain('asset uploads');
@@ -660,7 +675,7 @@ describe('the sentences that depend on the held types', () => {
     expect(specialist('whiteboard').join('\n')).not.toMatch(/Data|live query|connector/);
     for (const ids of [['data'], ['whiteboard', 'data'], ['design', 'sheets', 'data']]) {
       const text = specialist(...ids).join('\n');
-      expect(text, ids.join()).toContain('For Data, use files you made and numbers you saved; configure or store a live query on a connector only when the user asked for it, and never store a call that changes anything.');
+      expect(text, ids.join()).toContain('For Data, use files you made and numbers you saved; run, configure or store a live query on a connector only when the user asked for it, and never store a call that changes anything.');
       expect(text, ids.join()).not.toContain('For Data use only files you made');
     }
   });
@@ -736,7 +751,7 @@ describe('the look bullet of a lead', () => {
 
   it('states the precedence: the proposal when the project has no design system page and none was declined, else the default without asking, else name the saved ones and ask once', () => {
     expect(LOOK_WITH_DESIGN_SYSTEM).toContain('when the project has no design system page of its own and no such proposal was declined in this piece of work, propose one once as a new page');
-    expect(LOOK_WITH_DESIGN_SYSTEM).toContain('Otherwise use the design system the user marked as default, where the account\'s list shows one, and do not ask; when several are saved and none is the default, name them and ask once.');
+    expect(LOOK_WITH_DESIGN_SYSTEM).toContain('Otherwise use the design system the user marked as default, where the account\'s list shows one, and do not ask; when some are saved and none is the default, name them and ask once.');
     expect(LOOK_WITH_DESIGN_SYSTEM).toContain('Never edit a saved design system unless that is the task.');
     expect(LOOK_WITH_DESIGN_SYSTEM).not.toContain('use the design system the user marked as default, where the account\'s list shows one, and do not ask. When several');
   });
