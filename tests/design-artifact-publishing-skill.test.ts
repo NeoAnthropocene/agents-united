@@ -151,7 +151,7 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
   });
 
   it('asks once before an HTML page replaces a Design or Slides type the account does not offer, in the skill and in its pages reference (the maintainer\'s decision of 2026-11-23)', () => {
-    expect(section("Edge Cases & Error Recovery")).toMatch(/Design or Slides type not offered\*\*: ask once before an HTML page replaces it/);
+    expect(section("Edge Cases & Error Recovery")).toMatch(/Design or Slides type not offered\*\*: when the user approved the page, ask once before an HTML page replaces it; declined or unanswered, the files stand/);
     expect(read('references/pages-decks-and-the-design-skill.md')).not.toContain('- Use an HTML page when the account does not offer');
   });
 
@@ -166,6 +166,7 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
   it('scopes the one-call publish to Design and Slides, and gives the Design System, connector and store types their own sequence (review finding 17)', () => {
     const r = section('Step-by-Step Runbook');
     expect(r).toMatch(/Design and Slides publish once, in one call/);
+    expect(r).toMatch(/Design and Slides publish once, in one call \(not yet observed for Slides\)/);
     expect(r).toMatch(/other types follow their reference/);
     expect(r).not.toMatch(/then publish in one call/);
   });
@@ -388,7 +389,8 @@ describe('the other page types (ADR 0078): the skill picks the type, three refer
     expect(r).toMatch(/A listed connector whose write fails: the files and the reason/);
     expect(r).toMatch(/Leave the page as it is and try no other route; report the link, the content you confirmed by reading it back, and "unknown" where the read-back failed/);
     expect(r).not.toMatch(/`batch` creates and binds|although the connector alone could create a doc/);
-    expect(r).toMatch(/no page because the connector is missing/);
+    expect(r).toMatch(/no new page because the connector is missing/);
+    expect(r).toMatch(/an existing page is left as it is/);
     expect(r).toMatch(/never ask the user to sign in or to connect it/i);
     expect(r).toMatch(/belongs in the codebase[\s\S]*file/);
     expect(r).toMatch(/500 cells/);
@@ -423,7 +425,7 @@ describe('the other page types (ADR 0078): the skill picks the type, three refer
   it('uses the same words for the rules as the generated block, so a role reads one wording', () => {
     const all = [skill(), ...REFS.map(read)].join('\n');
     expect(all).toContain('Keep it in the project');
-    expect(all).toContain('no page because the connector is missing');
+    expect(all).toContain('no new page because the connector is missing');
     expect(all).not.toMatch(/ArtifactData`? (?:is|goes) on (?:a|the) tools line/);
   });
 });
@@ -461,8 +463,7 @@ describe('the skill for every holder, for decks and for the go-ahead of each pag
       'A new artifact is visible only to you',
       'MCP-server contexts',
       'If the call fails',
-      'does not offer the Design or Slides type you need',
-      'ask once before an HTML page replaces it: say that the type is not available, with **Keep it in the project** first and **Publish an HTML page** second; publish the HTML page only on that answer',
+      'When the user approved a Design or Slides page and the account does not offer that type, ask once before an HTML page replaces it: say that the type is not available, with **Keep it in the project** first and **Publish an HTML page** second; publish the HTML page only on that answer; if it is declined or unanswered, the files stand',
       'Write the files in the project first',
     ]) {
       expect(r, phrase).toContain(phrase);

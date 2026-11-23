@@ -46,7 +46,7 @@ describe('the typed command and the user\'s own request, with their conditions (
 describe('the HTML page is the fallback for Design or Slides only (review finding 9)', () => {
   it('CONTEXT: the Page Type entry says Design or Slides and files for any other type', () => {
     const entry = CONTEXT().split('\n').find(line => line.startsWith('One of the kinds of page that a claude.ai account offers')) ?? '';
-    expect(entry).toContain('when the account does not offer the Design or Slides type needed and the user, asked once, chose it; for any other type the account does not offer, the files in the project are the deliverable (ADR 0078)');
+    expect(entry).toContain('when the user approved a Design or Slides page and the account does not offer that type, and the user, asked once, chose it (declined or unanswered, the files stand); for any other type the account does not offer, the files in the project are the deliverable (ADR 0078)');
     expect(entry).not.toContain('when the account does not offer the type needed');
   });
 
@@ -147,7 +147,7 @@ describe('the HTML fallback asks the user once (the maintainer\'s decision of 20
 
   it('CONTEXT, ADR 0077 and ADR 0078 limits state the one extra question', () => {
     expect(CONTEXT()).toContain('when the account does not offer the Design or Slides type needed and the user, asked once, chose it');
-    expect(ADR_0077()).toContain('ADR 0078 decision 19 adds one question to the user before that HTML page');
+    expect(ADR_0077()).toContain('ADR 0078 decision 19 adds one question to the user before that HTML page, when the user approved a Design or Slides page and the account does not offer that type; declined or unanswered, the files stand');
     expect(ADR_0078()).toContain('gets one question to the user and, on the answer "Publish an HTML page", an HTML page for a Design or Slides deliverable');
   });
 
@@ -156,6 +156,21 @@ describe('the HTML fallback asks the user once (the maintainer\'s decision of 20
       expect(text, name).not.toMatch(/(?:publish|use|gets) an HTML page when the account does not offer/);
     }
     expect(ASK.length).toBeGreaterThan(0);
+  });
+});
+
+describe('the fourth review: the sources of two claims, the requirement of decision 18 and the state of the factory check', () => {
+  it('ADR 0078: the parent session\'s connector tools are listed as callable, and decision 18 states the requirement and the record that showed a modified copy', () => {
+    const text = ADR_0078();
+    expect(text).not.toMatch(/__read` \(deferred\)|\(callable\)/);
+    expect(text).toContain('`__guide`, `__update` (listed as callable)');
+    expect(text).toContain('The requirement is that the published page equals the project files; the record cited below showed a modified copy');
+  });
+
+  it('ADR 0078: the factory check is described as it is, with the connector tool of a connector holder expected', () => {
+    const text = ADR_0078();
+    expect(text).not.toContain('`factory-check --artifact` refuses an `mcp__` entry');
+    expect(text).toContain('`factory-check --artifact` expects the connector tool on the tools line of a connector holder, so it checks the 24 connector holders');
   });
 });
 
