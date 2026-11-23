@@ -50,6 +50,11 @@ describe('the HTML page is the fallback for Design or Slides only (review findin
     expect(entry).not.toContain('when the account does not offer the type needed');
   });
 
+  it('ADR 0077: the third step names the Design or Slides type it falls back from', () => {
+    expect(ADR_0077()).toContain('an HTML page when the account does not offer the Design or Slides type the role needs');
+    expect(ADR_0077()).not.toContain('an HTML page when the account does not offer the type the role needs');
+  });
+
   it('ADR 0078: the limits say what a session without the Design or Slides type gets and what any other missing type gets', () => {
     const text = ADR_0078();
     expect(text).toContain('A session whose account does not offer the Design or Slides type gets an HTML page for a Design or Slides deliverable; an account that does not offer another type, or a session without the connector, gets the files, with the reason.');
