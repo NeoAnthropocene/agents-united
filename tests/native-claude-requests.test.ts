@@ -250,3 +250,33 @@ describe('requestsBlockProblems', () => {
     ]);
   });
 });
+
+describe('the wording that a live run showed a model reading loosely', () => {
+  const specialist = renderRequests('specialist', ['Read']);
+  const lead = renderRequests('coordinator', ['Read']);
+
+  it('says what "unchanged" means for the options of an ask-user entry', () => {
+    expect(lead).toContain('word for word');
+    expect(lead).toContain('same order');
+    expect(lead).toContain('shorten none');
+    expect(lead).not.toContain('options unchanged');
+  });
+
+  it('requires a changed command to be declared as changed, with the reason', () => {
+    expect(lead).toContain('Run the exact command, character for character');
+    expect(lead).toContain('say `changed`');
+    expect(lead).toContain('never `unchanged`');
+  });
+
+  it('gives complete example lines for a declined entry, with who and why', () => {
+    expect(lead).toContain('`R2: declined (user: no answer)`');
+    expect(lead).toContain('`R3: declined (lead: read-only role)`');
+    expect(lead).toContain('A line with a who and no why is wrong');
+  });
+
+  it('says every entry carries all five parts, a schedule entry and a non-blocking entry too', () => {
+    expect(specialist).toContain('Every entry carries all five parts');
+    expect(specialist).toContain('a `schedule` entry and a `non-blocking` entry too');
+    expect(specialist).toContain('even when you think no answer or result is needed');
+  });
+});
