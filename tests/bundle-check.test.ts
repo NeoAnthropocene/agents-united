@@ -1442,6 +1442,43 @@ describe('checkBundle', () => {
         expect(checkOf(run(f), 'registry-rules').status).toBe('failed');
         expect(checkOf(run(f, { allowUnresolved: true }), 'registry-rules').status).toBe('passed');
       });
+
+      it('does not leave an existing Bundle of the registry unjudged under --allow-unresolved when the proposal makes it inherit a workflow skill', () => {
+        const proposal = domainProposal();
+        const skill = bundleOf(proposal).skills[0] as string;
+        const f = build(proposal, {}, registry => {
+          fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'workflows'), { recursive: true });
+          fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'workflows', `${skill}.js`), "export const meta = { name: 'demo' }\n");
+          const manifestPath = path.join(registry, 'bundles.json');
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as Json;
+          manifest.bundles['existing-child'] = {
+            ...manifest.bundles['existing-domain'], name: 'existing-child', aliases: [], parentBundle: bundleOf(proposal).name,
+            orchestrator: 'orchestrator-gone.md', skills: [], agents: [],
+          };
+          fs.writeFileSync(manifestPath, JSON.stringify(manifest));
+        });
+        const r = run(f, { allowUnresolved: true });
+        const rules = checkOf(r, 'registry-rules');
+        expect(rules.status).toBe('failed');
+        expect(rules.findings.map(item => item.message).join('\n')).toContain('bundle "existing-child"');
+      });
+
+      it('does not let the native role file of a lead it left unjudged change the registry digest', () => {
+        const proposal = organizationProposal();
+        const skill = bundleOf(proposal).skills[0] as string;
+        bundleOf(proposal).orchestrator = 'orchestrator-late.md';
+        rebind(proposal);
+        const f = build(proposal, {}, registry => {
+          fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'workflows'), { recursive: true });
+          fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'workflows', `${skill}.js`), "export const meta = { name: 'demo' }\n");
+          fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'agents'), { recursive: true });
+          fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'agents', 'orchestrator-digital-agency.md'), '---\nname: orchestrator-digital-agency\ndescription: Lead.\ntools: Read, Workflow\n---\nLead.\n');
+        });
+        const before = run(f, { allowUnresolved: true }).registryDigest;
+        expect(before).toMatch(/^[0-9a-f]{64}$/);
+        fs.writeFileSync(path.join(f.registry, 'hosts', 'claude', 'agents', 'orchestrator-late.md'), '---\nname: orchestrator-late\ndescription: Lead.\ntools: Read\n---\nLead.\n');
+        expect(run(f, { allowUnresolved: true }).registryDigest).toBe(before);
+      });
     });
 
     it('reports both codes when the proposal and the registry both change', () => {

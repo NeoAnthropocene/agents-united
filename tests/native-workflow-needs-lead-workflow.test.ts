@@ -162,9 +162,27 @@ describe('the manifest check: a skill with a native workflow needs a lead that h
     const dir = registryWith();
     const late = bundle('x', { orchestrator: 'orchestrator-late.md' });
     expect(collectBundleManifestIssues(manifestOf(late), dir)).toHaveLength(1);
-    expect(collectBundleManifestIssues(manifestOf(late), dir, { allowUnresolvedLeads: true })).toEqual([]);
+    expect(collectBundleManifestIssues(manifestOf(late), dir, { unresolvedLeadsAllowedFor: new Set(['x']) })).toEqual([]);
     fs.outputFileSync(path.join(dir, 'agents/orchestrator-late.md'), canonicalLead('orchestrator-late'));
-    expect(collectBundleManifestIssues(manifestOf(late), dir, { allowUnresolvedLeads: true })).toHaveLength(1);
+    expect(collectBundleManifestIssues(manifestOf(late), dir, { unresolvedLeadsAllowedFor: new Set(['x']) })).toHaveLength(1);
+  });
+
+  it('leaves unresolved leads alone only for the Bundles it is given, not for an existing Bundle that inherits the skill', () => {
+    const dir = registryWith();
+    const parent = bundle('parent', { orchestrator: undefined });
+    const child = bundle('child', { parentBundle: 'parent', orchestrator: 'orchestrator-late.md', skills: [] });
+    const issues = collectBundleManifestIssues(manifestOf(parent, child), dir, { unresolvedLeadsAllowedFor: new Set(['parent']) });
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('bundle "child"');
+  });
+
+  it('does not cut a lead name that only ends in letters followed by md', () => {
+    const dir = registryWith({ 'orchestrator-cmd': 'Read' });
+    const issues = leadIssues(manifestOf(bundle('x', { orchestrator: 'orchestrator-cmd' })), dir);
+    expect(issues).toHaveLength(1);
+    expect(issues[0]).toContain('"orchestrator-cmd"');
+    const mapped = bundle('y', { orchestrator: 'subagent-cmd' });
+    expect(leadIssues(manifestOf(mapped), registryWith({ cmd: 'Read, Workflow' }))).toEqual([]);
   });
 
   it('needs nothing from a Bundle whose skills have no native workflow', () => {
