@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
@@ -49,8 +50,18 @@ describe('a projected role written by the version before is renewed by an update
     await fs.writeFile(file, older);
     expect(inspectNativeAgent(older).guard).toBe('destructive');
 
+    // What the earlier version recorded: the lockfile holds the hash of the bytes it wrote.
+    const lockPath = path.join(PROJECT, '.agents', 'agents-united.json');
+    const lock = await fs.readJson(lockPath) as { projections: Record<string, { hash?: string }> };
+    const rel = `.claude/agents/${projected[0]}`;
+    expect(lock.projections[rel]?.hash).toMatch(/^sha256:/);
+    lock.projections[rel]!.hash = `sha256:${crypto.createHash('sha256').update(await fs.readFile(file)).digest('hex')}`;
+    await fs.writeJson(lockPath, lock, { spaces: 2 });
+
     const report = await DoctorEngine.runDoctor(path.join(PROJECT, '.agents'), 'claude');
-    expect(report.warnings.join('\n')).not.toMatch(/modified|hand-edit/i);
+    const text = report.warnings.join('\n');
+    expect(text).not.toMatch(/Content drift|edited after installation|user-modified/i);
+    expect(text).toContain(`Outdated projection ${rel}`);
     await new UpdateEngine().update('__all__', { hosts: ['agents'], cwd: PROJECT } as never);
     const after = (await fs.readFile(file, 'utf8')).replace(/\r\n/g, '\n');
     expect(after).toContain(NEW_SHELL);
