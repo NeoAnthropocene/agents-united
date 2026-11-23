@@ -20,7 +20,7 @@ const COMMON = [
   'tests/native-claude-agents.test.ts', 'tests/native-install-lane.test.ts', 'tests/cli-e2e.test.ts', 'tests/native-claude-own-session.test.ts',
   'tests/native-invariant-coverage.test.ts', 'tests/core-safety-floor.test.ts', 'tests/claude-session-task-policy.test.ts', 'tests/factory-repository-rules.test.ts',
   'tests/native-roster.test.ts', 'tests/native-conformance.test.ts', 'tests/native-claude-lead-pool.test.ts', 'tests/native-claude-tier1-open-items.test.ts',
-  'tests/subagent-comms.test.ts', 'tests/registry.test.ts', 'tests/native-wiring.test.ts',
+  'tests/subagent-comms.test.ts', 'tests/registry.test.ts', 'tests/native-wiring.test.ts', 'tests/guard-destructive-upgrade.test.ts',
 ];
 
 /** The focused test files of a batch: the common set and each role's own test file, those present in the checkout. */
