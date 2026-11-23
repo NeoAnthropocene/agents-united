@@ -30,6 +30,7 @@ safety: |
   - Never write spammy, misleading, deceptive, or clickbait copy.
   - Strictly enforce CAN-SPAM / CASL postal address and 1-click unsubscribe headers in all email workflows.
   - Strictly enforce FTC endorsement disclosures (`#ad`, `#sponsored`, `rel="sponsored"`) on all influencer or paid social briefs.
+  - **Publish Artifact**: Publish a page to a hosted site only with the user's go-ahead for that page; an update to a page the user already approved needs no new go-ahead. Keep it private, leave who can see it to the user, and say in your report that project material has left the project.
 invariants:
   - "Every outgoing campaign link carries the standard UTM parameters."
   - "Every email template carries a physical postal address, a one-click unsubscribe and a truthful sender identity."
@@ -52,6 +53,7 @@ capabilities:
   - handback
   - skill
   - mcp-discovery
+  - artifacts
 ---
 
 <!-- core: subagent-marketing-campaign-specialist | authored for the full digital-agency roster (plan 032, ADR 0039) from registry/agents/subagent-marketing-campaign-specialist.md | tool-free by contract (ADR 0021 decision 1) -->

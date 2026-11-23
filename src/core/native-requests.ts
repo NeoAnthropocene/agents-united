@@ -6,6 +6,8 @@
  * Pure string work: no I/O, no clock.
  */
 
+import { anchorHeadingPoint, checkBlock, writeBlock, type BlockMarkers } from './native-blocks.js';
+
 export const REQUESTS_START =
   '<!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->';
 export const REQUESTS_END = '<!-- agents-united:requests:end -->';
@@ -109,42 +111,13 @@ export function renderRequests(kind: RequestsKind, tools: readonly string[]): st
   return SPECIALIST_TEXT.join('\n').replace(OPEN_TYPES, open);
 }
 
-const lf = (text: string): string => text.replace(/\r\n/g, '\n');
-const HEADINGS = ['## Boundaries of this host', '## Session task tracking'] as const;
-
-function locate(text: string): { start: number; bodyStart: number; end: number } | undefined {
-  const start = text.indexOf(REQUESTS_START);
-  const end = text.indexOf(REQUESTS_END);
-  if (start < 0 && end < 0) return undefined;
-  if (start < 0 || end < start || text.indexOf(REQUESTS_START, start + 1) >= 0 || text.indexOf(REQUESTS_END, end + 1) >= 0) {
-    throw new Error('Native requests error: the file needs exactly one pair of requests markers, start before end.');
-  }
-  return { start, bodyStart: start + REQUESTS_START.length, end };
-}
-
-function insertionPoint(text: string): number {
-  for (const heading of HEADINGS) {
-    const found = new RegExp(`^${heading}$`, 'm').exec(text);
-    if (found) return found.index;
-  }
-  throw new Error(`Native requests error: the file has neither a "${HEADINGS[0]}" nor a "${HEADINGS[1]}" heading to place the requests block before.`);
-}
+const MARKERS: BlockMarkers = { label: 'requests', start: REQUESTS_START, end: REQUESTS_END };
 
 /** Writes the block: replaces what is between the markers, or inserts the whole block before the boundaries (else the session task tracking) section. */
 export function syncRequests(text: string, kind: RequestsKind, tools: readonly string[]): string {
-  const source = lf(text);
-  const body = renderRequests(kind, tools);
-  const found = locate(source);
-  if (found) return `${source.slice(0, found.bodyStart)}\n${body}\n${source.slice(found.end)}`;
-  const at = insertionPoint(source);
-  return `${source.slice(0, at)}${REQUESTS_START}\n${body}\n${REQUESTS_END}\n\n${source.slice(at)}`;
+  return writeBlock(text, MARKERS, renderRequests(kind, tools), source => anchorHeadingPoint(source, MARKERS));
 }
 
 export function checkRequests(text: string, kind: RequestsKind, tools: readonly string[]): string[] {
-  const source = lf(text);
-  const found = locate(source);
-  if (!found) return ['Native requests block missing: the file has no requests markers (regenerate with UPDATE_NATIVE=1).'];
-  return source.slice(found.bodyStart, found.end) === `\n${renderRequests(kind, tools)}\n`
-    ? []
-    : ['Native requests block stale: the block between the requests markers differs from the generated text (regenerate with UPDATE_NATIVE=1).'];
+  return checkBlock(text, MARKERS, renderRequests(kind, tools));
 }

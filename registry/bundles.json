@@ -207,6 +207,7 @@
         "stitch-design-taste",
         "ux-writing",
         "commercial-stock-sourcer",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -274,6 +275,7 @@
         "banner-design",
         "brand-identity",
         "commercial-stock-sourcer",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -318,6 +320,7 @@
         "domain-modeling",
         "grill-me",
         "growth-experiment-design",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -380,6 +383,7 @@
         "signup-flow-cro",
         "stitch-design-taste",
         "commercial-stock-sourcer",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -426,6 +430,7 @@
         "grill-me",
         "product-launch-playbook",
         "seo-audit",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -471,6 +476,7 @@
         "product-launch-playbook",
         "seo-audit",
         "social-media-campaign",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -554,6 +560,7 @@
         "workflow-brainstorm",
         "workflow-explain",
         "workflow-grill",
+        "design-artifact-publishing",
         "host-agent-router",
         "git-guardrails"
       ],
@@ -591,6 +598,7 @@
         "workflow-estimate",
         "domain-modeling",
         "grill-me",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1505,6 +1513,7 @@
         "stitch-design-taste",
         "ui-component-spec",
         "user-flow-mapping",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1555,6 +1564,7 @@
         "stitch-design-taste",
         "ui-component-spec",
         "user-flow-mapping",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1726,6 +1736,7 @@
         "workflow-business-panel",
         "domain-modeling",
         "grill-me",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1763,6 +1774,7 @@
         "workflow-spec-panel",
         "grill-me",
         "growth-experiment-design",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1802,6 +1814,7 @@
         "git-guardrails",
         "grill-me",
         "to-tickets",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff"
       ],
@@ -1840,6 +1853,7 @@
         "grill-me",
         "growth-experiment-design",
         "handoff",
+        "design-artifact-publishing",
         "host-agent-router",
         "git-guardrails"
       ],

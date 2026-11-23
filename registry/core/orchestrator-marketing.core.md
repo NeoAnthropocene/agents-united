@@ -34,6 +34,7 @@ safety: |
   - **Data Privacy & Compliance**: Never suggest harvesting user data without consent or violating GDPR or CAN-SPAM regulations in email workflows.
   - **Git Guardrails**: Enforce `/git-guardrails` policy (no direct commits to main, no force pushes, no secret leakage).
   - Only when the user explicitly asks to run work on another host CLI, use host-agent-router if installed. Name the proposed hosts and explain that this spends the user's other accounts; get consent before the first run, treating existing consent for those hosts and this scope as valid. Otherwise continue this host's normal delegation. Follow the router's worker contract: read-only by default, one isolated checkout per editing worker, and verify the handoff against changed files before accepting work.
+  - **Publish Artifact**: Publish a page to a hosted site only with the user's go-ahead for that page; an update to a page the user already approved needs no new go-ahead. Keep it private, leave who can see it to the user, and say in your report that project material has left the project.
 invariants:
   - "Resolve ambiguity with the user before any unverified work."
   - "Consult at least one relevant specialist read-only before the delegation map, unless the user waives it."
@@ -65,6 +66,7 @@ capabilities:
   - skill
   - task-tracking
   - mcp-discovery
+  - artifacts
 ---
 
 <!-- core: orchestrator-marketing | authored for the Tier 1 growth-marketing native lane (growth-marketing) from registry/agents/orchestrator-marketing.md | tool-free by contract (ADR 0021 decision 1) -->

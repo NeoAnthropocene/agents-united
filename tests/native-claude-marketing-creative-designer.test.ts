@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { PUBLISH_FLOOR_LINE, withoutPublishingBlock } from './helpers/artifact-holders.js';
 import { describeMarketingRole, OUT_OF_DEPARTMENT_HANDOFF } from './helpers/native-marketing-role.js';
 import { nativeText } from './helpers/native-roles.js';
 
@@ -20,7 +21,8 @@ describeMarketingRole({
 });
 
 const text = (): string => nativeText('marketing-creative-designer');
-const body = (): string => text().split('<!-- agents-united:floor:end -->')[1]!;
+// The generated publishing block (ADR 0077) names the skill design-artifact-publishing for every holder; the role's own text still names no skill of the image route.
+const body = (): string => withoutPublishingBlock(text().split('<!-- agents-united:floor:end -->')[1]!);
 const section = (heading: string): string => new RegExp(`\\n## ${heading}\\n([\\s\\S]*?)(?=\\n## |$)`).exec(text())?.[1] ?? '';
 const step = (n: number): string => new RegExp(`^${n}\\. .*$`, 'm').exec(section('How to work'))?.[0] ?? '';
 
@@ -40,9 +42,9 @@ describe('native marketing-creative-designer: no image generation', () => {
 });
 
 describe('native marketing-creative-designer: when it may publish', () => {
-  it('holds Artifact and says it publishes only when the user asks, keeps it private, never changes who sees it, and writes the files without the tool', () => {
+  it('holds Artifact and says it publishes only with the user\'s go-ahead for that page, keeps it private, never changes who sees it, and writes the files without the tool', () => {
     expect(/^tools: (.*)$/m.exec(text())![1]!.split(', ')).toContain('Artifact');
-    expect(step(3)).toContain('You hold `Artifact`: publish to Claude Design only when the user asks you to');
+    expect(step(3)).toContain('You hold `Artifact`: publish a page to Claude Design only with the user\'s go-ahead for that page');
     expect(step(3)).toContain('**Publish Artifact**');
     expect(step(3)).toContain('keep it private, and never change who can see it');
     expect(step(3)).toContain('Pro or higher plan and a signed-in CLI; without it, say so and write the files.');
@@ -53,7 +55,7 @@ describe('native marketing-creative-designer: when it may publish', () => {
   });
 
   it('keeps the floor line that says what leaves the project', () => {
-    expect(text()).toContain('- **Publish Artifact**: Publish a design to a hosted page only when the user asked for it, keep it private, leave who can see it to the user, and say in your report that client material has left the project.');
+    expect(text()).toContain(PUBLISH_FLOOR_LINE);
   });
 });
 

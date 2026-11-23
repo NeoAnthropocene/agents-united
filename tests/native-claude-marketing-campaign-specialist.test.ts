@@ -12,7 +12,7 @@ describeMarketingRole({
   type: 'subagent-marketing-campaign-specialist',
   agency: 'agency-campaign-specialist',
   servers: ['context7'],
-  artifact: false,
+  artifact: true,
   peers: ['marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-content-strategist', 'marketing-growth-strategist', 'lifecycle-email-specialist'],
   returns: 'the campaign kit',
 });

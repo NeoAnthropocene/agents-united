@@ -5,6 +5,7 @@
  * contract-check) both call these functions. Pure: no I/O, no clock.
  */
 import { ClaudeProjector } from './claude-projector.js';
+import { checkPublishing } from './native-publishing.js';
 import { REQUESTS_EXEMPT_ROLES, checkRequests } from './native-requests.js';
 import { validateDeclaredDeltas } from './semantic-core.js';
 import type { DeclaredDelta, SemanticCore } from './types.js';
@@ -83,6 +84,18 @@ export function requestsBlockProblems(text: string, role: { kind: NativeKind; na
   }
   try {
     return checkRequests(body, role.kind === 'coordinator' ? 'coordinator' : 'specialist', role.tools);
+  } catch (error) {
+    return [error instanceof Error ? error.message : String(error)];
+  }
+}
+
+/**
+ * ADR 0077 - the generated publishing block. A role whose tools hold `Artifact` carries the current block for its kind (specialist or lead);
+ * a role without `Artifact` carries no publishing markers. Never throws.
+ */
+export function publishingBlockProblems(text: string, role: { kind: NativeKind; name: string; tools: readonly string[] }): string[] {
+  try {
+    return checkPublishing(text, role.kind === 'coordinator' ? 'coordinator' : 'specialist', role.tools);
   } catch (error) {
     return [error instanceof Error ? error.message : String(error)];
   }

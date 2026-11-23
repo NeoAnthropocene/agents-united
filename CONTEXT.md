@@ -878,3 +878,9 @@ _Avoid_: Version check, health check, proof that nothing changed
 **Request for the lead**:
 A numbered entry (`R<n>`) in a specialist's report section `Requests for the lead`, of one of seven types (`ask-user`, `run-command`, `watch`, `schedule`, `run-workflow`, `delegate`, `use-server`), for something its work needs and its tools on the Claude host do not give it. The lead acts on it with its own tool under its own rules, may decline it, and returns the result to the same specialist with `SendMessage` (ADR 0076).
 _Avoid_: Hand-off request, escalation
+
+### Publishing pages (ADR 0077)
+
+**Publish Artifact** (the go-ahead for a page):
+The user's approval of one new page published to their claude.ai account through the `Artifact` tool (the label the user sees is **Publish Artifact**). The lead asks the user for it; the answer reaches a specialist in its brief or as the answer to its `ask-user` entry; an update to a page the user already approved needs none, a `/design` or `/slides` line the user typed counts as the go-ahead for the one page it asks for, and the files in the project are always delivered first. A published page is private; who can see it is the user's own act in the browser (ADR 0077).
+_Avoid_: Share, deploy, public link

@@ -22,7 +22,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 
 /** The whole tools line: the editing, search, web, messaging, hand-back, skill, task and discovery classes of the core, then the two servers by every route that exists. */
 const EXPECTED_TOOLS = [
-  'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
+  'Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
   'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write',
   'mcp__firecrawl', 'mcp__claude_ai_Firecrawl', 'mcp__context7', 'mcp__plugin_context7_context7',
 ];

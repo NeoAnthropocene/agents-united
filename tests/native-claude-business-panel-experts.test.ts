@@ -24,7 +24,7 @@ const sessionSection = (body: string): string => /\n## Session task tracking\n([
 
 /** The whole tools line: the read, search, edit, web, messaging, hand-back, skill, task and discovery classes of the core. The one server of the pair, markitdown, is bound through its route. */
 const EXPECTED_TOOLS = [
-  'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
+  'Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
   'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write', 'mcp__markitdown',
 ];
 

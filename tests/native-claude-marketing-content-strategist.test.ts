@@ -12,7 +12,7 @@ describeMarketingRole({
   type: 'subagent-marketing-content-strategist',
   agency: 'agency-content-strategist',
   servers: ['firecrawl', 'markitdown'],
-  artifact: false,
+  artifact: true,
   peers: ['marketing-conversion-specialist', 'marketing-campaign-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'seo-specialist'],
   returns: 'the strategy document',
 });

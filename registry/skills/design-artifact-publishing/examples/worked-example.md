@@ -22,7 +22,7 @@ The sizes are illustrative; the columns are the point: what the listing says, wh
 The listing holds the type's 16 files and these four: 20 files.
 
 ## The report
-- Published: https://claude.ai/artifact/<id>, a Design artifact, version 2. Private; sharing untouched. Share it from the page's Share menu if others should see it.
+- Published: https://claude.ai/artifact/<id>, a Design artifact, version 2. Private; sharing untouched. Sharing is your own act, from the page's Share control.
 - Checked: the sizes, the colours (6 of 6 are tokens), the copy, the zones by arithmetic from the layout numbers, the contrast by formula (15.47, 5.48 and 7.43 to 1).
 - **Not checked**: it is not rendered, so the wrapping of the headline at 96 px on the link ad is an estimate; the platforms' current specifications; how the editor shows it.
 - Claims for Defne: "4.9 average rating", "12,000 stays", "insured up to $1M" (fictional, and a note on the canvas says not to run them).
