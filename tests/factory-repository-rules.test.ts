@@ -9,7 +9,7 @@ import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import {
   canonicalDirectives, canonicalFloorProblems, canonicalGuardrails, canonicalServerTools, coverageFileProblems, invariantCoverageProblems,
-  evidencePlaceAt, nativePosture, nativeToolOrder, nativeToolsWanted, postureProblems, sessionTrackingProblems, type EvidencePlace,
+  evidencePlaceAt, isLeadRole, nativePosture, nativeToolOrder, nativeToolsWanted, postureProblems, sessionTrackingProblems, type EvidencePlace,
 } from '../src/core/native-repository-rules.js';
 import { evidenceFor } from './helpers/native-invariant-evidence.js';
 import { loadNativeDeltas, NATIVE_ROLES } from './helpers/native-roles.js';
@@ -37,6 +37,16 @@ describe('the rules, one implementation', () => {
     expect(nativePosture('coordinator')).toEqual({ model: ClaudeProjector.CLAUDE_DIALECT.roleModelDefaults!.coordinator, effort: ClaudeProjector.CLAUDE_DIALECT.roleEffortDefaults!.coordinator });
     expect(nativePosture('factory-worker')).toEqual({ model: 'inherit', effort: 'medium' });
     expect(nativePosture('specialist')).toEqual({ model: 'sonnet', effort: 'medium' });
+  });
+
+  it('knows a lead as the repository\'s role table does, from the core and the canonical agent', async () => {
+    const cores = await loadSemanticCore(path.join(ROOT, 'registry'));
+    const measured = NATIVE_ROLES.filter(entry => entry.role !== 'orchestrator-agent-factory' && !entry.stem.startsWith('subagent-factory') && !/^factory-/.test(entry.role) && fs.existsSync(path.join(ROOT, 'registry/agents', `${entry.stem}.md`)));
+    expect(measured.length).toBeGreaterThan(40);
+    for (const entry of measured) expect(isLeadRole(cores.get(entry.stem)!, canonicalOf(entry.stem)), entry.role).toBe(entry.coordinator);
+    // Without a canonical agent, only a delegate class makes a lead.
+    expect(isLeadRole(cores.get('orchestrator-universal')!)).toBe(false);
+    expect(isLeadRole(cores.get('orchestrator-engineering')!)).toBe(true);
   });
 
   it('refuses another posture, naming both', () => {

@@ -15,6 +15,17 @@ export type NativeKind = 'specialist' | 'coordinator' | 'factory-worker';
 
 export interface NativePosture { model: string; effort: string; }
 
+/**
+ * Whether a native role is a lead (the coordinator kind: coordinator posture, coordinator wording of its generated blocks). A role whose core can
+ * `delegate` is one. So is a lead that routes and holds no `delegate` class, the front door: its canonical agent is `type: orchestrator`, and
+ * the repository's tests list it among the leads. A lead's tools line may still hold no `Agent` allowlist; that is `delegates`, not this.
+ */
+export function isLeadRole(core: SemanticCore, canonicalText?: string): boolean {
+  if (core.capabilities?.includes('delegate')) return true;
+  const frontmatter = canonicalText === undefined ? undefined : /^---\n([\s\S]*?)\n---/.exec(lf(canonicalText))?.[1];
+  return frontmatter !== undefined && /^type:\s*orchestrator\s*$/m.test(frontmatter);
+}
+
 const normalize = (text: string): string => text.replace(/\s+/g, ' ').trim();
 const lf = (text: string): string => text.replace(/\r\n/g, '\n');
 

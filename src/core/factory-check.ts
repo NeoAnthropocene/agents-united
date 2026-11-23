@@ -12,7 +12,7 @@ import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
-import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
+import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, isLeadRole, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -75,13 +75,6 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       if (facts.meta.name !== path.basename(input.artifactPath, '.md')) findings.push('Native name must match the artifact filename.');
       findings.push(...checkFloor(text, core));
       // The repository's own rules for a native role (ADR 0072): the same functions its conformance tests call.
-      const coordinator = core.capabilities?.includes('delegate') ?? false;
-      const factorySkill = factoryBindingSkill(registry, input.definition);
-      const kind: NativeKind = factorySkill !== undefined ? 'factory-worker' : coordinator ? 'coordinator' : 'specialist';
-      findings.push(...postureProblems(facts.meta, kind));
-      if (core.capabilities?.includes('task-tracking')) findings.push(...sessionTrackingProblems(text, { coordinator }));
-      findings.push(...requestsBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
-      findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
       let canonicalText: string | undefined;
       const defaultCanonical = path.join(registry, 'agents', `${input.definition}.md`);
       if (input.canonicalFile !== undefined) {
@@ -89,6 +82,15 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
         else if (!fs.existsSync(input.canonicalFile) || !fs.statSync(input.canonicalFile).isFile()) findings.push(`Missing canonical agent ${input.canonicalFile}.`);
         else canonicalText = fs.readFileSync(input.canonicalFile, 'utf8');
       } else if (fs.existsSync(defaultCanonical) && fs.statSync(defaultCanonical).isFile()) canonicalText = fs.readFileSync(defaultCanonical, 'utf8');
+      // A lead is the coordinator kind (posture, wording of the generated blocks); `delegates` is only whether its tools line may hold an `Agent` allowlist.
+      const coordinator = isLeadRole(core, canonicalText);
+      const delegates = core.capabilities?.includes('delegate') ?? false;
+      const factorySkill = factoryBindingSkill(registry, input.definition);
+      const kind: NativeKind = factorySkill !== undefined ? 'factory-worker' : coordinator ? 'coordinator' : 'specialist';
+      findings.push(...postureProblems(facts.meta, kind));
+      if (core.capabilities?.includes('task-tracking')) findings.push(...sessionTrackingProblems(text, { coordinator }));
+      findings.push(...requestsBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
+      findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
       if (canonicalText !== undefined) findings.push(...canonicalFloorProblems(core, canonicalText));
       if (input.coverageFile !== undefined) {
         if (!path.isAbsolute(input.coverageFile)) findings.push('Invariant coverage: the coverage file must be an absolute path.');
@@ -106,7 +108,7 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
         // coordinator must hold exactly its fixed delegate list (the same function as tests/helpers/native-delta.ts); any other delegating role's
         // one well-formed `Agent(...)` allowlist stands for `Agent`.
         const expected = nativeToolOrder(grant, canonicalText === undefined ? [] : canonicalServerTools(canonicalText));
-        let wanted = nativeToolsWanted(expected, facts.tools, { coordinator });
+        let wanted = nativeToolsWanted(expected, facts.tools, { coordinator: delegates });
         if (factorySkill === 'coordinate-artifact') {
           try {
             normalizeClaudeFactoryCoordinatorTools(facts.tools);
