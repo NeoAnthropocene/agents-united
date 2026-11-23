@@ -46,7 +46,7 @@ describe('the typed command and the user\'s own request, with their conditions (
 describe('the HTML page is the fallback for Design or Slides only (review finding 9)', () => {
   it('CONTEXT: the Page Type entry says Design or Slides and files for any other type', () => {
     const entry = CONTEXT().split('\n').find(line => line.startsWith('One of the kinds of page that a claude.ai account offers')) ?? '';
-    expect(entry).toContain('when the account does not offer the Design or Slides type needed; for any other type the account does not offer, the files in the project are the deliverable (ADR 0078)');
+    expect(entry).toContain('when the account does not offer the Design or Slides type needed and the user, asked once, chose it; for any other type the account does not offer, the files in the project are the deliverable (ADR 0078)');
     expect(entry).not.toContain('when the account does not offer the type needed');
   });
 
@@ -57,7 +57,7 @@ describe('the HTML page is the fallback for Design or Slides only (review findin
 
   it('ADR 0078: the limits say what a session without the Design or Slides type gets and what any other missing type gets', () => {
     const text = ADR_0078();
-    expect(text).toContain('A session whose account does not offer the Design or Slides type gets an HTML page for a Design or Slides deliverable; an account that does not offer another type, or a session without the connector, gets the files, with the reason.');
+    expect(text).toContain('A session whose account does not offer the Design or Slides type gets one question to the user and, on the answer "Publish an HTML page", an HTML page for a Design or Slides deliverable; an account that does not offer another type, or a session without the connector, gets the files, with the reason.');
     expect(text).not.toContain('A plan or session without the types, or without the connector, gets the files, with the reason.');
   });
 });
