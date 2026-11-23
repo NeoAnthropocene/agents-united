@@ -151,7 +151,7 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
   });
 
   it('asks once before an HTML page replaces a Design or Slides type the account does not offer, in the skill and in its pages reference (the maintainer\'s decision of 2026-11-23)', () => {
-    expect(section('Edge Cases & Error Recovery')).toMatch(/Design or Slides type is not offered: ask once before an HTML page replaces it/);
+    expect(section("Edge Cases & Error Recovery")).toMatch(/Design or Slides type not offered\*\*: ask once before an HTML page replaces it/);
     expect(read('references/pages-decks-and-the-design-skill.md')).not.toContain('- Use an HTML page when the account does not offer');
   });
 

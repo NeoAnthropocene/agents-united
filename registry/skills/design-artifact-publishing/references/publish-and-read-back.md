@@ -3,10 +3,10 @@
 ## The calls for Design and Slides, in order
 Design and Slides are files published under the page, in one call. Design System, Docs, Sheets, Whiteboard and Data are not published this way: see the reference for the kind. A Design System has its own sequence (the files in the project, the go-ahead, the empty page, the files with the index last, the read-back).
 1. Load the skills that hold the rules (`ad-creative-design`, `design-system-tokens`, `brand-identity` as the work needs). Read the tokens file and the copy file.
-2. `Artifact` `quickstart` (`intent: design`, or `slides` for a deck). Pick the type and read what the result says.
+2. `Artifact` `quickstart` (`intent: design`, or `slides` for a deck; the Slides argument has not yet been observed in this repository). Pick the type and read what the result says.
 3. Write every file under a scratch folder: for a canvas `project/canvas.json` and the boards.
 4. Check the files against the table below, and fix them.
-5. With the user's go-ahead for the page, `Artifact` `publish` with the type's `type_url` and a title (new) or with the `url` (update), all files in one call.
+5. With the user's go-ahead for the page, `Artifact` `publish` with the type's `type_url` and a title (new) or with the `url` (update), all files in one call (the one-call procedure for Slides has not yet been observed in this repository).
 6. `Artifact` `list` with scope `files`, then `read` each file you wrote.
 7. Compare, count, report.
 

@@ -10,7 +10,7 @@
 - The host documentation, read on 2026-11-21, names project, user and plugin skills for a subagent and does not name bundled skills. That a listed bundled skill can be invoked through `Skill` by a subagent is not established either. If the call fails, or the skill answers that the user must run `/design consent` or sign in, report that and go on with the tool.
 - Never ask for `/design-login` or `/design-sync`. Those commands belong to a standalone site that closes by December 14, 2026.
 - Otherwise, use the Design type for a prototype, a screen flow, a poster or a one-pager, and the Slides type for a deck, both started through the `Artifact` tool, following the type's own instructions for the page's content only.
-- Use an HTML page when the account does not offer the Design or Slides type you need. For any other type the account does not offer, the files in the project are the deliverable.
+- When the account does not offer the Design or Slides type you need, ask once before an HTML page replaces it: say that the type is not available, with **Keep it in the project** first and **Publish an HTML page** second; publish the HTML page only on that answer (a specialist asks through its lead). For any other type the account does not offer, the files in the project are the deliverable.
 
 Nothing about the files of the Slides type has been observed in this repository: follow the type's own instructions and report what you did not check.
 
