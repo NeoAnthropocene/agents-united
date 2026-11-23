@@ -891,6 +891,10 @@ export class ClaudeProjector {
     const maxTurns = bundle.planningLoop?.budget?.maxIterations;
 
     // 1. Roles.
+    // A saved workflow runs only through the `Workflow` tool, which the host gives to the main session alone and only when its role lists it.
+    // So a native workflow may stand in for a skill only when this bundle's lead, as installed, lists `Workflow`: a lead projected from the
+    // canonical agent never does.
+    let leadHoldsWorkflow = false;
     for (const agentFile of resolved.agents || []) {
       const canonicalRel = `agents/${agentFile}`;
       const src = path.join(registryDir, 'agents', agentFile);
@@ -902,6 +906,7 @@ export class ClaudeProjector {
       const nativeName = bundle.nativeRoles?.[agentFile] ?? roleName;
       const native = nativeLane ? ClaudeProjector.nativeRoleContent(registryDir, nativeName, canonicalRel, guardForm) : undefined;
       if (native !== undefined) nativeRoleNames.push(nativeName);
+      if (native !== undefined && isCoordinator) leadHoldsWorkflow = inspectNativeAgent(native).tools.includes('Workflow');
       // A bundle-scoped native copy is not the projection of the canonical agent for every owner of it: other bundles keep theirs. So it
       // is owned by this bundle alone and records no canonical pointer (like a native-only file); its marker still names the canonical.
       const scoped = native !== undefined && nativeName !== roleName;
@@ -933,8 +938,9 @@ export class ClaudeProjector {
       const canonicalRel = `skills/${skillName}/SKILL.md`;
       const normalized = ClaudeProjector.normalizeSkillName(skillName);
       // Plan 032 Phase 7 — with the native lane on, a committed host workflow stands in for the skill of the same name
-      // (both own the slash command `/<name>`), so neither the skill nor its resources are projected.
-      const nativeWorkflow = nativeLane ? ClaudeProjector.nativeWorkflowContent(registryDir, skillName, canonicalRel) : undefined;
+      // (both own the slash command `/<name>`), so neither the skill nor its resources are projected. When the lead does not hold the
+      // `Workflow` tool the skill stays: nothing could run the workflow.
+      const nativeWorkflow = nativeLane && leadHoldsWorkflow ?ClaudeProjector.nativeWorkflowContent(registryDir, skillName, canonicalRel) : undefined;
       if (nativeWorkflow !== undefined) {
         artifacts.push({
           kind: 'workflow',
