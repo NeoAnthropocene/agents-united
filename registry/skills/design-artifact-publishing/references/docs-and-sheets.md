@@ -24,7 +24,7 @@ A report, memo, playbook, financial model, scored backlog, calendar or compariso
 - With `Artifact` missing or refused: the files and the reason, also when the connector is among your tools. The connector alone could create a doc (vendor); it never does here.
 
 ## The connector is not among your tools
-The files in the project are the deliverable. Your report says there is no page because the connector is missing. Never ask the user to sign in or to connect it. The user can switch it off themselves (`/mcp`, or `deniedMcpServers` with `"claude.ai Claude Docs"`).
+The files in the project are the deliverable. Your report says there is no new page because the connector is missing, and an existing page is left as it is. Never ask the user to sign in or to connect it. The user can switch it off themselves (`/mcp`, or `deniedMcpServers` with `"claude.ai Claude Docs"`).
 
 ## A listed connector whose write fails
 A listed connector whose write fails: the files and the reason. Leave the page as it is and try no other route; report the link, the content you confirmed by reading it back, and "unknown" where the read-back failed.
