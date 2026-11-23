@@ -176,7 +176,7 @@ export function nativeGuardFileHooks(): { PreToolUse: Array<{ matcher: string; h
 
 /**
  * Plan 032 PR E — the destructive-command guard for native agents: same script and exec form, but the shell matcher
- * also covers `PowerShell` (a class-derived grant holds it on Windows, and the legacy `Bash`-only matcher would let a
+ * also covers `PowerShell` (a class-derived grant holds it on Windows, and a `Bash`-only matcher would let a
  * forced push through it). `managedGuardHooks`, the guard of a projected role, returns these same groups.
  */
 export function nativeGuardHooks(): { PreToolUse: Array<{ matcher: string; hooks: FailClosedHandler[] }> } {
