@@ -245,5 +245,13 @@ describe('the README says when a role guard runs and when it does not', () => {
     expect(bullet).toContain('claude -p');
     expect(bullet).toContain('does not run');
     expect(bullet).toContain('`--session-guard`');
+    expect(bullet).toContain('as a subagent or as the main session of `claude --agent <role>`');
+    expect(bullet).toContain('trusted that exact folder');
+    expect(bullet).toContain('`~/.claude/agents`');
+    expect(bullet).not.toContain('skips a project agent');
+  });
+
+  it('does not repeat the session-guard coverage in a second bullet', () => {
+    expect(README).not.toContain('Add `--session-guard` at install time to cover plain `claude` sessions too.');
   });
 });
