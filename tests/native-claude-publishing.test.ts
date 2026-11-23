@@ -585,8 +585,52 @@ describe('the page type rule of the repository', () => {
     ]);
     const extra = ['Read', 'Artifact', CONNECTOR];
     expect(publishingBlockProblems(synced(extra, typesOf('design')), role(extra, typesOf('design')))).toEqual([
-      expect.stringMatching(/^Native page types: x holds the connector tool mcp__claude_ai_Claude_Docs but no page type that is filled through a connector/),
+      expect.stringMatching(/^Native page types: x holds the connector tool mcp__claude_ai_Claude_Docs but no page type that needs mcp__claude_ai_Claude_Docs/),
     ]);
+  });
+
+  it('names the types that need the tool, in the singular or the plural', () => {
+    const missing = ['Read', 'Artifact'];
+    expect(publishingBlockProblems(synced(missing, typesOf('design', 'docs', 'sheets')), role(missing, typesOf('design', 'docs', 'sheets')))).toEqual([
+      expect.stringMatching(/^Native page types: x holds the connector types docs, sheets but its tools line lacks mcp__claude_ai_Claude_Docs/),
+    ]);
+    expect(publishingBlockProblems(synced(missing, typesOf('whiteboard', 'data')), role(missing, typesOf('whiteboard', 'data')))).toEqual([
+      expect.stringMatching(/^Native page types: x holds the store types whiteboard, data but its tools line lacks ToolSearch/),
+    ]);
+  });
+
+  it('names the connector entry of a role that holds no page type and no Artifact, and a tool-level variant of the connector', () => {
+    const stray = { kind: 'specialist' as const, name: 'x', tools: ['Read', CONNECTOR], types: [] as PageType[], catalogue: TABLE.types };
+    expect(publishingBlockProblems(base, stray)).toEqual([expect.stringMatching(/^Native page types: x holds the connector tool mcp__claude_ai_Claude_Docs but no page type that needs mcp__claude_ai_Claude_Docs/)]);
+    const variant = { ...stray, tools: ['Read', `${CONNECTOR}__create_doc`] };
+    expect(publishingBlockProblems(base, variant)).toEqual([expect.stringMatching(/^Native page types: x holds the connector tool mcp__claude_ai_Claude_Docs__create_doc but no page type that needs mcp__claude_ai_Claude_Docs/)]);
+    const lookalike = { ...stray, tools: ['Read', 'mcp__claude_ai_Claude_Docs_other'] };
+    expect(publishingBlockProblems(base, lookalike)).toEqual([]);
+  });
+
+  it('names a role that holds a page type and misses the store tool even when it holds no Artifact', () => {
+    const noArtifact = { kind: 'specialist' as const, name: 'x', tools: ['Read'], types: typesOf('whiteboard'), catalogue: TABLE.types };
+    const problems = publishingBlockProblems(base, noArtifact);
+    expect(problems).toEqual([expect.stringMatching(/^Native page types: x has page types \(whiteboard\) but its tools line holds no Artifact/), expect.stringMatching(/lacks ToolSearch/)]);
+  });
+
+  it('refuses the artifact store tool and the artifact comment tool in any form on a tools line', () => {
+    for (const tool of ['ArtifactData', 'ArtifactComments', 'ArtifactData(read)', 'mcp__claude_ai_Artifact__ArtifactData', 'mcp__x__ArtifactComments']) {
+      const tools = ['Read', 'Artifact', tool];
+      const problems = publishingBlockProblems(synced(tools, typesOf('design')), role(tools, typesOf('design')));
+      expect(problems, tool).toHaveLength(1);
+      expect(problems[0], tool).toContain(`Native page types: x holds ${tool}, which a native role never holds`);
+    }
+  });
+
+  it('says what is wrong when the table is missing and when a lead has no holder in its roster', () => {
+    const noTable = { kind: 'specialist' as const, name: 'x', tools: ['Read', 'Artifact'], types: [] as PageType[], catalogue: [] as PageType[] };
+    expect(publishingBlockProblems(base, noTable)).toEqual([expect.stringMatching(/^Native page types: x holds Artifact but the page type table of the host is missing/)]);
+    const lead = { kind: 'coordinator' as const, name: 'lead', tools: ['Agent(a)', 'Artifact'], types: [] as PageType[], catalogue: TABLE.types };
+    const [problem] = publishingBlockProblems(base, lead);
+    expect(problem).toMatch(/^Native page types: lead holds Artifact but no role in its Agent roster holds a page type/);
+    expect(problem).not.toMatch(/add it to the holders/);
+    expect(publishingBlockProblems(base, role(['Read', 'Artifact'], []))[0]).toMatch(/add it to the holders of the page type table/);
   });
 
   it('names a store type without ToolSearch', () => {
