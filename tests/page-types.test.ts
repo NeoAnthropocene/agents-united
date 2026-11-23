@@ -37,57 +37,57 @@ describe('parsePageTypes', () => {
   });
 
   it('refuses what is not an object, a table without types, and an empty catalogue', () => {
-    expect(() => parsePageTypes(null)).toThrow(/page types: .*object/i);
-    expect(() => parsePageTypes([])).toThrow(/page types: .*object/i);
+    expect(() => parsePageTypes(null)).toThrow(/Page types:.*object/i);
+    expect(() => parsePageTypes([])).toThrow(/Page types:.*object/i);
     const noTypes = raw();
     delete noTypes.types;
-    expect(() => parsePageTypes(noTypes)).toThrow(/page types: .*types/i);
-    expect(() => parsePageTypes({ ...raw(), types: [] })).toThrow(/page types: .*types/i);
+    expect(() => parsePageTypes(noTypes)).toThrow(/Page types:.*types/i);
+    expect(() => parsePageTypes({ ...raw(), types: [] })).toThrow(/Page types:.*types/i);
   });
 
   it('refuses an unknown kind', () => {
     const table = raw();
     (table.types as Array<Record<string, unknown>>)[0]!.filledBy = 'magic';
-    expect(() => parsePageTypes(table)).toThrow(/page types: type "design" .*filledBy.*files, connector or store/);
+    expect(() => parsePageTypes(table)).toThrow(/Page types: type "design" .*filledBy.*files, connector or store/);
   });
 
   it('refuses a duplicate type id and a malformed field', () => {
     const duplicated = raw();
     (duplicated.types as unknown[]).push({ id: 'docs', title: 'Docs 2', for: 'x', filledBy: 'files', needs: [], takesLook: false });
-    expect(() => parsePageTypes(duplicated)).toThrow(/page types: type id "docs" appears twice/);
+    expect(() => parsePageTypes(duplicated)).toThrow(/Page types: type id "docs" appears twice/);
     const badTitle = raw();
     (badTitle.types as Array<Record<string, unknown>>)[1]!.title = '';
-    expect(() => parsePageTypes(badTitle)).toThrow(/page types: type "docs" .*title/);
+    expect(() => parsePageTypes(badTitle)).toThrow(/Page types: type "docs" .*title/);
     const badNeeds = raw();
     (badNeeds.types as Array<Record<string, unknown>>)[1]!.needs = 'ToolSearch';
-    expect(() => parsePageTypes(badNeeds)).toThrow(/page types: type "docs" .*needs/);
+    expect(() => parsePageTypes(badNeeds)).toThrow(/Page types: type "docs" .*needs/);
     const badLook = raw();
     (badLook.types as Array<Record<string, unknown>>)[0]!.takesLook = 'yes';
-    expect(() => parsePageTypes(badLook)).toThrow(/page types: type "design" .*takesLook/);
+    expect(() => parsePageTypes(badLook)).toThrow(/Page types: type "design" .*takesLook/);
   });
 
   it('refuses a holder that names an unknown type id', () => {
     const table = raw();
     (table.holders as Record<string, string[]>)['subagent-a'] = ['design', 'video'];
-    expect(() => parsePageTypes(table)).toThrow(/page types: holder "subagent-a" names the unknown type "video"/);
+    expect(() => parsePageTypes(table)).toThrow(/Page types: holder "subagent-a" names the unknown type "video"/);
   });
 
   it('refuses a holder list that is not in catalogue order', () => {
     const table = raw();
     (table.holders as Record<string, string[]>)['subagent-a'] = ['docs', 'design'];
-    expect(() => parsePageTypes(table)).toThrow(/page types: holder "subagent-a" lists "docs" before "design"; keep the catalogue order/);
+    expect(() => parsePageTypes(table)).toThrow(/Page types: holder "subagent-a" lists "docs" before "design"; keep the catalogue order/);
   });
 
   it('refuses a duplicate in a holder list, an empty holder list and a holder that is not a specialist', () => {
     const duplicated = raw();
     (duplicated.holders as Record<string, string[]>)['subagent-a'] = ['design', 'design'];
-    expect(() => parsePageTypes(duplicated)).toThrow(/page types: holder "subagent-a" lists "design" twice/);
+    expect(() => parsePageTypes(duplicated)).toThrow(/Page types: holder "subagent-a" lists "design" twice/);
     const empty = raw();
     (empty.holders as Record<string, string[]>)['subagent-a'] = [];
-    expect(() => parsePageTypes(empty)).toThrow(/page types: holder "subagent-a" has an empty list/);
+    expect(() => parsePageTypes(empty)).toThrow(/Page types: holder "subagent-a" has an empty list/);
     const lead = raw();
     (lead.holders as Record<string, string[]>)['orchestrator-x'] = ['design'];
-    expect(() => parsePageTypes(lead)).toThrow(/page types: holder "orchestrator-x" is not a specialist stem/);
+    expect(() => parsePageTypes(lead)).toThrow(/Page types: holder "orchestrator-x" is not a specialist stem/);
   });
 });
 
@@ -133,9 +133,10 @@ describe('the needs of a list', () => {
 
 describe('stemOfRoleName', () => {
   it('maps a role name to the stem of its core, and an agency copy to the marketing core it stands on', () => {
-    expect(stemOfRoleName('ui-designer')).toBe('subagent-ui-designer');
-    expect(stemOfRoleName('agency-growth-strategist')).toBe('subagent-marketing-growth-strategist');
-    expect(stemOfRoleName('agency-seo-specialist')).toBe('subagent-seo-specialist');
+    const committed = loadPageTypes('registry', 'claude');
+    expect(stemOfRoleName('ui-designer', committed)).toBe('subagent-ui-designer');
+    expect(stemOfRoleName('agency-growth-strategist', committed)).toBe('subagent-marketing-growth-strategist');
+    expect(stemOfRoleName('agency-seo-specialist', committed)).toBe('subagent-seo-specialist');
   });
 });
 

@@ -1,0 +1,135 @@
+/**
+ * ADR 0078 - the page types of a Claude account and the roles that hold them. The table is fixed text in `registry/hosts/<host>/page-types.json`;
+ * it is read, checked and never probed at run time. A specialist's list is its holder entry; a lead's list is the union of the lists of the roles in
+ * its `Agent(...)` allowlist. Pure functions apart from the one file read: no terminal I/O, no clock.
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import type { PageType, PageTypeId, PageTypeKind, PageTypeTable } from './types.js';
+
+const KINDS: readonly PageTypeKind[] = ['files', 'connector', 'store'];
+const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const fail = (message: string): never => {
+  throw new Error(`Page types: ${message}`);
+};
+const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
+
+function parseType(entry: unknown, index: number): PageType {
+  if (!isRecord(entry)) return fail(`type ${index + 1} is not an object.`);
+  const id = entry.id;
+  if (typeof id !== 'string' || !ID.test(id)) return fail(`type ${index + 1} needs an id in kebab case.`);
+  for (const key of ['title', 'for'] as const) {
+    const value = entry[key];
+    if (typeof value !== 'string' || value.trim() === '') return fail(`type "${id}" needs a non-empty ${key}.`);
+  }
+  if (typeof entry.filledBy !== 'string' || !KINDS.includes(entry.filledBy as PageTypeKind)) return fail(`type "${id}" needs filledBy to be files, connector or store.`);
+  if (!Array.isArray(entry.needs) || entry.needs.some(tool => typeof tool !== 'string' || tool.trim() === '')) return fail(`type "${id}" needs a needs list of tool names.`);
+  if (typeof entry.takesLook !== 'boolean') return fail(`type "${id}" needs takesLook to be true or false.`);
+  return {
+    id,
+    title: entry.title as string,
+    for: entry.for as string,
+    filledBy: entry.filledBy as PageTypeKind,
+    needs: [...(entry.needs as string[])],
+    takesLook: entry.takesLook,
+  };
+}
+
+/** Checks a parsed table and returns it typed. Throws a clear error for each fault. */
+export function parsePageTypes(value: unknown): PageTypeTable {
+  if (!isRecord(value)) return fail('the table is not an object.');
+  if (!Array.isArray(value.types) || value.types.length === 0) return fail('the table needs a non-empty list of types.');
+  const types = value.types.map(parseType);
+  const order = new Map<PageTypeId, number>();
+  for (const type of types) {
+    if (order.has(type.id)) return fail(`type id "${type.id}" appears twice.`);
+    order.set(type.id, order.size);
+  }
+  if (!isRecord(value.holders)) return fail('the table needs a holders object.');
+  const holders: Record<string, PageTypeId[]> = {};
+  for (const [stem, list] of Object.entries(value.holders)) {
+    if (!stem.startsWith('subagent-')) return fail(`holder "${stem}" is not a specialist stem; a lead's list is computed from its roster.`);
+    if (!Array.isArray(list) || list.some(id => typeof id !== 'string')) return fail(`holder "${stem}" needs a list of type ids.`);
+    if (list.length === 0) return fail(`holder "${stem}" has an empty list.`);
+    let last = -1;
+    let lastId = '';
+    const seen = new Set<string>();
+    for (const id of list as string[]) {
+      if (!order.has(id)) return fail(`holder "${stem}" names the unknown type "${id}".`);
+      if (seen.has(id)) return fail(`holder "${stem}" lists "${id}" twice.`);
+      seen.add(id);
+      if (order.get(id)! < last) return fail(`holder "${stem}" lists "${lastId}" before "${id}"; keep the catalogue order.`);
+      last = order.get(id)!;
+      lastId = id;
+    }
+    holders[stem] = [...(list as string[])];
+  }
+  return { semantics: typeof value.semantics === 'string' ? value.semantics : '', types, holders };
+}
+
+/** Reads and checks `registry/hosts/<host>/page-types.json`. */
+export function loadPageTypes(registryDir: string, host: string = 'claude'): PageTypeTable {
+  const file = path.join(registryDir, 'hosts', host, 'page-types.json');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as unknown;
+  } catch (error) {
+    return fail(`cannot read ${file}: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  return parsePageTypes(parsed);
+}
+
+const inCatalogueOrder = (table: PageTypeTable, ids: ReadonlySet<PageTypeId>): PageType[] => table.types.filter(type => ids.has(type.id));
+
+/** The types a specialist holds, by the stem of its core, in catalogue order; nothing for a stem without an entry. */
+export function typesOfSpecialist(table: PageTypeTable, stem: string): PageType[] {
+  return inCatalogueOrder(table, new Set(table.holders[stem] ?? []));
+}
+
+/**
+ * The stem of the core a native role stands on, from its role name: `subagent-<name>`. A Tier-2 copy `agency-<name>` stands on the marketing core
+ * `subagent-marketing-<name>` when that core has an entry, else on `subagent-<name>`.
+ */
+export function stemOfRoleName(name: string, table: PageTypeTable): string {
+  if (!name.startsWith('agency-')) return `subagent-${name}`;
+  const rest = name.slice('agency-'.length);
+  return `subagent-marketing-${rest}` in table.holders ? `subagent-marketing-${rest}` : `subagent-${rest}`;
+}
+
+/** The union of the lists of the roles in a lead's roster, in catalogue order. */
+export function typesOfLead(table: PageTypeTable, roster: readonly string[], stemOf: (name: string) => string | undefined): PageType[] {
+  const ids = new Set<PageTypeId>();
+  for (const name of roster) {
+    const stem = stemOf(name);
+    if (stem !== undefined) for (const id of table.holders[stem] ?? []) ids.add(id);
+  }
+  return inCatalogueOrder(table, ids);
+}
+
+/** The role names of the `Agent(a, b)` allowlist of a tools line; none when the line holds a bare `Agent` or no `Agent`. */
+export function delegateNamesOf(tools: readonly string[]): string[] {
+  const entry = tools.find(tool => tool.startsWith('Agent('));
+  const match = entry === undefined ? null : /^Agent\((.*)\)$/.exec(entry);
+  return match === null ? [] : match[1]!.split(',').map(name => name.trim()).filter(name => name !== '');
+}
+
+/** The page types of a role: a specialist's own list, or a lead's union over its roster. */
+export function typesOfRole(
+  table: PageTypeTable,
+  role: { stem: string; coordinator: boolean; tools: readonly string[] },
+  stemOf: (name: string) => string | undefined = name => stemOfRoleName(name, table),
+): PageType[] {
+  return role.coordinator ? typesOfLead(table, delegateNamesOf(role.tools), stemOf) : typesOfSpecialist(table, role.stem);
+}
+
+const unique = (values: readonly string[]): string[] => [...new Set(values)];
+
+/** The connector tools a list needs: the `needs` of its connector types, each once. */
+export function connectorToolsOf(types: readonly PageType[]): string[] {
+  return unique(types.filter(type => type.filledBy === 'connector').flatMap(type => type.needs));
+}
+
+/** The tools a list needs to reach a page's own store: the `needs` of its store types, each once. */
+export function storeNeedsOf(types: readonly PageType[]): string[] {
+  return unique(types.filter(type => type.filledBy === 'store').flatMap(type => type.needs));
+}
