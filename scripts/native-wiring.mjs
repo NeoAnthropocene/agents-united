@@ -1,6 +1,6 @@
 /**
  * ADR 0075 - the test wiring of a role brought into the Claude native lane, generated from a batch manifest (scripts/factory-batch.schema.json).
- * Contributor tooling: never installed, never run at install time. It plans edits to six test files and prints them; `--write` applies them.
+ * Contributor tooling: never installed, never run at install time. It plans edits to seven test files and prints them; `--write` applies them.
  * It never writes registry/bundles.json, a tool policy or anything under src/; registry/hosts/claude/deltas.json only with `--deltas`.
  *
  *   node scripts/native-wiring.mjs --manifest <file> --checkout <folder> [--write] [--deltas]
@@ -20,6 +20,7 @@ const FILES = {
   reach: 'tests/native-claude-own-session.test.ts',
   install: 'tests/native-install-lane.test.ts',
   cli: 'tests/cli-e2e.test.ts',
+  guard: 'tests/guard-destructive-upgrade.test.ts',
   deltas: 'registry/hosts/claude/deltas.json',
 };
 
@@ -130,6 +131,12 @@ function factsOf(role, checkout) {
 function namedInvariants(text) {
   const block = /const COMMS = \{([\s\S]*?)\}/.exec(text)?.[1] ?? '';
   return new Map([...block.matchAll(/^\s+(\w+): '((?:[^'\\]|\\.)*)',$/gm)].map(match => [match[1], match[2].replace(/\\'/g, "'")]));
+}
+
+/** The sentence the guard test's role-text case looks for (its `SENTENCE` constant, a single-quoted string), or '' when the test has none. */
+function guardSentence(text) {
+  const match = /describe\('the role texts say one true sentence about the guard'[\s\S]*?const SENTENCE =\s*'((?:[^'\\\n]|\\.)*)';/.exec(text);
+  return match ? match[1].replace(/\\(.)/g, '$1') : '';
 }
 
 /** `'<invariant>': /<pattern>/flags,` (or `[COMMS.key]: ...`) lines of a block that starts at `header` (an object literal opened on that line), at `indent` spaces. */
@@ -277,6 +284,11 @@ export function planWiring(manifest, checkout, options = {}) {
   const refuse = (key, role, what) => plan.refusals.push(`${FILES[key]}: ${role} ${what} differs from what the generator writes; it is left as it is and nothing is written.`);
   for (const key of ['roster', 'roles', 'evidence', 'reach', 'install', 'cli']) original[FILES[key]] = load(key);
   const evidenceText = () => texts[FILES.evidence];
+  // The guard-sentence test is read only when a role needs it, so a checkout without it is fine until then.
+  const guardTest = () => {
+    if (original[FILES.guard] === undefined && exists(path.join(checkout, FILES.guard))) original[FILES.guard] = load('guard');
+    return original[FILES.guard] ?? '';
+  };
   const shared = patternsIn(original[FILES.evidence], 'export const EVIDENCE: Record<string, RegExp> = {', 2) ?? new Map();
 
   for (const role of active) {
@@ -400,6 +412,27 @@ export function planWiring(manifest, checkout, options = {}) {
         }
       }
       texts[FILES.install] = text;
+    }
+
+    // 8. The guard-sentence list: a role whose native file carries the sentence (the test's own SENTENCE) is named in it, in sorted place.
+    //    A new name joins the line of the name before it, so every other line stays as it is; the list is read only for such a role.
+    {
+      const sentence = guardSentence(guardTest());
+      if (sentence && facts.text.includes(sentence)) {
+        const text = texts[FILES.guard];
+        const listStart = text.indexOf('const named = [');
+        const listEnd = listStart < 0 ? -1 : text.indexOf('];', listStart);
+        const names = listEnd < 0 ? [] : [...text.slice(listStart, listEnd).matchAll(/'([a-z0-9-]+)'/g)].map(match => match[1]);
+        if (names.length === 0) plan.refusals.push(`${FILES.guard}: the \`named\` list, where a role that carries the guard sentence goes, is missing or empty.`);
+        else if (names.includes(role.role)) note('guard', 'unchanged', role.role, 'guard-sentence list entry');
+        else {
+          const before = names.filter(name => name < role.role).pop();
+          const segment = text.slice(listStart, listEnd);
+          const updated = before === undefined ? segment.replace(`'${names[0]}'`, () => `'${role.role}', '${names[0]}'`) : segment.replace(`'${before}',`, () => `'${before}', '${role.role}',`);
+          if (updated === segment) plan.refusals.push(`${FILES.guard}: the guard-sentence list has no place for ${role.role} (each entry must end in a comma).`);
+          else { texts[FILES.guard] = text.slice(0, listStart) + updated + text.slice(listEnd); note('guard', 'insert', role.role, 'guard-sentence list entry'); }
+        }
+      }
     }
 
     // 7. The role's own test file: a stub when it is missing (its exact tool set, and a case that fails until its claims are written);
