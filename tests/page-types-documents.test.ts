@@ -133,6 +133,45 @@ describe('ADR 0077 and the observation record attribute the second copy to the d
   });
 });
 
+describe('the HTML fallback asks the user once (the maintainer\'s decision of 2026-11-23)', () => {
+  const ASK = 'ask once before an HTML page replaces it';
+
+  it('ADR 0078 records it as decision 19 of the maintainer, with the options, and the session decision moves to 20', () => {
+    const text = ADR_0078();
+    expect(text).toContain('Decisions 18 and 19 are the maintainer\'s, of 2026-11-23');
+    expect(text).toMatch(/\n19\. \*\*The HTML fallback asks once\.\*\*[^\n]*"Ask once more"[^\n]*Keep it in the project\*\* first[^\n]*Publish an HTML page\*\*/);
+    expect(text).toMatch(/\n20\. \(C\) \*\*Creation, refusal and read-back\.\*\*/);
+    expect(text).toContain('decisions 9 to 17 and decision 20');
+    expect(text).not.toContain('it stays the fallback when the account does not offer the Design or Slides type.');
+  });
+
+  it('CONTEXT, ADR 0077 and ADR 0078 limits state the one extra question', () => {
+    expect(CONTEXT()).toContain('when the account does not offer the Design or Slides type needed and the user, asked once, chose it');
+    expect(ADR_0077()).toContain('ADR 0078 decision 19 adds one question to the user before that HTML page');
+    expect(ADR_0078()).toContain('gets one question to the user and, on the answer "Publish an HTML page", an HTML page for a Design or Slides deliverable');
+  });
+
+  it('no document keeps a looser statement of the fallback', () => {
+    for (const [name, text] of [['ADR 0078', ADR_0078()], ['CONTEXT', CONTEXT()], ['README', README()]] as const) {
+      expect(text, name).not.toMatch(/(?:publish|use|gets) an HTML page when the account does not offer/);
+    }
+    expect(ASK.length).toBeGreaterThan(0);
+  });
+});
+
+describe('the third review: sharing of a new page and of an update, and the look of a project that has its own design system page', () => {
+  it('ADR 0078 and CONTEXT say a new page is private and an update leaves sharing as it was', () => {
+    expect(ADR_0078()).toContain('A new page is private; an update leaves sharing as it was.');
+    expect(ADR_0078()).not.toContain('Pages are always private.');
+    expect(CONTEXT()).toContain('A new page is private; an update leaves sharing as it was;');
+    expect(CONTEXT()).not.toContain('A published page is private;');
+  });
+
+  it("ADR 0078: the project's own design system page is followed before the default", () => {
+    expect(ADR_0078()).toContain("otherwise the project's own design system page is followed, or else the default is used without asking");
+  });
+});
+
 describe('the second review: README, the table header, the live check plan and the fallback of the look (review round two)', () => {
   it('README: no second question for a user who named the deliverable, and the exceptions stated once', () => {
     const p = publishingParagraph();

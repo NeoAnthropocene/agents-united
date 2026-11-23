@@ -146,8 +146,13 @@ describe('the runbook teaches the rules that P3 showed she skips', () => {
     expect(e).toMatch(/approved publish that partly landed/);
     expect(e).toMatch(/same URL, through the same tool/);
     expect(e).toMatch(/only when the result can be checked/);
-    expect(e).toMatch(/Design and Slides only/);
+    expect(e).toMatch(/Design and Slides only; never after a refusal, which stops/);
     expect(e).toMatch(/After a connector or store write fails, the type's own rule holds: leave the page as it is and try no other route/);
+  });
+
+  it('asks once before an HTML page replaces a Design or Slides type the account does not offer, in the skill and in its pages reference (the maintainer\'s decision of 2026-11-23)', () => {
+    expect(section('Edge Cases & Error Recovery')).toMatch(/Design or Slides type is not offered: ask once before an HTML page replaces it/);
+    expect(read('references/pages-decks-and-the-design-skill.md')).not.toContain('- Use an HTML page when the account does not offer');
   });
 
   it('reads the reference of the kind and the read-back reference before the first write call, and the look reference when a look is needed (review finding 21)', () => {
@@ -202,6 +207,8 @@ describe('the references, the example and the evals', () => {
     const r = read('references/publish-and-read-back.md');
     expect(r).toMatch(/## The calls for Design and Slides, in order/);
     expect(r).toMatch(/Design System, Docs, Sheets, Whiteboard and Data are not published this way/);
+    expect(r).toMatch(/the Slides argument has not yet been observed in this repository/);
+    expect(r).toMatch(/the one-call procedure for Slides has not yet been observed in this repository/);
     expect(r).toMatch(/## Read back by type/);
     for (const kind of ['Design, Slides and Design System', 'Docs and Sheets', 'Whiteboard and Data']) expect(r, kind).toContain(kind);
     expect(r).toMatch(/a read-back, or a stated failure to read back/);
@@ -455,6 +462,7 @@ describe('the skill for every holder, for decks and for the go-ahead of each pag
       'MCP-server contexts',
       'If the call fails',
       'does not offer the Design or Slides type you need',
+      'ask once before an HTML page replaces it: say that the type is not available, with **Keep it in the project** first and **Publish an HTML page** second; publish the HTML page only on that answer',
       'Write the files in the project first',
     ]) {
       expect(r, phrase).toContain(phrase);
