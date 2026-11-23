@@ -47,6 +47,14 @@ describe('the rules, one implementation', () => {
     // Without a canonical agent, only a delegate class makes a lead.
     expect(isLeadRole(cores.get('orchestrator-universal')!)).toBe(false);
     expect(isLeadRole(cores.get('orchestrator-engineering')!)).toBe(true);
+    // The frontmatter is read as YAML: a quoted value, an inline comment, a BOM and CRLF line ends do not matter.
+    const front = cores.get('orchestrator-universal')!;
+    const canonical = canonicalOf('orchestrator-universal');
+    expect(isLeadRole(front, canonical.replace(/^type: orchestrator$/m, 'type: "orchestrator"'))).toBe(true);
+    expect(isLeadRole(front, canonical.replace(/^type: orchestrator$/m, 'type: orchestrator # the front door'))).toBe(true);
+    expect(isLeadRole(front, `﻿${canonical.replace(/\n/g, '\r\n')}`)).toBe(true);
+    expect(isLeadRole(front, canonical.replace(/^type: orchestrator$/m, 'type: subagent'))).toBe(false);
+    expect(isLeadRole(front, canonical.replace(/^type: orchestrator$/m, 'type: [unclosed'))).toBe(false);
   });
 
   it('refuses another posture, naming both', () => {
