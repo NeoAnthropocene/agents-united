@@ -10,7 +10,7 @@ import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js
 import { GUARD_SCRIPT, NATIVE_GUARD_FILES } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
-import { delegateNamesOf, loadPageTypesIfPresent, roleStemResolver, typesOfRole, unknownRosterNames } from './page-types.js';
+import { connectorToolsOf, delegateNamesOf, loadPageTypesIfPresent, roleStemResolver, typesOfRole, unknownRosterNames } from './page-types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
 import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
@@ -114,7 +114,9 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
         // The generator's own form (ADR 0072): the class grant sorted, then the canonical agent's server tools in its order. The factory's own
         // coordinator must hold exactly its fixed delegate list (the same function as tests/helpers/native-delta.ts); any other delegating role's
         // one well-formed `Agent(...)` allowlist stands for `Agent`.
-        const expected = nativeToolOrder(grant, canonicalText === undefined ? [] : canonicalServerTools(canonicalText));
+        // A role that holds a connector page type also holds the connector tool of that type (ADR 0078); no canonical agent declares it.
+        const serverTools = canonicalText === undefined ? [] : canonicalServerTools(canonicalText);
+        const expected = nativeToolOrder(grant, [...serverTools, ...connectorToolsOf(types).filter(tool => !serverTools.includes(tool))]);
         let wanted = nativeToolsWanted(expected, facts.tools, { coordinator });
         if (factorySkill === 'coordinate-artifact') {
           try {

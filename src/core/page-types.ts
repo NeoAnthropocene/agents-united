@@ -115,7 +115,8 @@ export function typesOfSpecialist(table: PageTypeTable, stem: string): PageType[
  * role and core in `FACTORY_WORKERS`. Returns native role name to core stem.
  */
 export function nativeRoleStems(registryDir: string): Record<string, string> {
-  const parsed = JSON.parse(fs.readFileSync(path.join(registryDir, 'bundles.json'), 'utf8')) as { bundles?: Record<string, { nativeRoles?: Record<string, string> }> };
+  const file = path.join(registryDir, 'bundles.json');
+  const parsed = (fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {}) as { bundles?: Record<string, { nativeRoles?: Record<string, string> }> };
   const stems: Record<string, string> = {};
   for (const worker of FACTORY_WORKERS) stems[worker.role] = worker.definition;
   for (const bundle of Object.values(parsed.bundles ?? {})) {

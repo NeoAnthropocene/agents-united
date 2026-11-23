@@ -105,20 +105,30 @@ export function publishingBlockProblems(
   const problems: string[] = [];
   const holds = holdsPublishing(role.tools);
   const ids = role.types.map(type => type.id).join(', ');
-  if (holds && role.types.length === 0) problems.push(`Native page types: ${role.name} holds Artifact but has no page type; add it to the holders of the page type table.`);
-  else if (!holds && role.types.length > 0) problems.push(`Native page types: ${role.name} has page types (${ids}) but its tools line holds no Artifact.`);
-  if (holds && role.types.length > 0) {
-    const connectors = connectorToolsOf(role.types);
-    const idsOfKind = (kind: PageTypeKind): string => role.types.filter(type => type.filledBy === kind).map(type => type.id).join(', ');
-    for (const tool of connectors) {
-      if (!role.tools.includes(tool)) problems.push(`Native page types: ${role.name} holds the connector type ${idsOfKind('connector')} but its tools line lacks ${tool}.`);
-    }
-    for (const tool of connectorToolsOf(role.catalogue)) {
-      if (!connectors.includes(tool) && role.tools.includes(tool)) problems.push(`Native page types: ${role.name} holds the connector tool ${tool} but no page type that is filled through a connector.`);
-    }
-    for (const tool of storeNeedsOf(role.types)) {
-      if (!role.tools.includes(tool)) problems.push(`Native page types: ${role.name} holds the store type ${idsOfKind('store')} but its tools line lacks ${tool}.`);
-    }
+  if (holds && role.types.length === 0) {
+    if (role.catalogue.length === 0) problems.push(`Native page types: ${role.name} holds Artifact but the page type table of the host is missing; add registry/hosts/claude/page-types.json.`);
+    else if (role.kind === 'coordinator') problems.push(`Native page types: ${role.name} holds Artifact but no role in its Agent roster holds a page type; add a role that holds one to the roster, or take Artifact off the tools line.`);
+    else problems.push(`Native page types: ${role.name} holds Artifact but has no page type; add it to the holders of the page type table.`);
+  } else if (!holds && role.types.length > 0) problems.push(`Native page types: ${role.name} has page types (${ids}) but its tools line holds no Artifact.`);
+  // The tools that the page types need are checked for every role, so that a role without Artifact cannot hold the connector or miss the store tool unnoticed.
+  const connectors = connectorToolsOf(role.types);
+  const typesNeeding = (tool: string, kind: PageTypeKind): string => {
+    const named = role.types.filter(type => type.filledBy === kind && type.needs.includes(tool));
+    return `${kind === 'connector' ? 'connector' : 'store'} type${named.length === 1 ? '' : 's'} ${named.map(type => type.id).join(', ')}`;
+  };
+  const holdsTool = (tool: string): string | undefined => role.tools.find(held => held === tool || held.startsWith(`${tool}__`));
+  for (const tool of connectors) {
+    if (!role.tools.includes(tool)) problems.push(`Native page types: ${role.name} holds the ${typesNeeding(tool, 'connector')} but its tools line lacks ${tool}.`);
+  }
+  for (const tool of connectorToolsOf(role.catalogue)) {
+    const held = holdsTool(tool);
+    if (!connectors.includes(tool) && held !== undefined) problems.push(`Native page types: ${role.name} holds the connector tool ${held} but no page type that needs ${tool}.`);
+  }
+  for (const tool of storeNeedsOf(role.types)) {
+    if (!role.tools.includes(tool)) problems.push(`Native page types: ${role.name} holds the ${typesNeeding(tool, 'store')} but its tools line lacks ${tool}.`);
+  }
+  for (const tool of role.tools) {
+    if (/(?:^|__)Artifact(?:Data|Comments)(?:\(|$)/.test(tool)) problems.push(`Native page types: ${role.name} holds ${tool}, which a native role never holds (no artifact store, no artifact comments).`);
   }
   if (holds && role.types.length === 0) return problems;
   try {
