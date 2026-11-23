@@ -48,13 +48,13 @@ function commandTargetOf(types: readonly PageType[]): string {
   return joinOr([...(holdsType(types, 'design') ? ['a canvas'] : []), ...(holdsType(types, 'slides') ? ['a deck'] : [])]);
 }
 
-/** The computed paragraph: the page types open to the role, each as `Title (what it is for)`, in the order of the list; a holder of Design also reads the HTML page sentence. */
+/** The computed paragraph: the page types open to the role, each as `Title (what it is for)`, in the order of the list; a holder of Design is told that a working HTML page is the exception. */
 function typesLine(kind: PublishingKind, types: readonly PageType[]): string {
   const open = types.map(type => `${type.title} (${type.for})`).join(', ');
   const intro = kind === 'coordinator' ? 'The page types open to you and to your specialists' : 'The page types open to you';
   const lead = kind === 'coordinator';
-  const other = lead && holdsType(types, 'design') ? 'A deliverable of another form stays a file in the project, apart from a working HTML page (below).' : OTHER_FORM;
-  return `${intro}: ${open}. ${holdsType(types, 'design') && !lead ? `${HTML_PAGE} ` : ''}${other}`;
+const other = holdsType(types, 'design') ? 'A deliverable of another form stays a file in the project, apart from a working HTML page (below).' : OTHER_FORM;
+  return `${intro}: ${open}. ${other}`;
 }
 
 /** The sentence that follows "Do not wait for the user to type a command": the commands to never ask for, when the role holds Design or Slides. */
@@ -90,17 +90,16 @@ function howSteps(types: readonly PageType[]): string[] {
   const slides = holdsType(types, 'slides');
   const skill = design && slides ? '`design` (for a deck: `slides`)' : design ? '`design`' : '`slides`';
   const type = design && slides ? 'the Design type (for a deck: the Slides type)' : design ? 'the Design type' : 'the Slides type';
-  const lacks = design && slides ? 'the Design or Slides type you need' : type;
   const others = otherTypesOf(types);
   const steps = [
     `- **How, for ${stepsScopeOf(types)}, the first of these that this session offers:**`,
     `  1. If the list of skills available to you shows ${skill}, invoke it through \`Skill\` with the brief. This host may not offer that skill to you; its absence from your list is not an error. If the call fails, or it answers that the user must run \`/design consent\` or sign in, report that and take step 2; never ask for \`/design-login\` or \`/design-sync\`.`,
-    `  2. Otherwise load the skill \`design-artifact-publishing\` and start ${type} through \`Artifact\`. When the account does not offer ${lacks}, ask once before an HTML page replaces it: one \`ask-user\` entry that says the type is not available, with **Keep it in the project** first and **Publish an HTML page** second; publish the HTML page only on that answer.`,
+    `  2. Otherwise load the skill \`design-artifact-publishing\` and start ${type} through \`Artifact\`. ${FALLBACK}`,
     '  3. If `Artifact` is missing or refuses, do not look for a way round it: the files in the project are the deliverable, and your report says why there is no page.',
   ];
   if (others.length > 0) {
     const only = design && slides ? 'Design and Slides' : design ? 'Design' : 'Slides';
-    steps.push(`- **Other types.** Every other type open to you is started through \`Artifact\` with the skill \`design-artifact-publishing\`, as the bullets below say. The steps above are for ${only} only.`);
+    steps.push(`- **Other types.** Every other type open to you follows its own bullet below, with the skill \`design-artifact-publishing\`. The steps above are for ${only} only.`);
   }
   return steps;
 }
@@ -109,8 +108,9 @@ const HOW_WITHOUT_CANVAS_OR_DECK =
   '- **How.** Load the skill `design-artifact-publishing` and follow the bullet of the type below. If `Artifact` is missing or refuses, do not look for a way round it: the files in the project are the deliverable, and your report says why there is no page.';
 
 const CREATES_PAGE = 'Starting the type creates the new page, so the go-ahead comes first';
-const UPDATE_SENTENCE = 'An update goes to that URL and never starts the type again; the steps and bullets below are for a new page.';
-const NO_CONNECTOR = 'if it is not, the files in the project are the deliverable, your report says there is no page because the connector is missing, and you never ask the user to sign in or to connect it';
+const UPDATE_SENTENCE = 'An update goes to that URL and never starts the type again; only the steps that start a new page are skipped, and every other rule below applies to it.';
+const FALLBACK = `When the user approved a Design or Slides page and the account does not offer that type, ask once before an HTML page replaces it: one \`ask-user\` entry that says the type is not available, with **Keep it in the project** first and **Publish an HTML page** second; publish the HTML page only on that answer; if it is declined or unanswered, the files stand.`;
+const NO_CONNECTOR = 'if it is not, the files in the project are the deliverable, your report says there is no new page because the connector is missing and an existing page is left as it is, and you never ask the user to sign in or to connect it';
 const FAILURE_REPORT = 'report the link, the content you confirmed by reading it back, and "unknown" where the read-back failed';
 const FILES_BULLET =
   `- **Design System.** The project files come first. ${CREATES_PAGE}. For a new page, start the type titled Design System through \`Artifact\` with a title and no files. Then write the files under the page's own project folder as its instructions say, the index file last, and read them back.`;
@@ -172,7 +172,7 @@ function specialistText(types: readonly PageType[]): string[] {
     ...(holdsType(types, 'design') ? [HTML_BULLET] : []),
     ...(canvasOrDeck ? howSteps(types) : [HOW_WITHOUT_CANVAS_OR_DECK]),
     ...kindBullets(types),
-    '- **Private, always.** A new page is private. Never share it, never ask the user to share it as a step of the work, never delete or pin an artifact, declare no runtime capabilities unless the brief asks for them, and never work around a prompt of the host. Who can see the page is the user\'s own act in the browser.',
+    '- **Private, and never shared by you.** A new page is private and an update leaves sharing as it was. Never share it, never ask the user to share it as a step of the work, never delete or pin an artifact, declare no runtime capabilities unless the brief asks for them, and never work around a prompt of the host. Who can see the page is the user\'s own act in the browser.',
     '- **Report.** The link, the type, what you published, what you read back from the page or why you could not, what you did not check (not rendered), and that project material has left the project.',
   ];
 }
@@ -195,16 +195,15 @@ function ownPagesText(types: readonly PageType[]): string {
   const slides = holdsType(types, 'slides');
   if (!design && !slides) {
     const examples = OWN_PAGE_EXAMPLES.filter(([id]) => holdsType(types, id)).map(([, example]) => example);
-    return `- **Your own pages** (${examples.join(', ')}) follow the same rule as your specialists: load \`design-artifact-publishing\` and start the type through \`Artifact\`, as the bullets below say. If \`Artifact\` is missing or refuses, do not look for a way round it: the files in the project are the deliverable, and your report says why there is no page.`;
+    return `- **Your own pages** (${examples.join(', ')}) follow the same rule as your specialists: load \`design-artifact-publishing\` and follow the bullet of the type below. If \`Artifact\` is missing or refuses, do not look for a way round it: the files in the project are the deliverable, and your report says why there is no page.`;
   }
   const example = design && slides ? 'a deck or a one-pager' : design ? 'a one-pager' : 'a deck';
   const scope = design && slides ? 'the Design and Slides types' : design ? 'the Design type' : 'the Slides type';
   const skill = design && slides ? '`design` (for a deck: `slides`)' : design ? '`design`' : '`slides`';
   const type = design && slides ? 'the Design or the Slides type' : design ? 'the Design type' : 'the Slides type';
-  const lacks = design && slides ? 'the Design or Slides type you need' : type;
-  const workingHtml = design ? ' A deliverable that is itself a working HTML page is published as an HTML page, not through this order.' : '';
-  const others = otherTypesOf(types).length > 0 ? 'every other type you hold is started through `Artifact` with `design-artifact-publishing`, as the bullets below say; ' : '';
-  return `- **Your own pages** (a synthesis as ${example}) follow the same rule and the same order for ${scope}, for a new page.${workingHtml} Otherwise, if the list of skills available to you shows ${skill}, invoke it through \`Skill\`. If the call fails, or it answers that the user must run \`/design consent\` or sign in, tell the user and take the next route; never ask for \`/design-login\` or \`/design-sync\`. The next route, also when the list does not show that skill: load \`design-artifact-publishing\` and start ${type} through \`Artifact\`, when the account does not offer ${lacks}, ask the user once before an HTML page replaces it (say that the type is not available; **Keep it in the project** first, **Publish an HTML page** second) and publish the HTML page only on that answer; ${others}${OWN_PAGES_FAILS}`;
+  const workingHtml = design ? ' A deliverable that is itself a working HTML page is published as an HTML page with the same go-ahead as any page, not through this order.' : '';
+  const others = otherTypesOf(types).length > 0 ? 'every other type you hold follows its own bullet below, with `design-artifact-publishing`; ' : '';
+  return `- **Your own pages** (a synthesis as ${example}) follow the same rule and the same order for ${scope}, for a new page.${workingHtml} Otherwise, if the list of skills available to you shows ${skill}, invoke it through \`Skill\`. If the call fails, or it answers that the user must run \`/design consent\` or sign in, tell the user and take the next route; never ask for \`/design-login\` or \`/design-sync\`. The next route, also when the list does not show that skill: load \`design-artifact-publishing\` and start ${type} through \`Artifact\`; when the user approved a Design or Slides page and the account does not offer that type, ask the user once with \`AskUserQuestion\` before an HTML page replaces it (say that the type is not available; **Keep it in the project** first, **Publish an HTML page** second), publish the HTML page only on that answer, and if it is declined or unanswered the files stand; ${others}${OWN_PAGES_FAILS}`;
 }
 
 /** The forms the lead holds that take a look, in the order of the list. */
@@ -221,11 +220,11 @@ function lookBullets(types: readonly PageType[]): string[] {
   if (forms === '') return [];
   if (holdsType(types, 'design-system')) {
     return [
-      `- **A look for the page.** When ${forms} needs a look: when the project has no design system page of its own and no such proposal was declined in this piece of work, propose one once as a new page, with **Keep it in the project** first, **Publish Artifact** second, and **Use <the default>** third when the account has a default. Otherwise follow the design system page that the project has, or else use the design system the user marked as default, where the account's list shows one, and do not ask; when some are saved and none is the default, name them and ask once. ${LOOK_TAIL}`,
+      `- **A look for the page.** When ${forms} needs a look: when the project has no design system page of its own and no such proposal was declined in this piece of work, propose one once as a new page, with **Keep it in the project** first, **Publish Artifact** second, and **Use <the default>** third when the account has a default. Otherwise follow the design system page that the project has; if it has none, use the design system the user marked as default, where the account's list shows one, and do not ask; if it has none and some are saved but none is the default, name them and ask once. What follows each answer is in the Design System reference of the skill. ${LOOK_TAIL}`,
     ];
   }
   return [
-    `- **A look for the page.** When ${forms} needs a look, follow the design system page that the project has; otherwise use the design system the user marked as default, where the account's list shows one, and do not ask. When some are saved and none is the default, name them and ask once. ${LOOK_TAIL}`,
+    `- **A look for the page.** When ${forms} needs a look, follow the design system page that the project has; if it has none, use the design system the user marked as default, where the account's list shows one, and do not ask; if it has none and some are saved but none is the default, name them and ask once. What follows each answer is in the Design System reference of the skill. ${LOOK_TAIL}`,
   ];
 }
 

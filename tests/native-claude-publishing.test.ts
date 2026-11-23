@@ -302,7 +302,7 @@ describe('the coordinator text', () => {
   it('has the lead relay a specialist\'s publish question with its options, not with two fixed ones, and reads some saved systems without a default as the case to ask about (review findings 11 and 12)', () => {
     expect(text).toContain('ask it with its options and return the answer to the same specialist');
     expect(text).not.toContain('with these two options');
-    expect(text).toContain('when some are saved and none is the default, name them and ask once');
+    expect(text).toContain('some are saved but none is the default, name them and ask once');
     expect(text).not.toContain('when several are saved');
   });
 
@@ -768,8 +768,9 @@ describe('what an update keeps (review round four)', () => {
 
   it('names the type\'s own bullet, never "start the type", in the overview of a lead and of a specialist for every type but Design and Slides', () => {
     for (const ids of CANVASLESS_LISTS) {
-      expect(coordinator(...ids).join('\n'), ids.join()).not.toMatch(/start the type through|is started through/);
-      expect(specialist(...ids).join('\n'), ids.join()).not.toMatch(/is started through/);
+      const overview = (text: string[]): string => text.filter(line => !/^- \*\*(?:Docs|Sheets|Whiteboard|Data|Design System)/.test(line)).join('\n');
+      expect(overview(coordinator(...ids)), ids.join()).not.toMatch(/start the type|is started through/);
+      expect(overview(specialist(...ids)), ids.join()).not.toMatch(/start the type|is started through/);
     }
     expect(coordinator('design', 'slides', 'docs').join('\n')).not.toMatch(/every other type you hold is started through/);
     expect(specialist('design', 'docs')).toContain(OTHER_TYPES_BULLET.replace('Design and Slides', 'Design'));
