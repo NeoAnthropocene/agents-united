@@ -106,11 +106,11 @@ describe('native orchestrator-security: the guard claims', () => {
     expect(section('Delegate')).toContain('**Brief every specialist on what the guard does not stop**');
   });
 
-  it.each(['appsec-penetration-tester', 'cloud-security-architect', 'compliance-grc-specialist'])('a projected %s carries the guard script on Bash and on Write|Edit|NotebookEdit only, as the Boundaries line says', name => {
+  it.each(['appsec-penetration-tester', 'cloud-security-architect', 'compliance-grc-specialist'])('a projected %s carries the guard script on Bash|PowerShell and on Write|Edit|MultiEdit|NotebookEdit', name => {
     const rel = `agents/subagent-${name}.md`;
     const rendered = ClaudeProjector.renderRole(fs.readFileSync(path.resolve('registry', rel), 'utf8'), rel).content.replace(/\r\n/g, '\n');
     const front = yaml.parse(/^---\n([\s\S]*?)\n---/.exec(rendered)![1]!) as { hooks: { PreToolUse: Array<{ matcher: string; hooks: Array<{ args?: string[] }> }> } };
-    expect(front.hooks.PreToolUse.map(group => group.matcher)).toEqual(['Bash', 'Write|Edit|NotebookEdit']);
+    expect(front.hooks.PreToolUse.map(group => group.matcher)).toEqual(['Bash|PowerShell', 'Write|Edit|MultiEdit|NotebookEdit']);
     for (const group of front.hooks.PreToolUse) expect(group.hooks).toEqual([guardHandler()]);
     expect(text()).toContain('a specialist that is still a projection carries the same guard script as an inline hook, on `Bash` and on `Write|Edit|NotebookEdit` but not on `PowerShell` or `MultiEdit`, so none of them is bound by more than this.');
   });

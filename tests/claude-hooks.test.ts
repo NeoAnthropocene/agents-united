@@ -53,7 +53,7 @@ describe('Plan 022 H5 — managed PreToolUse guard is wired on every projected r
       return JSON.stringify(groups) !== JSON.stringify(guard) || guard.length === 0;
     });
     expect(missing).toEqual([]);
-    expect(guard.map(g => g.matcher)).toEqual(['Bash', 'Write|Edit|NotebookEdit']);
+    expect(guard.map(g => g.matcher)).toEqual(['Bash|PowerShell', 'Write|Edit|MultiEdit|NotebookEdit']);
   });
 
   it('Plan 023 A0: every guard handler is exec form (node + args, no shell, no shell field)', () => {
