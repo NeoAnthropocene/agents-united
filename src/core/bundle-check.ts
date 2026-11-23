@@ -12,7 +12,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { collectBundleManifestIssues } from './registry.js';
+import { listNativeWorkflows } from './native-package.js';
+import { collectBundleManifestIssues, nativeLeadState, nativeWorkflowLead } from './registry.js';
 import {
   MAX_DIRECTORIES, MAX_ECHO_CHARS, MAX_ENTRIES, MAX_FINDINGS, MAX_OUTPUT_BYTES, byPath, canonical, errorCode, errorText, hasTraversalAlias,
   linkedAncestorOf, sha256, shortened, unsafeEntryName, validUtf8, withoutTrailingSeparators,
@@ -791,7 +792,7 @@ function registryRulesGate(context: Context, proposedBundles: ShapedBundle[]): R
   const manifest = { ...(context.registry.manifest as unknown as Plain), bundles: merged } as unknown as BundlesManifest;
   let issues: string[];
   try {
-    issues = collectBundleManifestIssues(manifest, context.registry.root);
+    issues = collectBundleManifestIssues(manifest, context.registry.root, { allowUnresolvedLeads: context.allowUnresolved });
   } catch (error) {
     issues = [`The manifest rules could not be evaluated on the merged manifest: ${cut(errorText(error), 300)}`];
   }
@@ -864,6 +865,27 @@ export class RegistryProbe {
     return result;
   }
 
+  /** The names of the native Claude workflows the manifest rules list (`hosts/claude/workflows/`), recorded. */
+  nativeWorkflowNames(): Set<string> {
+    const key = 'native:workflows';
+    let known = this.record.get(key);
+    if (known === undefined) {
+      known = JSON.stringify(listNativeWorkflows(this.root, 'claude'));
+      this.record.set(key, known);
+    }
+    return new Set(JSON.parse(known) as string[]);
+  }
+
+  /** What the native role file of a lead says about the `Workflow` tool (the manifest rules read it), recorded. */
+  nativeLeadState(role: string): string {
+    const key = `native:lead:${role}`;
+    const known = this.record.get(key);
+    if (known !== undefined) return known;
+    const result = nativeLeadState(this.root, role);
+    this.record.set(key, result);
+    return result;
+  }
+
   /** The canonical text of everything looked up so far. */
   snapshot(): string {
     return canonical([...this.record.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
@@ -874,6 +896,8 @@ export class RegistryProbe {
     const again = new RegistryProbe(this.root);
     for (const key of this.record.keys()) {
       if (key.startsWith('rule:')) again.ruleState(key.slice('rule:'.length));
+      else if (key === 'native:workflows') again.nativeWorkflowNames();
+      else if (key.startsWith('native:lead:')) again.nativeLeadState(key.slice('native:lead:'.length));
       else again.state(key.split('/'));
     }
     return again.snapshot();
@@ -1126,6 +1150,12 @@ function runGates(context: Context): { checks: BundleCheckGate[]; replaces: stri
         if (isSafeSegment(rule)) context.probe.state(['rules', rule]);
       }
     }
+  }
+  // The manifest rules also list the native Claude workflows and read the native role file of each lead that must hold `Workflow`.
+  const nativeWorkflows = context.probe.nativeWorkflowNames();
+  for (const bundle of Object.values(rules.merged)) {
+    const lead = nativeWorkflowLead(bundle as never, rules.merged as never, nativeWorkflows);
+    if (lead !== undefined) context.probe.nativeLeadState(lead.leadRole);
   }
   // Own keys and aliases only, as the loader looks a bundle up (a name such as `toString` is not a bundle).
   const names = new Set<string>(Object.keys(rules.merged));

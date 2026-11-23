@@ -356,6 +356,42 @@ export class RegistryResolver {
   }
 }
 
+/** What the native role of a lead says about the `Workflow` tool: no native role file, a file that lacks it, or a file that lists it. */
+export type NativeLeadState = 'absent' | 'lacks' | 'holds';
+
+/** What `registry/hosts/claude/agents/<role>.md` says about the `Workflow` tool. */
+export function nativeLeadState(registryDir: string, role: string): NativeLeadState {
+  const source = nativeRoleSource(registryDir, 'claude', role);
+  if (source === undefined) return 'absent';
+  return inspectNativeAgent(fs.readFileSync(source, 'utf8')).tools.includes('Workflow') ? 'holds' : 'lacks';
+}
+
+/**
+ * The lead a bundle needs when it resolves a skill that has a native Claude workflow, or `undefined` when it needs none (no such skill, or no
+ * lead). The skills are the bundle's own and its parent's; the lead file is the bundle's `orchestrator`, else its parent's (truthiness, as
+ * `resolve` and the projector read it); the role name is the `nativeRoles` mapping of the bundle when it is a plain object that has the lead
+ * file as an own key with a string value, else the default name of the file. The parent is found by name or alias.
+ */
+export function nativeWorkflowLead(
+  bundle: BundleDefinition, bundles: Record<string, BundleDefinition>, nativeWorkflows: ReadonlySet<string>,
+): { skills: string[]; leadFile: string; leadRole: string } | undefined {
+  if (nativeWorkflows.size === 0) return undefined;
+  const parentKey = bundle.parentBundle;
+  const parent = typeof parentKey !== 'string' ? undefined
+    : Object.hasOwn(bundles, parentKey) ? bundles[parentKey]
+      : Object.values(bundles).find(candidate => Array.isArray(candidate.aliases) && candidate.aliases.includes(parentKey));
+  const listed = (value: unknown): string[] => (Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []);
+  const skills = [...new Set([...listed(bundle.skills), ...listed(parent?.skills)])].filter(skill => nativeWorkflows.has(skill));
+  const leadFile = bundle.orchestrator || parent?.orchestrator;
+  if (skills.length === 0 || typeof leadFile !== 'string' || leadFile === '') return undefined;
+  const roles = bundle.nativeRoles as unknown;
+  const mapped = roles !== null && typeof roles === 'object' && !Array.isArray(roles) && Object.hasOwn(roles, leadFile)
+    ? (roles as Record<string, unknown>)[leadFile]
+    : undefined;
+  const leadRole = typeof mapped === 'string' ? mapped : leadFile.replace(/.md$/i, '').replace(/^subagent-/, '');
+  return { skills, leadFile, leadRole };
+}
+
 /**
  * ADR 0015 — the manifest rules of `RegistryResolver.validateBundles`, collected instead of thrown at the first problem (Plan 033 P20,
  * so `agents bundle-check` can report every problem of a merged manifest). The problems come in the order the first-throw code met them,
@@ -363,7 +399,7 @@ export class RegistryResolver {
  * problem was found still throws that same raw error; once a problem has been collected, a crash on a malformed later part is not
  * raised, because the old code would have stopped at the problem already found.
  */
-export function collectBundleManifestIssues(manifest: BundlesManifest, registryDir: string): string[] {
+export function collectBundleManifestIssues(manifest: BundlesManifest, registryDir: string, options: { allowUnresolvedLeads?: boolean } = {}): string[] {
   const issues: string[] = [];
   const validModes: string[] = ['subagent-first', 'planner-orchestrator'];
 
@@ -394,6 +430,7 @@ export function collectBundleManifestIssues(manifest: BundlesManifest, registryD
   }
 
   const nativeClaudeWorkflows = new Set(listNativeWorkflows(registryDir, 'claude'));
+  const leadStates = new Map<string, NativeLeadState>();
   const inspect = (name: string, bundle: BundleDefinition): void => {
     try {
       validateBundleHostAvailability(bundle);
@@ -460,24 +497,20 @@ export function collectBundleManifestIssues(manifest: BundlesManifest, registryD
     }
 
     // A native Claude workflow stands in for the skill of the same name, and a saved workflow runs only through the `Workflow` tool, which
-    // the host gives to the main session alone and only when its role lists it. So a bundle that resolves such a skill needs a lead (its
-    // orchestrator, else its parent's, as `resolve` inherits it) that is a native role listing `Workflow`.
-    const inherited = bundle.parentBundle !== undefined
-      ? manifest.bundles[bundle.parentBundle] ?? bundles.find(candidate => candidate.aliases?.includes(bundle.parentBundle as string))
-      : undefined;
-    const workflowSkills = [...new Set([...(bundle.skills ?? []), ...(inherited?.skills ?? [])])].filter(skill => nativeClaudeWorkflows.has(skill));
-    if (workflowSkills.length > 0) {
-      const leadFile = bundle.orchestrator ?? inherited?.orchestrator;
-      if (leadFile !== undefined) {
-        const leadRole = bundle.nativeRoles?.[leadFile] ?? leadFile.replace(/\.md$/i, '').replace(/^subagent-/, '');
-        const source = nativeRoleSource(registryDir, 'claude', leadRole);
-        const holdsWorkflow = source !== undefined && inspectNativeAgent(fs.readFileSync(source, 'utf8')).tools.includes('Workflow');
-        if (!holdsWorkflow) {
-          issues.push(
-            `Registry validation error: bundle "${name}" lists ${workflowSkills.map(skill => `"${skill}"`).join(', ')}, which a native Claude workflow replaces, ` +
-            `so its lead "${leadRole}" must be a native role (registry/hosts/claude/agents/${leadRole}.md) that lists the Workflow tool.`
-          );
-        }
+    // the host gives to the main session alone and only when its role lists it. So a bundle that resolves such a skill needs a lead that is
+    // a native role listing `Workflow`. A bundle with no lead at all (no orchestrator of its own or of its parent) is exempt: it is used from
+    // a plain session, which holds `Workflow`, and the user runs `/<name>` there.
+    const lead = nativeWorkflowLead(bundle, manifest.bundles, nativeClaudeWorkflows);
+    // `agents bundle-check --allow-unresolved` passes the option: a lead the proposal names but the registry does not have yet is not judged.
+    const unresolvedLead = lead !== undefined && options.allowUnresolvedLeads === true && !fs.existsSync(path.join(registryDir, 'agents', lead.leadFile));
+    if (lead !== undefined && !unresolvedLead) {
+      if (leadStates.get(lead.leadRole) === undefined) leadStates.set(lead.leadRole, nativeLeadState(registryDir, lead.leadRole));
+      if (leadStates.get(lead.leadRole) !== 'holds') {
+        const many = lead.skills.length > 1;
+        issues.push(
+          `Registry validation error: bundle "${name}" resolves the skill${many ? 's' : ''} ${lead.skills.map(skill => `"${skill}"`).join(', ')}, which ${many ? 'native Claude workflows replace' : 'a native Claude workflow replaces'}, ` +
+          `so its lead "${lead.leadRole}" must be a native role (registry/hosts/claude/agents/${lead.leadRole}.md) that lists the Workflow tool.`
+        );
       }
     }
 
