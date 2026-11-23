@@ -307,6 +307,25 @@ describe('the factory\'s checks use the same rules', () => {
     expect((await run(committed.replace(/^model: .*$/m, 'model: sonnet'))).join('\n')).toContain('differs from the coordinator posture');
   });
 
+  it('factory-check accepts the plugin and connector names of the canonical servers (the routes table), and nothing else', async () => {
+    const registry = await stage(path.join(FIXTURES, 'final'));
+    await fs.outputJson(path.join(registry, 'core/orchestrator-universal.contract.json'), { definition: 'orchestrator-universal', workflows: [], skills: [], hooks: [] });
+    const differs = async (text: string): Promise<string | undefined> => {
+      const file = path.join(scratch, 'orchestrator-universal.md');
+      await fs.writeFile(file, text);
+      const result = await checkFactoryArtifact({ registryDir: registry, definition: 'orchestrator-universal', host: 'claude', artifactPath: file, loading: 'main', requiredSkills: [] });
+      return result.findings.find(finding => finding.startsWith('Native tools differ'));
+    };
+    const committed = nativeOf('orchestrator-universal');
+    expect(committed).toContain('mcp__plugin_github_github');
+    expect(await differs(committed)).toBeUndefined();
+    // An integration the canonical agent does not declare, with or without a route of its own, is refused; so is the Claude Docs connector (a grant of a page type, not of a canonical server).
+    expect(await differs(committed.replace(/^(tools: .*)$/m, '$1, mcp__stitch'))).toContain('Native tools differ from the generator\'s form');
+    expect(await differs(committed.replace(/^(tools: .*)$/m, '$1, mcp__claude_ai_Claude_Docs'))).toContain('Native tools differ from the generator\'s form');
+    // A route is held only next to its server and in the table's order.
+    expect(await differs(committed.replace(', mcp__plugin_github_github', ''))).toContain('Native tools differ from the generator\'s form');
+  });
+
   it('factory-check refuses a relative canonical or coverage path', async () => {
     const final = path.join(FIXTURES, 'final');
     const registry = await stage(final);
