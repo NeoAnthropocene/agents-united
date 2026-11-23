@@ -292,6 +292,135 @@ describe('the wiring generator (ADR 0075, decisions 2 and 3)', () => {
   });
 });
 
+describe('the guard sentence list (ADR 0075)', () => {
+  const GUARD_TEST = 'tests/guard-destructive-upgrade.test.ts';
+  const SENTENCE = 'A guard blocks forced pushes and `.env` writes; it is a seat belt, not a boundary.';
+  /** The list as the live test writes it: wrapped across lines, several names on a line, every entry ending in a comma. */
+  const guardTest = (names: string[], decoy = false): string => [
+    ...(decoy ? ["const named = ['decoy-role'];", ''] : []),
+    "describe('the role texts say one true sentence about the guard', () => {",
+    '  const SENTENCE =',
+    `    '${SENTENCE}';`,
+    "  const AGENTS = path.resolve('registry/hosts/claude/agents');",
+    '  const named = [',
+    `    '${names[0]}',`,
+    ...(names.length > 1 ? [`    ${names.slice(1).map(name => `'${name}'`).join(', ')},`] : []),
+    '  ];',
+    '});',
+    '',
+  ].join('\n');
+  const agentFile = (checkout: string): string => path.join(checkout, 'registry/hosts/claude/agents/devops-engineer.md');
+  async function withSentence(names: string[], carries = true): Promise<string> {
+    const checkout = await copyCheckout();
+    await fs.outputFile(path.join(checkout, GUARD_TEST), guardTest(names));
+    if (carries) await fs.appendFile(agentFile(checkout), `\n${SENTENCE}\n`);
+    return checkout;
+  }
+  const guardEdits = (plan: Json): Json[] => plan.edits.filter((edit: Json) => edit.file === GUARD_TEST);
+  const listOf = (checkout: string): string[] => [...(/const named = \[([\s\S]*?)\];/.exec(read(path.join(checkout, GUARD_TEST)))![1]!).matchAll(/'([a-z0-9-]+)'/g)].map(match => match[1]!);
+
+  it('adds a role whose native file carries the sentence to the list, in sorted place, and keeps the wrapping', async () => {
+    const checkout = await withSentence(['accessibility-lead', 'backend-architect', 'zeta-role']);
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals).toEqual([]);
+    expect(guardEdits(plan)).toEqual([{ file: GUARD_TEST, action: 'insert', role: 'devops-engineer', what: 'guard-sentence list entry' }]);
+    const before = read(path.join(checkout, GUARD_TEST));
+    applyWiring(plan, checkout);
+    expect(listOf(checkout)).toEqual(['accessibility-lead', 'backend-architect', 'devops-engineer', 'zeta-role']);
+    // Only the one entry is added: the same lines, the entry on the line of the name before it.
+    expect(read(path.join(checkout, GUARD_TEST))).toBe(before.replace("'backend-architect',", "'backend-architect', 'devops-engineer',"));
+    expect(guardEdits(planWiring(manifest(), checkout, {})).map((edit: Json) => edit.action)).toEqual(['unchanged']);
+  });
+
+  it('puts a role that sorts before every entry ahead of the first one', async () => {
+    const checkout = await withSentence(['zeta-role', 'zulu-role']);
+    applyWiring(planWiring(manifest(), checkout, {}), checkout);
+    expect(listOf(checkout)).toEqual(['devops-engineer', 'zeta-role', 'zulu-role']);
+  });
+
+  it('plans nothing for a role already in the list', async () => {
+    const checkout = await withSentence(['accessibility-lead', 'devops-engineer', 'zeta-role']);
+    const plan = planWiring(manifest(), checkout, {});
+    expect(guardEdits(plan).map((edit: Json) => edit.action)).toEqual(['unchanged']);
+    expect(Object.keys(plan.texts)).not.toContain(GUARD_TEST);
+  });
+
+  it('plans nothing, and needs no list, for a role whose native file lacks the sentence', async () => {
+    const withList = await withSentence(['accessibility-lead', 'zeta-role'], false);
+    const plan = planWiring(manifest(), withList, {});
+    expect(plan.refusals).toEqual([]);
+    expect(guardEdits(plan)).toEqual([]);
+    expect(Object.keys(plan.texts)).not.toContain(GUARD_TEST);
+    // The frozen checkout has no such test file at all.
+    const frozenPlan = planWiring(manifest(), await copyCheckout(), {});
+    expect(frozenPlan.refusals).toEqual([]);
+    expect(guardEdits(frozenPlan)).toEqual([]);
+  });
+
+  it('refuses, and writes nothing, when a role carries the sentence and the list is missing', async () => {
+    const checkout = await copyCheckout();
+    await fs.appendFile(agentFile(checkout), `\n${SENTENCE}\n`);
+    await fs.outputFile(path.join(checkout, GUARD_TEST), guardTest(['a-role']).replace('const named = [', 'const other = ['));
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals.join('\n')).toContain(GUARD_TEST);
+    expect(() => applyWiring(plan, checkout)).toThrow(/refus/i);
+  });
+
+  it('refuses a test file whose guard sentence cannot be read, instead of skipping it', async () => {
+    const checkout = await withSentence(['accessibility-lead', 'zeta-role'], false);
+    await fs.writeFile(path.join(checkout, GUARD_TEST), guardTest(['accessibility-lead', 'zeta-role']).replace('one true sentence about the guard', 'one sentence about guards'));
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals).toEqual([`${GUARD_TEST}: the guard sentence could not be read from ${GUARD_TEST}.`]);
+    expect(() => applyWiring(plan, checkout)).toThrow(/refus/i);
+  });
+
+  it('looks for the list inside the guard-sentence case, not from the start of the file', async () => {
+    const checkout = await withSentence(['accessibility-lead', 'zeta-role']);
+    await fs.writeFile(path.join(checkout, GUARD_TEST), guardTest(['accessibility-lead', 'zeta-role'], true));
+    applyWiring(planWiring(manifest(), checkout, {}), checkout);
+    const text = read(path.join(checkout, GUARD_TEST));
+    expect(text).toContain("const named = ['decoy-role'];");
+    expect(text).toContain("    'accessibility-lead', 'devops-engineer',\n    'zeta-role',");
+  });
+
+  it('refuses a role whose native file holds the sentence twice, because the list\'s own test requires it once', async () => {
+    const checkout = await withSentence(['accessibility-lead', 'zeta-role']);
+    await fs.appendFile(agentFile(checkout), `\n${SENTENCE}\n`);
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals.join('\n')).toMatch(new RegExp(`${GUARD_TEST}: .*devops-engineer.* more than once`));
+    expect(guardEdits(plan)).toEqual([]);
+  });
+
+  it('adds two roles of one batch, each in sorted place', async () => {
+    const checkout = await withSentence(['accessibility-lead', 'zeta-role']);
+    const second = path.join(checkout, 'registry/hosts/claude/agents/backend-architect.md');
+    await fs.appendFile(second, `\n${SENTENCE}\n`);
+    const m = manifest();
+    m.roles.push({ ...m.roles[0], role: 'backend-architect', definition: 'subagent-backend-architect', canonical: 'registry/agents/subagent-backend-architect.md', native: 'registry/hosts/claude/agents/backend-architect.md' });
+    const plan = planWiring(m, checkout, {});
+    expect(guardEdits(plan).map((edit: Json) => [edit.role, edit.action])).toEqual([['devops-engineer', 'insert'], ['backend-architect', 'insert']]);
+    expect([...(/const named = \[([\s\S]*?)\];/.exec(plan.texts[GUARD_TEST])![1]!).matchAll(/'([a-z0-9-]+)'/g)].map(match => match[1]))
+      .toEqual(['accessibility-lead', 'backend-architect', 'devops-engineer', 'zeta-role']);
+  });
+
+  it('keeps the line ends of a file that uses CRLF', async () => {
+    const checkout = await withSentence(['accessibility-lead', 'zeta-role']);
+    await fs.writeFile(path.join(checkout, GUARD_TEST), guardTest(['accessibility-lead', 'zeta-role']).replace(/\n/g, '\r\n'));
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals).toEqual([]);
+    const text: string = plan.texts[GUARD_TEST];
+    expect(text.replace(/\r\n/g, '')).not.toContain('\n');
+    expect(text).toContain("'accessibility-lead', 'devops-engineer',\r\n    'zeta-role',");
+  });
+
+  it('reads the real sentence and the real list of the checkout it is run on, and finds an already-listed role unchanged', () => {
+    const plan = planWiring(manifest(), ROOT, {});
+    expect(guardEdits(plan)).toEqual([{ file: GUARD_TEST, action: 'unchanged', role: 'devops-engineer', what: 'guard-sentence list entry' }]);
+    expect(plan.refusals.filter((line: string) => line.startsWith(GUARD_TEST))).toEqual([]);
+    expect(Object.keys(plan.texts)).not.toContain(GUARD_TEST);
+  });
+});
+
 describe('the conformance runner (ADR 0075, decision 4)', () => {
   it('refuses to start while the named hold file exists, and does nothing else', async () => {
     const hold = path.join(work, 'HOLD');
@@ -307,7 +436,7 @@ describe('the conformance runner (ADR 0075, decision 4)', () => {
     const files: string[] = conformanceFiles(manifest(), ROOT);
     expect(files).toEqual(expect.arrayContaining(['tests/native-claude-agents.test.ts', 'tests/native-claude-devops-engineer.test.ts', 'tests/native-install-lane.test.ts',
       'tests/cli-e2e.test.ts', 'tests/native-claude-own-session.test.ts', 'tests/native-invariant-coverage.test.ts', 'tests/core-safety-floor.test.ts',
-      'tests/claude-session-task-policy.test.ts', 'tests/factory-repository-rules.test.ts']));
+      'tests/claude-session-task-policy.test.ts', 'tests/factory-repository-rules.test.ts', 'tests/guard-destructive-upgrade.test.ts']));
     for (const file of files) expect(fs.existsSync(path.join(ROOT, file)), file).toBe(true);
     expect(files.length).toBeLessThan(40);
   });

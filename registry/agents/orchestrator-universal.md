@@ -157,9 +157,9 @@ Every listed Bundle, and every standalone addon, explicitly ships `host-agent-ro
 
 The following **Organizational Bundle** requires explicit user opt-in and a **Prerequisite Gate** check. Never recommend or install it autonomously:
 
-| Bundle | Status | Rule |
-|---|---|---|
-| `digital-agency` | under-construction | Opt-in only — route to it only if the user explicitly asks for a full-service agency team, and only after explaining the runtime prerequisites. |
+| Bundle | Rule |
+|---|---|
+| `digital-agency` | Opt-in only — route to it only if the user explicitly asks for a full-service agency team, and only after explaining the runtime prerequisites. |
 
 ---
 
