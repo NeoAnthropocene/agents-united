@@ -47,7 +47,7 @@ const commandFor = (tool: string): Handler => {
 };
 
 describe('Plan 022 H5 — managed PreToolUse guard is wired on every projected role', () => {
-  it('every role carries the same guard for Bash and Write|Edit', () => {
+  it('every role carries the same guard for shells (Bash, PowerShell) and file writers (Write, Edit, MultiEdit, NotebookEdit)', () => {
     const missing = files.filter(file => {
       const { groups } = hooksOf(file);
       return JSON.stringify(groups) !== JSON.stringify(guard) || guard.length === 0;
@@ -75,6 +75,9 @@ describe('Plan 022 H5 — managed PreToolUse guard is wired on every projected r
     ['.env write (Write)', 'Write', { file_path: '/repo/.env', content: 'SECRET=1' }],
     ['.env.local write (Edit)', 'Edit', { file_path: 'apps/web/.env.local', old_string: 'a', new_string: 'b' }],
     ['.env write via shell redirect', 'Bash', { command: 'echo KEY=1 >> .env' }],
+    ['git push --force (PowerShell)', 'PowerShell', { command: 'git push --force origin main' }],
+    ['.env write (MultiEdit)', 'MultiEdit', { file_path: '/repo/.env', edits: [] }],
+    ['.env write (NotebookEdit, notebook_path)', 'NotebookEdit', { notebook_path: '/repo/.env', new_source: 'x' }],
   ];
   for (const [label, tool, input] of blocked) {
     it(`blocks ${label} with exit 2 and a clear message`, () => {
@@ -90,6 +93,8 @@ describe('Plan 022 H5 — managed PreToolUse guard is wired on every projected r
     ['vercel preview deploy', 'Bash', { command: 'npx vercel deploy --prebuilt' }],
     ['.env.example write', 'Write', { file_path: '.env.example', content: 'KEY=' }],
     ['ordinary source edit', 'Edit', { file_path: 'src/env.ts', old_string: 'a', new_string: 'b' }],
+    ['PowerShell git push --force-with-lease', 'PowerShell', { command: 'git push --force-with-lease' }],
+    ['ordinary MultiEdit', 'MultiEdit', { file_path: 'src/env.ts', edits: [] }],
   ];
   for (const [label, tool, input] of allowed) {
     it(`allows ${label}`, () => {
