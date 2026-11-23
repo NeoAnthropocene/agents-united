@@ -52,8 +52,7 @@ function commandTargetOf(types: readonly PageType[]): string {
 function typesLine(kind: PublishingKind, types: readonly PageType[]): string {
   const open = types.map(type => `${type.title} (${type.for})`).join(', ');
   const intro = kind === 'coordinator' ? 'The page types open to you and to your specialists' : 'The page types open to you';
-  const lead = kind === 'coordinator';
-const other = holdsType(types, 'design') ? 'A deliverable of another form stays a file in the project, apart from a working HTML page (below).' : OTHER_FORM;
+  const other = holdsType(types, 'design') ? 'A deliverable of another form stays a file in the project, apart from a working HTML page (below).' : OTHER_FORM;
   return `${intro}: ${open}. ${other}`;
 }
 
