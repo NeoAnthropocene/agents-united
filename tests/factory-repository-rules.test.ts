@@ -332,8 +332,11 @@ describe('the factory\'s checks use the same rules', () => {
     // An integration the canonical agent does not declare, with or without a route of its own, is refused; so is the Claude Docs connector (a grant of a page type, not of a canonical server).
     expect(await differs(committed.replace(/^(tools: .*)$/m, '$1, mcp__stitch'))).toContain('Native tools differ from the generator\'s form');
     expect(await differs(committed.replace(/^(tools: .*)$/m, '$1, mcp__claude_ai_Claude_Docs'))).toContain('Native tools differ from the generator\'s form');
-    // A route is held only next to its server and in the table's order.
+    // A route is held only next to its server and in the table's order: a missing route and a route before its server are both refused.
     expect(await differs(committed.replace(', mcp__plugin_github_github', ''))).toContain('Native tools differ from the generator\'s form');
+    expect(await differs(committed.replace('mcp__github, mcp__plugin_github_github', 'mcp__plugin_github_github, mcp__github'))).toContain('Native tools differ from the generator\'s form');
+    // The Agent stand-in depends on the delegate class alone: a lead without it is refused when its tools line holds an Agent(...) entry.
+    expect(await differs(committed.replace(/^(tools: )/m, '$1Agent(backend-architect, code-reviewer), '))).toContain('Native tools differ from the generator\'s form');
   });
 
   it('factory-check refuses a relative canonical or coverage path', async () => {
