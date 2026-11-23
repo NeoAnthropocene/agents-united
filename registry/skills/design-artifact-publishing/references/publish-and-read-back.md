@@ -9,6 +9,14 @@
 6. `Artifact` `list` with scope `files`, then `read` each file you wrote.
 7. Compare, count, report.
 
+A Docs, Sheets, Whiteboard or Data page is not read back this way: see the reference for its kind.
+
+## Keep to the source
+Copy word for word; only token colours; figures and claims go to the role that reviews claims (in the agency Defne) as claims to review; what you infer is written as inferred, never as the brand's. A required timestamp is the date given at `T00:00:00Z`, called a placeholder in the report.
+
+## Read back what you published
+`list` the files, `read` each one you wrote, compare sizes; count files, tokens and empty fields instead of estimating; recompute any contrast figure you state.
+
 ## What to compare in the read-back
 | Check | How |
 |---|---|
@@ -27,3 +35,11 @@
 - The checks that ran, with the numbers; the checks that did not: the render, the platform specs, how the editor shows it. Every count you give is a count, not an estimate.
 - The claims for Defne; what you marked as inferred; the placeholder time, if you wrote one.
 - Open items for the lead, the render ask first: you cannot look at the page.
+
+## Anti-patterns, each with its reason
+- Publishing after every board: the half-built canvas is visible.
+- A time written from memory (`12:00:00Z`): it was not the time.
+- "I invented nothing" over rules the source does not state: the reader trusts it.
+- A count from memory ("11 of 12"): count it; it was 10.
+- Saying it looks right when nobody rendered it.
+- Changing sharing, or telling the user it is shared.
