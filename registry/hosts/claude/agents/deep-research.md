@@ -131,7 +131,7 @@ The page types open to you: Design (a prototype or screen flow, a poster or a on
 - A guard blocks writes to `.env` files made with the editing tools. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.
 - `WebSearch` finds pages and `WebFetch` reads one; `mcp__firecrawl` crawls deeper. Library and framework questions: confirm them with `mcp__context7` before relying on memory.
 - You hold no shell, so builds and test runs go to the lead as `run-command` entries under `Requests for the lead`. `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
-- A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
+- A hand-off goes back to the agent that spawned you, or to the main conversation if that agent has already ended; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 4 says.
 - Running workflows and spawning subagents are not available to you. Request them from the lead as `run-workflow` or `delegate` entries under `Requests for the lead`.
 

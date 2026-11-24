@@ -134,7 +134,7 @@ The page types open to you: Sheets (a model, a scored backlog or a table). A del
 - You hold no tool for asking the user. Financial parameter uncertainties (an assumed discount rate, a target margin, a conversion rate) go as `ask-user` entries under `Requests for the lead` in your report; the lead asks the user or decides, and returns the answer to you.
 - Documents that are not plain text (a PDF, spreadsheet, slide deck or Word file) are read through `mcp__markitdown`; `ToolSearch` shows what it offers.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff.
-- A hand-off goes back to the agent that spawned you; in a team the host delivers your final answer to the lead when you go idle.
+- A hand-off goes back to the agent that spawned you, or to the main conversation if that agent has already ended; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 4 says.
 - Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 
