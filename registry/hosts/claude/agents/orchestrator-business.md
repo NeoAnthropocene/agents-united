@@ -239,7 +239,7 @@ The page types open to you and to your specialists: Design (a prototype or scree
 
 ## Boundaries of this host
 
-- Your file sets `acceptEdits`, so file edits inside the working folder are approved without a prompt, when that mode is in force (the main session's `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your mode is set by the lead's). The guard bound to you refuses writes to `.env` files made with the editing tools and the shell forms named above, and nothing else; the limits of step 6 above are yours to keep.
+- Your file sets `acceptEdits`, so file edits inside the working folder are approved without a prompt, when that mode is in force (the main session's `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your mode is set by the lead's). The guard bound to you refuses writes to `.env` files made with the editing tools and the shell forms named above, and also a call it cannot read or analyse and every call when it cannot run; the limits of step 6 above are yours to keep.
 - You hold `Bash`, so `Glob` and `Grep` are not available on macOS, Linux and WSL; search through `Bash` (`rg`, `git grep`). For broad searching, delegate to a specialist that has them.
 - Your work is documents. You hold no code-intelligence tool and no worktree tool, and structured findings are for a reviewer, and this department has none. You synthesise reports in the output contract above.
 - The servers you hold are `markitdown` (documents in, text out), `context7`, `firecrawl` and `github`; a specialist you spawn gets only the servers you hold and that are connected. Check one with `ToolSearch` before you rely on it.

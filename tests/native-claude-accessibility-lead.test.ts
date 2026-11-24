@@ -63,7 +63,7 @@ describe('native accessibility-lead: the guard and permission claims', () => {
     const five = step(5);
     expect(five).toContain('permissionMode: acceptEdits');
     expect(five).toContain('you hold no shell, so no command is approved for you');
-    expect(five).toContain('blocks only writes to `.env` files and their variants such as `.env.local` (`.env.example` stays writable), made with `Write`, `Edit` or `NotebookEdit`, and a call whose input it cannot read');
+    expect(five).toContain('blocks only writes to `.env` files and their variants such as `.env.local` (`.env.example` stays writable), made with `Write`, `Edit` or `NotebookEdit`, a call whose input it cannot read, and every call when it cannot run');
     expect(five).toContain('its rules against forced pushes, `vercel --prod` and destructive shell commands apply to a shell, which you do not hold');
     expect(five).toContain('It does not stop an overwrite of any other file');
     expect(five).toContain('does not enforce the Safety rule against suppressing an audit rule');
