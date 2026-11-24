@@ -169,6 +169,12 @@ process.stdin.on("data", chunk => { raw += chunk; }).on("end", () => {
   gate(raw).catch(() => process.exit(0));
 });`;
 
+/**
+ * The roles that carry the gate: the one place that says so. `expectedWorkerHooks` (so `factory-check`, the factory binding check and the startup check)
+ * and the tests that regenerate or measure a role's hooks block all read this list, and a test ties it to the committed role files.
+ */
+export const MODE_LINE_GATE_ROLES: readonly string[] = ['orchestrator-digital-agency'];
+
 /** The gate as a PreToolUse group of the lead: every tool, the script file, no shell. The script sorts out ToolSearch and the teammates' calls. */
 export function modeLineGateHooks(): { PreToolUse: Array<{ matcher: string; hooks: ReturnType<typeof guardFileHandler>[] }> } {
   return { PreToolUse: [{ matcher: '*', hooks: [guardFileHandler('mode-line')] }] };

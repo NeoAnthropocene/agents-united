@@ -12,6 +12,7 @@
  * through is still checked by the caller, and the guards of ADR 0068 are the ones that must fail closed.
  */
 import { nativeGuardFileHooks } from './guard.js';
+import { MODE_LINE_GATE_ROLES, modeLineGateHooks } from './mode-line-gate.js';
 import { readOnlyGuardFileHooks } from './readonly-guard.js';
 
 /** The one role that carries the hand-back hook. */
@@ -36,8 +37,12 @@ export function handbackCheckHooks(): WorkerHooks {
   return { PreToolUse: [{ matcher: 'SubagentHandback', hooks: [{ type: 'command', command: 'node', args: [HANDBACK_CHECK_REFERENCE] }] }] };
 }
 
-/** The hooks a factory worker must carry, as generated: its guard, and for the evaluator (read-only) the hand-back entry after it. */
+/**
+ * The hooks a native role must carry, as generated: its guard; for the evaluator (read-only) the hand-back entry after it; and for a role of
+ * `MODE_LINE_GATE_ROLES` the mode-line gate (ADR 0042, ADR 0053) after the rest. Any other role with an extra entry is refused.
+ */
 export function expectedWorkerHooks(roleName: string, guard: 'destructive' | 'read-only'): WorkerHooks {
   const base: WorkerHooks = guard === 'destructive' ? nativeGuardFileHooks() : readOnlyGuardFileHooks();
-  return roleName === HANDBACK_CHECK_ROLE && guard === 'read-only' ? { PreToolUse: [...base.PreToolUse, ...handbackCheckHooks().PreToolUse] } : base;
+  const groups = roleName === HANDBACK_CHECK_ROLE && guard === 'read-only' ? [...base.PreToolUse, ...handbackCheckHooks().PreToolUse] : base.PreToolUse;
+  return MODE_LINE_GATE_ROLES.includes(roleName) ? { PreToolUse: [...groups, ...modeLineGateHooks().PreToolUse] } : { PreToolUse: groups };
 }
