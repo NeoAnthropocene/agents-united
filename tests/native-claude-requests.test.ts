@@ -258,7 +258,9 @@ describe('the wording that a live run showed a model reading loosely', () => {
   it('says what "unchanged" means for the options of an ask-user entry', () => {
     expect(lead).toContain('word for word');
     expect(lead).toContain('same order');
-    expect(lead).toContain('shorten none');
+    expect(lead).toContain('cut only the label to what the tool allows');
+    expect(lead).toContain("put the option's full text, word for word, in its description");
+    expect(lead).not.toContain('shorten none');
     expect(lead).not.toContain('options unchanged');
   });
 
