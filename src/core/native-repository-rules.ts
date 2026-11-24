@@ -4,7 +4,9 @@
  * factory check and still fail the repository's tests. The repository's conformance tests and the factory's checks (factory-check,
  * contract-check) both call these functions. Pure: no I/O, no clock.
  */
+import yaml from 'yaml';
 import { ClaudeProjector } from './claude-projector.js';
+import { connectorServerGrant, integrationOf, pluginServerGrant, withRoutes } from './claude-mcp-routes.js';
 import { checkPublishing, holdsPublishing } from './native-publishing.js';
 import { connectorToolsOf, storeNeedsOf } from './page-types.js';
 import { REQUESTS_EXEMPT_ROLES, checkRequests } from './native-requests.js';
@@ -15,6 +17,42 @@ import type { DeclaredDelta, PageType, PageTypeKind, SemanticCore } from './type
 export type NativeKind = 'specialist' | 'coordinator' | 'factory-worker';
 
 export interface NativePosture { model: string; effort: string; }
+
+/**
+ * Whether a native role is a lead (the coordinator kind: coordinator posture, coordinator wording of its generated blocks). A role whose core can
+ * `delegate` is one. So is a lead that routes and holds no `delegate` class, the front door: its canonical agent is `type: orchestrator`, and
+ * the repository's tests list it among the leads. A lead's tools line may still hold no `Agent` allowlist; that is `delegates`, not this.
+ */
+export function isLeadRole(core: SemanticCore, canonicalText?: string): boolean {
+  if (core.capabilities?.includes('delegate')) return true;
+  return canonicalMeta(canonicalText)?.type === 'orchestrator';
+}
+
+/** The BOM, spelled without a literal character (an invisible character in a source file is easy to lose in an edit). */
+const BOM = String.fromCharCode(0xfeff);
+
+/** The frontmatter of a canonical agent as YAML (a BOM and CRLF line ends do not matter), or undefined when there is none or it does not parse. */
+function canonicalMeta(canonicalText: string | undefined): Record<string, unknown> | undefined {
+  if (canonicalText === undefined) return undefined;
+  const text = lf(canonicalText);
+  const frontmatter = /^---\n([\s\S]*?)\n---/.exec(text.startsWith(BOM) ? text.slice(1) : text)?.[1];
+  if (frontmatter === undefined) return undefined;
+  try {
+    const meta = yaml.parse(frontmatter) as unknown;
+    return typeof meta === 'object' && meta !== null && !Array.isArray(meta) ? meta as Record<string, unknown> : undefined;
+  } catch { return undefined; }
+}
+
+/**
+ * Whether a role is read-only (the `plan` permission posture of the Claude dialect). The canonical agent says `readOnly`, which the dialect maps to
+ * `plan`, the same test `ClaudeProjector.serverToolsOf` applies; a native file already says the host's own value, `plan`, which the map does not know.
+ * A read-only role takes pinned read-only tools and no whole server.
+ */
+export function isReadOnlyRole(canonicalText: string | undefined, nativePermissionMode?: unknown): boolean {
+  const canonicalMode = canonicalMeta(canonicalText)?.permissionMode;
+  const fromCanonical = typeof canonicalMode === 'string' && (ClaudeProjector.CLAUDE_DIALECT.permissionModeMap[canonicalMode] ?? 'default') === 'plan';
+  return fromCanonical || nativePermissionMode === 'plan';
+}
 
 const normalize = (text: string): string => text.replace(/\s+/g, ' ').trim();
 const lf = (text: string): string => text.replace(/\r\n/g, '\n');
@@ -307,5 +345,92 @@ export function coverageFileProblems(core: SemanticCore, agentText: string, cove
     if (count === 0) problems.push(`Invariant coverage: the core invariant "${invariant}" is neither evidenced nor declared as a delta.`);
     else if (count > 1) problems.push(`Invariant coverage: the core invariant "${invariant}" appears more than once.`);
   }
+  return problems;
+}
+
+const sameSet = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && new Set(a).size === a.length && a.every(entry => b.includes(entry));
+
+/** An `mcp__` entry in the form the generator writes (`mcp__<server>` or `mcp__<server>__<tool>`), whichever route it came by. */
+function manualForm(entry: string): string {
+  const integration = integrationOf(entry);
+  const manual = `mcp__${integration}`;
+  for (const prefix of [manual, pluginServerGrant(integration), connectorServerGrant(integration)]) {
+    if (prefix === undefined) continue;
+    if (entry === prefix) return manual;
+    if (entry.startsWith(`${prefix}__`)) return `${manual}${entry.slice(prefix.length)}`;
+  }
+  return entry;
+}
+
+/** The tools line writes the class tools first and the server entries after them (the generator's `nativeToolOrder`); the entries among themselves may come in any order. */
+export function serverPlacementProblems(tools: readonly string[]): string[] {
+  const first = tools.findIndex(tool => tool.startsWith('mcp__'));
+  return first >= 0 && tools.slice(first).some(tool => !tool.startsWith('mcp__')) ? ['the server entries are not all after the other tools (the class tools come first)'] : [];
+}
+
+/**
+ * How a role's `mcp__` entries are compared (the repository's own rules, as its tests apply them), without regard to the order of the entries:
+ * - a canonical server is held whole or per tool, and each form alone or with the names of its routes table (plugin and connector), nothing partial;
+ * - a per-tool entry is accepted when it is one of the server's pinned read-only tools (`ClaudeProjector.serverGrant(server, true)`), and any non-empty
+ *   subset of them is a narrowing; the routes of the narrowing follow the same all-or-none rule;
+ * - `required` entries are held (the connector tools of the page types, ADR 0078), checked against everything the role holds;
+ * - `allowed` entries (what a lead's roster holds) may be held, a server at a time and by the same rules: its entries in the generator's form, some of
+ *   them, alone or all with their routes. A read-only role takes from them only the pinned read-only per-tool entries, as `canonicalServerTools` does;
+ * - anything else is a problem. `canonical` is what the generator yields for the canonical agent (`canonicalServerTools`).
+ */
+export function serverEntryProblems(
+  held: readonly string[],
+  canonical: readonly string[],
+  options: { required?: readonly string[]; allowed?: readonly string[]; readOnly?: boolean } = {},
+): string[] {
+  const problems: string[] = [];
+  const all = held.filter(entry => entry.startsWith('mcp__'));
+  const repeated = [...new Set(all.filter((entry, index) => all.indexOf(entry) !== index))];
+  if (repeated.length > 0) problems.push(`server entries are repeated: ${repeated.join(', ')}`);
+  const entries = [...new Set(all)];
+  const required = [...new Set(options.required ?? [])];
+  const left = new Set(entries);
+  const integrations = [...new Set(canonical.map(integrationOf))];
+  for (const integration of integrations) {
+    const generated = canonical.filter(entry => integrationOf(entry) === integration);
+    const routed = withRoutes(generated);
+    // A required entry that is not a form of this server (the connector of a page type) is judged below, not here.
+    const members = entries.filter(entry => integrationOf(entry) === integration && (routed.includes(entry) || !required.includes(entry)));
+    for (const member of members) left.delete(member);
+    if (sameSet(members, generated) || sameSet(members, routed)) continue;
+    // A narrowing: the pinned read-only tools of the server (or the per-tool entries the generator yields), some of them, routed all or none.
+    const rest = generated[0]?.slice('mcp__'.length);
+    const server = rest !== undefined && !rest.includes('__') ? rest : undefined;
+    const pinned = generated.length === 1 && server !== undefined ? ClaudeProjector.serverGrant(server, true) : generated;
+    const narrowed = members.filter(member => pinned.includes(member));
+    if (narrowed.length > 0 && (sameSet(members, narrowed) || sameSet(members, withRoutes(narrowed)))) continue;
+    problems.push(`${integration} is held as ${members.length === 0 ? 'nothing' : members.join(', ')}; expected ${generated.join(', ')}, with or without the names of its routes${pinned.length > 0 && pinned !== generated ? `, or some of its read-only tools (${pinned.join(', ')})` : ''}`);
+  }
+  for (const entry of required) {
+    if (!entries.includes(entry)) problems.push(`${entry} is not held`);
+    left.delete(entry);
+  }
+  // The entries a roster holds, a server at a time, by the same rules as a canonical server.
+  const roster = new Map<string, string[]>();
+  for (const entry of options.allowed ?? []) {
+    const manual = manualForm(entry);
+    const integration = integrationOf(entry);
+    if (options.readOnly && !ClaudeProjector.serverGrant(integration, true).includes(manual)) continue;
+    const forms = roster.get(integration) ?? [];
+    if (!forms.includes(manual)) forms.push(manual);
+    roster.set(integration, forms);
+  }
+  const unplaced = [...left];
+  for (const integration of [...new Set(unplaced.map(integrationOf))]) {
+    const members = unplaced.filter(entry => integrationOf(entry) === integration);
+    const base = roster.get(integration) ?? [];
+    const manual = members.filter(member => manualForm(member) === member);
+    // The whole server or some of its tools, not both: a roster may hold either form, and the lead holds one of them.
+    const mixed = manual.includes(`mcp__${integration}`) && manual.length > 1;
+    if (!mixed && manual.length > 0 && manual.every(member => base.includes(member)) && (sameSet(members, manual) || sameSet(members, withRoutes(manual)))) {
+      for (const member of members) left.delete(member);
+    }
+  }
+  for (const entry of left) problems.push(`${entry} is held beyond the canonical servers of the role (or without its server, or with only some of its routes)`);
   return problems;
 }
