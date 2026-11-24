@@ -24,6 +24,7 @@ import type {
   ProjectionKind,
   ResolvedAssets,
 } from './types.js';
+import { hostSections } from './host-sections.js';
 import { isRelativeTarget, rewriteMarkdownLinks } from './markdown-links.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
 
@@ -131,7 +132,8 @@ export class ClineProjector {
     }
 
     const frontmatterStr = yaml.stringify(cleanFrontmatter).trim();
-    const bodyStr = match[2].trim();
+    // ADR 0079: the sections of other hosts leave the body here, and a body that is not well formed is refused.
+    const bodyStr = hostSections(match[2], 'cline').trim();
 
     return `---\n${frontmatterStr}\n---\n${this.marker(canonicalRelPath)}\n\n${this.runtimeNote}\n\n${bodyStr}\n`;
   }

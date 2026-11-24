@@ -24,6 +24,7 @@ import { assertClaudeSkillBindings } from './claude-skill-binding.js';
 import { assertClaudeContractTaskBinding, assertClaudeContractTaskDelivery, planClaudeContractTaskArtifacts } from './claude-contract-binding.js';
 import { assertClaudeFactoryDelivery, planClaudeFactoryArtifacts } from './claude-factory-binding.js';
 import { unsupportedSkillNames } from './host-profile.js';
+import { hostSections } from './host-sections.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -568,7 +569,10 @@ export class ClaudeProjector {
     canonicalRelPath: string,
     opts: { allowlist?: string[]; maxTurns?: number } = {}
   ): ClaudeRenderResult {
-    const { meta, body } = ClaudeProjector.parse(canonicalContent, canonicalRelPath);
+    const parsed = ClaudeProjector.parse(canonicalContent, canonicalRelPath);
+    const meta = parsed.meta;
+    // ADR 0079: the sections of other hosts leave the body here, and a body that is not well formed is refused.
+    const body = hostSections(parsed.body, 'claude');
     const ledger = new Map<string, TranslationLedgerEntry>();
 
     // 1. Every canonical key either maps inline or carries a recorded disposition.

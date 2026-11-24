@@ -17,6 +17,7 @@ import { ANTIGRAVITY_LEGACY_ENTRYPOINT_RULE } from './antigravity-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, loadGuardHookEntry, mergeAntigravityHook, removeAntigravityHook } from './antigravity-hooks.js';
 import { ANTIGRAVITY_MCP_FILE, describeMcpOutcomes, loadMcpCatalog, syncAntigravityMcp, type McpEntry } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
+import { hasHostSections, hostSections } from './host-sections.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
@@ -1875,8 +1876,22 @@ private toPosix(p: string): string {
           }
         }
 
-        const actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
-        const hash = await this.calculateHash(src);
+        // ADR 0079: the store copy is the Antigravity copy of a canonical agent: a body with host sections is written rendered for Antigravity (a real file, never a link into the registry),
+        // and its recorded hash is the hash of the bytes written, so a re-install and the doctor see no edit.
+        const sourceText = await fs.readFile(src, 'utf8');
+        let actualMethod: 'symlink' | 'copy';
+        let hash: string;
+        if (hasHostSections(sourceText)) {
+          const rendered = hostSections(sourceText, 'antigravity');
+          await fs.ensureDir(path.dirname(dest));
+          if ((await fs.lstat(dest).catch(() => null))?.isSymbolicLink()) await fs.unlink(dest);
+          await fs.writeFile(dest, rendered, 'utf8');
+          actualMethod = 'copy';
+          hash = 'sha256:' + crypto.createHash('sha256').update(Buffer.from(rendered, 'utf8')).digest('hex');
+        } else {
+          actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
+          hash = await this.calculateHash(src);
+        }
         const relPath = this.toPosix(path.relative(targetDir, dest));
         // Preserve projection tracking and co-ownership across re-installs;
         // applyFanout re-records the current fan-out below (deduplicated).

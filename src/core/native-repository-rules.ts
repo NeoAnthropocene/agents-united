@@ -7,6 +7,7 @@
 import yaml from 'yaml';
 import { ClaudeProjector } from './claude-projector.js';
 import { connectorServerGrant, integrationOf, pluginServerGrant, withRoutes } from './claude-mcp-routes.js';
+import { hostSections } from './host-sections.js';
 import { checkPublishing, holdsPublishing } from './native-publishing.js';
 import { connectorToolsOf, storeNeedsOf } from './page-types.js';
 import { REQUESTS_EXEMPT_ROLES, checkRequests } from './native-requests.js';
@@ -203,14 +204,14 @@ export function canonicalServerTools(canonicalText: string): string[] {
 
 /** The "## Safety Guardrails" bullets of a canonical agent, whitespace-normalized. */
 export function canonicalGuardrails(canonicalText: string): string[] {
-  const section = /\n## Safety Guardrails\n([\s\S]*?)(?=\n---\n|\n## )/.exec(lf(canonicalText))?.[1];
+  const section = /\n## Safety Guardrails\n([\s\S]*?)(?=\n---\n|\n## )/.exec(hostSections(lf(canonicalText), 'claude'))?.[1];
   if (section === undefined) return [];
   return section.split('\n').filter(line => line.startsWith('- ')).map(line => normalize(line.slice(2)));
 }
 
 /** The numbered "## Primary Directives" titles of a canonical agent ("1. Title"), whitespace-normalized. */
 export function canonicalDirectives(canonicalText: string): string[] {
-  const section = /\n## Primary Directives\n([\s\S]*?)(?=\n---\n|\n## )/.exec(lf(canonicalText))?.[1];
+  const section = /\n## Primary Directives\n([\s\S]*?)(?=\n---\n|\n## )/.exec(hostSections(lf(canonicalText), 'claude'))?.[1];
   if (section === undefined) return [];
   return [...section.matchAll(/^(\d+)\. (.+)$/gm)].map(match => normalize(`${match[1]}. ${match[2]}`));
 }

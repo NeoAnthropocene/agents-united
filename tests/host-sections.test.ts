@@ -100,10 +100,11 @@ describe('the registry', () => {
   });
 
   it('has no purity rule for the prose of a canonical agent, and the core purity rule still refuses a host section in a core', () => {
-    // Purity (`scanCoreForHostTokens`) is applied to registry/core files only; the canonical agents already name hosts in their prose.
-    expect(scanCoreForHostTokens(body('For Antigravity only.')).length).toBeGreaterThan(0);
+    // Purity (`scanCoreForHostTokens`, a corpus of host tool names) is applied to registry/core files only; the canonical agents already use those names. A host section is no exemption in a core.
+    expect(scanCoreForHostTokens(body('Call run_command here.')).length).toBeGreaterThan(0);
+    expect(scanCoreForHostTokens('Call run_command here.').length).toBeGreaterThan(0);
     expect(scanCoreForHostTokens('Before.\n\nAfter.\n')).toEqual([]);
-    const core = { identity: 'You are a role.', mission: body('For Antigravity only.'), scope_boundaries: 'Scope.', safety: 'Safe.', output_contract: 'Out.', invariants: ['One.'], capabilities: ['messaging'] };
+    const core = { identity: 'You are a role.', mission: body('Call run_command here.'), scope_boundaries: 'Scope.', safety: 'Safe.', output_contract: 'Out.', invariants: ['One.'], capabilities: ['messaging'] };
     expect(() => validateCoreSchema(core)).toThrow(/purity/);
   });
 
