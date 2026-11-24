@@ -69,15 +69,15 @@ describe('native orchestrator-marketing: posture and tools', () => {
       return (front.mcpServers ?? []).map(entry => (typeof entry === 'string' ? entry : entry.name));
     };
     const union = new Set([...servers('orchestrator-marketing.md'), ...NINE.flatMap(type => servers(`subagent-${type}.md`))]);
-    expect([...union].sort()).toEqual(['chrome-devtools-mcp', 'context7', 'figma', 'firecrawl', 'github', 'markitdown', 'playwright', 'stitch']);
+    expect([...union].sort()).toEqual(['chrome-devtools-mcp', 'context7', 'figma', 'firecrawl', 'github', 'image-gen', 'markitdown', 'playwright', 'stitch']);
     const held = new Set(tools().filter(tool => tool.startsWith('mcp__')).map(integrationOf));
     // The Claude Docs connector (ADR 0078) is held for the Docs and Sheets types of the roles it spawns; no canonical agent declares it.
     expect([...held].sort()).toEqual([...union, 'claude_ai_Claude_Docs'].sort());
     expect(servers('orchestrator-marketing.md').sort()).toEqual(['context7', 'firecrawl', 'github', 'markitdown']);
   });
 
-  it('holds no image server and no image tool, no saved-workflow tool, no code intelligence, no structured findings and no worktree tool', () => {
-    expect(tools().filter(tool => /image/i.test(tool))).toEqual([]);
+  it('holds the one image tool and not the image server, no saved-workflow tool, no code intelligence, no structured findings and no worktree tool', () => {
+    expect(tools().filter(tool => /image/i.test(tool))).toEqual(['mcp__image-gen__generate_image']);
     for (const absent of ['Workflow', 'LSP', 'ReportFindings', 'EnterWorktree', 'ExitWorktree']) expect(toolNames(), absent).not.toContain(absent);
     for (const present of ['Agent', 'Artifact', 'AskUserQuestion', 'Bash', 'CronCreate', 'Edit', 'Monitor', 'SendMessage', 'Skill', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write']) {
       expect(toolNames(), present).toContain(present);
@@ -85,11 +85,21 @@ describe('native orchestrator-marketing: posture and tools', () => {
   });
 });
 
-describe('native orchestrator-marketing: no image generation', () => {
-  it('says in plain words that no image-generation tool is bound in this lane, and what to do instead', () => {
-    expect(section('Boundaries of this host')).toContain('No image-generation tool is bound in this lane');
-    expect(section('Boundaries of this host')).toMatch(/briefs|outside the session/);
-    expect(text()).not.toMatch(/\bimage-gen\b|generate_image/);
+describe('native orchestrator-marketing: the image tool is held for its creative designer (ADR 0079)', () => {
+  it('says that it holds the one image tool so that its creative designer\'s tool pool has it, never calls it, and passes on only the go of the user', () => {
+    const boundaries = section('Boundaries of this host');
+    expect(boundaries).toContain('You hold the one image tool `mcp__image-gen__generate_image` of the optional `image-gen` server so that the creative designer\'s tool pool has it');
+    expect(boundaries).toMatch(/never call it/);
+    expect(boundaries).toMatch(/pass on the user's go, naming the images, the provider and the size, and never give one yourself/);
+    expect(boundaries).toMatch(/installing the server is the user's own act and not part of this department's setup/);
+    expect(boundaries).toMatch(/image brief/);
+  });
+
+  it('no longer says that no image tool is bound, in its Boundaries or in the roster row of its creative designer', () => {
+    expect(text()).not.toMatch(/no image-generation tool is bound|No image tool is bound/i);
+    const row = text().split('\n').find(line => line.startsWith('| `marketing-creative-designer` |')) ?? '';
+    expect(row).toContain('photos only via the optional image server');
+    expect(row).toContain('MCP: figma, image-gen, stitch');
   });
 });
 

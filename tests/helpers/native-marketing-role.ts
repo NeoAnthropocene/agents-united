@@ -25,8 +25,10 @@ export interface MarketingRoleSpec {
   type: string;
   /** The Tier 2 file stood on the same core, when there is one. A role on a core of its own leaves it out: its tools are then pinned by the class ceiling in native-claude-agents.test.ts. */
   agency?: string;
-  /** The integrations the canonical agent declares (the routes are derived), none of them an image server. */
+  /** The integrations the canonical agent declares (the routes are derived). */
   servers: string[];
+  /** The canonical agent declares the optional image server (ADR 0079), so the role holds its one tool `mcp__image-gen__generate_image` and no other tool of it. */
+  image?: boolean;
   /** Whether the core has the artifacts class, and so the role holds the `Artifact` tool. */
   artifact: boolean;
   /** The marketing types its "Your peers" line must name. */
@@ -70,13 +72,10 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
       expect(meta().description).toContain(spec.shell ? 'Edits files and runs commands.' : 'Edits files, no shell.');
     });
 
-    it('holds the tools of the Tier 2 copy on the same core when there is one, minus every image server', () => {
-      if (spec.agency) {
-        const expected = agencyTools().filter(tool => !/image/i.test(tool));
-        expect([...tools()].sort()).toEqual([...expected].sort());
-      }
-      expect(tools().filter(tool => /image/i.test(tool))).toEqual([]);
-      expect(text()).not.toMatch(IMAGE_TOOL);
+    it('holds the tools of the Tier 2 copy on the same core when there is one, and the image tool only when its canonical agent declares the image server (ADR 0079)', () => {
+      if (spec.agency) expect([...tools()].sort()).toEqual([...agencyTools()].sort());
+      expect(tools().filter(tool => /image/i.test(tool))).toEqual(spec.image === true ? ['mcp__image-gen__generate_image'] : []);
+      if (spec.image !== true) expect(text()).not.toMatch(IMAGE_TOOL);
     });
 
     it('holds the servers its canonical agent declares, under every route, and nothing else', () => {

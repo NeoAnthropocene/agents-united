@@ -5,11 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { nativeText, NATIVE_AGENTS_DIR } from './helpers/native-roles.js';
 
 /**
- * Plan 036 S19, ADR 0049: the creative designer may generate photographs through the optional `image-gen` server. The skill that teaches it and the
- * install route are the previous slice (S18). This slice is the grant and the offer, and the tests pin what must stay true of them: the grant is the one
- * tool and not the server; no other role holds it; the server is in no required list and in no canonical agent's `mcpServers`, so the doctor, the install
- * gate and the Antigravity sync do not move; her body and the lead's say when the route may be used and what the user is told; the decision is recorded;
- * the live test is gated, not claimed.
+ * Plan 036 S19, ADR 0049, as amended by ADR 0079: the creative designers may generate photographs through the optional `image-gen` server. The skill that
+ * teaches it and the install route are the previous slice (S18). This slice is the grant and the offer, and the tests pin what must stay true of them: the
+ * grant is the one tool and not the server; only the two creative designers and the two leads that carry them hold it; the canonical creative designer and the
+ * canonical digital-agency lead declare the server by name, and every bundle that holds the creative designer lists it as an optional extra and never as a
+ * required server; the Antigravity catalog has no entry for it; her body and the lead's say when the route may be used and what the user is told; the
+ * decision is recorded; the live test is gated, not claimed.
  *
  * Amended 2026-10-09 (the maintainer: the latest tag of the package, the other providers wired, and the floor bullet and the path guard carried by a
  * detailed skill that the subagent can use): the lead asks which provider keys the user has; her body restates the hard rules and tells her to load
@@ -21,10 +22,12 @@ const read = (rel: string): string => fs.readFileSync(path.resolve(rel), 'utf8')
 const frontmatter = (role: string): Record<string, any> => yaml.parse(/^---\n([\s\S]*?)\n---\n/.exec(nativeText(role))![1]!);
 const tools = (role: string): string[] => String(frontmatter(role).tools).split(',').map(t => t.trim());
 const body = (role: string): string => nativeText(role).split('<!-- agents-united:floor:end -->')[1]!;
-type Bundles = Record<string, { prerequisites?: { requiredMcps?: Array<{ name: string }> }; skills?: string[] }>;
+type Bundles = Record<string, { prerequisites?: { requiredMcps?: Array<{ name: string; optional?: boolean }> }; skills?: string[] }>;
 const bundles = (): Bundles => (JSON.parse(read('registry/bundles.json')) as { bundles: Bundles }).bundles;
 
-describe('the grant: one tool, one role', () => {
+const HOLDERS = ['agency-creative-designer', 'marketing-creative-designer', 'orchestrator-digital-agency', 'orchestrator-marketing'];
+
+describe('the grant: one tool, four roles', () => {
   it('gives the creative designer the tool and not the whole server', () => {
     const held = tools('agency-creative-designer');
     expect(held).toContain(TOOL);
@@ -34,14 +37,23 @@ describe('the grant: one tool, one role', () => {
 
   // Sitting T (2026-10-12): the lead's tool pool was missing the tool, so its ToolSearch could never list it and Jamileh, a teammate, never got it either: the host gives a
   // subagent the MCP tools "available in the main conversation" (sub-agents, "Available tools"), and the main conversation of `--agent` is cut to its `tools`.
-  it('gives it to the lead too, the same one tool, so that a teammate can have it, and to no other native role', () => {
+  it('gives it to the lead too, the same one tool, so that a teammate can have it, and to no native role but the two creative designers and the two leads that carry them (ADR 0079)', () => {
     const lead = tools('orchestrator-digital-agency');
     expect(lead).toContain(TOOL);
     expect(lead).not.toContain('mcp__image-gen');
     expect(lead.filter(t => t.includes('image-gen'))).toEqual([TOOL]);
-    const others = fs.readdirSync(NATIVE_AGENTS_DIR).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, '')).filter(r => r !== 'agency-creative-designer' && r !== 'orchestrator-digital-agency');
+    const others = fs.readdirSync(NATIVE_AGENTS_DIR).filter(f => f.endsWith('.md')).map(f => f.replace(/\.md$/, '')).filter(r => !HOLDERS.includes(r));
     expect(others.length).toBeGreaterThan(5);
     for (const role of others) expect(tools(role).filter(t => t.includes('image-gen')), role).toEqual([]);
+  });
+
+  it('gives the marketing creative designer and the marketing lead the same one tool, and never the whole server (ADR 0079)', () => {
+    for (const role of ['marketing-creative-designer', 'orchestrator-marketing']) {
+      const held = tools(role);
+      expect(held, role).toContain(TOOL);
+      expect(held, role).not.toContain('mcp__image-gen');
+      expect(held.filter(t => t.includes('image-gen')), role).toEqual([TOOL]);
+    }
   });
 
   it('keeps the shell and delegation out of her hands: the image route widened nothing else', () => {
@@ -50,15 +62,24 @@ describe('the grant: one tool, one role', () => {
   });
 });
 
-describe('the server is an optional extra that nothing else knows about', () => {
-  it('is in no bundle\'s required list and in no canonical agent\'s mcpServers', () => {
+describe('the server is an optional extra: declared by name in two canonical agents, never required (ADR 0079)', () => {
+  const declared = (file: string): string[] => {
+    const meta = yaml.parse(/^---\n([\s\S]*?)\n---/.exec(read(path.join('registry/agents', file)))![1]!) as { mcpServers?: Array<{ name: string } | string> };
+    return (meta.mcpServers ?? []).map(s => (typeof s === 'string' ? s : s.name));
+  };
+
+  it('is declared by name in the canonical creative designer and the canonical digital-agency lead, and in no other canonical agent', () => {
+    const holders = fs.readdirSync(path.resolve('registry/agents')).filter(f => f.endsWith('.md') && declared(f).includes('image-gen')).sort();
+    expect(holders).toEqual(['orchestrator-digital-agency.md', 'subagent-marketing-creative-designer.md']);
+  });
+
+  it('is in every bundle that holds the creative designer as an optional extra, never as a required server, and in no other bundle', () => {
+    const holding = ['digital-agency', 'full', 'growth-marketing', 'performance-paid-acquisition'];
     for (const [name, bundle] of Object.entries(bundles())) {
-      expect((bundle.prerequisites?.requiredMcps ?? []).map(m => m.name), name).not.toContain('image-gen');
-    }
-    for (const file of fs.readdirSync(path.resolve('registry/agents')).filter(f => f.endsWith('.md'))) {
-      const meta = yaml.parse(/^---\n([\s\S]*?)\n---/.exec(read(path.join('registry/agents', file)))![1]!) as { mcpServers?: Array<{ name: string } | string> };
-      const names = (meta.mcpServers ?? []).map(s => (typeof s === 'string' ? s : s.name));
-      expect(names, file).not.toContain('image-gen');
+      const entries = (bundle.prerequisites?.requiredMcps ?? []).filter(m => m.name === 'image-gen');
+      if (!holding.includes(name)) { expect(entries, name).toEqual([]); continue; }
+      expect(entries.length, name).toBe(1);
+      expect(entries[0]!.optional, name).toBe(true);
     }
   });
 
@@ -297,7 +318,7 @@ describe('the record', () => {
   it('has the Image route in the domain dictionary, with its three providers and the skill that carries the rules', () => {
     const context = read('CONTEXT.md');
     expect(context).toMatch(/\*\*Image route\*\*:/);
-    expect(context).toMatch(/never in `requiredMcps`/);
+    expect(context).toMatch(/an optional extra in `requiredMcps`, never a required server/);
     expect(context).toMatch(/Gemini, OpenAI or Seedream|Gemini, OpenAI or BytePlus Seedream/);
     expect(context).toContain('`image-generation`');
   });
@@ -319,5 +340,35 @@ describe('the record', () => {
     expect(h10d).toMatch(/loaded? `image-generation`|loads `image-generation`/);
     expect(h10d).not.toMatch(/probe P2 has passed|S5 server/);
     expect(h10d).not.toMatch(/\bPASS\b|\bpassed on\b/);
+  });
+});
+
+describe('ADR 0079: the media servers in the base roles, and the image tool shared with marketing', () => {
+  const file = (): string => fs.readdirSync(path.resolve('docs/adr')).find(f => /^0079-.*\.md$/.test(f)) ?? '';
+  const adr = (): string => read(path.join('docs/adr', file()));
+
+  it('exists, is accepted on 2026-11-24 and supersedes decisions 4 and 5 of ADR 0049', () => {
+    expect(file()).not.toBe('');
+    const a = adr();
+    expect(a).toMatch(/^# ADR 0079: /);
+    expect(a).toMatch(/\*\*Status\*\*: Accepted, 2026-11-24/);
+    expect(a).toMatch(/[Ss]upersedes decisions 4 and 5 of ADR 0049/);
+  });
+
+  it('names the maintainer\'s two choices, the Antigravity exclusion with its two reasons, and the limits', () => {
+    const a = adr();
+    expect(a).toMatch(/servers go in the base roles/);
+    expect(a).toMatch(/image tool is shared with marketing/);
+    expect(a).toMatch(/OAuth over `serverUrl` is unverified on Antigravity/);
+    expect(a).toMatch(/Antigravity[^.]*own `generate_image`/);
+    expect(a).toMatch(/OAuth[^.]*unverified/);
+    expect(a).toMatch(/Cline drops `mcpServers`/);
+    expect(a).toMatch(/no live image call|No live image call/);
+  });
+
+  it('is pointed to from the status of ADR 0049, whose first words stay as they were', () => {
+    const status = read('docs/adr/0049-the-creative-designer-may-generate-photographs.md').split('\n').find(line => line.startsWith('- **Status**')) ?? '';
+    expect(status).toMatch(/^- \*\*Status\*\*: Accepted, 2026-10-08; amended 2026-10-09/);
+    expect(status).toMatch(/decisions 4 and 5 are superseded by \[ADR 0079\]/);
   });
 });

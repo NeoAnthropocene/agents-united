@@ -208,10 +208,10 @@ const BASE_ROLES: RoleSpec[] = [
   },
   // Tier 1, the growth-marketing bundle (growth-marketing): five second native files on the cores the digital agency already uses (as `frontend-architect` beside `agency-frontend-architect`),
   // and a lead cut like the engineering lead's minus saved workflows, code intelligence, structured findings and worktrees. These roles run no shell (their cores grant none), so like the
-  // Tier 2 teammates they hold the editors and the web; their servers are their canonical set with the routes, and none holds the image tool (the `image-gen` route is the agency's, ADR 0049).
+  // Tier 2 teammates they hold the editors and the web; their servers are their canonical set with the routes, and the creative designer holds the image tool as the one tool of the optional `image-gen` server, as the agency copy does (ADR 0079).
   ...[
     { name: 'marketing-growth-strategist', stem: 'subagent-marketing-growth-strategist', serverTools: withRoutes(['mcp__firecrawl']) },
-    { name: 'marketing-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: withRoutes(['mcp__figma', 'mcp__stitch']) },
+    { name: 'marketing-creative-designer', stem: 'subagent-marketing-creative-designer', serverTools: withRoutes(['mcp__figma', 'mcp__stitch', 'mcp__image-gen__generate_image']) },
     { name: 'marketing-conversion-specialist', stem: 'subagent-marketing-conversion-specialist', serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__playwright']) },
     { name: 'marketing-content-strategist', stem: 'subagent-marketing-content-strategist', serverTools: withRoutes(['mcp__firecrawl', 'mcp__markitdown']) },
     { name: 'marketing-campaign-specialist', stem: 'subagent-marketing-campaign-specialist', serverTools: withRoutes(['mcp__context7']) },
@@ -300,8 +300,8 @@ const BASE_ROLES: RoleSpec[] = [
     skills: [],
     // The union of the servers its roles' canonical agents declare (firecrawl, markitdown, context7, github, stitch, figma, playwright, chrome-devtools-mcp), with the routes as the digital-agency lead has them.
     // This goes beyond the lead's own canonical agent (firecrawl, markitdown, context7, github) by a decision made during the roll-out (2026-11-20, open to the maintainer's review): a subagent gets the MCP tools of the main conversation, and the main conversation of
-    // `--agent` is cut to this list (Sitting T), so a role's server is worth nothing unless its lead holds it too. No image server: the lead has no image tool in this lane.
-    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch']),
+    // `--agent` is cut to this list (Sitting T), so a role's server is worth nothing unless its lead holds it too. The lead holds the one image tool because its creative designer does (ADR 0079); it never calls it.
+    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch', 'mcp__image-gen__generate_image']),
     mutating: true,
     // Delegation and orchestration: the roster allowlist, the user, schedules, watchers and the shared task list; no saved workflows (the bundle has none), no worktrees, no code intelligence, no structured findings.
     mustHold: ['Agent', 'AskUserQuestion', 'Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'CronCreate', 'SendMessage', 'Skill', 'TaskCreate', 'TaskList', 'TaskUpdate'],

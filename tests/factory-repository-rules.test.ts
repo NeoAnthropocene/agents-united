@@ -103,6 +103,16 @@ describe('the rules, one implementation', () => {
     }
   });
 
+  it('derives the media servers of the creative, motion and sound designers from their canonical agents, the image server as its one tool', () => {
+    expect(canonicalServerTools(canonicalOf('subagent-marketing-creative-designer'))).toEqual(['mcp__stitch', 'mcp__figma', 'mcp__image-gen__generate_image']);
+    expect(canonicalServerTools(canonicalOf('subagent-motion-designer'))).toEqual(['mcp__higgsfield', 'mcp__klingai']);
+    expect(canonicalServerTools(canonicalOf('subagent-sound-designer'))).toEqual(['mcp__elevenlabs', 'mcp__fish-audio']);
+    expect(canonicalServerTools(canonicalOf('orchestrator-digital-agency'))).toEqual([
+      'mcp__github', 'mcp__firecrawl', 'mcp__context7', 'mcp__playwright', 'mcp__markitdown', 'mcp__chrome-devtools-mcp', 'mcp__stitch', 'mcp__figma',
+      'mcp__image-gen__generate_image', 'mcp__higgsfield', 'mcp__klingai', 'mcp__elevenlabs', 'mcp__fish-audio',
+    ]);
+  });
+
   it('derives the server tools from the canonical agent: a server grant for a writable role, pinned read-only tools for a read-only role', () => {
     expect(canonicalServerTools(canonicalOf('subagent-backend-architect'))).toEqual(['mcp__github', 'mcp__context7']);
     expect(canonicalServerTools(canonicalOf('subagent-frontend-architect'))).toEqual(['mcp__stitch', 'mcp__context7', 'mcp__chrome-devtools-mcp']);
@@ -437,11 +447,21 @@ describe('factory-check compares server entries as the repository does (option A
     }
   }, 300000);
 
+  it('accepts the committed tools line of the creative designers, the motion and sound designers and the two leads that hold their media servers (their canonical agents declare them)', async () => {
+    const registry = await stageFull();
+    for (const role of ['agency-creative-designer', 'marketing-creative-designer', 'agency-motion-designer', 'agency-sound-designer', 'orchestrator-digital-agency', 'orchestrator-marketing']) {
+      const entry = NATIVE_ROLES.find(candidate => candidate.role === role)!;
+      const { finding, reached } = await toolsFinding(registry, entry);
+      expect(reached, `${role}: the check reached the tools line`).toBe(true);
+      expect(finding, role).toBeUndefined();
+    }
+  }, 120000);
+
   it('refuses, for a lead, a server that nobody in its roster holds, and for a specialist any server beyond its canonical ones', async () => {
     const registry = await stageFull();
     const lead = NATIVE_ROLES.find(entry => entry.role === 'orchestrator-engineering')!;
     const leadText = fs.readFileSync(path.join(registry, 'hosts/claude/agents/orchestrator-engineering.md'), 'utf8').replace(/\r\n/g, '\n');
-    expect((await toolsFinding(registry, lead, leadText.replace(/^(tools: .*)$/m, '$1, mcp__elevenlabs'))).finding).toContain('mcp__elevenlabs');
+    expect((await toolsFinding(registry, lead, leadText.replace(/^(tools: .*)$/m, '$1, mcp__no-such-server'))).finding).toContain('mcp__no-such-server');
     const specialist = NATIVE_ROLES.find(entry => entry.role === 'ui-designer')!;
     const specialistText = fs.readFileSync(path.join(registry, 'hosts/claude/agents/ui-designer.md'), 'utf8').replace(/\r\n/g, '\n');
     // playwright is held by a role in the engineering lead's roster, yet a specialist has no roster.
@@ -514,7 +534,7 @@ describe('serverEntryProblems: the rules the review of option A asked to pin', (
     // A route without its server is neither form.
     expect(serverEntryProblems([...lead, 'mcp__plugin_playwright_playwright'], lead, { allowed: roster }).join('\n')).toContain('playwright');
     // A server nobody in the roster holds, and another tool of a server held per tool, are refused.
-    expect(serverEntryProblems([...lead, 'mcp__elevenlabs'], lead, { allowed: roster })).not.toEqual([]);
+    expect(serverEntryProblems([...lead, 'mcp__no-such-server'], lead, { allowed: roster })).not.toEqual([]);
     expect(serverEntryProblems([...lead, 'mcp__image-gen__other_tool'], lead, { allowed: roster })).not.toEqual([]);
   });
 
@@ -638,8 +658,8 @@ describe('the re-review of option A', () => {
     }, 120000);
 
     it('refuses a server of its own beyond a roster name that has no native file', async () => {
-      const result = await toolsFindings(text => text.replace('Agent(', 'Agent(no-such-role, ').replace(/^(tools: .*)$/m, '$1, mcp__elevenlabs'));
-      expect(result).toContain('mcp__elevenlabs is held beyond');
+      const result = await toolsFindings(text => text.replace('Agent(', 'Agent(no-such-role, ').replace(/^(tools: .*)$/m, '$1, mcp__no-such-server'));
+      expect(result).toContain('mcp__no-such-server is held beyond');
       expect(result).not.toContain('mcp__playwright');
     }, 120000);
   });

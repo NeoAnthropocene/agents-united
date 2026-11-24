@@ -37,10 +37,29 @@ const USER = { mine: { command: 'node', args: ['server.js'], env: { MY_KEY: 'use
 describe('the packaged catalog', () => {
   const registryAgents = (): string[] => fs.readdirSync(path.join(REGISTRY, 'agents')).filter(f => f.endsWith('.md'));
 
-  it('has an entry for every server the registry agents declare, and for nothing else', async () => {
+  // ADR 0079: the five servers that the creative, motion and sound designers declare are not written on Antigravity, each for a stated reason. The list is closed:
+  // a sixth server that the registry agents declare and the catalog lacks fails the check below.
+  const NOT_WIRED_ON_ANTIGRAVITY: Record<string, string> = {
+    'image-gen': 'Antigravity has its own generate_image tool, so the server would duplicate it (and it needs a provider key, which is never written)',
+    higgsfield: 'OAuth over serverUrl is unverified on Antigravity',
+    klingai: 'OAuth over serverUrl is unverified on Antigravity',
+    elevenlabs: 'OAuth over serverUrl is unverified on Antigravity',
+    'fish-audio': 'OAuth over serverUrl is unverified on Antigravity',
+  };
+
+  it('has an entry for every server the registry agents declare, except the five named ones, and for nothing else', async () => {
     const declared = await declaredServerNames(path.join(REGISTRY, 'agents'), registryAgents());
-    expect(Object.keys(catalog).sort()).toEqual([...declared].sort());
+    const wired = declared.filter(name => NOT_WIRED_ON_ANTIGRAVITY[name] === undefined);
+    expect(Object.keys(catalog).sort()).toEqual([...wired].sort());
     expect(declared).toEqual(expect.arrayContaining(['github', 'context7', 'firecrawl', 'stitch', 'chrome-devtools-mcp']));
+  });
+
+  it('declares each of the five named servers in a registry agent and writes none of them to the catalog, so the list cannot go stale', async () => {
+    const declared = await declaredServerNames(path.join(REGISTRY, 'agents'), registryAgents());
+    for (const [name, reason] of Object.entries(NOT_WIRED_ON_ANTIGRAVITY)) {
+      expect(declared, `${name}: ${reason}`).toContain(name);
+      expect(Object.keys(catalog), name).not.toContain(name);
+    }
   });
 
   it('writes only keys the host documents, one transport each, and never the legacy remote fields', () => {
@@ -62,7 +81,7 @@ describe('the packaged catalog', () => {
 
   it('keeps the launch command of the existing server definitions, so the two cannot drift apart', () => {
     for (const [name, server] of Object.entries(catalog)) {
-      const legacy = PrerequisiteChecker.getMcpDefinition(name, 'limited-operational', {});
+      const legacy = PrerequisiteChecker.getMcpDefinition(name, 'limited-operational', {})!;
       expect({ command: server.entry.command, args: server.entry.args }, name).toEqual({ command: legacy.command, args: legacy.args });
     }
   });
@@ -70,7 +89,7 @@ describe('the packaged catalog', () => {
   it('names every variable the existing definitions would pass, and ships no switch (a server that needs one is not written, ADR 0032 addendum 2)', () => {
     const everything = { GITHUB_PERSONAL_ACCESS_TOKEN: 'x', FIRECRAWL_API_KEY: 'x', STITCH_API_KEY: 'x', FIGMA_ACCESS_TOKEN: 'x', UPSTASH_REDIS_REST_URL: 'x', UPSTASH_REDIS_REST_TOKEN: 'x' };
     for (const [name, server] of Object.entries(catalog)) {
-      const legacyEnv = Object.keys(PrerequisiteChecker.getMcpDefinition(name, 'operational', everything).env ?? {});
+      const legacyEnv = Object.keys(PrerequisiteChecker.getMcpDefinition(name, 'operational', everything)!.env ?? {});
       expect([...server.requiresEnv, ...server.optionalEnv].sort(), name).toEqual(expect.arrayContaining(legacyEnv));
       expect(server.entry, name).not.toHaveProperty('disabled');
     }
