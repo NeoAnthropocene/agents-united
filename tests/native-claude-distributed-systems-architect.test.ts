@@ -108,7 +108,7 @@ describe('native distributed-systems-architect: the guard claims', () => {
   });
 
   it('Boundaries carry the one guard sentence, and say where the guard comes from in both modes', () => {
-    const sentence = `A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`;
+    const sentence = `A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` redirect, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`;
     expect(text().split(sentence)).toHaveLength(2);
     expect(text().split('A guard blocks')).toHaveLength(2);
     expect(text()).toContain(`${sentence} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);

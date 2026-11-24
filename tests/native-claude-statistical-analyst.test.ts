@@ -81,7 +81,7 @@ describe('native statistical-analyst: acceptEdits, the guard and the obligations
   it('step 5 states the limit of acceptEdits, what the guard blocks and what it does not, and makes the rest an obligation', () => {
     const five = step(5);
     expect(five).toContain('file edits inside the working folder are approved without a prompt');
-    expect(five).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(five).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` redirect, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
     expect(five).not.toContain('blocks only');
     expect(five).toMatch(/does not stop an edit that overwrites another file, a delete of one file or of a build folder/);
     expect(five).toMatch(/does not catch every destructive form/);
@@ -109,7 +109,7 @@ describe('native statistical-analyst: acceptEdits, the guard and the obligations
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
+    expect(text()).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` redirect, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });

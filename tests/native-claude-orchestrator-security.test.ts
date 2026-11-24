@@ -90,7 +90,7 @@ describe('native orchestrator-security: the guard claims', () => {
   it('names exactly what the bound guard blocks, and what it does not', () => {
     const paragraph = guardParagraph();
     expect(paragraph).toContain('is a seat belt, not a boundary');
-    expect(paragraph).toContain('It blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, writes to `.env` files (not `.env.example`) and a tool call whose input it cannot read.');
+    expect(paragraph).toContain('It blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` redirect, and a tool call whose input it cannot read.');
     expect(paragraph).toContain('a recursive delete of a root, home or project folder (`rm -rf /`, `rm -rf ~`, but not `rm -rf build` of an ordinary subfolder), `sudo` and other privilege escalation, shutdown and reboot, deletion of a cloud resource group, project or account, and disk formatting');
     expect(paragraph).toContain('It does not stop SQL `DROP` statements, a recursive delete of an ordinary subfolder, network traffic to an external or production target, or anything hidden in variables, aliases, interpreters, encoded commands or scripts.');
     expect(paragraph).toMatch(/permissionMode: acceptEdits/);
@@ -101,7 +101,7 @@ describe('native orchestrator-security: the guard claims', () => {
     const body = text();
     expect(body).not.toMatch(/blocks[^.\n]*\bDROP\b/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain('- A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As the main agent it comes from this file; a native specialist carries its own copy from its own file, and a specialist that is still a projection carries the same guard script as an inline hook, on `Bash|PowerShell` and on `Write|Edit|MultiEdit|NotebookEdit`, the same tools as a native specialist, so none of them is bound by more than this. Brief every specialist on what to hold back.');
+    expect(body).toContain('- A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` redirect, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As the main agent it comes from this file; a native specialist carries its own copy from its own file, and a specialist that is still a projection carries the same guard script as an inline hook, on `Bash|PowerShell` and on `Write|Edit|MultiEdit|NotebookEdit`, the same tools as a native specialist, so none of them is bound by more than this. Brief every specialist on what to hold back.');
     expect(body).not.toContain('delegate to a specialist that has them');
     expect(section('Delegate')).toContain('**Brief every specialist on what the guard does not stop**');
   });

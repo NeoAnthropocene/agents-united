@@ -208,7 +208,7 @@ describe('the three factory byte checks follow the new script and refuse the old
 
 describe('the role texts say one true sentence about the guard', () => {
   const SENTENCE =
-    'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+    'A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` redirect, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
   const AGENTS = path.resolve('registry/hosts/claude/agents');
   const named = [
     'accessibility-lead',
@@ -222,11 +222,25 @@ describe('the role texts say one true sentence about the guard', () => {
     expect(text.split(SENTENCE)).toHaveLength(2);
   });
 
-  it('no Claude role still claims the guard blocks "production deploys", and every "A guard blocks forced..." sentence is the one sentence', () => {
+  it('every step copy of the sentence ("blocks ..." without "A guard") is the same list', () => {
+    const list = SENTENCE.replace('A guard blocks ', '');
+    const copies: string[] = [];
     for (const file of fs.readdirSync(AGENTS).filter(name => name.endsWith('.md'))) {
       const text = fs.readFileSync(path.join(AGENTS, file), 'utf8').replace(/\r\n/g, '\n');
-      expect(text, file).not.toMatch(/guard blocks forced pushes, production deploys/);
-      for (const line of text.split('\n').filter(item => item.includes('A guard blocks forced'))) expect(line, file).toContain(SENTENCE);
+      for (const line of text.split('\n').filter(item => item.includes('(see Boundaries of this host) blocks ') || item.includes('The guard bound to it blocks '))) {
+        expect(line, file).toContain(list);
+        copies.push(file);
+      }
+    }
+    expect(copies).toHaveLength(10);
+  });
+
+  it('no Claude role still claims the guard blocks "production deploys" or "forced pushes" or ".env writes", and every "A guard blocks `git push --force`" sentence is the one sentence', () => {
+    for (const file of fs.readdirSync(AGENTS).filter(name => name.endsWith('.md'))) {
+      const text = fs.readFileSync(path.join(AGENTS, file), 'utf8').replace(/\r\n/g, '\n');
+      expect(text, file).not.toMatch(/guard blocks forced pushes/);
+      expect(text, file).not.toContain('`.env` writes and the common forms');
+      for (const line of text.split('\n').filter(item => item.includes('A guard blocks `git push --force`'))) expect(line, file).toContain(SENTENCE);
     }
   });
 });
@@ -236,6 +250,12 @@ describe('the README says when a role guard runs and when it does not', () => {
 
   it('no longer claims the guard always runs while a role is active', () => {
     expect(README).not.toContain('always runs while an Agents United role is active');
+  });
+
+  it('says the .env rule sees a shell `>` redirect and not cp, mv or tee', () => {
+    const paragraph = README.split('\n').find(line => line.startsWith('**Enforced by the managed guard hook (Claude Code):**'));
+    expect(paragraph).toBeDefined();
+    expect(paragraph).toContain('or `notebook_path` (NotebookEdit), or a shell `>` redirect; `cp`, `mv` and `tee` to `.env` are not seen');
   });
 
   it('names the cases where a role guard does not run and points to the session guard', () => {
