@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults, PlanningLoopMode } from './types.js';
 import { isEmptyContributorBundle } from './types.js';
 import { validateBundleHostAvailability } from './bundle-host-availability.js';
+import { hostSectionProblems } from './host-sections.js';
 import { inspectNativeAgent } from './native-guard.js';
 import { listNativeWorkflows, nativeRoleSource } from './native-package.js';
 
@@ -56,6 +57,7 @@ export class RegistryResolver {
 
     const manifest: BundlesManifest = await fs.readJson(manifestPath);
     this.validateBundles(manifest);
+    this.validateAgentHostSections();
     this.bundlesManifest = manifest;
     return manifest;
   }
@@ -63,12 +65,30 @@ export class RegistryResolver {
   public async getBundle(bundleName: string): Promise<BundleDefinition | null> {
     const manifest = await this.loadBundles();
     if (manifest.bundles[bundleName]) {
-      return manifest.bundles[bundleName];
+      return RegistryResolver.withInheritedOptionalMcps(manifest.bundles[bundleName], manifest);
     }
     const found = Object.values(manifest.bundles).find(
       b => b.aliases?.includes(bundleName)
     );
-    return found || null;
+    return found ? RegistryResolver.withInheritedOptionalMcps(found, manifest) : null;
+  }
+
+  /**
+   * ADR 0079 - one rule for the optional MCP servers of a bundle: its own entries marked `optional: true` and those of the bundles it extends through `parentBundle`, the nearest
+   * entry of a name winning. A required entry of a parent is never taken. The doctor and the install panel read a bundle through `getBundle`, so a bundle that extends another holds
+   * the roles of its parent and no longer warns about a server that the parent lists as an optional extra. Nothing is copied into `bundles.json`.
+   */
+  private static withInheritedOptionalMcps(bundle: BundleDefinition, manifest: BundlesManifest, seen: ReadonlySet<string> = new Set()): BundleDefinition {
+    if (!bundle.parentBundle || seen.has(bundle.name)) return bundle;
+    const parentKey = bundle.parentBundle;
+    const parent = manifest.bundles[parentKey] ?? Object.values(manifest.bundles).find(candidate => candidate.aliases?.includes(parentKey));
+    if (!parent) return bundle;
+    const effective = RegistryResolver.withInheritedOptionalMcps(parent, manifest, new Set([...seen, bundle.name]));
+    const own = bundle.prerequisites?.requiredMcps ?? [];
+    const named = new Set(own.map(mcp => mcp.name.toLowerCase()));
+    const inherited = (effective.prerequisites?.requiredMcps ?? []).filter(mcp => mcp.optional === true && !named.has(mcp.name.toLowerCase()));
+    if (inherited.length === 0) return bundle;
+    return { ...bundle, prerequisites: { ...(bundle.prerequisites ?? {}), requiredMcps: [...own, ...inherited.map(mcp => ({ ...mcp }))] } };
   }
 
   public async listBundles(): Promise<BundleDefinition[]> {
@@ -349,6 +369,19 @@ export class RegistryResolver {
    * ADR 0015 — fail-fast validation of planningLoop configuration.
    * @throws if any bundle violates planner-orchestrator invariants.
    */
+  /**
+   * ADR 0079: every canonical agent body is read for one host, so a malformed host section (an unknown host, a nested or an unclosed section, a stray end marker) fails when the registry
+   * loads, before any asset is written and not only at the first reader. The result is cached with the manifest.
+   */
+  private validateAgentHostSections(): void {
+    const agentsDir = path.join(this.registryDir, 'agents');
+    if (!fs.existsSync(agentsDir)) return;
+    for (const file of fs.readdirSync(agentsDir).filter(name => name.endsWith('.md')).sort()) {
+      const problems = hostSectionProblems(fs.readFileSync(path.join(agentsDir, file), 'utf8'));
+      if (problems.length > 0) throw new Error(`Registry agent ${file}: ${problems.join(' ')}`);
+    }
+  }
+
   private validateBundles(manifest: BundlesManifest): void {
     // Plan 033 P20: the rules moved into collectBundleManifestIssues; the first collected problem is the one thrown here, as before.
     const issues = collectBundleManifestIssues(manifest, this.registryDir);

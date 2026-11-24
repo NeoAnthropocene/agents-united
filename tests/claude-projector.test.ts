@@ -576,3 +576,27 @@ describe('ClaudeProjector.rewriteBody — send_message prose rewrite', () => {
     expect(coordinator!.content).toContain('recommend installing it');
   });
 });
+
+describe('ClaudeProjector.serverGrant - a writable role holds the image server as its one tool', () => {
+  it('grants the one pinned tool of image-gen to a writable role, never the whole server', () => {
+    expect(ClaudeProjector.serverGrant('image-gen', false)).toEqual(['mcp__image-gen__generate_image']);
+  });
+
+  it('keeps every unlisted server whole for a writable role', () => {
+    expect(ClaudeProjector.serverGrant('higgsfield', false)).toEqual(['mcp__higgsfield']);
+    expect(ClaudeProjector.serverGrant('github', false)).toEqual(['mcp__github']);
+  });
+
+  it('gives a read-only role nothing of image-gen, which has no read-only pin', () => {
+    expect(ClaudeProjector.serverGrant('image-gen', true)).toEqual([]);
+  });
+
+  it('renders the image server by name and its one tool, in the tools of a projected role', () => {
+    const text = SAMPLE.replace(/\nrules:/, '\nmcpServers:\n  - name: image-gen\nrules:');
+    const meta = yamlOf(ClaudeProjector.renderRole(text, CANONICAL_AGENT_PATH).content);
+    const tools = meta.tools as string[];
+    expect(tools).toContain('mcp__image-gen__generate_image');
+    expect(tools).not.toContain('mcp__image-gen');
+    expect(meta.mcpServers).toEqual([{ name: 'image-gen' }]);
+  });
+});

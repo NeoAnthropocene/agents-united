@@ -1,6 +1,7 @@
 import YAML from 'yaml';
 import type { ProjectionProfile } from './hosts.js';
 import { ClineProjector } from './cline-projector.js';
+import { hostSections } from './host-sections.js';
 
 /**
  * Error raised by {@link HostProjector} when a canonical file cannot be projected:
@@ -120,7 +121,8 @@ export class HostProjector {
   ): ProjectionResult {
     const { meta, body } = HostProjector.parseFrontmatter(md, canonicalRelPath);
     const warnings: string[] = [];
-    const normalizedBody = body.replace(/\r\n/g, '\n');
+    // ADR 0079: a canonical body is read for one host: the antigravity profile keeps the sections of Antigravity, every other profile drops them, and a malformed body is refused.
+    const normalizedBody = hostSections(body, profile === 'antigravity' ? 'antigravity' : profile).replace(/\r\n/g, '\n');
     const marker = `<!-- managed-by: agents-united | profile: ${profile} | canonical: ${canonicalRelPath} | do not edit -->`;
 
     // agentsmd: AGENTS.md bridge entry (name -> link text, description -> table cell,

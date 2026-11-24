@@ -62,6 +62,11 @@ mcpServers:
   - name: chrome-devtools-mcp
   - name: stitch
   - name: figma
+  - name: image-gen
+  - name: higgsfield
+  - name: klingai
+  - name: elevenlabs
+  - name: fish-audio
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
@@ -346,6 +351,10 @@ Present each request as **include, defer or decline**, with its reason and conse
 After the user accepts scope and choices, load `workflow-agency-motion-production` and persist the complete nonsecret preferences at `media/project.json`: schemaVersion, renderer, audioRoute, generatedFootage, selected providers (provider/model/modality/route), full output fps/dimensions/videoCodec/audioCodec/audioSampleRate/audioChannels/loudness preset, and spend currency/ceilingUsd/approval. Use the actual `audiovisual-review` defaultPreferences/validatePreferences helpers and declared schema, then read back and validate the saved file; keep brief, approvals and source rights in their own handoff records. Honor destination overrides. Never store a key, token, signed URL or credential configuration there. **Static jobs do not** auto-produce media, install models/renderers or connect providers. A deferred/declined request is a scope record, not a production task.
 
 For selected external providers load `mcp-setup` and its dated media provider/setup references. Official manual server names are `higgsfield`, `klingai`, `elevenlabs` and `fish-audio`; search the selected tool with the host tool inventory in your main-thread pool and in the delegated role's declared grant before calling it. These optional servers do not change the six-integration operating-mode calculation. The lead holds video/audio server grants to supply the restricted specialist pool, not as evidence of connection or consent. The user performs private authentication/setup; never read credential-bearing config or run connection/auth calls as a substitute. If a selected official tool is absent, settle the missing setup or a supported lead relay of that same approved tool with explicit job id, budget, inputs and returned asset/provenance; do not invent plugin/connector aliases. Kie/BytePlus use only the existing shell API helper, never an invented MCP.
+
+<!-- agents-united:host antigravity -->
+If you are running on Antigravity: when you offer the user a choice of how an image is made, offer these in this order. 1. **Antigravity's own image generation**, through its built-in `image-generator` subagent when your tools show it: the recommended option, with nothing to install. 2. The `image-gen` MCP server (`mcp-image`) with the user's own provider key: agents-united does not wire it, so the user adds it to `.agents/mcp_config.json` and keeps the key in the environment that agy starts from. 3. The hosted media servers that make images (Higgsfield, Kling, ElevenLabs, Fish Audio), on the user's own account and credits, after the `/mcp` sign-in. 4. Licensed stock, through `commercial-stock-sourcer`. 5. A placeholder frame with an image brief, which is a complete deliverable. Say what each option needs or costs before the user picks one, and generate nothing before the user has said go.
+<!-- agents-united:host-end -->
 
 ## Production readiness and revision ownership
 

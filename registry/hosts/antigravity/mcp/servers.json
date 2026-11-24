@@ -26,6 +26,26 @@
       "requiresEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
       "optionalEnv": []
     },
+    "elevenlabs": {
+      "entry": { "serverUrl": "https://api.elevenlabs.io/v1/mcp" },
+      "requiresEnv": [],
+      "optionalEnv": []
+    },
+    "fish-audio": {
+      "entry": { "serverUrl": "https://api.fish.audio/mcp" },
+      "requiresEnv": [],
+      "optionalEnv": []
+    },
+    "higgsfield": {
+      "entry": { "serverUrl": "https://mcp.higgsfield.ai/mcp" },
+      "requiresEnv": [],
+      "optionalEnv": []
+    },
+    "klingai": {
+      "entry": { "serverUrl": "https://kling.ai/mcp" },
+      "requiresEnv": [],
+      "optionalEnv": []
+    },
     "markitdown": {
       "entry": { "command": "uvx", "args": ["markitdown-mcp"] },
       "requiresEnv": [],

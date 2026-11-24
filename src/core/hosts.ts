@@ -214,3 +214,12 @@ export function planInstallTargets(
 
   return { hosts, fanout, addedCanonicalStore, storeShape };
 }
+
+/**
+ * Every host an install targets, for the prerequisite panel: the hosts and the fan-out together, in that order and without repeats, or the default host when both are empty.
+ * `planInstallTargets` puts a projection-capable host such as Claude in `fanout`, so a panel that looked at `hosts` alone never reached it (ADR 0079).
+ */
+export function installTargetHostKeys(hosts: readonly string[], fanout: readonly string[]): string[] {
+  const all = Array.from(new Set([...hosts, ...fanout]));
+  return all.length > 0 ? all : ['agents'];
+}

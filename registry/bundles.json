@@ -237,6 +237,40 @@
         "lifecycle-email-marketing"
       ],
       "description": "Growth strategists, visual creative designer, copywriters, and launch playbooks",
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "image-gen",
+            "purpose": "Photographic images for the creative designer: Gemini, OpenAI or Seedream through the user's own keys",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "higgsfield",
+            "purpose": "Image/video generation and editing",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "klingai",
+            "purpose": "Video/image generation, task queries/downloads and membership/credit queries",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "elevenlabs",
+            "purpose": "Speech, transcription, dubbing, music, sound effects, images and video",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "fish-audio",
+            "purpose": "Narration, voice casting, transcription and image generation",
+            "optionalForBrainstorming": true,
+            "optional": true
+          }
+        ]
+      },
       "orchestrator": "orchestrator-marketing.md",
       "agents": [
         "subagent-marketing-growth-strategist.md",
@@ -258,6 +292,9 @@
         "seo-audit",
         "signup-flow-cro",
         "social-media-campaign",
+        "image-creation",
+        "image-generation",
+        "mcp-setup",
         "workflow-marketing-panel",
         "workflow-marketing-audit",
         "workflow-marketing-campaign-builder",
@@ -349,6 +386,40 @@
         "paid-media"
       ],
       "description": "Multi-channel PPC (Google Ads, Meta Ads, LinkedIn Ads), ROAS/CAC attribution modeling, and ad copy testing",
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "image-gen",
+            "purpose": "Photographic images for the creative designer: Gemini, OpenAI or Seedream through the user's own keys",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "higgsfield",
+            "purpose": "Image/video generation and editing",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "klingai",
+            "purpose": "Video/image generation, task queries/downloads and membership/credit queries",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "elevenlabs",
+            "purpose": "Speech, transcription, dubbing, music, sound effects, images and video",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "fish-audio",
+            "purpose": "Narration, voice casting, transcription and image generation",
+            "optionalForBrainstorming": true,
+            "optional": true
+          }
+        ]
+      },
       "orchestrator": "orchestrator-marketing.md",
       "agents": [
         "subagent-paid-acquisition-specialist.md",
@@ -384,6 +455,9 @@
         "signup-flow-cro",
         "stitch-design-taste",
         "commercial-stock-sourcer",
+        "image-creation",
+        "image-generation",
+        "mcp-setup",
         "design-artifact-publishing",
         "host-agent-router",
         "handoff",
@@ -944,6 +1018,40 @@
         "full-suite"
       ],
       "description": "Complete end-user suite of lead orchestrators, subagents, skills and workflows; contributor tooling is excluded",
+      "prerequisites": {
+        "requiredMcps": [
+          {
+            "name": "image-gen",
+            "purpose": "Photographic images for the creative designer: Gemini, OpenAI or Seedream through the user's own keys",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "higgsfield",
+            "purpose": "Image/video generation and editing",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "klingai",
+            "purpose": "Video/image generation, task queries/downloads and membership/credit queries",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "elevenlabs",
+            "purpose": "Speech, transcription, dubbing, music, sound effects, images and video",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "fish-audio",
+            "purpose": "Narration, voice casting, transcription and image generation",
+            "optionalForBrainstorming": true,
+            "optional": true
+          }
+        ]
+      },
       "orchestrator": "orchestrator-engineering.md",
       "agents": [
         "orchestrator-business.md",
@@ -1247,7 +1355,7 @@
       "aliases": [
         "agency"
       ],
-      "description": "Full-service digital product agency powered by the AstrolabsAI persona team (Chris, Ava, Jamileh, Kaan). Features dynamic DAG orchestration and Tri-Tier Execution Modes with 6 required MCP servers and 2 optional extras.",
+      "description": "Full-service digital product agency powered by the AstrolabsAI persona team (Chris, Ava, Jamileh, Kaan). Features dynamic DAG orchestration and Tri-Tier Execution Modes with 6 required MCP servers and 7 optional extras.",
       "prerequisites": {
         "requiredMcps": [
           {
@@ -1291,6 +1399,36 @@
             "name": "figma",
             "purpose": "Extraction of design systems and canvas frames",
             "optionalForBrainstorming": true
+          },
+          {
+            "name": "image-gen",
+            "purpose": "Photographic images for the creative designer: Gemini, OpenAI or Seedream through the user's own keys",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "higgsfield",
+            "purpose": "Image/video generation and editing",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "klingai",
+            "purpose": "Video/image generation, task queries/downloads and membership/credit queries",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "elevenlabs",
+            "purpose": "Speech, transcription, dubbing, music, sound effects, images and video",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "fish-audio",
+            "purpose": "Narration, voice casting, transcription and image generation",
+            "optionalForBrainstorming": true,
+            "optional": true
           }
         ],
         "requiredPackages": [

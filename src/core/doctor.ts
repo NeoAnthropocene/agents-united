@@ -13,6 +13,7 @@ import { ClineProjector } from './cline-projector.js';
 import { AntigravityProjector } from './antigravity-projector.js';
 import { RegistryResolver, loadTranslationLedger } from './registry.js';
 import { McpLocationRegistry } from './mcp-locations.js';
+import { mcpAddCommand } from './mcp-add-commands.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, inspectAntigravityHook, loadGuardHookEntry } from './antigravity-hooks.js';
 import { inspectAntigravityMcp, loadMcpCatalog } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
@@ -133,21 +134,6 @@ const MCP_LOCATION_HOST: Record<string, string> = {
   antigravity: 'gemini',
   cline: 'cline',
 };
-
-/**
- * Plan 029 A3 — the host's own command for registering a server, PRINTED for the user to run.
- * `agents doctor` never executes it, never installs a server and never writes an MCP config file.
- */
-function mcpAddCommand(host: string, server: string, workspaceRoot: string): string {
-  if (host === 'antigravity') {
-    return `Add it with: agy mcp add ${server} -- <command> [args...]`;
-  }
-  if (host === 'cline') {
-    const settingsPath = McpLocationRegistry.getPrimaryWritePath('cline', workspaceRoot);
-    return `Add it with the interactive wizard: cline mcp install|add <name> (or cline config mcp for the current list); settings live in ${settingsPath}.`;
-  }
-  return `Add it with: claude mcp add ${server} -- <command> [args...]`;
-}
 
 /** A projection that now serves the same canonical at a different path. */
 interface SupersedingProjection {

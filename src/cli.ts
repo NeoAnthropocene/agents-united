@@ -31,7 +31,7 @@ import { explicitNativeFlag } from './core/native-flag.js';
 import { linkedSkillAdvice, listLinkedSkills } from './core/skill-links.js';
 import { nativeWorkflowNote } from './core/native-workflows.js';
 import { nativeTeamNote, sessionGuardPrompt } from './core/native-teams.js';
-import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
+import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, installTargetHostKeys, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, PrerequisiteItemCheck, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport, ClineCapabilityReport } from './core/types.js';
 import { isEmptyContributorBundle } from './core/types.js';
 
@@ -931,7 +931,7 @@ cli
 
     if (targetBundleDef && (targetBundleDef.prerequisites || targetBundleDef.tier === 'organization')) {
       const checker = new PrerequisiteChecker();
-      const prereqEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: hosts });
+      const prereqEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: installTargetHostKeys(hosts, fanout) });
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
@@ -1616,7 +1616,7 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
     lines.push(...formatWrappedList(domainSkills, '│   ').map(line => pc.yellow(line)));
     lines.push(`├── 🔄 Workflows (${workflows.length}):`);
     lines.push(...formatWrappedList(workflows.map(workflow => workflow.replace(/\.md$/, '')), '│   ').map(line => pc.magenta(line)));
-    lines.push(`├── 🔌 Prerequisites: ${pc.dim('None (Self-contained universal suite)')}`);
+    lines.push(`├── 🔌 Prerequisites: ${(bundle.prerequisites?.requiredMcps?.length ?? 0) > 0 ? pc.dim(`None required; optional MCPs: ${describeRequiredMcps(bundle.prerequisites!.requiredMcps!)}`) : pc.dim('None (Self-contained universal suite)')}`);
     lines.push(`└── 💡 Execution Modes: ${pc.green('Operational')}`);
     return lines.join('\n');
   }
@@ -2010,10 +2010,22 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
 
     // 2. Prerequisite Gate Evaluation
     let executionMode: ExecutionMode = 'operational';
+    // The install targets are worked out once, here, as the install then receives them (`agents` is always one of them, and a projection-capable host such as Claude is a fan-out host),
+    // and the panel evaluates exactly those hosts.
+    const detectedHosts = detectWorkspaceHosts();
+    let installHosts: AgentHost[] = ['agents'];
+    let installFanout: string[] = [];
+
+    if (detectedHosts.length > 0) {
+      const projectionHosts = detectedHosts.filter(h => HOST_REGISTRY[h].projectionCapable);
+      installFanout = projectionHosts;
+      installHosts = detectedHosts.filter(h => !HOST_REGISTRY[h].projectionCapable) as AgentHost[];
+      if (!installHosts.includes('agents')) installHosts.unshift('agents');
+    }
 
     if (bundle.prerequisites || bundle.tier === 'organization') {
       const checker = new PrerequisiteChecker();
-      const prereqEval = await checker.evaluate(bundle);
+      const prereqEval = await checker.evaluate(bundle, { cwd: process.cwd(), targetHosts: installTargetHostKeys(installHosts, installFanout) });
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
@@ -2062,17 +2074,7 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
       }
     }
 
-    // 3. Workspace Host & Fan-out Configuration
-    const detectedHosts = detectWorkspaceHosts();
-    let installHosts: AgentHost[] = ['agents'];
-    let installFanout: string[] = [];
-
-    if (detectedHosts.length > 0) {
-      const projectionHosts = detectedHosts.filter(h => HOST_REGISTRY[h].projectionCapable);
-      installFanout = projectionHosts;
-      installHosts = detectedHosts.filter(h => !HOST_REGISTRY[h].projectionCapable) as AgentHost[];
-      if (!installHosts.includes('agents')) installHosts.unshift('agents');
-    }
+    // 3. Workspace Host & Fan-out Configuration (worked out above, before the panel)
 
     const installSpinner = spinner();
     installSpinner.start(`Installing "${bundle.name}"...`);

@@ -80,3 +80,13 @@ describe('the pool of a coordinator: a teammate gets the MCP tools of the main c
     expect(held).not.toContain('mcp__image-gen');
   });
 });
+
+describe('the marketing lead holds the image tool of its creative designer (ADR 0079)', () => {
+  it('holds the one tool and not the server, because the marketing creative designer holds it and a teammate gets the tools of the main conversation', () => {
+    expect(toolsOf('marketing-creative-designer')).toContain('mcp__image-gen__generate_image');
+    const held = toolsOf('orchestrator-marketing');
+    expect(held).toContain('mcp__image-gen__generate_image');
+    expect(held).not.toContain('mcp__image-gen');
+    expect(held.filter(t => t.includes('image-gen'))).toEqual(['mcp__image-gen__generate_image']);
+  });
+});

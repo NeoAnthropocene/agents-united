@@ -2,6 +2,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'fs-extra';
 import { McpLocationRegistry, type DiscoveredMcpConfig } from './mcp-locations.js';
+import { claudeAddCommand, hasNoStdioDefinition } from './mcp-add-commands.js';
 import type {
   BundleDefinition,
   PrerequisiteEvaluation,
@@ -343,6 +344,11 @@ export class PrerequisiteChecker {
           status = 'partial';
           details = `Detected in ${otherLabels.join(', ')}; Missing in target (${Array.from(targetHostKeys).map(h => hostCleanNames[h] || h).join(', ')})`;
         }
+        // ADR 0079: a server of the media set (hosted HTTP or the image server) has one command that the mcp-setup references give, and the panel prints it for Claude Code.
+        if (!satisfied && missingHostKeys.includes('claude')) {
+          const addCommand = claudeAddCommand(mcp.name);
+          if (addCommand !== undefined) details += `; add it with: ${addCommand}`;
+        }
 
         items.push({
           type: 'mcp',
@@ -406,14 +412,16 @@ export class PrerequisiteChecker {
   }
 
   /**
-   * Returns canonical command and environment definitions for known MCP servers
+   * Returns canonical command and environment definitions for known MCP servers, or undefined for a server that has none to write (ADR 0079): the four hosted media servers need a
+   * sign-in and the image server needs the user's own key, so none of them may fall through to `npx -y <name>`; their add command is printed instead (`mcp-add-commands.ts`).
    */
   public static getMcpDefinition(
     mcpName: string,
     mode: 'operational' | 'limited-operational' = 'operational',
     envVars: Record<string, string | undefined> = {}
-  ): { command: string; args: string[]; env?: Record<string, string> } {
+  ): { command: string; args: string[]; env?: Record<string, string> } | undefined {
     const norm = mcpName.trim().toLowerCase();
+    if (hasNoStdioDefinition(norm)) return undefined;
     switch (norm) {
       case 'github':
         return {
@@ -494,6 +502,7 @@ export class PrerequisiteChecker {
 
     for (const name of mcpNames) {
       const def = PrerequisiteChecker.getMcpDefinition(name, mode, envVars);
+      if (def === undefined) continue;
       if (client === 'cline') {
         servers[name] = {
           ...def,
@@ -538,7 +547,7 @@ export class PrerequisiteChecker {
     mcpNames: string[],
     mode: 'operational' | 'limited-operational' = 'operational',
     envVars: Record<string, string | undefined> = {}
-  ): Promise<{ success: boolean; targetFile: string; addedServers: string[]; enabledServers: string[] }> {
+  ): Promise<{ success: boolean; targetFile: string; addedServers: string[]; enabledServers: string[]; skippedServers: string[] }> {
     await fs.ensureDir(path.dirname(targetFilePath));
     let existingConfig: any = {};
     if (await fs.pathExists(targetFilePath)) {
@@ -553,6 +562,7 @@ export class PrerequisiteChecker {
     const existingServers = (isServersProp ? existingConfig.servers : existingConfig.mcpServers) || {};
     const addedServers: string[] = [];
     const enabledServers: string[] = [];
+    const skippedServers: string[] = [];
 
     for (const mcp of mcpNames) {
       let foundKey: string | null = null;
@@ -569,6 +579,10 @@ export class PrerequisiteChecker {
 
       if (!foundKey) {
         const def = PrerequisiteChecker.getMcpDefinition(mcp, mode, envVars);
+        if (def === undefined) {
+          skippedServers.push(mcp);
+          continue;
+        }
         existingServers[mcp] = def;
         addedServers.push(mcp);
       }
@@ -586,6 +600,7 @@ export class PrerequisiteChecker {
       targetFile: targetFilePath,
       addedServers,
       enabledServers,
+      skippedServers,
     };
   }
 
@@ -598,13 +613,14 @@ export class PrerequisiteChecker {
     cwd: string = process.cwd(),
     mode: 'operational' | 'limited-operational' = 'operational',
     envVars: Record<string, string | undefined> = {}
-  ): Promise<{ configured: boolean; targetFile: string; addedServers: string[] }> {
+  ): Promise<{ configured: boolean; targetFile: string; addedServers: string[]; skippedServers: string[] }> {
     const targetFile = McpLocationRegistry.getPrimaryWritePath(host as AgentHost, cwd);
     const res = await PrerequisiteChecker.autoConfigureConfigFile(targetFile, mcpNames, mode, envVars);
     return {
       configured: res.success,
       targetFile: res.targetFile,
       addedServers: [...res.addedServers, ...res.enabledServers],
+      skippedServers: res.skippedServers,
     };
   }
 

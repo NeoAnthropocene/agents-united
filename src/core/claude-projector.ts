@@ -24,6 +24,7 @@ import { assertClaudeSkillBindings } from './claude-skill-binding.js';
 import { assertClaudeContractTaskBinding, assertClaudeContractTaskDelivery, planClaudeContractTaskArtifacts } from './claude-contract-binding.js';
 import { assertClaudeFactoryDelivery, planClaudeFactoryArtifacts } from './claude-factory-binding.js';
 import { unsupportedSkillNames } from './host-profile.js';
+import { hostSections } from './host-sections.js';
 
 /** Result of rendering one canonical asset into the Claude dialect. */
 export interface ClaudeRenderResult {
@@ -81,7 +82,7 @@ const FEATURE_LEDGER: Record<string, { disposition: LedgerDisposition; rationale
   ask_question: { disposition: 'approximated', rationale: 'Claude exposes AskUserQuestion only in the main conversation (excluded from subagents by default).' },
   generate_image: { disposition: 'unsupported', rationale: 'Claude Code exposes no image-generation tool; asset creation must happen outside the agent run.' },
   skills: { disposition: 'degraded', rationale: 'Claude subagents discover project skills and can invoke them; the canonical preload list is not injected to avoid paying its token cost on every spawn.' },
-  mcpServers: { disposition: 'mapped', rationale: 'Plan 029 A2 — a canonical `mcpServers:` entry projects into the Claude subagent `mcpServers:` field as a server NAME reference (`- name: <server>`), and the matching grant lands in `tools:` (`mcp__<server>`, or pinned read-only tool names for a read-only role). Credentials, `env` blocks and inline server definitions are never projected (Risk R4).' },
+  mcpServers: { disposition: 'mapped', rationale: 'Plan 029 A2 — a canonical `mcpServers:` entry projects into the Claude subagent `mcpServers:` field as a server NAME reference (`- name: <server>`), and the matching grant lands in `tools:` (`mcp__<server>`, its one pinned tool where the server is pinned (ADR 0079: `image-gen` is granted as `mcp__image-gen__generate_image`), or pinned read-only tool names for a read-only role). Credentials, `env` blocks and inline server definitions are never projected (Risk R4).' },
 };
 
 const MARKER_PROFILE = 'claude';
@@ -133,6 +134,16 @@ const READ_ONLY_MCP_TOOL_GRANTS: Record<string, readonly string[]> = {
   // Plan 029 Step 3 pin correction: `get-library-docs` is Context7's DEPRECATED tool name; the
   // current surface is `resolve-library-id` + `query-docs` (verified against the live MCP server).
   context7: ['mcp__context7__resolve-library-id', 'mcp__context7__query-docs'],
+};
+
+/**
+ * ADR 0079 - what a WRITABLE role receives for a server that is granted as its pinned tools and not as the whole server. A bare `mcp__<server>` grant resolves to every tool the
+ * server exposes now and in any later version, so a server whose one tool is all the role needs is pinned to that tool. `image-gen` (the `mcp-image` package, one tool today, ADR 0049
+ * decision 4) is granted as `mcp__image-gen__generate_image`; the server stays a name-only entry in the canonical agent and in the `mcpServers:` field. A server absent from this table is
+ * granted whole, as before. A read-only role never uses this table: it takes `READ_ONLY_MCP_TOOL_GRANTS` and gets nothing of a server that has no read-only pin.
+ */
+const WRITABLE_MCP_TOOL_PINS: Record<string, readonly string[]> = {
+  'image-gen': ['mcp__image-gen__generate_image'],
 };
 
 const FRONTMATTER_REGEX = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/;
@@ -355,9 +366,9 @@ export class ClaudeProjector {
     return { meta, body: match[2].replace(/^\r?\n/, '') };
   }
 
-  /** The tools one declared server grants: the server itself for a writable role, its pinned read-only tools (none when unpinned) for a read-only one. */
+  /** The tools one declared server grants: for a writable role its pinned tools (ADR 0079) or else the server itself; for a read-only role its pinned read-only tools (none when unpinned). */
   public static serverGrant(server: string, readOnly: boolean): readonly string[] {
-    return readOnly ? READ_ONLY_MCP_TOOL_GRANTS[server] ?? [] : [`mcp__${server}`];
+    return readOnly ? READ_ONLY_MCP_TOOL_GRANTS[server] ?? [] : WRITABLE_MCP_TOOL_PINS[server] ?? [`mcp__${server}`];
   }
 
   /** The server tools a canonical agent's frontmatter yields, in declaration order: one rule for the projector and the repository checks (ADR 0072). */
@@ -558,7 +569,10 @@ export class ClaudeProjector {
     canonicalRelPath: string,
     opts: { allowlist?: string[]; maxTurns?: number } = {}
   ): ClaudeRenderResult {
-    const { meta, body } = ClaudeProjector.parse(canonicalContent, canonicalRelPath);
+    const parsed = ClaudeProjector.parse(canonicalContent, canonicalRelPath);
+    const meta = parsed.meta;
+    // ADR 0079: the sections of other hosts leave the body here, and a body that is not well formed is refused.
+    const body = hostSections(parsed.body, 'claude');
     const ledger = new Map<string, TranslationLedgerEntry>();
 
     // 1. Every canonical key either maps inline or carries a recorded disposition.
@@ -652,7 +666,7 @@ export class ClaudeProjector {
     // `mcpServers:` name references (the documented "a name that references a server you already
     // configured" form) and the matching grant in `tools:`. A name reference alone does not survive
     // an explicit `tools:` allowlist, which is why every declared server also gets its grant — the
-    // server-level `mcp__<server>` for a writable role, pinned read-only tool names for a `plan`
+    // server-level `mcp__<server>` for a writable role (its one pinned tool where the server is pinned, ADR 0079), pinned read-only tool names for a `plan`
     // role (Risk R1, owner Option B). Servers are referenced BY NAME ONLY (Risk R4).
     const declaredServers = ClaudeProjector.declaredMcpServers(meta, canonicalRelPath);
     for (const server of declaredServers) {

@@ -17,6 +17,7 @@ import { ANTIGRAVITY_LEGACY_ENTRYPOINT_RULE } from './antigravity-projector.js';
 import { ANTIGRAVITY_GUARD_SCRIPT, ANTIGRAVITY_HOOKS_FILE, ANTIGRAVITY_HOOK_NAME, loadGuardHookEntry, mergeAntigravityHook, removeAntigravityHook } from './antigravity-hooks.js';
 import { ANTIGRAVITY_MCP_FILE, describeMcpOutcomes, loadMcpCatalog, syncAntigravityMcp, type McpEntry } from './antigravity-mcp.js';
 import { declaredServerNames } from './mcp-declarations.js';
+import { hasHostSections, hostSections } from './host-sections.js';
 import { ClaudeProjector } from './claude-projector.js';
 import { listNativeWorkflows } from './native-package.js';
 import { isMaintainerOnlySkillPath } from './skill-folder.js';
@@ -164,8 +165,9 @@ export class InstallEngine {
     const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', targetDir);
     return { agentsTarget, root: workspaceRootOf(agentsTarget) };
   }
-private toPosix(p: string): string {
-    return p.split(path.sep).join('/');
+  /** A path in the form of the lockfile records: a slash for either separator, so a record found on one platform matches on the other. */
+  private toPosix(p: string): string {
+    return p.replace(/[\\/]/g, '/');
   }
 
   private canonicalRelAgent(agentFile: string): string {
@@ -1867,16 +1869,33 @@ private toPosix(p: string): string {
         const src = path.join(registryDir, 'agents', agentFile);
         const dest = path.join(subPaths.agentsDir, agentFile);
 
-        if (await fs.pathExists(dest) && !options.force && method !== 'symlink') {
+        // ADR 0079: the store copy is the Antigravity copy of a canonical agent: a body with host sections is written rendered for Antigravity (a real file, never a link into the registry),
+        // and its recorded hash is the hash of the bytes written, so a re-install and the doctor see no edit. The guard follows what is installed and not what the source holds now: a
+        // file in place that is not a link (a rendered copy, or a copy that an earlier install made) is protected whatever the method and whatever the source has become.
+        const sourceText = await fs.readFile(src, 'utf8');
+        const rendersSections = hasHostSections(sourceText);
+        const destIsLink = (await fs.lstat(dest).catch(() => null))?.isSymbolicLink() === true;
+        if (await fs.pathExists(dest) && !options.force && (method !== 'symlink' || !destIsLink)) {
           const existingHash = await this.calculateHash(dest).catch(() => null);
-          const relPath = path.relative(targetDir, dest);
+          const relPath = this.toPosix(path.relative(targetDir, dest));
           if (existingHash && lockfile.files[relPath] && lockfile.files[relPath].hash !== existingHash) {
             throw new Error(`File ${relPath} has user modifications. Use --force to overwrite.`);
           }
         }
 
-        const actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
-        const hash = await this.calculateHash(src);
+        let actualMethod: 'symlink' | 'copy';
+        let hash: string;
+        if (rendersSections) {
+          const rendered = hostSections(sourceText, 'antigravity');
+          await fs.ensureDir(path.dirname(dest));
+          if ((await fs.lstat(dest).catch(() => null))?.isSymbolicLink()) await fs.unlink(dest);
+          await fs.writeFile(dest, rendered, 'utf8');
+          actualMethod = 'copy';
+          hash = 'sha256:' + crypto.createHash('sha256').update(Buffer.from(rendered, 'utf8')).digest('hex');
+        } else {
+          actualMethod = await this.deployFile(src, dest, iterMethod, options.force);
+          hash = await this.calculateHash(src);
+        }
         const relPath = this.toPosix(path.relative(targetDir, dest));
         // Preserve projection tracking and co-ownership across re-installs;
         // applyFanout re-records the current fan-out below (deduplicated).

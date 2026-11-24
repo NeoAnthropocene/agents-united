@@ -153,7 +153,7 @@ in the provider cards. No paid generation during setup.
 
 | Provider / route | Endpoint and authentication | Source |
 | --- | --- | --- |
-| Higgsfield official hosted MCP | `https://mcp.higgsfield.ai`; actual account authorization | <https://higgsfield.ai/blog/Generate-AI-Videos-From-Claude-with-Higgsfield-MCP> |
+| Higgsfield official hosted MCP | `https://mcp.higgsfield.ai/mcp` (the bare host `https://mcp.higgsfield.ai` answers 404, observed 2026-11-24); actual account authorization | <https://higgsfield.ai/blog/Generate-AI-Videos-From-Claude-with-Higgsfield-MCP> |
 | Kling official hosted MCP | `https://kling.ai/mcp`; documented authorization flow | <https://kling.ai/app/mcp> |
 | ElevenLabs official hosted MCP | `https://api.elevenlabs.io/v1/mcp`; OAuth; speech, music, SFX | <https://elevenlabs.io/mcp>, <https://elevenlabs.io/blog/introducing-voice-music-image-and-video-generation-in-the-elevenlabs-mcp> |
 | Fish Audio official hosted MCP | `https://api.fish.audio/mcp`; OAuth | <https://docs.fish.audio/overview/mcp> |

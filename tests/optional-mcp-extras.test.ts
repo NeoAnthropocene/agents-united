@@ -14,12 +14,16 @@ import type { BundleDefinition, PrerequisiteItemCheck, RequiredMcp } from '../sr
  * The lead's mode already counts six (`tests/agency-operational-mode-counts.test.ts`). The bundle's prerequisites kept all eight as required, so the doctor warned
  * for every declared server that was not configured (including the two extras), and the install gate called a bundle "not fully satisfied" and chose Limited
  * Operational while the lead would have reported Fully Operational. An entry of `requiredMcps` can now say `optional: true`: it is shown, never a failure.
+ *
+ * ADR 0079 added five more optional extras to the digital-agency, the servers of the creative, motion and sound designers (`image-gen`, `higgsfield`, `klingai`,
+ * `elevenlabs`, `fish-audio`). The lead's mode still counts six; the list of required servers is unchanged.
  */
 
 const bundle = (name: string, requiredMcps?: RequiredMcp[]): BundleDefinition => ({ name, prerequisites: requiredMcps ? { requiredMcps } : undefined }) as unknown as BundleDefinition;
 
 const REQUIRED = ['github', 'firecrawl', 'context7', 'playwright', 'chrome-devtools-mcp', 'figma'];
 const EXTRAS = ['markitdown', 'stitch'];
+const MEDIA = ['image-gen', 'higgsfield', 'klingai', 'elevenlabs', 'fish-audio'];
 
 describe('optionalMcpNames: which servers no installed bundle requires', () => {
   it('names the servers a bundle lists as optional extras, in lower case', () => {
@@ -63,12 +67,12 @@ describe('the labels of the install panel and the list', () => {
 });
 
 describe('the digital-agency bundle carries the narrowed list', () => {
-  it('requires six servers and marks MarkItDown and Stitch as optional extras', async () => {
+  it('requires six servers and marks MarkItDown, Stitch and the five media servers as optional extras', async () => {
     const agency = await new RegistryResolver().getBundle('digital-agency');
     const mcps = agency?.prerequisites?.requiredMcps ?? [];
-    expect(mcps.map(mcp => mcp.name).sort()).toEqual([...REQUIRED, ...EXTRAS].sort());
-    for (const mcp of mcps) expect(mcp.optional === true, `${mcp.name} optional`).toBe(EXTRAS.includes(mcp.name));
-    expect(agency?.description).toMatch(/6 required MCP servers and 2 optional extras/);
+    expect(mcps.map(mcp => mcp.name).sort()).toEqual([...REQUIRED, ...EXTRAS, ...MEDIA].sort());
+    for (const mcp of mcps) expect(mcp.optional === true, `${mcp.name} optional`).toBe([...EXTRAS, ...MEDIA].includes(mcp.name));
+    expect(agency?.description).toMatch(/6 required MCP servers and 7 optional extras/);
     expect(agency?.description).not.toMatch(/with 8 MCP servers/);
   });
 });
@@ -158,10 +162,10 @@ describe('the doctor warns for the required servers only', () => {
     await fs.remove(root);
   });
 
-  it('warns for each of the six required servers that is not configured, and for neither optional extra', async () => {
+  it('warns for each of the six required servers that is not configured, and for none of the seven optional extras', async () => {
     const text = textOf(await DoctorEngine.runDoctor(agentsDir, 'claude'));
     for (const server of REQUIRED) expect(warnsAbout(text, server), `${server} should be warned about:\n${text}`).toBe(true);
-    for (const server of EXTRAS) expect(warnsAbout(text, server), `${server} is an optional extra:\n${text}`).toBe(false);
+    for (const server of [...EXTRAS, ...MEDIA]) expect(warnsAbout(text, server), `${server} is an optional extra:\n${text}`).toBe(false);
   });
 
   it('has no MCP warning at all when the six required servers are configured and the extras are not', async () => {

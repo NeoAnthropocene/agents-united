@@ -25,6 +25,9 @@ skills:
   - audio-post-production
   - audiovisual-review
   - workflow-agency-motion-production
+mcpServers:
+  - name: elevenlabs
+  - name: fish-audio
 inheritCustomizations: false
 effort: medium
 ---

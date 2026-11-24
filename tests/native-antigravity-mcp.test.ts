@@ -11,6 +11,7 @@ import {
 } from '../src/core/antigravity-mcp.js';
 import { declaredServerNames } from '../src/core/mcp-declarations.js';
 import { McpLocationRegistry } from '../src/core/mcp-locations.js';
+import { HOSTED_MEDIA_SERVERS } from '../src/core/mcp-add-commands.js';
 import { PrerequisiteChecker } from '../src/core/prerequisites.js';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { InstallEngine } from '../src/core/installer.js';
@@ -37,10 +38,33 @@ const USER = { mine: { command: 'node', args: ['server.js'], env: { MY_KEY: 'use
 describe('the packaged catalog', () => {
   const registryAgents = (): string[] => fs.readdirSync(path.join(REGISTRY, 'agents')).filter(f => f.endsWith('.md'));
 
-  it('has an entry for every server the registry agents declare, and for nothing else', async () => {
+  // ADR 0079: the one server that is not written on Antigravity, with its reason. The list is closed: another server that the registry agents declare and the catalog lacks fails the check below.
+  const NOT_WIRED_ON_ANTIGRAVITY: Record<string, string> = {
+    'image-gen': 'Antigravity generates images itself, through its built-in image-generator subagent, and image-gen is a stdio server that needs the user\'s own provider key, which is never written',
+  };
+  const HOSTED = ['higgsfield', 'klingai', 'elevenlabs', 'fish-audio'];
+
+  it('has an entry for every server the registry agents declare, except the one named, and for nothing else', async () => {
     const declared = await declaredServerNames(path.join(REGISTRY, 'agents'), registryAgents());
-    expect(Object.keys(catalog).sort()).toEqual([...declared].sort());
+    const wired = declared.filter(name => NOT_WIRED_ON_ANTIGRAVITY[name] === undefined);
+    expect(Object.keys(catalog).sort()).toEqual([...wired].sort());
     expect(declared).toEqual(expect.arrayContaining(['github', 'context7', 'firecrawl', 'stitch', 'chrome-devtools-mcp']));
+  });
+
+  it('holds each hosted media server as a remote entry that is only its serverUrl, from the one table in src, with no key, header or OAuth block', () => {
+    for (const name of HOSTED) {
+      expect(catalog[name]!.entry, name).toEqual({ serverUrl: HOSTED_MEDIA_SERVERS[name] });
+      expect(catalog[name]!.requiresEnv, name).toEqual([]);
+      expect(catalog[name]!.optionalEnv, name).toEqual([]);
+    }
+  });
+
+  it('declares the named server in a registry agent and writes it to no catalog, so the list cannot go stale', async () => {
+    const declared = await declaredServerNames(path.join(REGISTRY, 'agents'), registryAgents());
+    for (const [name, reason] of Object.entries(NOT_WIRED_ON_ANTIGRAVITY)) {
+      expect(declared, `${name}: ${reason}`).toContain(name);
+      expect(Object.keys(catalog), name).not.toContain(name);
+    }
   });
 
   it('writes only keys the host documents, one transport each, and never the legacy remote fields', () => {
@@ -60,9 +84,13 @@ describe('the packaged catalog', () => {
     }
   });
 
-  it('keeps the launch command of the existing server definitions, so the two cannot drift apart', () => {
+  it('keeps the launch command of the existing server definitions, so the two cannot drift apart (a remote entry has none: its definition is undefined)', () => {
     for (const [name, server] of Object.entries(catalog)) {
-      const legacy = PrerequisiteChecker.getMcpDefinition(name, 'limited-operational', {});
+      if (server.entry.serverUrl !== undefined) {
+        expect(PrerequisiteChecker.getMcpDefinition(name), name).toBeUndefined();
+        continue;
+      }
+      const legacy = PrerequisiteChecker.getMcpDefinition(name, 'limited-operational', {})!;
       expect({ command: server.entry.command, args: server.entry.args }, name).toEqual({ command: legacy.command, args: legacy.args });
     }
   });
@@ -70,7 +98,8 @@ describe('the packaged catalog', () => {
   it('names every variable the existing definitions would pass, and ships no switch (a server that needs one is not written, ADR 0032 addendum 2)', () => {
     const everything = { GITHUB_PERSONAL_ACCESS_TOKEN: 'x', FIRECRAWL_API_KEY: 'x', STITCH_API_KEY: 'x', FIGMA_ACCESS_TOKEN: 'x', UPSTASH_REDIS_REST_URL: 'x', UPSTASH_REDIS_REST_TOKEN: 'x' };
     for (const [name, server] of Object.entries(catalog)) {
-      const legacyEnv = Object.keys(PrerequisiteChecker.getMcpDefinition(name, 'operational', everything).env ?? {});
+      if (server.entry.serverUrl !== undefined) continue;
+      const legacyEnv = Object.keys(PrerequisiteChecker.getMcpDefinition(name, 'operational', everything)!.env ?? {});
       expect([...server.requiresEnv, ...server.optionalEnv].sort(), name).toEqual(expect.arrayContaining(legacyEnv));
       expect(server.entry, name).not.toHaveProperty('disabled');
     }
@@ -343,6 +372,14 @@ describe('MCP wiring in the native install lane (agents add --native)', () => {
   it('packages every server the bundle declares', async () => {
     const bundle = (JSON.parse(read(path.join(REGISTRY, 'bundles.json'))) as { bundles: Record<string, { orchestrator: string; agents: string[] }> }).bundles[BUNDLE];
     expect(await declaredServerNames(path.join(REGISTRY, 'agents'), [bundle.orchestrator, ...bundle.agents])).toEqual(SE);
+  });
+
+  it('writes the four hosted media servers of the digital-agency as bare serverUrl entries, and nothing for the image server', async () => {
+    await install(true, {}, 'digital-agency');
+    const servers = wired();
+    for (const name of ['higgsfield', 'klingai', 'elevenlabs', 'fish-audio']) expect(servers[name], name).toEqual({ serverUrl: HOSTED_MEDIA_SERVERS[name] });
+    expect(Object.keys(servers)).not.toContain('image-gen');
+    expect(read(at(ANTIGRAVITY_MCP_FILE))).not.toMatch(/oauth|headers|env/i);
   });
 
   it('is off with the lane: nothing is written, nothing recorded', async () => {
