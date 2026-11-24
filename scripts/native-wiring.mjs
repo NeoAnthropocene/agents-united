@@ -405,10 +405,17 @@ export function planWiring(manifest, checkout, options = {}) {
       }
       if (role.canonical === null) plan.proposals.push(`${FILES.install}: write the install cases of ${role.role} by hand (it has no canonical agent).`);
       else {
-        // A case that is there must equal the generator's; a case that is missing is written before the anchor case. Two missing cases go in together.
+        // Each case is there exactly once and equal to the generator's, or it is not there at all and is written before the anchor case (two missing
+        // cases together). Anything between is refused: a copy that differs, a second copy, a title that was edited, or the generated body under another title.
         const blocks = installCaseBlocks(role);
-        const found = blocks.map(block => text.includes(block));
-        if (blocks.some((block, at) => !found[at] && text.includes(block.split('\n')[0]))) refuse('install', role.role, 'install cases');
+        const count = (haystack, needle) => haystack.split(needle).length - 1;
+        const standing = blocks.map(block => {
+          const [title, ...rest] = block.split('\n');
+          return { exact: count(text, block), titles: text.split('\n').filter(line => line === title).length, bodies: count(text, rest.join('\n')) };
+        });
+        const found = standing.map(state => state.exact === 1);
+        const absent = standing.map(state => state.exact === 0 && state.titles === 0 && state.bodies === 0);
+        if (standing.some((state, at) => !found[at] && !absent[at]) || standing.some(state => state.exact === 1 && (state.titles !== 1 || state.bodies !== 1))) refuse('install', role.role, 'install cases');
         else if (found.every(Boolean)) note('install', 'unchanged', role.role, 'install cases');
         else {
           const next = insertBeforeLine(text, line => line.startsWith("  it('records the lane, and every projection hash matches the file on disk'"), blocks.filter((block, at) => !found[at]).join(''));
