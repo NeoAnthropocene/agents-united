@@ -277,12 +277,7 @@ describe('the install panel reaches the Claude command through the CLI wiring', 
     expect(installTargetHostKeys([], [])).toEqual(['agents']);
   });
 
-  it('has every evaluation of a bundle in the CLI name the hosts it targets, the guided install included', () => {
-    const source = read('src/cli.ts');
-    const calls = [...source.matchAll(/\.evaluate\(([^;]*)\);/g)].map(match => match[1]!);
-    expect(calls.length).toBeGreaterThanOrEqual(2);
-    for (const call of calls) expect(call, call).toContain('targetHosts');
-  });
+  // The guided install is driven with mocked prompts in tests/cli-guided-install-hosts.test.ts, which compares the evaluated hosts with the installed ones.
 });
 
 describe('optional servers are read through parentBundle (ADR 0079)', () => {

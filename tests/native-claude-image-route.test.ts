@@ -384,6 +384,8 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     expect(a).toMatch(/through `parentBundle`/);
     expect(a).toMatch(/`seo-content-marketing`, `product-led-growth` and `lifecycle-email-marketing`/);
     expect(a).not.toMatch(/do not hold the designer and are unchanged/);
+    expect(a).toMatch(/`performance-paid-acquisition` declares the designer itself and lists `image-gen` itself; the other three \(`seo-content-marketing`/);
+    expect(a).not.toMatch(/The three bundles that extend `growth-marketing`/);
   });
 
   it('is pointed to from the status of ADR 0049, whose first words stay as they were', () => {
