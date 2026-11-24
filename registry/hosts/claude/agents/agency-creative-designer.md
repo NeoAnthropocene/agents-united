@@ -1,6 +1,6 @@
 ---
 name: agency-creative-designer
-description: Creative designer (Jamileh) of the digital agency team. Use for ad creative layouts, multi-aspect formats, brand and design tokens, and SVG, HTML and CSS asset specifications. Edits files, no shell; photos only via the optional image server. Hands design tokens to engineering as a fixed input.
+description: Creative designer (Jamileh) of the digital agency team. Use for ad creative layouts, multi-aspect formats, brand and design tokens, and SVG, HTML and CSS asset specifications. Edits files, no shell; generated photos only via the optional image server. Hands tokens to engineering as a fixed input.
 model: sonnet
 effort: medium
 permissionMode: acceptEdits
