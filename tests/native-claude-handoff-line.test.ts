@@ -10,7 +10,7 @@ import { NATIVE_AGENTS_DIR, nativeText } from './helpers/native-roles.js';
 
 const roles = fs.readdirSync(NATIVE_AGENTS_DIR).filter(name => name.endsWith('.md')).map(name => name.replace(/\.md$/, ''));
 const withLine = roles.filter(role => nativeText(role).includes('A hand-off goes back to the agent that spawned you'));
-const FRESH = 'A hand-off goes back to the agent that spawned you, or to the main conversation if that agent has already ended';
+const FRESH = 'A hand-off goes back to the agent that spawned you, or, for a background subagent whose spawner has already ended, to the main conversation';
 
 describe('the hand-off line', () => {
   it('50 native roles state it: 47 with the team clause, 3 Tier-1 specialists with the short form', () => {
