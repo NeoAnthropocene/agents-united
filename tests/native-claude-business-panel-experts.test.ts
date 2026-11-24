@@ -63,7 +63,7 @@ describe('native business-panel-experts: the question tool it cannot hold', () =
   });
 
   it('says so in one sentence that names no tool, and records no delta for it', () => {
-    const sentence = 'You cannot put a question to the user yourself in this host. Put any question for the user as an `ask-user` entry under `Requests for the lead` in your report; the lead asks it and returns the answer to you.';
+    const sentence = 'As a subagent or a teammate you cannot put a question to the user yourself. Put any question for the user as an `ask-user` entry under `Requests for the lead` in your report; the lead asks it and returns the answer to you.';
     expect(text().split(sentence)).toHaveLength(2);
     expect(text()).not.toMatch(/AskUserQuestion/);
     const deltas = fs.readFileSync(path.resolve('registry/hosts/claude/deltas.json'), 'utf8');
