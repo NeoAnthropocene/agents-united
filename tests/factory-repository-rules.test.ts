@@ -9,7 +9,7 @@ import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import {
   canonicalDirectives, canonicalFloorProblems, canonicalGuardrails, canonicalServerTools, coverageFileProblems, invariantCoverageProblems,
-  evidencePlaceAt, isLeadRole, nativePosture, nativeToolOrder, nativeToolsWanted, postureProblems, serverEntryProblems, serverPlacementProblems, sessionTrackingProblems, type EvidencePlace,
+  evidencePlaceAt, isLeadRole, nativePosture, nativeToolOrder, nativeToolsWanted, isReadOnlyRole, postureProblems, serverEntryProblems, serverPlacementProblems, sessionTrackingProblems, type EvidencePlace,
 } from '../src/core/native-repository-rules.js';
 import { evidenceFor } from './helpers/native-invariant-evidence.js';
 import { loadNativeDeltas, NATIVE_ROLES } from './helpers/native-roles.js';
@@ -582,4 +582,63 @@ describe('factory-check and the entries of a lead\'s roster', () => {
     expect(all.join('\n')).toContain('names no-such-role');
     expect(toolsFindings(all)).toBe('');
   }, 120000);
+});
+
+describe('the re-review of option A', () => {
+  it('knows a read-only role by the canonical readOnly or the native plan, and no other posture', () => {
+    const canonical = (mode: string): string => `---\nname: x\ntype: subagent\npermissionMode: ${mode}\n---\nbody\n`;
+    expect(isReadOnlyRole(canonical('readOnly'))).toBe(true);
+    expect(isReadOnlyRole(undefined, 'plan')).toBe(true);
+    expect(isReadOnlyRole(canonical('acceptEdits'), 'acceptEdits')).toBe(false);
+    expect(isReadOnlyRole(canonical('acceptEdits'))).toBe(false);
+    expect(isReadOnlyRole(undefined, undefined)).toBe(false);
+    expect(isReadOnlyRole(undefined)).toBe(false);
+    expect(isReadOnlyRole(canonicalOf('subagent-code-reviewer'))).toBe(true);
+    expect(isReadOnlyRole(undefined, 'acceptEdits')).toBe(false);
+  });
+
+  it('refuses a write tool of a pinned server held per tool, and an entry listed twice in required is missing once', () => {
+    const github = ['mcp__github', 'mcp__context7'];
+    expect(serverEntryProblems(['mcp__context7', 'mcp__github__create_pull_request'], github)).not.toEqual([]);
+    const missing = serverEntryProblems(['mcp__stitch'], ['mcp__stitch'], { required: ['mcp__claude_ai_Claude_Docs', 'mcp__claude_ai_Claude_Docs'] });
+    expect(missing).toEqual(['mcp__claude_ai_Claude_Docs is not held']);
+  });
+
+  it('lets a lead hold the whole-server form or the per-tool form of a roster server, not a mix of them', () => {
+    const lead = ['mcp__stitch'];
+    const roster = ['mcp__github', 'mcp__github__search_code'];
+    expect(serverEntryProblems([...lead, 'mcp__github'], lead, { allowed: roster })).toEqual([]);
+    expect(serverEntryProblems([...lead, 'mcp__github__search_code'], lead, { allowed: roster })).toEqual([]);
+    expect(serverEntryProblems([...lead, 'mcp__github', 'mcp__github__search_code'], lead, { allowed: roster })).not.toEqual([]);
+  });
+
+  describe('through factory-check', () => {
+    let full = '';
+    afterEach(async () => { if (full) { await fs.remove(full); full = ''; } });
+    const toolsFindings = async (edit: (text: string) => string): Promise<string> => {
+      full = full || await fs.mkdtemp(path.join(os.tmpdir(), 'au-re-review-'));
+      const registry = path.join(full, 'registry');
+      if (!fs.existsSync(registry)) {
+        await fs.copy(path.join(ROOT, 'registry'), registry);
+        await fs.outputJson(path.join(registry, 'core/orchestrator-engineering.contract.json'), { definition: 'orchestrator-engineering', workflows: [], skills: [], hooks: [] });
+      }
+      const text = fs.readFileSync(path.join(registry, 'hosts/claude/agents/orchestrator-engineering.md'), 'utf8').replace(/\r\n/g, '\n');
+      const file = path.join(full, 'orchestrator-engineering.md');
+      await fs.writeFile(file, edit(text));
+      const result = await checkFactoryArtifact({ registryDir: registry, definition: 'orchestrator-engineering', host: 'claude', artifactPath: file, loading: 'main', requiredSkills: [] });
+      return result.findings.filter(finding => finding.startsWith('Native tools differ')).join('\n');
+    };
+
+    it('refuses the whole server of a roster to a lead whose own file says plan', async () => {
+      expect(await toolsFindings(text => text)).toBe('');
+      const plan = await toolsFindings(text => text.replace(/^permissionMode: .*$/m, 'permissionMode: plan'));
+      expect(plan).toContain('mcp__playwright is held beyond');
+    }, 120000);
+
+    it('refuses a server of its own beyond a roster name that has no native file', async () => {
+      const result = await toolsFindings(text => text.replace('Agent(', 'Agent(no-such-role, ').replace(/^(tools: .*)$/m, '$1, mcp__elevenlabs'));
+      expect(result).toContain('mcp__elevenlabs is held beyond');
+      expect(result).not.toContain('mcp__playwright');
+    }, 120000);
+  });
 });
