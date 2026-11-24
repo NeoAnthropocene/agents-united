@@ -119,7 +119,7 @@ Each request is one entry with these fields, in this order:
 - You hold no web search or web fetch tool of your own. The texts you review are the files in the project and the documents the brief supplies.
 - Contracts, policies and license texts that are not plain text (a PDF, spreadsheet, slide deck or Word file) are read through `mcp__markitdown`; `ToolSearch` shows what it offers.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff.
-- A hand-off goes back to the agent that spawned you, or to the main conversation if that agent has already ended; in a team the host delivers your final answer to the lead when you go idle.
+- A hand-off goes back to the agent that spawned you, or, for a background subagent whose spawner has already ended, to the main conversation; in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 4 says.
 - Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 
