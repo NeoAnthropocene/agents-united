@@ -272,6 +272,7 @@ describe('the wording that a live run showed a model reading loosely', () => {
     expect(askRow).toContain('Only when the tool refuses the length of a label, cut that label');
     expect(askRow).toContain('keep the labels distinct');
     expect(askRow).toContain("put the option's full text, word for word, in its description");
+    expect(askRow).toContain("When the labels cannot stay distinct, or an option's full text does not fit in its description, ask the question in plain prose instead, with the specialist's question and options word for word, numbered");
   });
 
   it('puts the guard rule first and lets a change be disclosed only as a syntax fix', () => {
