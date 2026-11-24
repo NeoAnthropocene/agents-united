@@ -140,7 +140,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
         }
         const boundaries = section('Boundaries of this host');
         expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
-        expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
+        expect(boundaries).toContain('Apart from that and a call whose input it cannot read, it enforces nothing, so the rules in your Safety section are your own obligation.');
         expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
       });
 
@@ -156,7 +156,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
         for (const tool of ['Bash', 'PowerShell']) expect(attempt(text(), project, { tool, input: { command: 'git push --force origin main' } }, { agentType: spec.role }).offered, tool).toBe(false);
         const boundaries = section('Boundaries of this host');
         expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
-        expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
+        expect(boundaries).toContain('Apart from that and a call whose input it cannot read, it enforces nothing, so the rules in your Safety section are your own obligation.');
         expect(boundaries).not.toContain('which you cannot run without a shell');
         expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
       });
