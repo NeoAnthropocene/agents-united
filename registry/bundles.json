@@ -244,6 +244,30 @@
             "purpose": "Photographic images for the creative designer: Gemini, OpenAI or Seedream through the user's own keys",
             "optionalForBrainstorming": true,
             "optional": true
+          },
+          {
+            "name": "higgsfield",
+            "purpose": "Image/video generation and editing",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "klingai",
+            "purpose": "Video/image generation, task queries/downloads and membership/credit queries",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "elevenlabs",
+            "purpose": "Speech, transcription, dubbing, music, sound effects, images and video",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "fish-audio",
+            "purpose": "Narration, voice casting, transcription and image generation",
+            "optionalForBrainstorming": true,
+            "optional": true
           }
         ]
       },
@@ -367,6 +391,30 @@
           {
             "name": "image-gen",
             "purpose": "Photographic images for the creative designer: Gemini, OpenAI or Seedream through the user's own keys",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "higgsfield",
+            "purpose": "Image/video generation and editing",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "klingai",
+            "purpose": "Video/image generation, task queries/downloads and membership/credit queries",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "elevenlabs",
+            "purpose": "Speech, transcription, dubbing, music, sound effects, images and video",
+            "optionalForBrainstorming": true,
+            "optional": true
+          },
+          {
+            "name": "fish-audio",
+            "purpose": "Narration, voice casting, transcription and image generation",
             "optionalForBrainstorming": true,
             "optional": true
           }

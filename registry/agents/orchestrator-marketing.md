@@ -58,6 +58,10 @@ mcpServers:
   - name: markitdown
   - name: context7
   - name: github
+  - name: higgsfield
+  - name: klingai
+  - name: elevenlabs
+  - name: fish-audio
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md
