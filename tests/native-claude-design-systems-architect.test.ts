@@ -47,7 +47,7 @@ describe('native design-systems-architect: editors, no shell', () => {
 describe('native design-systems-architect: the guard and acceptEdits claims', () => {
   it('says exactly what the bound guard can stop, and that staying inside the design surface is its own obligation', () => {
     const body = text();
-    expect(body).toContain('so the only thing the guard bound to this role can stop is a write to a `.env` file (`.env.example` passes)');
+    expect(body).toContain('so the guard bound to this role stops a write to a `.env` file (`.env.example` passes), an editor call whose input it cannot read, and every call when it cannot run');
     expect(body).toContain('is your own obligation');
     expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
     expect(body.split(GUARD_SENTENCE)).toHaveLength(2);
