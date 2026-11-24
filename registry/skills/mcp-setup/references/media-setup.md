@@ -7,7 +7,7 @@ Read [provider/auth cards](media-providers.md) first. Sources retrieved 2026-10-
 The [credential-free template](../assets/media-http.mcp.template.json) lists four **alternatives** with explicit `type: http`. Merge only the selected entry into the host's project config; do not overwrite existing servers, register all four or insert keys. These stable manual names are not plugin or connector aliases. For Claude Code, the explicit commands are:
 
 ```text
-claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai
+claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai/mcp
 claude mcp add --scope project --transport http klingai https://kling.ai/mcp
 claude mcp add --scope project --transport http elevenlabs https://api.elevenlabs.io/v1/mcp
 claude mcp add --scope project --transport http fish-audio https://api.fish.audio/mcp

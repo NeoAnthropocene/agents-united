@@ -4,7 +4,8 @@ Official documentation retrieved **2026-10-24**; authored 2026-10-25. These are 
 
 ## Higgsfield — hosted MCP
 
-- Official endpoint: `https://mcp.higgsfield.ai`; stable manual server name `higgsfield`.
+- Official endpoint: `https://mcp.higgsfield.ai/mcp`; stable manual server name `higgsfield`.
+- Observed 2026-11-24: the bare host answers 404 (`https://mcp.higgsfield.ai`), while `/mcp` answers 401 without a sign-in, the vendor's protected-resource metadata names `https://mcp.higgsfield.ai/mcp` as its resource, and Antigravity CLI `agy` 1.5.16 connected to `/mcp` and not to the bare host. The vendor article below gives the bare host.
 - Auth/setup: custom remote connector, human sign-in and access approval. The official article demonstrates Claude's connector flow; the exact Claude Code authorization handshake is **unverified** here. Never invent an API-key header for this endpoint.
 - Capability: the service describes image/video generation and editing, references/characters and audio operations. Choose the exact model and inspect the connected tool schema before submitting; marketing coverage does not prove every tool is exposed to a restricted agent.
 - Account/billing: Higgsfield account/workspace and its current credits/terms; other vendors' model subscriptions do not establish this entitlement. Reconcile job identity and download actual media from the workspace before handoff.

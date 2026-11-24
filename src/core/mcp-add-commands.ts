@@ -12,7 +12,7 @@ import { McpLocationRegistry } from './mcp-locations.js';
 
 /** The four hosted HTTP servers of the motion and sound designers, and the endpoint of each (human OAuth sign-in follows in `/mcp`). */
 export const HOSTED_MEDIA_SERVERS: Readonly<Record<string, string>> = {
-  higgsfield: 'https://mcp.higgsfield.ai',
+  higgsfield: 'https://mcp.higgsfield.ai/mcp',
   klingai: 'https://kling.ai/mcp',
   elevenlabs: 'https://api.elevenlabs.io/v1/mcp',
   'fish-audio': 'https://api.fish.audio/mcp',
@@ -45,14 +45,18 @@ export function claudeAddCommand(server: string): string | undefined {
 
 /**
  * The host's own command for registering a server, PRINTED for the user to run. `agents doctor` never executes it, never installs a server and never writes an MCP config file.
- * The five servers of ADR 0079 get the command of the table on Claude Code, and on Antigravity a statement that no command is verified (OAuth over `serverUrl` is unverified there,
- * and the image server is covered by its own `generate_image` tool); every other server keeps the generic form.
+ * The five servers of ADR 0079 get the command of the table on Claude Code. On Antigravity a hosted server gets the `serverUrl` entry for `.agents/mcp_config.json` (seen to connect, with the
+ * sign-in through `/mcp`, on 2026-11-24) and the image server a statement that no command is verified (Antigravity generates images itself); every other server keeps the generic form.
  */
 export function mcpAddCommand(host: string, server: string, workspaceRoot: string): string {
   const special = claudeAddCommand(server);
   if (host === 'antigravity') {
+    const url = HOSTED_MEDIA_SERVERS[server.trim().toLowerCase()];
+    if (url !== undefined) {
+      return `Add it to .agents/mcp_config.json under "mcpServers": "${server}": { "serverUrl": "${url}" }, then sign in through /mcp (agents-united never writes a credential)`;
+    }
     if (special !== undefined) {
-      return `No verified add command for ${server} on Antigravity (${server === IMAGE_SERVER ? 'it has its own generate_image tool' : 'OAuth over serverUrl is unverified there'}); see the skill mcp-setup, references/${server === IMAGE_SERVER ? 'claude-code' : 'media-setup'}.md.`;
+      return `No verified add command for ${server} on Antigravity (it generates images itself, through its built-in image-generator subagent, and ${server} is a stdio server that needs your own provider key); see the skill mcp-setup, references/claude-code.md.`;
     }
     return `Add it with: agy mcp add ${server} -- <command> [args...]`;
   }
