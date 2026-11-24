@@ -165,8 +165,9 @@ export class InstallEngine {
     const agentsTarget = AgentHostAdapter.resolveHostDir(scope, 'agents', targetDir);
     return { agentsTarget, root: workspaceRootOf(agentsTarget) };
   }
-private toPosix(p: string): string {
-    return p.split(path.sep).join('/');
+  /** A path in the form of the lockfile records: a slash for either separator, so a record found on one platform matches on the other. */
+  private toPosix(p: string): string {
+    return p.replace(/[\\/]/g, '/');
   }
 
   private canonicalRelAgent(agentFile: string): string {
@@ -1869,11 +1870,12 @@ private toPosix(p: string): string {
         const dest = path.join(subPaths.agentsDir, agentFile);
 
         // ADR 0079: the store copy is the Antigravity copy of a canonical agent: a body with host sections is written rendered for Antigravity (a real file, never a link into the registry),
-        // and its recorded hash is the hash of the bytes written, so a re-install and the doctor see no edit. A rendered copy is guarded whatever the method, since it is a real file.
+        // and its recorded hash is the hash of the bytes written, so a re-install and the doctor see no edit. The guard follows what is installed and not what the source holds now: a
+        // file in place that is not a link (a rendered copy, or a copy that an earlier install made) is protected whatever the method and whatever the source has become.
         const sourceText = await fs.readFile(src, 'utf8');
         const rendersSections = hasHostSections(sourceText);
         const destIsLink = (await fs.lstat(dest).catch(() => null))?.isSymbolicLink() === true;
-        if (await fs.pathExists(dest) && !options.force && (method !== 'symlink' || (rendersSections && !destIsLink))) {
+        if (await fs.pathExists(dest) && !options.force && (method !== 'symlink' || !destIsLink)) {
           const existingHash = await this.calculateHash(dest).catch(() => null);
           const relPath = this.toPosix(path.relative(targetDir, dest));
           if (existingHash && lockfile.files[relPath] && lockfile.files[relPath].hash !== existingHash) {
