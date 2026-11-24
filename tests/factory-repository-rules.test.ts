@@ -9,7 +9,7 @@ import { inspectNativeAgent } from '../src/core/native-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import {
   canonicalDirectives, canonicalFloorProblems, canonicalGuardrails, canonicalServerTools, coverageFileProblems, invariantCoverageProblems,
-  evidencePlaceAt, isLeadRole, nativePosture, nativeToolOrder, nativeToolsWanted, postureProblems, sessionTrackingProblems, type EvidencePlace,
+  evidencePlaceAt, isLeadRole, nativePosture, nativeToolOrder, nativeToolsWanted, postureProblems, serverEntryProblems, sessionTrackingProblems, type EvidencePlace,
 } from '../src/core/native-repository-rules.js';
 import { evidenceFor } from './helpers/native-invariant-evidence.js';
 import { loadNativeDeltas, NATIVE_ROLES } from './helpers/native-roles.js';
@@ -382,5 +382,88 @@ describe('the factory\'s checks use the same rules', () => {
     expect(accepted.valid).toBe(true);
     // Without a canonical file the pair check is what it was.
     expect((await checkSharedPair({ registryDir: originalRegistry, definition: STEM })).valid).toBe(true);
+  });
+});
+
+describe('factory-check compares server entries as the repository does (option A)', () => {
+  const GROUP_10 = ['ui-designer', 'interaction-designer', 'marketing-creative-designer', 'marketing-conversion-specialist', 'orchestrator-research', 'compliance-grc-specialist', 'orchestrator-engineering', 'orchestrator-design', 'orchestrator-marketing', 'orchestrator-digital-agency'];
+  let full = '';
+  /** The whole registry (core, hosts, agents, skills) in a scratch folder, with a minimal contract where a role has none. */
+  async function stageFull(): Promise<string> {
+    if (full) return full;
+    full = await fs.mkdtemp(path.join(os.tmpdir(), 'au-server-entries-'));
+    await fs.copy(path.join(ROOT, 'registry'), full);
+    for (const entry of NATIVE_ROLES) {
+      const contract = path.join(full, 'core', `${entry.stem}.contract.json`);
+      if (fs.existsSync(path.join(full, 'core', `${entry.stem}.core.md`)) && !fs.existsSync(contract)) await fs.outputJson(contract, { definition: entry.stem, workflows: [], skills: [], hooks: [] });
+    }
+    return full;
+  }
+  afterEach(async () => { if (full) { await fs.remove(full); full = ''; } });
+
+  const toolsFinding = async (registry: string, entry: { role: string; stem: string; coordinator: boolean }, text?: string): Promise<{ finding: string | undefined; reached: boolean }> => {
+    let file = path.join(registry, 'hosts/claude/agents', `${entry.role}.md`);
+    if (text !== undefined) { file = path.join(registry, `${entry.role}.md`); await fs.writeFile(file, text); }
+    const result = await checkFactoryArtifact({ registryDir: registry, definition: entry.stem, host: 'claude', artifactPath: file, loading: entry.coordinator ? 'main' : 'subagent', requiredSkills: [] });
+    return { finding: result.findings.find(finding => finding.startsWith('Native tools differ')), reached: result.findings.some(finding => finding.startsWith('Invariant coverage needs')) };
+  };
+
+  it('accepts the tools line of the ten roles that hold their servers in another order, narrowed, or as a lead holds its roster\'s', async () => {
+    const registry = await stageFull();
+    for (const role of GROUP_10) {
+      const entry = NATIVE_ROLES.find(candidate => candidate.role === role)!;
+      const { finding, reached } = await toolsFinding(registry, entry);
+      expect(reached, `${role}: the check reached the tools line`).toBe(true);
+      expect(finding, role).toBeUndefined();
+    }
+  }, 120000);
+
+  it('keeps accepting every committed role that has a canonical agent', async () => {
+    const registry = await stageFull();
+    const measured = NATIVE_ROLES.filter(entry => fs.existsSync(path.join(registry, 'agents', `${entry.stem}.md`)));
+    expect(measured.length).toBeGreaterThanOrEqual(59);
+    for (const entry of measured) {
+      const { finding, reached } = await toolsFinding(registry, entry);
+      expect(reached, `${entry.role}: the check reached the tools line`).toBe(true);
+      expect(finding, entry.role).toBeUndefined();
+    }
+  }, 300000);
+
+  it('refuses, for a lead, a server that nobody in its roster holds, and for a specialist any server beyond its canonical ones', async () => {
+    const registry = await stageFull();
+    const lead = NATIVE_ROLES.find(entry => entry.role === 'orchestrator-engineering')!;
+    const leadText = fs.readFileSync(path.join(registry, 'hosts/claude/agents/orchestrator-engineering.md'), 'utf8').replace(/\r\n/g, '\n');
+    expect((await toolsFinding(registry, lead, leadText.replace(/^(tools: .*)$/m, '$1, mcp__elevenlabs'))).finding).toContain('mcp__elevenlabs');
+    const specialist = NATIVE_ROLES.find(entry => entry.role === 'ui-designer')!;
+    const specialistText = fs.readFileSync(path.join(registry, 'hosts/claude/agents/ui-designer.md'), 'utf8').replace(/\r\n/g, '\n');
+    // playwright is held by a role in the engineering lead's roster, yet a specialist has no roster.
+    expect((await toolsFinding(registry, specialist, specialistText.replace(/^(tools: .*)$/m, '$1, mcp__playwright'))).finding).toContain('mcp__playwright');
+  }, 120000);
+
+  describe('serverEntryProblems', () => {
+    const canonical = ['mcp__stitch', 'mcp__figma'];
+    it('ignores the order of the entries', () => {
+      expect(serverEntryProblems(['mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch'], canonical)).toEqual([]);
+      expect(serverEntryProblems(['mcp__stitch', 'mcp__figma'], canonical)).toEqual([]);
+    });
+    it('refuses a canonical server that is missing and a route held without its partner', () => {
+      expect(serverEntryProblems(['mcp__stitch'], canonical).join('\n')).toContain('figma');
+      expect(serverEntryProblems(['mcp__stitch', 'mcp__figma', 'mcp__plugin_figma_figma', 'mcp__plugin_figma_figma'], canonical)).not.toEqual([]);
+      expect(serverEntryProblems(['mcp__stitch', 'mcp__plugin_figma_figma'], canonical)).not.toEqual([]);
+    });
+    it('accepts a read-only per-tool narrowing of a canonical server, in the manual or the plugin form, and refuses another tool', () => {
+      const github = ['mcp__github', 'mcp__context7'];
+      expect(serverEntryProblems(['mcp__context7', 'mcp__github__search_code', 'mcp__github__get_file_contents'], github)).toEqual([]);
+      expect(serverEntryProblems(['mcp__context7', 'mcp__github__search_code', 'mcp__plugin_github_github__search_code'], github)).toEqual([]);
+      expect(serverEntryProblems(['mcp__context7', 'mcp__github__create_issue'], github)).not.toEqual([]);
+      // Routed for one tool and not for the other is neither form.
+      expect(serverEntryProblems(['mcp__context7', 'mcp__github__search_code', 'mcp__github__get_file_contents', 'mcp__plugin_github_github__search_code'], github)).not.toEqual([]);
+    });
+    it('refuses an unrelated server, and accepts it only when the caller lists it as allowed or required', () => {
+      expect(serverEntryProblems(['mcp__stitch', 'mcp__figma', 'mcp__playwright'], canonical).join('\n')).toContain('mcp__playwright');
+      expect(serverEntryProblems(['mcp__stitch', 'mcp__figma', 'mcp__playwright'], canonical, { allowed: ['mcp__playwright'] })).toEqual([]);
+      expect(serverEntryProblems(['mcp__stitch', 'mcp__figma'], canonical, { required: ['mcp__claude_ai_Claude_Docs'] }).join('\n')).toContain('mcp__claude_ai_Claude_Docs');
+      expect(serverEntryProblems(['mcp__stitch', 'mcp__figma', 'mcp__claude_ai_Claude_Docs'], canonical, { required: ['mcp__claude_ai_Claude_Docs'] })).toEqual([]);
+    });
   });
 });
