@@ -366,6 +366,13 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     expect(a).toMatch(/no live image call|No live image call/);
   });
 
+  it('names the two image skills added to the growth-marketing and performance-paid-acquisition bundles, and why that follows from the shared tool', () => {
+    const a = adr();
+    expect(a).toMatch(/\*\*The two image skills join two bundles\.\*\*/);
+    expect(a).toMatch(/`image-creation` and `image-generation`[^.]*`growth-marketing` and `performance-paid-acquisition`/);
+    expect(a).toMatch(/follows from the shared tool/);
+  });
+
   it('is pointed to from the status of ADR 0049, whose first words stay as they were', () => {
     const status = read('docs/adr/0049-the-creative-designer-may-generate-photographs.md').split('\n').find(line => line.startsWith('- **Status**')) ?? '';
     expect(status).toMatch(/^- \*\*Status\*\*: Accepted, 2026-10-08; amended 2026-10-09/);
