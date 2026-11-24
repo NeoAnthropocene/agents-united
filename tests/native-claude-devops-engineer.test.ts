@@ -93,7 +93,7 @@ describe('native devops-engineer: the MCP servers of its canonical agent', () =>
   it('holds github and context7 in its tools line and says when to use them', () => {
     const tools = /^tools: (.*)$/m.exec(text())![1]!.split(', ');
     expect(tools).toEqual(expect.arrayContaining(['mcp__github', 'mcp__context7']));
-    expect(text()).toContain(`- Library and framework questions: confirm them with \`mcp__context7\` before relying on memory. Pull-request and repository reads go through \`mcp__github\`; do not push, merge or force anything without being asked.`);
+    expect(text()).toContain(`- Library and framework questions: confirm them with \`mcp__context7\` before relying on memory. Pull-request and repository reads go through \`mcp__github\`; push or merge only on the user's explicit word, and never force a push.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 

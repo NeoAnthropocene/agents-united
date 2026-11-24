@@ -83,7 +83,7 @@ describe('native system-architect: the guard claims, against the real script', (
 
   it('the guard does not see GitHub MCP calls, so the push, merge and create duty is stated as the role\'s own', () => {
     for (const tool of ['mcp__github__push_files', 'mcp__github__merge_pull_request', 'mcp__github__create_pull_request']) expect(fire(tool, {}).blocked, tool).toBe(false);
-    expect(text()).toContain('the guard does not see its calls, so not pushing, merging or creating anything there without being asked is your own obligation.');
+    expect(text()).toContain('the guard does not see its calls, so pushing or merging only on the user\'s explicit word, never forcing a push, and creating nothing there unasked, is your own obligation.');
   });
 
   it('names no guard behaviour the script does not have', () => {
