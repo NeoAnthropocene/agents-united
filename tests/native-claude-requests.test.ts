@@ -254,31 +254,59 @@ describe('requestsBlockProblems', () => {
 describe('the wording that a live run showed a model reading loosely', () => {
   const specialist = renderRequests('specialist', ['Read']);
   const lead = renderRequests('coordinator', ['Read']);
+  const row = (text: string, start: string): string => text.split('\n').find(line => line.startsWith(start)) ?? '';
+  const bullet = (text: string, start: string): string => text.split('\n').find(line => line.startsWith(`- **${start}`)) ?? '';
 
-  it('says what "unchanged" means for the options of an ask-user entry', () => {
-    expect(lead).toContain('word for word');
-    expect(lead).toContain('same order');
-    expect(lead).toContain('cut only the label to what the tool allows');
-    expect(lead).toContain("put the option's full text, word for word, in its description");
-    expect(lead).not.toContain('shorten none');
-    expect(lead).not.toContain('options unchanged');
+  it('gives the options of an ask-user entry word for word, on the dialog path and on the prose path', () => {
+    const askRow = row(lead, '| `ask-user`');
+    expect(askRow).toContain("the specialist's question and options word for word");
+    expect(askRow).toContain('in the same order');
+    expect(askRow).not.toContain('options unchanged');
+    expect(askRow).not.toContain('"Unchanged" means exactly this');
+    const prose = bullet(lead, 'Only with a tool you really have');
+    expect(prose).toContain("the specialist's question and options word for word, numbered");
   });
 
-  it('requires a changed command to be declared as changed, with the reason', () => {
-    expect(lead).toContain('Run the exact command, character for character');
-    expect(lead).toContain('say `changed`');
-    expect(lead).toContain('never `unchanged`');
+  it('cuts a label only when the tool refuses its length, keeps labels distinct and the full text in the description', () => {
+    const askRow = row(lead, '| `ask-user`');
+    expect(askRow).toContain('Only when the tool refuses the length of a label, cut that label');
+    expect(askRow).toContain('keep the labels distinct');
+    expect(askRow).toContain("put the option's full text, word for word, in its description");
   });
 
-  it('gives complete example lines for a declined entry, with who and why', () => {
-    expect(lead).toContain('`R2: declined (user: no answer)`');
-    expect(lead).toContain('`R3: declined (lead: read-only role)`');
-    expect(lead).toContain('A line with a who and no why is wrong');
+  it('puts the guard rule first and lets a change be disclosed only as a syntax fix', () => {
+    const runRow = row(lead, '| `run-command`');
+    expect(runRow.indexOf('A command your guard blocks is declined, never reworded')).toBeGreaterThan(-1);
+    expect(runRow.indexOf('A command your guard blocks is declined, never reworded')).toBeLessThan(runRow.indexOf('Otherwise run the exact command, character for character'));
+    expect(runRow).toContain('If you must change it (a syntax fix for the shell you hold), say `changed`, name each change and the reason');
+    expect(runRow).toContain('never report `unchanged` for a command you altered');
   });
 
-  it('says every entry carries all five parts, a schedule entry and a non-blocking entry too', () => {
-    expect(specialist).toContain('Every entry carries all five parts');
-    expect(specialist).toContain('a `schedule` entry and a `non-blocking` entry too');
-    expect(specialist).toContain('even when you think no answer or result is needed');
+  it('writes the declined form with one delimiter everywhere and an example that carries a reason', () => {
+    const declined = bullet(lead, 'Declined always says who and why');
+    expect(declined).toContain('`declined (who: why)`');
+    expect(declined).toContain('`R2: declined (user: no answer)`');
+    expect(declined).toContain('`R3: declined (lead: read-only role)`');
+    expect(declined).toContain('`R4: declined (user: no reason given)`');
+    expect(declined).toContain("relay the user's reason when they give one");
+    expect(declined).toContain('A line with a who and no why is wrong');
+    expect(declined).not.toContain('chose not to schedule');
+    expect(declined).not.toContain('When the user gives no answer and you go on, that is');
+    expect(lead).not.toContain('(who, why)');
+    expect(specialist).not.toContain('(who, why)');
+    expect(bullet(lead, 'Return every result to the same specialist')).toContain('`R<n>: declined (who: why)`');
+    expect(bullet(specialist, 'The answer comes back to you')).toContain('`declined (who: why)`');
+  });
+
+  it('states the no-answer case once and keeps "and you go on"', () => {
+    expect(lead.split('declined (user: no answer)').length - 1).toBe(1);
+    expect(bullet(lead, 'Declined always says who and why')).toContain('and you go on');
+  });
+
+  it('says every entry carries all five parts, even a non-blocking schedule request', () => {
+    const paragraph = specialist.split('\n').find(line => line.startsWith('Every entry carries all five parts')) ?? '';
+    expect(paragraph).toContain('even for a non-blocking `schedule` request');
+    expect(paragraph).toContain('`If declined or unanswered`');
+    expect(paragraph).toContain('`With the result I will`');
   });
 });
