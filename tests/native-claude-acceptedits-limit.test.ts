@@ -12,7 +12,7 @@ import fs from 'node:fs';
  * carries one clause, in the same words, saying so.
  */
 
-const LIMITS = "(the main session's `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your mode is set by the lead's)";
+const LIMITS = "(the main session's `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your starting mode follows from the lead's and can change)";
 const CLAUSE = `, when that mode is in force ${LIMITS}`;
 const REWORDED = ` while \`acceptEdits\` is in force ${LIMITS}`;
 
@@ -91,7 +91,7 @@ describe('the sentences that state what acceptEdits approves also say when it ho
     expect([...stated].sort()).toEqual(FAMILIES.flatMap(family => family.roles).sort());
     for (const role of stated) {
       expect(effectLines(role), role).toHaveLength(1);
-      expect(effectLines(role)[0], role).toMatch(/without (asking|a prompt)(, when that mode is in force| while `acceptEdits` is in force) \(the main session's `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your mode is set by the lead's\)/);
+      expect(effectLines(role)[0], role).toMatch(/without (asking|a prompt)(, when that mode is in force| while `acceptEdits` is in force) \(the main session's `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your starting mode follows from the lead's and can change\)/);
     }
   });
 });
