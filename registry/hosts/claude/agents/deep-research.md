@@ -86,6 +86,8 @@ Each request is one entry with these fields, in this order:
 4. `If declined or unanswered`: the assumption you go on with.
 5. `With the result I will`: one sentence.
 
+Every entry carries all five parts: a `schedule` entry and a `non-blocking` entry too. Write `If declined or unanswered` and `With the result I will` even when you think no answer or result is needed.
+
 | Type | Fields |
 |---|---|
 | `ask-user` | The question in plain language; 2 to 4 options, the one you recommend first, or the words `open answer` when the question has no fixed choices. |
