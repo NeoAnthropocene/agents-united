@@ -44,12 +44,14 @@ function canonicalMeta(canonicalText: string | undefined): Record<string, unknow
 }
 
 /**
- * Whether a role is read-only (the `plan` permission posture of the Claude dialect), by its canonical agent or by its own native `permissionMode`.
- * The same test `ClaudeProjector.serverToolsOf` applies, where a read-only role takes pinned read-only tools and no whole server.
+ * Whether a role is read-only (the `plan` permission posture of the Claude dialect). The canonical agent says `readOnly`, which the dialect maps to
+ * `plan`, the same test `ClaudeProjector.serverToolsOf` applies; a native file already says the host's own value, `plan`, which the map does not know.
+ * A read-only role takes pinned read-only tools and no whole server.
  */
 export function isReadOnlyRole(canonicalText: string | undefined, nativePermissionMode?: unknown): boolean {
-  const plan = (mode: unknown): boolean => typeof mode === 'string' && (ClaudeProjector.CLAUDE_DIALECT.permissionModeMap[mode] ?? 'default') === 'plan';
-  return plan(canonicalMeta(canonicalText)?.permissionMode) || plan(nativePermissionMode);
+  const canonicalMode = canonicalMeta(canonicalText)?.permissionMode;
+  const fromCanonical = typeof canonicalMode === 'string' && (ClaudeProjector.CLAUDE_DIALECT.permissionModeMap[canonicalMode] ?? 'default') === 'plan';
+  return fromCanonical || nativePermissionMode === 'plan';
 }
 
 const normalize = (text: string): string => text.replace(/\s+/g, ' ').trim();
@@ -386,7 +388,7 @@ export function serverEntryProblems(
   const repeated = [...new Set(all.filter((entry, index) => all.indexOf(entry) !== index))];
   if (repeated.length > 0) problems.push(`server entries are repeated: ${repeated.join(', ')}`);
   const entries = [...new Set(all)];
-  const required = options.required ?? [];
+  const required = [...new Set(options.required ?? [])];
   const left = new Set(entries);
   const integrations = [...new Set(canonical.map(integrationOf))];
   for (const integration of integrations) {
@@ -423,7 +425,9 @@ export function serverEntryProblems(
     const members = unplaced.filter(entry => integrationOf(entry) === integration);
     const base = roster.get(integration) ?? [];
     const manual = members.filter(member => manualForm(member) === member);
-    if (manual.length > 0 && manual.every(member => base.includes(member)) && (sameSet(members, manual) || sameSet(members, withRoutes(manual)))) {
+    // The whole server or some of its tools, not both: a roster may hold either form, and the lead holds one of them.
+    const mixed = manual.includes(`mcp__${integration}`) && manual.length > 1;
+    if (!mixed && manual.length > 0 && manual.every(member => base.includes(member)) && (sameSet(members, manual) || sameSet(members, withRoutes(manual)))) {
       for (const member of members) left.delete(member);
     }
   }
