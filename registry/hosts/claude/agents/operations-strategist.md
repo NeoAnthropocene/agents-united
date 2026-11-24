@@ -144,7 +144,7 @@ The page types open to you: Design (a prototype or screen flow, a poster or a on
 - You hold no web search or web fetch tool of your own. The material you plan from is the files in the project, the repositories you read and the documents the brief supplies.
 - Repository, issue and pull-request reads go through `mcp__github`; `ToolSearch` shows what it offers. Do not create or comment on anything unless the brief asks for it; push or merge only on the user's explicit word, and never force a push.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff.
-- A hand-off goes back to the agent that spawned you, or, for a background subagent whose spawner has already ended, to the main conversation; in a team the host delivers your final answer to the lead when you go idle.
+- A hand-off goes back to the agent that spawned you (in a headless or SDK session with fork mode off, a background subagent that outlives the agent that spawned it reports to the main conversation instead); in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 5 says.
 - Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 

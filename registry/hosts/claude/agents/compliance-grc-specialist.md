@@ -132,7 +132,7 @@ Each request is one entry with these fields, in this order:
 - Repository reads go through `mcp__github__search_code`, `mcp__github__get_file_contents`, `mcp__github__list_pull_requests` and `mcp__github__pull_request_read`: you read GitHub and do not write to it. A client's policy documents are read with `mcp__markitdown`, and library and framework questions are confirmed with `mcp__context7` before you rely on memory.
 - `WebFetch` and `WebSearch` read regulations, standards and regulator guidance: cite the source and its date, and send nothing from the audited system.
 - `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate` and `TodoWrite` track multi-step work where actually available; if none is, track in the handoff. `ToolSearch` shows what a connected MCP server offers.
-- A hand-off goes back to the agent that spawned you, or, for a background subagent whose spawner has already ended, to the main conversation; in a team the host delivers your final answer to the lead when you go idle.
+- A hand-off goes back to the agent that spawned you (in a headless or SDK session with fork mode off, a background subagent that outlives the agent that spawned it reports to the main conversation instead); in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as step 2 says.
 - Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 

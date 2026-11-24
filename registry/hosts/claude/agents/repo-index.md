@@ -138,7 +138,7 @@ Each request is one entry with these fields, in this order:
 
 - You hold read, search and code-intelligence tools only. A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; report the change as a recommendation instead.
 - Connected-server tools load on demand: `ToolSearch` shows what a server offers, but you can use only the server tools named in your allowlist.
-- A hand-off goes back to the agent that spawned you, or, for a background subagent whose spawner has already ended, to the main conversation. Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
+- A hand-off goes back to the agent that spawned you (in a headless or SDK session with fork mode off, a background subagent that outlives the agent that spawned it reports to the main conversation instead). Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
 - Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 
 ## Session task tracking

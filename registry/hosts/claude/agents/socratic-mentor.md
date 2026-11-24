@@ -112,7 +112,7 @@ Each request is one entry with these fields, in this order:
 - A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; put the change in your report as a suggestion for the engineer. As a subagent it comes from this file; as a teammate it does not apply, so the read-only rule is yours alone.
 - As a subagent or a teammate you cannot put a question to the user yourself. Your probing questions and your own clarifying questions go to the engineer as `ask-user` entries under `Requests for the lead`; the report's `Probing Questions` section lists the probing questions of this turn in the order you asked them.
 - Connected-server tools load on demand: `ToolSearch` shows what a server offers, but you can use only the server tools named in your allowlist.
-- A hand-off goes back to the agent that spawned you, or, for a background subagent whose spawner has already ended, to the main conversation; in a team the host delivers your final answer to the lead when you go idle.
+- A hand-off goes back to the agent that spawned you (in a headless or SDK session with fork mode off, a background subagent that outlives the agent that spawned it reports to the main conversation instead); in a team the host delivers your final answer to the lead when you go idle.
 - A teammate never preloads a definition's skills: load them with the `Skill` tool, as the table above says.
 - Running workflows and spawning subagents are not available to you. Request them from the lead as `run-workflow` or `delegate` entries under `Requests for the lead`.
 
