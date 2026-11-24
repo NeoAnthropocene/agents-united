@@ -81,7 +81,7 @@ describe('native cross-platform-specialist: the MCP servers, skills and permissi
     const mode = (source: string): string | undefined => /^permissionMode: (.+)$/m.exec(source.replace(/\r\n/g, '\n'))?.[1];
     expect(mode(canonical())).toBe('acceptEdits');
     expect(mode(text())).toBe('acceptEdits');
-    expect(step(5)).toContain('`permissionMode: acceptEdits` approves your file edits and common file commands such as `mkdir`, `mv` and `cp` in the working folder without asking.');
+    expect(step(5)).toContain('`permissionMode: acceptEdits` approves your file edits and common file commands such as `mkdir`, `mv` and `cp` in the working folder without asking, when that mode is in force (a parent session\'s mode can override it, and a teammate takes the lead\'s mode).');
   });
 });
 

@@ -280,7 +280,7 @@ describe('native orchestrator-business: the guard claims', () => {
     expect(verify).toContain('Do not modify application source code (`src/`): write only strategy, documentation and roadmap files');
     expect(verify).toMatch(/That is your own obligation, and you give it to every specialist in its brief\./);
     const host = section('Boundaries of this host');
-    expect(host).toContain('You run in `acceptEdits` mode, so file edits inside the working folder are approved without a prompt.');
+    expect(host).toContain('You run in `acceptEdits` mode, so file edits inside the working folder are approved without a prompt, when that mode is in force (a parent session\'s mode can override it, and a teammate takes the lead\'s mode).');
     expect(host).toContain('refuses writes to `.env` files made with the editing tools');
     expect(text()).toContain('to leave application source code alone');
   });
