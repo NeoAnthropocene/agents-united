@@ -1,6 +1,6 @@
 # What Claude Design looked like in the sessions of 2026-10-08
 
-**These are observations of Claude Code 2.1.294 on a Pro plan, not documentation.** The vendor's own instructions arrive with the `Artifact` calls and win where they differ from this page. Source: `host-library/claude/observations/2026-10-08-claude-2.1.294-designer-p3-artifact-probe.md` (two runs, one prompt each, fictional content).
+**These are observations of Claude Code 2.1.294 on a Pro plan, not documentation.** The vendor's own instructions arrive with the `Artifact` calls and win where they differ from this page, for the page's content only; the go-ahead, tool and sharing rules stay in force. Source: `host-library/claude/observations/2026-10-08-claude-2.1.294-designer-p3-artifact-probe.md` (two runs, one prompt each, fictional content).
 
 ## The tool and its availability
 - It needs a Pro or higher plan, a signed-in CLI and the Anthropic API, and it is documented as off by default in the Agent SDK and GitHub Action contexts. In a headless run `CLAUDE_CODE_ARTIFACT_AUTO_OPEN=0` keeps a browser tab from opening.

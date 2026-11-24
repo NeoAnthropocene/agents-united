@@ -45,6 +45,7 @@ const EXPECTED_TOOLS = [
   'PushNotification', 'Read', 'ReadMcpResourceTool', 'RemoteTrigger', 'ScheduleWakeup', 'SendMessage', 'SendUserFile', 'Skill', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskStop',
   'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WaitForMcpServers', 'WebFetch', 'WebSearch', 'Write',
   ...withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__firecrawl', 'mcp__github']),
+  'mcp__claude_ai_Claude_Docs',
 ];
 
 /** The one sentence every Claude role carries about the guard (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
@@ -84,7 +85,7 @@ describe('native orchestrator-business: its tools', () => {
   it('holds the four servers of the canonical lead and no other, each under its manual name and its plugin or connector route', () => {
     expect(serversOf(canonicalLead()).sort()).toEqual(['context7', 'firecrawl', 'github', 'markitdown']);
     const held = tools().filter(tool => tool.startsWith('mcp__'));
-    expect([...new Set(held.map(integrationOf))].sort()).toEqual(['context7', 'firecrawl', 'github', 'markitdown']);
+    expect([...new Set(held.map(integrationOf))].sort()).toEqual(['claude_ai_Claude_Docs', 'context7', 'firecrawl', 'github', 'markitdown']);
     for (const grant of withRoutes(['mcp__markitdown', 'mcp__context7', 'mcp__firecrawl', 'mcp__github'])) expect(tools(), grant).toContain(grant);
   });
 

@@ -11,6 +11,7 @@ import { inspectNativeAgent, splitTools } from '../src/core/native-guard.js';
 import { NATIVE_ROLES } from './helpers/native-roles.js';
 import { syncRoster } from '../src/core/native-roster.js';
 import { PUBLISHING_START, holdsPublishing, syncPublishing } from '../src/core/native-publishing.js';
+import { connectorToolsOf, loadPageTypes, roleStemResolver, typesOfRole } from '../src/core/page-types.js';
 import { REQUESTS_EXEMPT_ROLES, REQUESTS_START, syncRequests } from '../src/core/native-requests.js';
 import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
@@ -20,6 +21,7 @@ import { attempt, preToolUseGroups } from './helpers/claude-host-hooks.js';
 import { allowlist, rosterTypes } from './helpers/native-coordinator.js';
 import { nativeToolOrder, publishingBlockProblems, requestsBlockProblems } from '../src/core/native-repository-rules.js';
 import { withRoutes } from '../src/core/claude-mcp-routes.js';
+import { HOLDER_STEMS } from './helpers/artifact-holders.js';
 
 /**
  * Plan 032 PR E — the native Claude agents (milestone 1: code-reviewer; milestone 2: backend-architect,
@@ -65,7 +67,7 @@ const WRITER_MUST_HOLD = ['Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit',
 const MEDIA_VIDEO_SERVERS = ['mcp__higgsfield', 'mcp__klingai'];
 const MEDIA_AUDIO_SERVERS = ['mcp__elevenlabs', 'mcp__fish-audio'];
 
-const ROLES: RoleSpec[] = [
+const BASE_ROLES: RoleSpec[] = [
   { name: 'factory-evaluator', stem: 'subagent-factory-evaluator', guard: 'read-only', skills: ['evaluate-artifact'], serverTools: [], mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
   { name: 'factory-realizer', stem: 'subagent-realize-for-host', guard: 'destructive', skills: ['realize-artifact'], serverTools: [], mutating: true, mustHold: ['Bash', 'PowerShell', 'Edit', 'Write', 'Skill', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
   { name: 'factory-sync', stem: 'subagent-host-update-sync', guard: 'read-only', skills: ['sync-host'], serverTools: [], mutating: false, mustHold: ['Glob', 'Grep', 'Read', 'ListMcpResourcesTool', 'ReadMcpResourceTool', 'ReportFindings', 'SubagentHandback'], searchTools: ['Glob', 'Grep', 'Read'], model: 'inherit', effort: 'medium' },
@@ -440,6 +442,20 @@ const ROLES: RoleSpec[] = [
   },
 ];
 
+/** ADR 0078: the page types of a role, from the committed table: a specialist's own list, a lead's union over the roles of its `Agent(...)` allowlist. */
+const PAGE_TYPES = loadPageTypes('registry', 'claude');
+const pageTypesOf = (stem: string, coordinator: boolean, tools: readonly string[]) => typesOfRole(PAGE_TYPES, { stem, coordinator, tools }, roleStemResolver('registry'));
+
+/**
+ * ADR 0078: a role holds the Claude Docs connector (the whole server, one plain entry) exactly when its page types include a connector type. The entry is added here from the table, after the
+ * servers each role declares, so it is not typed 24 times; `tests/native-claude-artifact-grant.test.ts` derives the same set again and pins its size.
+ */
+const ROLES: RoleSpec[] = BASE_ROLES.map(role => {
+  // Only a holder of the class `artifacts` has page types: a lead that spawns publishers without holding Artifact (the universal lead holds no `Agent` list) has none.
+  const types = HOLDER_STEMS.includes(role.stem) ? pageTypesOf(role.stem, role.mainThread ?? false, role.mainThread ? [allowlist(role.coordinatorBundle)] : []) : [];
+  return connectorToolsOf(types).length === 0 ? role : { ...role, serverTools: [...role.serverTools, ...connectorToolsOf(types)] };
+});
+
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
 /** The hooks of a role as generated: its guard, for the factory evaluator also its hand-back entry (ADR 0070, `handback-check.ts`), and for the digital-agency lead also the gate on its first message (Plan 035 N2 slice e, `mode-line-gate.ts`). */
@@ -477,18 +493,20 @@ beforeAll(async () => {
       // ADR 0076: the requests block, after the tools line is set (a specialist's open types are computed from it); the factory's fixed-job roles carry none.
       if (!REQUESTS_EXEMPT_ROLES.includes(role.name)) synced = syncRequests(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
       // ADR 0077: the publishing block directly after the requests block, only for a role whose tools hold `Artifact` (a role without it carries none).
-      synced = syncPublishing(synced, role.mainThread ? 'coordinator' : 'specialist', nativeToolOrder(tools, role.serverTools));
+      const lineTools = nativeToolOrder(tools, role.serverTools);
+      synced = syncPublishing(synced, role.mainThread ? 'coordinator' : 'specialist', lineTools, pageTypesOf(role.stem, role.mainThread ?? false, lineTools));
       // A roster block belongs to a lead that spawns the roster: only a main-thread role that holds `Agent` carries one.
       if (role.mainThread && ceilingOf(role).includes('Agent')) synced = syncRoster(synced, rosterTypes(role.coordinatorBundle));
       fs.writeFileSync(fileOf(role), synced);
     }
     // A committed specialist that is not in ROLES above (its floor and hooks are kept by its own suite) still gets the requests block, from its own tools line.
-    for (const { role, coordinator } of NATIVE_ROLES) {
+    for (const { role, coordinator, stem } of NATIVE_ROLES) {
       const file = path.resolve('registry/hosts/claude/agents', `${role}.md`);
       if (ROLES.some(spec => spec.name === role) || REQUESTS_EXEMPT_ROLES.includes(role) || !fs.existsSync(file)) continue;
       const text = fs.readFileSync(file, 'utf8');
       const synced = syncRequests(text, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools);
-      fs.writeFileSync(file, syncPublishing(synced, coordinator ? 'coordinator' : 'specialist', inspectNativeAgent(text).tools));
+      const ownTools = inspectNativeAgent(text).tools;
+      fs.writeFileSync(file, syncPublishing(synced, coordinator ? 'coordinator' : 'specialist', ownTools, pageTypesOf(stem, coordinator, ownTools)));
     }
   }
   // A project directory where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points: the committed scripts, as installed.
@@ -516,7 +534,7 @@ describe.each(ROLES)('native Claude $name', role => {
   });
 
   it('carries the publishing block of ADR 0077, exactly as generated, exactly when its tools line holds Artifact', () => {
-    expect(publishingBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared() })).toEqual([]);
+    expect(publishingBlockProblems(read(), { kind: role.mainThread ? 'coordinator' : 'specialist', name: role.name, tools: declared(), types: pageTypesOf(role.stem, role.mainThread ?? false, declared()), catalogue: PAGE_TYPES.types })).toEqual([]);
     expect(read().includes(PUBLISHING_START)).toBe(holdsPublishing(declared()));
   });
 

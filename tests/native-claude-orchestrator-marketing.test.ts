@@ -71,7 +71,8 @@ describe('native orchestrator-marketing: posture and tools', () => {
     const union = new Set([...servers('orchestrator-marketing.md'), ...NINE.flatMap(type => servers(`subagent-${type}.md`))]);
     expect([...union].sort()).toEqual(['chrome-devtools-mcp', 'context7', 'figma', 'firecrawl', 'github', 'markitdown', 'playwright', 'stitch']);
     const held = new Set(tools().filter(tool => tool.startsWith('mcp__')).map(integrationOf));
-    expect([...held].sort()).toEqual([...union].sort());
+    // The Claude Docs connector (ADR 0078) is held for the Docs and Sheets types of the roles it spawns; no canonical agent declares it.
+    expect([...held].sort()).toEqual([...union, 'claude_ai_Claude_Docs'].sort());
     expect(servers('orchestrator-marketing.md').sort()).toEqual(['context7', 'firecrawl', 'github', 'markitdown']);
   });
 

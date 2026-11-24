@@ -26,8 +26,8 @@ const COMMON_FORMS = 'the common forms of destructive shell commands (a recursiv
 
 /** The whole tools line: the read, search, edit, shell, messaging, hand-back, skill, task and discovery classes of the core. The one server of the pair, markitdown, is bound through its route. */
 const EXPECTED_TOOLS = [
-  'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
-  'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__markitdown',
+  'Artifact', 'Bash', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'PowerShell', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
+  'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__markitdown', 'mcp__claude_ai_Claude_Docs',
 ];
 
 describe('native financial-analyst: its exact tool set and posture', () => {
@@ -35,7 +35,7 @@ describe('native financial-analyst: its exact tool set and posture', () => {
     expect(toolsLine().split(', ')).toEqual(EXPECTED_TOOLS);
     for (const forbidden of ['Agent', 'Workflow', 'Monitor', 'TaskStop', 'CronCreate', 'CronList', 'CronDelete', 'WebFetch', 'WebSearch', 'AskUserQuestion', 'EnterWorktree', 'ExitWorktree'])
       expect(toolsLine().split(', '), forbidden).not.toContain(forbidden);
-    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual(['mcp__markitdown']);
+    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual(['mcp__markitdown', 'mcp__claude_ai_Claude_Docs']);
   });
 
   it('is sonnet at medium effort, with the canonical permission mode', () => {
