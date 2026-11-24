@@ -20,6 +20,12 @@ describe.each(TIER1_SPECIALISTS)('Tier-1 specialist %s', role => {
     expect(afterFloor(role)).toMatch(/Always end the report with an `Open items` section[^.]*could not do or verify[^.]*"none"/);
   });
 
+  it('sends a question for the user to the requests block, and a question for a peer to `Open items`', () => {
+    expect(afterFloor(role)).toContain('Always end the report with an `Open items` section: what you could not do or verify, a question for a peer, or "none"; a question for the user goes under `Requests for the lead`.');
+    expect(nativeText(role)).toContain('<!-- agents-united:requests:start');
+    expect(afterFloor(role)).not.toContain('a question for the orchestrator');
+  });
+
   it('does not bind `Peer messages received`: it never receives one', () => {
     expect(afterFloor(role)).not.toMatch(/`Peer messages received`/);
   });
