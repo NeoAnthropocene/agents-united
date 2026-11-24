@@ -63,12 +63,30 @@ export class RegistryResolver {
   public async getBundle(bundleName: string): Promise<BundleDefinition | null> {
     const manifest = await this.loadBundles();
     if (manifest.bundles[bundleName]) {
-      return manifest.bundles[bundleName];
+      return RegistryResolver.withInheritedOptionalMcps(manifest.bundles[bundleName], manifest);
     }
     const found = Object.values(manifest.bundles).find(
       b => b.aliases?.includes(bundleName)
     );
-    return found || null;
+    return found ? RegistryResolver.withInheritedOptionalMcps(found, manifest) : null;
+  }
+
+  /**
+   * ADR 0079 - one rule for the optional MCP servers of a bundle: its own entries marked `optional: true` and those of the bundles it extends through `parentBundle`, the nearest
+   * entry of a name winning. A required entry of a parent is never taken. The doctor and the install panel read a bundle through `getBundle`, so a bundle that extends another holds
+   * the roles of its parent and no longer warns about a server that the parent lists as an optional extra. Nothing is copied into `bundles.json`.
+   */
+  private static withInheritedOptionalMcps(bundle: BundleDefinition, manifest: BundlesManifest, seen: ReadonlySet<string> = new Set()): BundleDefinition {
+    if (!bundle.parentBundle || seen.has(bundle.name)) return bundle;
+    const parentKey = bundle.parentBundle;
+    const parent = manifest.bundles[parentKey] ?? Object.values(manifest.bundles).find(candidate => candidate.aliases?.includes(parentKey));
+    if (!parent) return bundle;
+    const effective = RegistryResolver.withInheritedOptionalMcps(parent, manifest, new Set([...seen, bundle.name]));
+    const own = bundle.prerequisites?.requiredMcps ?? [];
+    const named = new Set(own.map(mcp => mcp.name.toLowerCase()));
+    const inherited = (effective.prerequisites?.requiredMcps ?? []).filter(mcp => mcp.optional === true && !named.has(mcp.name.toLowerCase()));
+    if (inherited.length === 0) return bundle;
+    return { ...bundle, prerequisites: { ...(bundle.prerequisites ?? {}), requiredMcps: [...own, ...inherited.map(mcp => ({ ...mcp }))] } };
   }
 
   public async listBundles(): Promise<BundleDefinition[]> {
