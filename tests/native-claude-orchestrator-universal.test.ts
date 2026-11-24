@@ -379,7 +379,7 @@ describe('native orchestrator-universal: the guard claims', () => {
 
   it('states the limit of acceptEdits: the handoff note is the one file it writes, and no guard stops anything else', () => {
     const host = section('Boundaries of this host');
-    expect(host).toContain('You run in `acceptEdits` mode, so file edits inside the working folder are approved without a prompt, when that mode is in force (a parent session\'s mode can override it, and a teammate takes the lead\'s mode).');
+    expect(host).toContain('Your file sets `acceptEdits`, so file edits inside the working folder are approved without a prompt, when that mode is in force (the main session\'s `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your mode is set by the lead\'s).');
     expect(host).toContain('The only file you write yourself is the handoff note; the rest of the working folder is not yours to change, and no guard stops you.');
   });
 
