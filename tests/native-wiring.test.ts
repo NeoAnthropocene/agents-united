@@ -441,3 +441,44 @@ describe('the conformance runner (ADR 0075, decision 4)', () => {
     expect(files.length).toBeLessThan(40);
   });
 });
+
+describe('the wiring generator on the live checkout and on interleaved install cases (ADR 0075)', () => {
+  it('finds the live checkout complete for the devops-engineering manifest: no refusal and no planned change', () => {
+    const plan = planWiring(manifest(), ROOT, {});
+    expect(plan.refusals).toEqual([]);
+    expect(plan.edits.filter((edit: Json) => edit.action !== 'unchanged')).toEqual([]);
+  });
+
+  it('accepts a role whose two install cases are not next to each other, as parallel merges leave them', async () => {
+    const checkout = await copyCheckout();
+    const file = path.join(checkout, 'tests/native-install-lane.test.ts');
+    const text = read(file);
+    const second = "  it('without the native lane, devops-engineering still writes the legacy projection";
+    const at = text.indexOf(second);
+    expect(at, 'the legacy case of the frozen file').toBeGreaterThan(0);
+    const filler = "  it('another role is installed between the two', async () => {\n    expect(true).toBe(true);\n  });\n\n";
+    await fs.writeFile(file, text.slice(0, at) + filler + text.slice(at));
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals).toEqual([]);
+    expect(plan.edits.filter((edit: Json) => edit.file === 'tests/native-install-lane.test.ts').map((edit: Json) => edit.action)).not.toContain('insert');
+  });
+
+  it('writes only the install case that is missing, and still refuses a case that is there but different', async () => {
+    const checkout = await copyCheckout();
+    const file = path.join(checkout, 'tests/native-install-lane.test.ts');
+    const text = read(file);
+    const second = "  it('without the native lane, devops-engineering still writes the legacy projection";
+    const from = text.indexOf(second);
+    const to = text.indexOf("  it('records the lane", from);
+    expect(from, 'the legacy case of the frozen file').toBeGreaterThan(0);
+    expect(to, 'the anchor case of the frozen file').toBeGreaterThan(from);
+    await fs.writeFile(file, text.slice(0, from) + text.slice(to));
+    const missing = planWiring(manifest(), checkout, {});
+    expect(missing.refusals).toEqual([]);
+    applyWiring(missing, checkout);
+    expect(read(file)).toBe(text);
+    await fs.writeFile(file, text.replace("expect(text).not.toContain('claude-native');", "expect(text).toContain('claude-native');"));
+    const different = planWiring(manifest(), checkout, {});
+    expect(different.refusals.join('\n')).toContain('tests/native-install-lane.test.ts: devops-engineer install cases differs');
+  });
+});
