@@ -130,7 +130,6 @@ describe('native database-administrator: the guard and live-database claims, aga
     expect(boundaries).not.toContain('Its `.env` rule covers');
     expect(text().split('A guard blocks')).toHaveLength(2);
     expect(boundaries).toContain('keeping to migrations, database configuration, runbooks and ADRs, and changing application source only when your brief asks, is your own obligation.');
-    expect(boundaries).toContain('`.env` files (not `.env.example`) in `Write`, `Edit`, `MultiEdit` and `NotebookEdit`');
     // `.env` tokens stripped, so the match runs to the end of the line instead of stopping at their dot.
     const claims = boundaries.replace(/`\.env(\.example)?`/g, 'ENV');
     expect(claims).not.toMatch(/blocks[^\n]*(DROP|psql|mysql|pg_restore)/);

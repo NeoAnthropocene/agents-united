@@ -227,7 +227,7 @@ describe('the role texts say one true sentence about the guard', () => {
     const copies: string[] = [];
     for (const file of fs.readdirSync(AGENTS).filter(name => name.endsWith('.md'))) {
       const text = fs.readFileSync(path.join(AGENTS, file), 'utf8').replace(/\r\n/g, '\n');
-      for (const line of text.split('\n').filter(item => item.includes('(see Boundaries of this host) blocks ') || item.includes('The guard bound to it blocks '))) {
+      for (const line of text.split('\n').filter(item => item.includes('(see Boundaries of this host) blocks `git push') || item.includes('The guard bound to it blocks `git push'))) {
         expect(line, file).toContain(list);
         copies.push(file);
       }

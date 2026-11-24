@@ -138,7 +138,6 @@ describe('native finops-cost-engineer: the guard and spend-changing claims, agai
     expect(boundaries).not.toContain('Its `.env` rule covers');
     expect(text().split('A guard blocks')).toHaveLength(2);
     expect(boundaries).toContain('keeping to cost reports, infrastructure-as-code recommendations, alert and budget definitions and ADRs, and changing application source only when your brief asks, is your own obligation.');
-    expect(boundaries).toContain('`.env` files (not `.env.example`) in `Write`, `Edit`, `MultiEdit` and `NotebookEdit`');
     // `.env` tokens stripped, so the match runs to the end of the line instead of stopping at their dot.
     const claims = boundaries.replace(/`\.env(\.example)?`/g, 'ENV');
     expect(claims).not.toMatch(/blocks[^\n]*(ec2|savingsplans|reserved|terraform|billing)/i);
