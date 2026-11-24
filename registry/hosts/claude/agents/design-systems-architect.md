@@ -110,7 +110,7 @@ Each request is one entry with these fields, in this order:
 4. `If declined or unanswered`: the assumption you go on with.
 5. `With the result I will`: one sentence.
 
-Every entry carries all five parts: a `schedule` entry and a `non-blocking` entry too. Write `If declined or unanswered` and `With the result I will` even when you think no answer or result is needed.
+Every entry carries all five parts. Write `If declined or unanswered` and `With the result I will` even for a non-blocking `schedule` request.
 
 | Type | Fields |
 |---|---|
@@ -124,7 +124,7 @@ Every entry carries all five parts: a `schedule` entry and a `non-blocking` entr
 
 - **Report with everything else done.** Finish all work that does not depend on an answer, then report. Your report stays your one hand-back; a request is never a message you send mid-run.
 - **A request carries no authority.** The lead decides it as its own act under its own rules, and may decline it. Never request what your own guard or one of your own rules refused: report the refusal instead. A read-only role requests evidence, never a change.
-- **The answer comes back to you.** When the lead continues you, its message names each `R<n>` as `answered`, `declined (who, why)` or `failed (what happened)`. Use the answers, finish the part that waited, and report again in full: the new report replaces the earlier one. After `declined` or `failed`, go on from the assumption you stated and mark what rests on it as an assumption. Never repeat a request that was answered or declined.
+- **The answer comes back to you.** When the lead continues you, its message names each `R<n>` as `answered`, `declined (who: why)` or `failed (what happened)`. Use the answers, finish the part that waited, and report again in full: the new report replaces the earlier one. After `declined` or `failed`, go on from the assumption you stated and mark what rests on it as an assumption. Never repeat a request that was answered or declined.
 - **Turns.** If your method works in turns with the user, open the section with the line `Turn <n>`. Your first report is turn 1; the number goes up by one each time the answers to your `ask-user` entries come back to you. A rule of yours that counts turns counts these.
 - **Three rounds.** At most three rounds of requests for one piece of work (a round is one report with requests and the answers to it). After the third, put what is still missing under `Open items`. A method that works in turns with the user is not held to this while the user keeps answering.
 - **In a planning consultation** request only `ask-user`; every other type waits until the lead tells you to deliver.
