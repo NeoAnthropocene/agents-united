@@ -33,6 +33,10 @@ describe('the canonical agents declare the media servers by name', () => {
     expect(declared('subagent-sound-designer.md')).toEqual(['elevenlabs', 'fish-audio']);
   });
 
+  it('has the marketing lead declare the four hosted servers after its four (ADR 0079, round 2)', () => {
+    expect(declared('orchestrator-marketing.md')).toEqual(['firecrawl', 'markitdown', 'context7', 'github', ...HOSTED]);
+  });
+
   it('has the digital-agency lead declare the five after its eight', () => {
     expect(declared('orchestrator-digital-agency.md')).toEqual(['github', 'firecrawl', 'context7', 'playwright', 'markitdown', 'chrome-devtools-mcp', 'stitch', 'figma', ...FIVE]);
   });
@@ -50,8 +54,8 @@ describe('the bundles that hold the roles list the servers as optional extras', 
   const HOLDS: Record<string, string[]> = {
     'digital-agency': FIVE,
     full: FIVE,
-    'growth-marketing': ['image-gen'],
-    'performance-paid-acquisition': ['image-gen'],
+    'growth-marketing': FIVE,
+    'performance-paid-acquisition': FIVE,
   };
 
   it('lists each server in the bundles that hold the role that declares it, as `{ name, purpose, optionalForBrainstorming: true, optional: true }`, and in no other bundle', () => {
@@ -103,6 +107,17 @@ describe('the add command is printed from one table', () => {
     expect(Object.keys(HOSTED_MEDIA_SERVERS).sort()).toEqual([...HOSTED].sort());
   });
 
+  it('holds the four URLs as the media template and the provider cards give them, and Higgsfield at /mcp (the bare host answers 404)', () => {
+    expect(HOSTED_MEDIA_SERVERS.higgsfield).toBe('https://mcp.higgsfield.ai/mcp');
+    const template = JSON.parse(read('registry/skills/mcp-setup/assets/media-http.mcp.template.json')) as { mcpServers: Record<string, { url: string }> };
+    expect(Object.fromEntries(Object.entries(template.mcpServers).map(([name, server]) => [name, server.url]))).toEqual(HOSTED_MEDIA_SERVERS);
+    const cards = read('registry/skills/mcp-setup/references/media-providers.md');
+    const endpoints = [...cards.matchAll(/^- Official (?:MCP )?endpoint: `([^`]+)`/gm)].map(match => match[1]);
+    expect(endpoints).toEqual(Object.values(HOSTED_MEDIA_SERVERS));
+    expect(cards).toMatch(/bare host answers 404/);
+    expect(cards).toContain('https://higgsfield.ai/blog/Generate-AI-Videos-From-Claude-with-Higgsfield-MCP');
+  });
+
   it('holds the image server command exactly as the reviewed Claude Code reference gives it (the Gemini base command)', () => {
     const reference = read('registry/skills/mcp-setup/references/claude-code.md');
     const base = reference.split('\n').find(line => line.startsWith('claude mcp add --scope local image-gen --env GEMINI_API_KEY='))!;
@@ -127,15 +142,25 @@ describe('the add command is printed from one table', () => {
     expect(text).not.toContain('<command>');
   });
 
-  it('keeps the generic form for every other server, and names no verified command for the five on Antigravity', () => {
+  it('prints the serverUrl entry and the sign-in for a hosted server on Antigravity, from the same table', () => {
+    for (const name of HOSTED) {
+      const text = mcpAddCommand('antigravity', name, '/work/project');
+      expect(text, name).toContain(`"${name}": { "serverUrl": "${HOSTED_MEDIA_SERVERS[name]}" }`);
+      expect(text, name).toContain('.agents/mcp_config.json');
+      expect(text, name).toContain('/mcp');
+      expect(text, name).not.toContain('<command>');
+      expect(text, name).not.toContain('No verified');
+    }
+  });
+
+  it('keeps the generic form for every other server, and names no verified command for the image server on Antigravity', () => {
     expect(mcpAddCommand('claude', 'github', '/work/project')).toBe('Add it with: claude mcp add github -- <command> [args...]');
     expect(mcpAddCommand('antigravity', 'github', '/work/project')).toBe('Add it with: agy mcp add github -- <command> [args...]');
-    for (const name of FIVE) {
-      const text = mcpAddCommand('antigravity', name, '/work/project');
-      expect(text, name).toContain('No verified add command');
-      expect(text, name).toContain('mcp-setup');
-      expect(text, name).not.toContain('<command>');
-    }
+    const text = mcpAddCommand('antigravity', 'image-gen', '/work/project');
+    expect(text).toContain('No verified add command');
+    expect(text).toContain('image-generator');
+    expect(text).toContain('mcp-setup');
+    expect(text).not.toContain('<command>');
   });
 });
 
@@ -207,7 +232,7 @@ describe('the doctor and the install panel print the add command of the table', 
     const report = await DoctorEngine.runDoctor(agentsDir, 'claude');
     const warning = (report.warnings ?? []).find(line => line.includes('MCP server "higgsfield"'));
     expect(warning).toBeDefined();
-    expect(warning).toContain('claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai');
+    expect(warning).toContain('claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai/mcp');
     expect(warning).not.toContain('<command>');
   });
 
@@ -224,7 +249,7 @@ describe('the doctor and the install panel print the add command of the table', 
     const claude = await new PrerequisiteChecker().evaluate(agency, { cwd: workspace, targetHosts: ['claude'] });
     const hosted = claude.items.find(item => item.name === 'higgsfield')!;
     expect(hosted).toMatchObject({ satisfied: false, optional: true });
-    expect(hosted.details).toContain('claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai');
+    expect(hosted.details).toContain('claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai/mcp');
     const image = claude.items.find(item => item.name === 'image-gen')!;
     expect(image.details).toContain(IMAGE_SERVER_ADD_COMMAND);
     const antigravity = await new PrerequisiteChecker().evaluate(agency, { cwd: workspace, targetHosts: ['antigravity'] });
@@ -255,7 +280,7 @@ describe('the install panel reaches the Claude command through the CLI wiring', 
     });
     return strip(result.stdout + result.stderr);
   };
-  const COMMAND = 'claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai';
+  const COMMAND = 'claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai/mcp';
 
   it('prints the command when Claude is the target (-t claude puts it in the fan-out)', () => {
     expect(add(['digital-agency', '-t', 'claude'])).toContain(COMMAND);
@@ -297,9 +322,10 @@ describe('optional servers are read through parentBundle (ADR 0079)', () => {
       if (gains.length > 0 || loses.length > 0) changes[name] = { gains, loses };
     }
     expect(changes).toEqual({
-      'seo-content-marketing': { gains: ['image-gen'], loses: [] },
-      'product-led-growth': { gains: ['image-gen'], loses: [] },
-      'lifecycle-email-marketing': { gains: ['image-gen'], loses: [] },
+      'seo-content-marketing': { gains: [...FIVE].sort(), loses: [] },
+      'product-led-growth': { gains: [...FIVE].sort(), loses: [] },
+      'lifecycle-email-marketing': { gains: [...FIVE].sort(), loses: [] },
+      // performance-paid-acquisition lists the five itself, so the rule adds nothing to it.
     });
   });
 

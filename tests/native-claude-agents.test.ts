@@ -301,7 +301,7 @@ const BASE_ROLES: RoleSpec[] = [
     // The union of the servers its roles' canonical agents declare (firecrawl, markitdown, context7, github, stitch, figma, playwright, chrome-devtools-mcp), with the routes as the digital-agency lead has them.
     // This goes beyond the lead's own canonical agent (firecrawl, markitdown, context7, github) by a decision made during the roll-out (2026-11-20, open to the maintainer's review): a subagent gets the MCP tools of the main conversation, and the main conversation of
     // `--agent` is cut to this list (Sitting T), so a role's server is worth nothing unless its lead holds it too. The lead holds the one image tool because its creative designer does (ADR 0079); it never calls it.
-    serverTools: withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch', 'mcp__image-gen__generate_image']),
+    serverTools: [...withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__markitdown', 'mcp__playwright', 'mcp__stitch', 'mcp__image-gen__generate_image']), ...MEDIA_VIDEO_SERVERS, ...MEDIA_AUDIO_SERVERS],
     mutating: true,
     // Delegation and orchestration: the roster allowlist, the user, schedules, watchers and the shared task list; no saved workflows (the bundle has none), no worktrees, no code intelligence, no structured findings.
     mustHold: ['Agent', 'AskUserQuestion', 'Bash', 'PowerShell', 'Edit', 'Write', 'NotebookEdit', 'Monitor', 'TodoWrite', 'ToolSearch', 'CronCreate', 'SendMessage', 'Skill', 'TaskCreate', 'TaskList', 'TaskUpdate'],

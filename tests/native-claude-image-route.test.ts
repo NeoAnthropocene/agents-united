@@ -359,9 +359,9 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     const a = adr();
     expect(a).toMatch(/servers go in the base roles/);
     expect(a).toMatch(/image tool is shared with marketing/);
-    expect(a).toMatch(/OAuth over `serverUrl` is unverified on Antigravity/);
-    expect(a).toMatch(/Antigravity[^.]*own `generate_image`/);
-    expect(a).toMatch(/OAuth[^.]*unverified/);
+    expect(a).toMatch(/image-generator/);
+    expect(a).toMatch(/needs the user's own provider key, which agents-united never writes/);
+    expect(a).toMatch(/OAuth[^.]*not run on Claude Code/);
     expect(a).toMatch(/Cline drops `mcpServers`/);
     expect(a).toMatch(/no live image call|No live image call/);
   });
@@ -386,6 +386,20 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     expect(a).not.toMatch(/do not hold the designer and are unchanged/);
     expect(a).toMatch(/`performance-paid-acquisition` declares the designer itself and lists `image-gen` itself; the other three \(`seo-content-marketing`/);
     expect(a).not.toMatch(/The three bundles that extend `growth-marketing`/);
+  });
+
+  it('records the Antigravity check with its three sitters kept apart, the corrected Higgsfield address, and the maintainer\'s words with the reading (round 2)', () => {
+    const a = adr();
+    expect(a).toMatch(/the maintainer, in an interactive Antigravity CLI `agy` 1\.5\.16 session/);
+    expect(a).toMatch(/fish-audio and klingai signed in with OAuth and connected \(62 and 18 tools\)/);
+    expect(a).toMatch(/the coordinating session probed Higgsfield without authentication/);
+    expect(a).toMatch(/a headless agy session reported no `generate_image`/);
+    expect(a).toMatch(/unverified beyond it/);
+    expect(a).toContain('https://mcp.higgsfield.ai/mcp');
+    expect(a).toContain('image-gen always will be the first recommended option for the Antigravity Orchestrators');
+    expect(a).toMatch(/Reading, recorded as the coordinating session's/);
+    expect(a).toMatch(/Antigravity image-choice paragraph is not in this commit set/);
+    expect(a).toMatch(/Add catalog entries with the corrected addresses/);
   });
 
   it('is pointed to from the status of ADR 0049, whose first words stay as they were', () => {

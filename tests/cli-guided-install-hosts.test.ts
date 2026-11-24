@@ -80,7 +80,7 @@ describe('the guided install evaluates the hosts it installs for', () => {
 
     const panel = prompts.note.mock.calls.map(call => strip(String(call[0]))).find(text => text.includes('[MCP] higgsfield'));
     expect(panel, 'the prerequisite panel').toBeDefined();
-    expect(panel).toContain('claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai');
+    expect(panel).toContain('claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai/mcp');
 
     expect(evaluate).toHaveBeenCalledTimes(1);
     expect(install).toHaveBeenCalledTimes(1);
