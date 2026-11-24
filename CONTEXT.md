@@ -328,6 +328,7 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
   `deep_planning_command`, `interview_command`) rewritten per host into that host's real command
   (Cline `/team`, Antigravity `/teamwork-preview`) or prose guidance (Claude). Host command
   names never appear in canonical prose.
+- **Host section** (ADR 0079): a part of a canonical agent body that is for one host, between a line `<!-- agents-united:host antigravity -->` and a line `<!-- agents-united:host-end -->`. The one function `hostSections` in `src/core/host-sections.ts` keeps it, without its markers, for that host and removes it for every other; it refuses an unknown host name, an unclosed section and a nested one, and every reader of a canonical agent body applies it. Only `antigravity` is a host name for now.
 - **Projection Overlay**: declarative per-agent (optionally per-tier × per-host) field/section
   replacement in the catalog. Precedence: overlay > dialect default > canonical.
 - **Section-Residue Lint**: CI-blocking check that projected bodies carry no foreign-host

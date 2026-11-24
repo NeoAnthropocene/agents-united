@@ -398,7 +398,11 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     expect(a).toContain('https://mcp.higgsfield.ai/mcp');
     expect(a).toContain('image-gen always will be the first recommended option for the Antigravity Orchestrators');
     expect(a).toMatch(/Reading, recorded as the coordinating session's/);
-    expect(a).toMatch(/Antigravity image-choice paragraph is not in this commit set/);
+    expect(a).toMatch(/Antigravity image-choice paragraph is in the two canonical leads, inside one host section each/);
+    expect(a).toMatch(/Host sections: a new behaviour in src/);
+    expect(a).toContain('`<!-- agents-united:host antigravity -->`');
+    expect(a).toMatch(/fails closed/);
+    expect(a).toMatch(/Claude native lead files are unchanged/);
     expect(a).toMatch(/Add catalog entries with the corrected addresses/);
   });
 
