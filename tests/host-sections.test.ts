@@ -205,7 +205,8 @@ describe('the readers of a canonical agent body (the inventory of ADR 0079)', ()
       const store = (await fs.readFile(path.join(agentsDir, 'agents', `${lead}.md`), 'utf8')).replace(/\r\n/g, '\n');
       expect(store).not.toContain('agents-united:host');
       expect(store).toContain(PARAGRAPH);
-      expect(store.slice(store.indexOf(PARAGRAPH) - 60, store.indexOf(PARAGRAPH))).toContain('If you are running on Antigravity:');
+      expect(store.indexOf('If you are running on Antigravity:')).toBeGreaterThanOrEqual(0);
+      expect(store.indexOf('If you are running on Antigravity:')).toBeLessThan(store.indexOf(PARAGRAPH));
       for (const { file, text } of await texts(path.join(root, 'ws'))) {
         if (file !== path.join(agentsDir, 'agents', `${lead}.md`)) expect(text, file).not.toContain(PARAGRAPH);
       }

@@ -404,7 +404,7 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     expect(a).toMatch(/fails closed/);
     expect(a).toMatch(/Claude native lead files are unchanged/);
     expect(a).toMatch(/store copy in `\.agents\/agents\/` is the Antigravity copy/);
-    expect(a).toMatch(/other hosts \(Codex, through the `AGENTS\.md` index\) may open it/);
+    expect(a).toMatch(/Other hosts \(Codex, through the `AGENTS\.md` index, which links the store copy and holds no body\) may open it/);
     expect(a).toMatch(/names its host for that reason/);
     expect(a).toContain('If you are running on Antigravity:');
     expect(a).toMatch(/maintainer chose[^.]*keep the four hosted servers on the Claude marketing lead too, with one source for every host/);
