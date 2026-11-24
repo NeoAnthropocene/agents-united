@@ -458,7 +458,7 @@ const ROLES: RoleSpec[] = BASE_ROLES.map(role => {
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
-/** The hooks of a role as generated: its guard, for the factory evaluator also its hand-back entry (ADR 0070), and for a role of `MODE_LINE_GATE_ROLES` also the gate on its first message (Plan 035 N2 slice e); `expectedWorkerHooks` is the one place that says so. */
+/** The hooks of a role as generated: its guard, for the factory evaluator also its hand-back entry (ADR 0070), and for a role of `MODE_LINE_GATE_ROLES` also the gate on its first message (ADR 0042); `expectedWorkerHooks` is the one place that says so. */
 const guardGroups = (role: RoleSpec): Record<string, unknown> => {
   return { ...expectedWorkerHooks(role.name, role.guard) };
 };
