@@ -31,7 +31,7 @@ import { explicitNativeFlag } from './core/native-flag.js';
 import { linkedSkillAdvice, listLinkedSkills } from './core/skill-links.js';
 import { nativeWorkflowNote } from './core/native-workflows.js';
 import { nativeTeamNote, sessionGuardPrompt } from './core/native-teams.js';
-import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
+import { isKnownHost, HOST_REGISTRY, KNOWN_HOST_IDS, planInstallTargets, installTargetHostKeys, hostAvailabilityNotice, SUPPORTED_HOST_IDS, splitHostList } from './core/hosts.js';
 import type { InstallScope, InstallMethod, AgentHost, BundleDefinition, BundleTier, InstalledPackageRecord, PrerequisiteItemCheck, ProjectionInfo, ExecutionMode, ClaudeCapabilityReport, ClineCapabilityReport } from './core/types.js';
 import { isEmptyContributorBundle } from './core/types.js';
 
@@ -931,7 +931,7 @@ cli
 
     if (targetBundleDef && (targetBundleDef.prerequisites || targetBundleDef.tier === 'organization')) {
       const checker = new PrerequisiteChecker();
-      const prereqEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: hosts });
+      const prereqEval = await checker.evaluate(targetBundleDef, { cwd: process.cwd(), targetHosts: installTargetHostKeys(hosts, fanout) });
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
@@ -2010,10 +2010,12 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
 
     // 2. Prerequisite Gate Evaluation
     let executionMode: ExecutionMode = 'operational';
+    // The hosts of the workspace are read before the panel, so that it looks at the hosts the install will target (Claude included, which is a fan-out host).
+    const detectedHosts = detectWorkspaceHosts();
 
     if (bundle.prerequisites || bundle.tier === 'organization') {
       const checker = new PrerequisiteChecker();
-      const prereqEval = await checker.evaluate(bundle);
+      const prereqEval = await checker.evaluate(bundle, { cwd: process.cwd(), targetHosts: installTargetHostKeys(detectedHosts, []) });
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
@@ -2063,7 +2065,6 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
     }
 
     // 3. Workspace Host & Fan-out Configuration
-    const detectedHosts = detectWorkspaceHosts();
     let installHosts: AgentHost[] = ['agents'];
     let installFanout: string[] = [];
 
