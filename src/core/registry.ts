@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { BundlesManifest, BundleDefinition, ResolvedAssets, SearchOptions, SearchResults, PlanningLoopMode } from './types.js';
 import { isEmptyContributorBundle } from './types.js';
 import { validateBundleHostAvailability } from './bundle-host-availability.js';
+import { hostSectionProblems } from './host-sections.js';
 import { inspectNativeAgent } from './native-guard.js';
 import { listNativeWorkflows, nativeRoleSource } from './native-package.js';
 
@@ -56,6 +57,7 @@ export class RegistryResolver {
 
     const manifest: BundlesManifest = await fs.readJson(manifestPath);
     this.validateBundles(manifest);
+    this.validateAgentHostSections();
     this.bundlesManifest = manifest;
     return manifest;
   }
@@ -367,6 +369,19 @@ export class RegistryResolver {
    * ADR 0015 — fail-fast validation of planningLoop configuration.
    * @throws if any bundle violates planner-orchestrator invariants.
    */
+  /**
+   * ADR 0079: every canonical agent body is read for one host, so a malformed host section (an unknown host, a nested or an unclosed section, a stray end marker) fails when the registry
+   * loads, before any asset is written and not only at the first reader. The result is cached with the manifest.
+   */
+  private validateAgentHostSections(): void {
+    const agentsDir = path.join(this.registryDir, 'agents');
+    if (!fs.existsSync(agentsDir)) return;
+    for (const file of fs.readdirSync(agentsDir).filter(name => name.endsWith('.md')).sort()) {
+      const problems = hostSectionProblems(fs.readFileSync(path.join(agentsDir, file), 'utf8'));
+      if (problems.length > 0) throw new Error(`Registry agent ${file}: ${problems.join(' ')}`);
+    }
+  }
+
   private validateBundles(manifest: BundlesManifest): void {
     // Plan 033 P20: the rules moved into collectBundleManifestIssues; the first collected problem is the one thrown here, as before.
     const issues = collectBundleManifestIssues(manifest, this.registryDir);

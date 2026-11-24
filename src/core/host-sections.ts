@@ -64,6 +64,7 @@ export function hostSections(text: string, host: string): string {
   const problems = hostSectionProblems(text);
   if (problems.length > 0) throw new Error(problems.join(' '));
   let section: string | undefined;
+  let removed = false;
   let out = '';
   for (const line of linesOf(text)) {
     if (section === undefined) {
@@ -72,8 +73,16 @@ export function hostSections(text: string, host: string): string {
         section = open[1]!;
         continue;
       }
+      // A section that was removed between two blank lines leaves one separator, not two.
+      const separator = line.text.trim() === '' && (out === '' || out.endsWith('\n\n') || out.endsWith('\r\n\r\n'));
+      if (removed && separator) {
+        removed = false;
+        continue;
+      }
+      removed = false;
       out += line.text + line.eol;
     } else if (line.text === END) {
+      removed = section !== host;
       section = undefined;
     } else if (section === host) {
       out += line.text + line.eol;

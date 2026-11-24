@@ -51,7 +51,8 @@ export function claudeAddCommand(server: string): string | undefined {
 export function mcpAddCommand(host: string, server: string, workspaceRoot: string): string {
   const special = claudeAddCommand(server);
   if (host === 'antigravity') {
-    const url = HOSTED_MEDIA_SERVERS[server.trim().toLowerCase()];
+    const key = server.trim().toLowerCase();
+    const url = Object.prototype.hasOwnProperty.call(HOSTED_MEDIA_SERVERS, key) ? HOSTED_MEDIA_SERVERS[key] : undefined;
     if (url !== undefined) {
       return `Add it to .agents/mcp_config.json under "mcpServers": "${server}": { "serverUrl": "${url}" }, then sign in through /mcp (agents-united never writes a credential)`;
     }

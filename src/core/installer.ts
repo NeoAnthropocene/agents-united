@@ -1868,20 +1868,22 @@ private toPosix(p: string): string {
         const src = path.join(registryDir, 'agents', agentFile);
         const dest = path.join(subPaths.agentsDir, agentFile);
 
-        if (await fs.pathExists(dest) && !options.force && method !== 'symlink') {
+        // ADR 0079: the store copy is the Antigravity copy of a canonical agent: a body with host sections is written rendered for Antigravity (a real file, never a link into the registry),
+        // and its recorded hash is the hash of the bytes written, so a re-install and the doctor see no edit. A rendered copy is guarded whatever the method, since it is a real file.
+        const sourceText = await fs.readFile(src, 'utf8');
+        const rendersSections = hasHostSections(sourceText);
+        const destIsLink = (await fs.lstat(dest).catch(() => null))?.isSymbolicLink() === true;
+        if (await fs.pathExists(dest) && !options.force && (method !== 'symlink' || (rendersSections && !destIsLink))) {
           const existingHash = await this.calculateHash(dest).catch(() => null);
-          const relPath = path.relative(targetDir, dest);
+          const relPath = this.toPosix(path.relative(targetDir, dest));
           if (existingHash && lockfile.files[relPath] && lockfile.files[relPath].hash !== existingHash) {
             throw new Error(`File ${relPath} has user modifications. Use --force to overwrite.`);
           }
         }
 
-        // ADR 0079: the store copy is the Antigravity copy of a canonical agent: a body with host sections is written rendered for Antigravity (a real file, never a link into the registry),
-        // and its recorded hash is the hash of the bytes written, so a re-install and the doctor see no edit.
-        const sourceText = await fs.readFile(src, 'utf8');
         let actualMethod: 'symlink' | 'copy';
         let hash: string;
-        if (hasHostSections(sourceText)) {
+        if (rendersSections) {
           const rendered = hostSections(sourceText, 'antigravity');
           await fs.ensureDir(path.dirname(dest));
           if ((await fs.lstat(dest).catch(() => null))?.isSymbolicLink()) await fs.unlink(dest);
