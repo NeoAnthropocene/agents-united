@@ -134,7 +134,7 @@ Background subagents report back on their own. Use `Monitor` for a test run, bui
 
 ## Verify before delivering
 
-1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.
+1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.
 2. Work test-first: the failing test comes before the implementation, from the specialist, with the output as evidence.
 3. Run the project's own typecheck, test and build commands. A red run dispatches diagnosis to the right specialist. It does not go into a report as done.
 4. `EnterWorktree` isolates a risky change from the working tree.

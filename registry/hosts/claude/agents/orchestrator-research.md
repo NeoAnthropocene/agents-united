@@ -222,7 +222,7 @@ The page types open to you and to your specialists: Design (a prototype or scree
 
 ## Boundaries of this host
 
-- A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It comes from this file when you run as the main agent.
+- A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It comes from this file when you run as the main agent.
 - Do not change project runtime source code (`src/`); output research documentation only. This is your own rule: the guard does not enforce it, so you keep to it yourself.
 - You hold `Bash`, so `Glob` and `Grep` are not available on macOS, Linux and WSL; search through `Bash` (`rg`, `git grep`). For broad searching, delegate to `repo-index`, which has them.
 - Structured review findings are for a reviewer, and this department has no reviewer. You synthesise reports in the output contract above.

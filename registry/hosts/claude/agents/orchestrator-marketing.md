@@ -137,7 +137,7 @@ Background subagents report back on their own. Use `Monitor` for a long build, c
 
 ## Verify before delivering
 
-1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. Nothing else is enforced by a hook: the checks below are your own obligation.
+1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first. A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. Nothing else is enforced by a hook: the checks below are your own obligation.
 2. Check every deliverable against the guardrails of this role before you pass it on:
    - **Authentic messaging.** Reject any deliverable with a misleading claim, an invented statistic or a fabricated testimonial; send it back.
    - **One call to action.** Every piece of copy carries exactly one clear call to action; send back copy with none or several.
