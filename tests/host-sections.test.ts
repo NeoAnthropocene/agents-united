@@ -113,6 +113,8 @@ describe('the registry', () => {
       const text = read(path.join('registry/agents', `${lead}.md`));
       const section = text.slice(text.indexOf(OPEN), text.indexOf(END));
       expect(section, lead).toContain(PARAGRAPH);
+      // The store copy is the Antigravity copy, and another host may open it: the paragraph names its host in its first words.
+      expect(section.split('\n').slice(1).join('\n').startsWith('If you are running on Antigravity:'), lead).toBe(true);
       const order = ["Antigravity's own image generation", '`image-gen`', 'hosted media servers', 'Licensed stock', 'placeholder'].map(part => section.indexOf(part));
       expect(order.every(index => index >= 0), `${lead}: ${order.join(',')}`).toBe(true);
       expect([...order].sort((a, b) => a - b), lead).toEqual(order);
@@ -191,6 +193,24 @@ describe('the readers of a canonical agent body (the inventory of ADR 0079)', ()
   });
 
   for (const bundle of ['digital-agency', 'growth-marketing']) {
+    it(`installs ${bundle} for Codex with exactly .agents and AGENTS.md, an index without the paragraph, and a store copy that names its host first`, async () => {
+      const agentsDir = path.join(root, 'ws', '.agents');
+      await new InstallEngine().install(bundle, { targetDir: agentsDir, method: 'copy', fanout: ['codex'] });
+      const lead = bundle === 'digital-agency' ? 'orchestrator-digital-agency' : 'orchestrator-marketing';
+      expect((await fs.readdir(path.join(root, 'ws'))).sort()).toEqual(['.agents', 'AGENTS.md']);
+      const index = (await fs.readFile(path.join(root, 'ws', 'AGENTS.md'), 'utf8')).replace(/\r\n/g, '\n');
+      expect(index).not.toContain('agents-united:host');
+      expect(index).not.toContain(PARAGRAPH);
+      expect(index).toContain(`(.agents/agents/${lead}.md)`);
+      const store = (await fs.readFile(path.join(agentsDir, 'agents', `${lead}.md`), 'utf8')).replace(/\r\n/g, '\n');
+      expect(store).not.toContain('agents-united:host');
+      expect(store).toContain(PARAGRAPH);
+      expect(store.slice(store.indexOf(PARAGRAPH) - 60, store.indexOf(PARAGRAPH))).toContain('If you are running on Antigravity:');
+      for (const { file, text } of await texts(path.join(root, 'ws'))) {
+        if (file !== path.join(agentsDir, 'agents', `${lead}.md`)) expect(text, file).not.toContain(PARAGRAPH);
+      }
+    });
+
     for (const method of ['copy', 'symlink'] as const) {
       it(`installs ${bundle} (${method}) with the paragraph in the Antigravity store copy only, and no marker anywhere`, async () => {
         const agentsDir = path.join(root, 'ws', '.agents');
