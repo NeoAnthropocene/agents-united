@@ -2010,12 +2010,22 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
 
     // 2. Prerequisite Gate Evaluation
     let executionMode: ExecutionMode = 'operational';
-    // The hosts of the workspace are read before the panel, so that it looks at the hosts the install will target (Claude included, which is a fan-out host).
+    // The install targets are worked out once, here, as the install then receives them (`agents` is always one of them, and a projection-capable host such as Claude is a fan-out host),
+    // and the panel evaluates exactly those hosts.
     const detectedHosts = detectWorkspaceHosts();
+    let installHosts: AgentHost[] = ['agents'];
+    let installFanout: string[] = [];
+
+    if (detectedHosts.length > 0) {
+      const projectionHosts = detectedHosts.filter(h => HOST_REGISTRY[h].projectionCapable);
+      installFanout = projectionHosts;
+      installHosts = detectedHosts.filter(h => !HOST_REGISTRY[h].projectionCapable) as AgentHost[];
+      if (!installHosts.includes('agents')) installHosts.unshift('agents');
+    }
 
     if (bundle.prerequisites || bundle.tier === 'organization') {
       const checker = new PrerequisiteChecker();
-      const prereqEval = await checker.evaluate(bundle, { cwd: process.cwd(), targetHosts: installTargetHostKeys(detectedHosts, []) });
+      const prereqEval = await checker.evaluate(bundle, { cwd: process.cwd(), targetHosts: installTargetHostKeys(installHosts, installFanout) });
 
       if (prereqEval.hasPrerequisites) {
         const checkLines: string[] = [];
@@ -2064,16 +2074,7 @@ async function handleBundleDetailView(bundle: BundleDefinition): Promise<'__back
       }
     }
 
-    // 3. Workspace Host & Fan-out Configuration
-    let installHosts: AgentHost[] = ['agents'];
-    let installFanout: string[] = [];
-
-    if (detectedHosts.length > 0) {
-      const projectionHosts = detectedHosts.filter(h => HOST_REGISTRY[h].projectionCapable);
-      installFanout = projectionHosts;
-      installHosts = detectedHosts.filter(h => !HOST_REGISTRY[h].projectionCapable) as AgentHost[];
-      if (!installHosts.includes('agents')) installHosts.unshift('agents');
-    }
+    // 3. Workspace Host & Fan-out Configuration (worked out above, before the panel)
 
     const installSpinner = spinner();
     installSpinner.start(`Installing "${bundle.name}"...`);
