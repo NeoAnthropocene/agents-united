@@ -6,7 +6,7 @@ import { nativeText, NATIVE_AGENTS_DIR } from './helpers/native-roles.js';
 
 /**
  * Plan 036 S19, ADR 0049, as amended by ADR 0079: the creative designers may generate photographs through the optional `image-gen` server. The skill that
- * teaches it and the install route are the previous slice (S18). This slice is the grant and the offer, and the tests pin what must stay true of them: the
+ * teaches it and the install route are the previous step (S18). This step is the grant and the offer, and the tests pin what must stay true of them: the
  * grant is the one tool and not the server; only the two creative designers and the two leads that carry them hold it; the canonical creative designer and the
  * canonical digital-agency lead declare the server by name, and every bundle that holds the creative designer lists it as an optional extra and never as a
  * required server; the Antigravity catalog has no entry for it; her body and the lead's say when the route may be used and what the user is told; the
