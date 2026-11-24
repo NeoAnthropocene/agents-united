@@ -13,10 +13,25 @@ import { expectedWorkerHooks } from './handback-check.js';
 import { connectorToolsOf, delegateNamesOf, loadPageTypesIfPresent, roleStemResolver, typesOfRole, unknownRosterNames } from './page-types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
-import { withRoutes } from './claude-mcp-routes.js';
-import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, isLeadRole, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
+import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, isLeadRole, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, serverEntryProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/**
+ * The `mcp__` entries that the native files of a lead's roster hold (registry/hosts/claude/agents/<role>.md). A lead's tool pool is cut to its own
+ * `tools:` line and a role it starts inherits that pool, so a lead holds the servers of the roles it may start. This is the rule that
+ * tests/native-claude-lead-pool.test.ts pins for the committed leads (every server entry of a role a lead may spawn is on the lead's line), applied here
+ * to a candidate: the entries of its roster are accepted on its line. A roster name without a native file adds nothing.
+ */
+function rosterServerEntries(registry: string, roster: readonly string[]): string[] {
+  const entries: string[] = [];
+  for (const name of roster) {
+    const file = path.join(registry, 'hosts', 'claude', 'agents', `${name}.md`);
+    if (!ID.test(name) || !fs.existsSync(file)) continue;
+    try { for (const tool of inspectNativeAgent(fs.readFileSync(file, 'utf8')).tools) if (tool.startsWith('mcp__') && !entries.includes(tool)) entries.push(tool); } catch { /* an unreadable file adds nothing */ }
+  }
+  return entries;
+}
 
 /** The skill of the agent-factory binding that names `definition` as one of its roles (a worker or the coordinator of the factory), else undefined. */
 function factoryBindingSkill(registry: string, definition: string): string | undefined {
@@ -115,24 +130,24 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       if (core.capabilities === undefined) findings.push('Native grant validation needs explicit core capability classes.');
       else {
         const grant = resolveGrant(policy, core.capabilities, { subagent: input.loading !== 'main', background: facts.meta.background === true }).tools;
-        // The generator's own form (ADR 0072): the class grant sorted, then the canonical agent's server tools in its order. The factory's own
-        // coordinator must hold exactly its fixed delegate list (the same function as tests/helpers/native-delta.ts); any other delegating role's
-        // one well-formed `Agent(...)` allowlist stands for `Agent`. The committed roles hold their canonical servers in one of two forms: the
-        // servers alone, or each followed by the names the reviewed routes table lists for it (its plugin and its claude.ai connector). A tools
-        // line that holds any route name is compared with the second form, exactly; no other server entry is accepted.
+        // The generator's own form (ADR 0072) for what is not a server: the class grant sorted. The factory's own coordinator must hold exactly its
+        // fixed delegate list (the same function as tests/helpers/native-delta.ts); any other delegating role's one well-formed `Agent(...)` allowlist
+        // stands for `Agent`. The server entries are compared as the repository's tests do, without regard to order (serverEntryProblems): the canonical
+        // servers whole or per read-only tool, alone or with their routes; the connector tools of the page types (ADR 0078); and, for a lead, the entries of
+        // the roles of its roster.
         const servers = canonicalText === undefined ? [] : canonicalServerTools(canonicalText);
-        const routed = withRoutes(servers);
-        const base = facts.tools.some(tool => routed.includes(tool) && !servers.includes(tool)) ? routed : servers;
-        // A role that holds a connector page type also holds the connector tool of that type (ADR 0078); no canonical agent declares it.
-        const expected = nativeToolOrder(grant, [...base, ...connectorToolsOf(types).filter(tool => !base.includes(tool))]);
-        let wanted = nativeToolsWanted(expected, facts.tools, { coordinator: delegates });
+        const expected = nativeToolOrder(grant, []);
+        const held = facts.tools.filter(tool => !tool.startsWith('mcp__'));
+        let wanted = nativeToolsWanted(expected, held, { coordinator: delegates });
         if (factorySkill === 'coordinate-artifact') {
           try {
             normalizeClaudeFactoryCoordinatorTools(facts.tools);
-            wanted = nativeToolsWanted(expected, facts.tools, { coordinator: true });
+            wanted = nativeToolsWanted(expected, held, { coordinator: true });
           } catch (error) { findings.push(error instanceof Error ? error.message : String(error)); }
         }
-        if (facts.meta.tools === undefined || !isDeepStrictEqual(facts.tools, wanted)) findings.push(`Native tools differ from the generator's form: expected ${wanted.join(', ')}.`);
+        const required = connectorToolsOf(types);
+        if (facts.meta.tools === undefined || !isDeepStrictEqual(held, wanted)) findings.push(`Native tools differ from the generator's form: expected ${[...wanted, ...servers, ...required].join(', ')}.`);
+        for (const problem of serverEntryProblems(facts.tools, servers, { required, allowed: coordinator ? rosterServerEntries(registry, delegateNamesOf(facts.tools)) : [] })) findings.push(`Native tools differ from the generator's form: ${problem}.`);
       }
       const preloads: unknown = facts.meta.skills ?? [];
       if (!Array.isArray(preloads) || preloads.some(id => typeof id !== 'string' || !ID.test(id))) findings.push('Native Skill preloads must be semantic identifiers.');
