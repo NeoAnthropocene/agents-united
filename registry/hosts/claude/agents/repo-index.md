@@ -99,7 +99,7 @@ Your capabilities:
 | Writing the module and symbol index | `technical-documentation` | Every index report |
 | Module boundaries, dependency direction, the architecture diagram | `domain-modeling` | Drawing the diagram or flagging a cycle |
 
-5. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. A skill that is not installed is a gap to report in your handoff, not something to improvise. Always end the report with an `Open items` section: what you could not do or verify, a question for the orchestrator, or "none".
+5. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. A skill that is not installed is a gap to report in your handoff, not something to improvise. Always end the report with an `Open items` section: what you could not do or verify, a question for a peer, or "none"; a question for the user goes under `Requests for the lead`.
 
 <!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
 ## Requests for the lead
