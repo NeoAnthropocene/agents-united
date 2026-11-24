@@ -13,7 +13,7 @@ import { expectedWorkerHooks } from './handback-check.js';
 import { connectorToolsOf, delegateNamesOf, loadPageTypesIfPresent, roleStemResolver, typesOfRole, unknownRosterNames } from './page-types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
-import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, isLeadRole, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, serverEntryProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
+import { canonicalFloorProblems, canonicalServerTools, coverageFileProblems, isLeadRole, isReadOnlyRole, nativeToolOrder, nativeToolsWanted, postureProblems, publishingBlockProblems, requestsBlockProblems, serverEntryProblems, serverPlacementProblems, sessionTrackingProblems, type NativeKind } from './native-repository-rules.js';
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -145,9 +145,13 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
             wanted = nativeToolsWanted(expected, held, { coordinator: true });
           } catch (error) { findings.push(error instanceof Error ? error.message : String(error)); }
         }
-        const required = connectorToolsOf(types);
-        if (facts.meta.tools === undefined || !isDeepStrictEqual(held, wanted)) findings.push(`Native tools differ from the generator's form: expected ${[...wanted, ...servers, ...required].join(', ')}.`);
-        for (const problem of serverEntryProblems(facts.tools, servers, { required, allowed: coordinator ? rosterServerEntries(registry, delegateNamesOf(facts.tools)) : [] })) findings.push(`Native tools differ from the generator's form: ${problem}.`);
+        const connectors = connectorToolsOf(types);
+        if (facts.meta.tools === undefined || !isDeepStrictEqual(held, wanted)) findings.push(`Native tools differ from the generator's form: expected ${[...new Set([...wanted, ...servers, ...connectors])].join(', ')}.`);
+        // The roster's entries are taken only by a role that delegates (the other roster checks here are keyed on the same class), and a read-only role takes
+        // only read-only per-tool entries from it (as canonicalServerTools does for its own servers).
+        const inherited = delegates ? rosterServerEntries(registry, delegateNamesOf(facts.tools)) : [];
+        const problems = [...serverPlacementProblems(facts.tools), ...serverEntryProblems(facts.tools, servers, { required: connectors, allowed: inherited, readOnly: isReadOnlyRole(canonicalText, facts.meta.permissionMode) })];
+        for (const problem of problems) findings.push(`Native tools differ from the generator's form: ${problem}.`);
       }
       const preloads: unknown = facts.meta.skills ?? [];
       if (!Array.isArray(preloads) || preloads.some(id => typeof id !== 'string' || !ID.test(id))) findings.push('Native Skill preloads must be semantic identifiers.');

@@ -562,7 +562,7 @@ describe('factory-check and the entries of a lead\'s roster', () => {
 
   it('refuses a route of a roster server held without the server, and accepts the server with it', async () => {
     const registry = await stageFull();
-    const route = (text: string): string => text.replace(/, mcp__playwright(?=,|$)/, '');
+    const route = (text: string): string => text.replace(/, mcp__playwright(?=,|$)/m, '');
     expect(toolsFindings(await findings(registry, 'orchestrator-engineering', 'main', text => text))).toBe('');
     expect(toolsFindings(await findings(registry, 'orchestrator-engineering', 'main', text => text.replace(/^(tools: .*)$/m, '$1, mcp__plugin_playwright_playwright')))).toBe('');
     expect(toolsFindings(await findings(registry, 'orchestrator-engineering', 'main', text => route(text).replace(/^(tools: .*)$/m, '$1, mcp__plugin_playwright_playwright')))).toContain('playwright');
@@ -572,7 +572,7 @@ describe('factory-check and the entries of a lead\'s roster', () => {
     const registry = await stageFull();
     const before = toolsFindings(await findings(registry, 'orchestrator-engineering', 'main', text => text.replace(/^tools: /m, 'tools: mcp__github, ')));
     expect(before).toContain('after the other tools');
-    const between = toolsFindings(await findings(registry, 'orchestrator-engineering', 'main', text => text.replace(/^tools: ([^,]*), /m, 'tools: $1, mcp__github, ')));
+    const between = toolsFindings(await findings(registry, 'orchestrator-engineering', 'main', text => text.replace(', Read, ', ', Read, mcp__github, ')));
     expect(between).toContain('after the other tools');
   }, 120000);
 
