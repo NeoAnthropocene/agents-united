@@ -200,8 +200,12 @@ function roleTestStub(role, facts) {
   ].join('\n');
 }
 
-function installCases(role) {
-  return [
+/**
+ * The two install cases of a role, each a block of whole lines that ends in a blank line. They are checked one at a time: other roles' cases
+ * land between them when parallel pull requests merge, and neither case then differs from what the generator writes.
+ */
+function installCaseBlocks(role) {
+  return [[
     `  it('installs the native ${role.role} for the ${role.bundle} bundle, recorded as a managed role of its canonical agent', async () => {`,
     `    await new InstallEngine().install('${role.bundle}', { targetDir: agentsDir, method: 'copy', fanout: ['claude'], nativeLane: true });`,
     `    expect(await fs.readFile(claudeAgent('${role.role}'), 'utf8')).toBe(expected('${role.role}'));`,
@@ -211,6 +215,7 @@ function installCases(role) {
     '    expect(record.managedMarker).toBe(true);',
     '  });',
     '',
+  ], [
     `  it('without the native lane, ${role.bundle} still writes the legacy projection for ${role.role}', async () => {`,
     `    await new InstallEngine().install('${role.bundle}', { targetDir: agentsDir, method: 'copy', fanout: ['claude'] });`,
     `    const text = await fs.readFile(claudeAgent('${role.role}'), 'utf8');`,
@@ -219,8 +224,7 @@ function installCases(role) {
     '    expect((await fs.readJson(lockPath)).nativeLane).toBeUndefined();',
     '  });',
     '',
-    '',
-  ].join('\n');
+  ]].map(lines => lines.join('\n') + '\n');
 }
 
 function cliCase(role, facts) {
@@ -401,12 +405,13 @@ export function planWiring(manifest, checkout, options = {}) {
       }
       if (role.canonical === null) plan.proposals.push(`${FILES.install}: write the install cases of ${role.role} by hand (it has no canonical agent).`);
       else {
-        const cases = installCases(role);
-        const first = cases.split('\n')[0];
-        if (text.includes(cases)) note('install', 'unchanged', role.role, 'install cases');
-        else if (text.includes(first)) refuse('install', role.role, 'install cases');
+        // A case that is there must equal the generator's; a case that is missing is written before the anchor case. Two missing cases go in together.
+        const blocks = installCaseBlocks(role);
+        const found = blocks.map(block => text.includes(block));
+        if (blocks.some((block, at) => !found[at] && text.includes(block.split('\n')[0]))) refuse('install', role.role, 'install cases');
+        else if (found.every(Boolean)) note('install', 'unchanged', role.role, 'install cases');
         else {
-          const next = insertBeforeLine(text, line => line.startsWith("  it('records the lane, and every projection hash matches the file on disk'"), cases);
+          const next = insertBeforeLine(text, line => line.startsWith("  it('records the lane, and every projection hash matches the file on disk'"), blocks.filter((block, at) => !found[at]).join(''));
           if (next === null) plan.refusals.push(`${FILES.install}: the anchor case "records the lane" is missing.`);
           else { text = next; note('install', 'insert', role.role, 'install cases'); }
         }
