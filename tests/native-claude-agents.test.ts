@@ -13,7 +13,7 @@ import { syncRoster } from '../src/core/native-roster.js';
 import { PUBLISHING_START, holdsPublishing, syncPublishing } from '../src/core/native-publishing.js';
 import { connectorToolsOf, loadPageTypes, roleStemResolver, typesOfRole } from '../src/core/page-types.js';
 import { REQUESTS_EXEMPT_ROLES, REQUESTS_START, syncRequests } from '../src/core/native-requests.js';
-import { MODE_LINE_GATE_SCRIPT, modeLineGateHooks } from '../src/core/mode-line-gate.js';
+import { MODE_LINE_GATE_SCRIPT } from '../src/core/mode-line-gate.js';
 import { READ_ONLY_GUARD_SCRIPT } from '../src/core/readonly-guard.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import type { SemanticCore } from '../src/core/types.js';
@@ -458,10 +458,9 @@ const ROLES: RoleSpec[] = BASE_ROLES.map(role => {
 
 const WRITERS = ['Bash', 'PowerShell', 'Write', 'Edit', 'MultiEdit', 'NotebookEdit'];
 const fileOf = (role: RoleSpec): string => path.resolve('registry/hosts/claude/agents', `${role.name}.md`);
-/** The hooks of a role as generated: its guard, for the factory evaluator also its hand-back entry (ADR 0070, `handback-check.ts`), and for the digital-agency lead also the gate on its first message (Plan 035 N2 slice e, `mode-line-gate.ts`). */
+/** The hooks of a role as generated: its guard, for the factory evaluator also its hand-back entry (ADR 0070), and for a role of `MODE_LINE_GATE_ROLES` also the gate on its first message (ADR 0042); `expectedWorkerHooks` is the one place that says so. */
 const guardGroups = (role: RoleSpec): Record<string, unknown> => {
-  const guard = expectedWorkerHooks(role.name, role.guard);
-  return role.name === 'orchestrator-digital-agency' ? { PreToolUse: [...guard.PreToolUse, ...modeLineGateHooks().PreToolUse] } : { ...guard };
+  return { ...expectedWorkerHooks(role.name, role.guard) };
 };
 
 /** A project directory holding the committed guard scripts where the agents' `${CLAUDE_PROJECT_DIR}/.claude/hooks/...` points. */

@@ -441,3 +441,85 @@ describe('the conformance runner (ADR 0075, decision 4)', () => {
     expect(files.length).toBeLessThan(40);
   });
 });
+
+describe('the wiring generator on the live checkout and on interleaved install cases (ADR 0075)', () => {
+  it('finds the live checkout complete for the devops-engineering manifest: no refusal and no planned change', () => {
+    const plan = planWiring(manifest(), ROOT, {});
+    expect(plan.refusals).toEqual([]);
+    expect(plan.edits.filter((edit: Json) => edit.action !== 'unchanged')).toEqual([]);
+  });
+
+  it('accepts a role whose two install cases are not next to each other, as parallel merges leave them', async () => {
+    const checkout = await copyCheckout();
+    const file = path.join(checkout, 'tests/native-install-lane.test.ts');
+    const text = read(file);
+    const second = "  it('without the native lane, devops-engineering still writes the legacy projection";
+    const at = text.indexOf(second);
+    expect(at, 'the legacy case of the frozen file').toBeGreaterThan(0);
+    const filler = "  it('another role is installed between the two', async () => {\n    expect(true).toBe(true);\n  });\n\n";
+    await fs.writeFile(file, text.slice(0, at) + filler + text.slice(at));
+    const plan = planWiring(manifest(), checkout, {});
+    expect(plan.refusals).toEqual([]);
+    expect(plan.edits.filter((edit: Json) => edit.file === 'tests/native-install-lane.test.ts').map((edit: Json) => edit.action)).not.toContain('insert');
+  });
+
+  it('writes only the install case that is missing, and still refuses a case that is there but different', async () => {
+    const checkout = await copyCheckout();
+    const file = path.join(checkout, 'tests/native-install-lane.test.ts');
+    const text = read(file);
+    const second = "  it('without the native lane, devops-engineering still writes the legacy projection";
+    const from = text.indexOf(second);
+    const to = text.indexOf("  it('records the lane", from);
+    expect(from, 'the legacy case of the frozen file').toBeGreaterThan(0);
+    expect(to, 'the anchor case of the frozen file').toBeGreaterThan(from);
+    await fs.writeFile(file, text.slice(0, from) + text.slice(to));
+    const missing = planWiring(manifest(), checkout, {});
+    expect(missing.refusals).toEqual([]);
+    applyWiring(missing, checkout);
+    expect(read(file)).toBe(text);
+    await fs.writeFile(file, text.replace("expect(text).not.toContain('claude-native');", "expect(text).toContain('claude-native');"));
+    const different = planWiring(manifest(), checkout, {});
+    expect(different.refusals.join('\n')).toContain('tests/native-install-lane.test.ts: devops-engineer install cases differs');
+  });
+
+  describe('a role\'s install case must be there exactly once, with its generated title and body', () => {
+    const NATIVE_TITLE = "  it('installs the native devops-engineer for the devops-engineering bundle";
+    const LEGACY_TITLE = "  it('without the native lane, devops-engineering still writes the legacy projection";
+    /** The frozen install-lane file, and the native case of devops-engineer cut out of it (it sits next to the legacy case there). */
+    async function withNativeCase(change: (text: string, nativeCase: string) => string): Promise<{ checkout: string; plan: Json }> {
+      const checkout = await copyCheckout();
+      const file = path.join(checkout, 'tests/native-install-lane.test.ts');
+      const text = read(file);
+      const from = text.indexOf(NATIVE_TITLE);
+      const to = text.indexOf(LEGACY_TITLE, from);
+      expect(from, 'the native case of the frozen file').toBeGreaterThan(0);
+      expect(to, 'the legacy case follows it').toBeGreaterThan(from);
+      await fs.writeFile(file, change(text, text.slice(from, to)));
+      return { checkout, plan: planWiring(manifest(), checkout, {}) };
+    }
+    const refusedAsDiffering = (plan: Json): void => {
+      expect(plan.refusals.join('\n')).toContain('tests/native-install-lane.test.ts: devops-engineer install cases differs');
+      expect(plan.edits.filter((edit: Json) => edit.file === 'tests/native-install-lane.test.ts').map((edit: Json) => edit.action)).not.toContain('insert');
+    };
+
+    it('refuses an exact case that is there twice', async () => {
+      const { plan } = await withNativeCase((text, nativeCase) => text.replace(nativeCase, nativeCase + nativeCase));
+      refusedAsDiffering(plan);
+    });
+
+    it('refuses an exact case beside an edited copy of it', async () => {
+      const { plan } = await withNativeCase((text, nativeCase) => text.replace(nativeCase, nativeCase + nativeCase.replace("expect(record.kind).toBe('role');", "expect(record.kind).toBe('agent');")));
+      refusedAsDiffering(plan);
+    });
+
+    it('refuses a case whose title was edited, and does not write another beside it', async () => {
+      const { plan } = await withNativeCase((text, nativeCase) => text.replace(nativeCase, nativeCase.replace(NATIVE_TITLE, "  it('installs the devops-engineer natively")));
+      refusedAsDiffering(plan);
+    });
+
+    it('refuses the generated body of a case under another title that is there next to the exact case', async () => {
+      const { plan } = await withNativeCase((text, nativeCase) => text.replace(nativeCase, nativeCase + nativeCase.replace(NATIVE_TITLE, "  it('another title for the same body")));
+      refusedAsDiffering(plan);
+    });
+  });
+});

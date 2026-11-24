@@ -113,7 +113,7 @@ describe('every committed native Claude agent with a hooks block', () => {
 
 // This calls the real generator functions `nativeGuardFileHooks`, `readOnlyGuardFileHooks`, `modeLineGateHooks` and `renderHooks` (the rendering behind `syncHooks`).
 // It re-implements two choices the `UPDATE_NATIVE=1` path makes in tests/native-claude-agents.test.ts: which guard kind a role has (here read from the file with
-// `inspectNativeAgent`) and the mode-line group of the digital-agency lead. No single exported function renders a role's whole hooks block.
+// `inspectNativeAgent`); `expectedWorkerHooks` adds the mode-line group of the roles in `MODE_LINE_GATE_ROLES`. No single exported function renders a role's whole hooks block.
 describe('the hooks block of every committed native Claude agent is what the real generator renders', () => {
   const files = fs.readdirSync(AGENTS).filter(file => file.endsWith('.md'));
   it.each(files)('%s', file => {
@@ -123,8 +123,7 @@ describe('the hooks block of every committed native Claude agent is what the rea
       expect(text, `${file} has no guard and no generated hooks block`).not.toContain('agents-united:hooks:start');
       return;
     }
-    const base = expectedWorkerHooks(file.replace(/\.md$/, ''), guard);
-    const hooks = file === 'orchestrator-digital-agency.md' ? { PreToolUse: [...base.PreToolUse, ...modeLineGateHooks().PreToolUse] } : base;
+    const hooks = expectedWorkerHooks(file.replace(/\.md$/, ''), guard);
     const block = /# agents-united:hooks:start[^\n]*\n([\s\S]*?)\n  # agents-united:hooks:end/.exec(text)?.[1];
     expect(block, file).toBe(renderHooks(hooks));
   });
