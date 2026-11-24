@@ -1616,7 +1616,7 @@ function renderBundleDetailTree(bundle: BundleDefinition): string {
     lines.push(...formatWrappedList(domainSkills, '│   ').map(line => pc.yellow(line)));
     lines.push(`├── 🔄 Workflows (${workflows.length}):`);
     lines.push(...formatWrappedList(workflows.map(workflow => workflow.replace(/\.md$/, '')), '│   ').map(line => pc.magenta(line)));
-    lines.push(`├── 🔌 Prerequisites: ${pc.dim('None (Self-contained universal suite)')}`);
+    lines.push(`├── 🔌 Prerequisites: ${(bundle.prerequisites?.requiredMcps?.length ?? 0) > 0 ? pc.dim(`None required; optional MCPs: ${describeRequiredMcps(bundle.prerequisites!.requiredMcps!)}`) : pc.dim('None (Self-contained universal suite)')}`);
     lines.push(`└── 💡 Execution Modes: ${pc.green('Operational')}`);
     return lines.join('\n');
   }

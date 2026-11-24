@@ -164,7 +164,7 @@ describe('the stdio fallback is never reached for the five', () => {
     expect(result.skippedServers).toEqual(FIVE);
     const text = await fs.readFile(file, 'utf8');
     for (const name of FIVE) expect(text, name).not.toContain(name);
-    expect(text).not.toContain('npx');
+    expect(Object.keys((JSON.parse(text) as { mcpServers: Record<string, unknown> }).mcpServers)).toEqual(['github']);
   });
 });
 
