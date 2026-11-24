@@ -16,7 +16,7 @@ describe.each(TIER1_SPECIALISTS)('Tier-1 specialist %s', role => {
     expect(afterFloor(role)).toMatch(/Always end the report with an `Open items` section/);
   });
 
-  it('says what goes there: what it could not do or verify, a question for the lead, or "none"', () => {
+  it('says what goes there: what it could not do or verify, a question for a peer, or "none"', () => {
     expect(afterFloor(role)).toMatch(/Always end the report with an `Open items` section[^.]*could not do or verify[^.]*"none"/);
   });
 

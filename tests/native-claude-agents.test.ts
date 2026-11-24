@@ -598,30 +598,38 @@ describe.each(ROLES)('native Claude $name', role => {
     for (const skill of role.skills) expect(fs.existsSync(path.resolve('registry/skills', skill, 'SKILL.md')), skill).toBe(true);
   });
 
-  it('names no tool outside its grant, and only skills that exist, in the authored guidance', () => {
-    // The generated requests block (ADR 0076) stays in the scan. A specialist's block names no tool. A lead's block names `Workflow` only in the sentence that runs a saved workflow
-    // when `Workflow` is among its tools (six leads lack it), so for a lead that one token is exempt inside the block; every other tool the block names must be in the grant.
-    // The generated publishing block (ADR 0077) is checked by its own suite: it names the bundled skills design and slides, which only a role that lists them can invoke.
-    const authored = read().split('<!-- agents-united:floor:end -->')[1];
-    const requestsBlock = /<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/;
-    const withoutPublishing = authored.replace(/<!-- agents-united:publishing:start[^>]*-->[\s\S]*?<!-- agents-united:publishing:end -->/, '');
-    const body = withoutPublishing.replace(requestsBlock, '');
-    const block = requestsBlock.exec(withoutPublishing)?.[0] ?? '';
+  // The generated requests block (ADR 0076) stays in the scan. A specialist's block names no tool. A lead's block names `Workflow` in two conditional sentences only: the saved-workflow
+  // row ("when `Workflow` is among your tools") and the note on what the host withholds from a lead that runs as a subagent. Six leads lack the tool, so for a lead those two mentions are exempt;
+  // every other tool the block names, and any other mention of `Workflow` in it, must be in the grant.
+  const WORKFLOW_SENTENCES: RegExp[] = [/when `Workflow` is among your tools/g, /withholds `AskUserQuestion`, `Workflow` and `ScheduleWakeup`/g];
+  const REQUESTS_BLOCK = /<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/;
+  const PUBLISHING_BLOCK = /<!-- agents-united:publishing:start[^>]*-->[\s\S]*?<!-- agents-united:publishing:end -->/;
+  /** The tool names a text puts in backticks that the role's grant does not hold; `exemptWorkflowSentences` blanks the token in the two sentences above. */
+  const ungranted = (text: string, exemptWorkflowSentences: boolean): string[] => {
     const catalog = new Set(loadToolPolicy('registry', 'claude').catalog.map(entry => entry.name));
     const held = new Set(declaredNames());
-    const BLOCK_OPTIONAL = new Set(['Workflow']);
-    const scan = (text: string, optional: ReadonlySet<string>): void => {
-      for (const match of text.matchAll(/`([A-Za-z_][\w-]*)`/g)) {
-        const token = match[1];
-        if (optional.has(token)) continue;
-        if (catalog.has(token) || token.startsWith('mcp__')) {
-          const covered = held.has(token) || [...held].some(tool => tool.startsWith('mcp__') && token.startsWith(`${tool}__`));
-          expect(covered, `${token} is named but not granted`).toBe(true);
-        }
-      }
-    };
-    scan(body, new Set());
-    scan(block, role.mainThread ? BLOCK_OPTIONAL : new Set());
+    const scanned = exemptWorkflowSentences ? WORKFLOW_SENTENCES.reduce((acc, sentence) => acc.replace(sentence, found => found.replace('`Workflow`', 'Workflow')), text) : text;
+    return [...scanned.matchAll(/`([A-Za-z_][\w-]*)`/g)].map(match => match[1]).filter(token => (catalog.has(token) || token.startsWith('mcp__'))
+      && !(held.has(token) || [...held].some(tool => tool.startsWith('mcp__') && token.startsWith(`${tool}__`))));
+  };
+
+  it('flags a `Workflow` mention in a lead\'s requests block that is not one of the two conditional sentences', () => {
+    if (!role.mainThread || declaredNames().includes('Workflow')) return;
+    const block = REQUESTS_BLOCK.exec(read().split('<!-- agents-united:floor:end -->')[1])?.[0];
+    if (block === undefined) return;
+    expect(ungranted(block, true)).toEqual([]);
+    const planted = block.replace('<!-- agents-united:requests:end -->', '- Always start with `Workflow`.\n<!-- agents-united:requests:end -->');
+    expect(ungranted(planted, true)).toEqual(['Workflow']);
+  });
+
+  it('names no tool outside its grant, and only skills that exist, in the authored guidance', () => {
+    // The generated publishing block (ADR 0077) is checked by its own suite: it names the bundled skills design and slides, which only a role that lists them can invoke.
+    const authored = read().split('<!-- agents-united:floor:end -->')[1];
+    const withoutPublishing = authored.replace(PUBLISHING_BLOCK, '');
+    const body = withoutPublishing.replace(REQUESTS_BLOCK, '');
+    const block = REQUESTS_BLOCK.exec(withoutPublishing)?.[0] ?? '';
+    expect(ungranted(body, false)).toEqual([]);
+    expect(ungranted(block, role.mainThread === true)).toEqual([]);
     // Only a table whose second column is headed "Skill" names skills; other tables (bundles, say) are not checked here.
     let inSkillTable = false;
     for (const line of body.split('\n')) {
