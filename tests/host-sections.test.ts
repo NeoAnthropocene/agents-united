@@ -380,3 +380,85 @@ describe('a section that is removed leaves one separator, not two', () => {
     expect(hostSections(`a\n\n${OPEN}\nb\n${END}\n\nc\n`, 'cursor')).toBe('a\n\nc\n');
   });
 });
+
+describe('the guard follows what is installed, not what the source holds now (ADR 0079, last fix)', () => {
+  let root: string;
+  beforeEach(async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-host-lost-'));
+    const registry = path.join(root, 'registry');
+    await fs.ensureDir(path.join(registry, 'agents'));
+    await fs.ensureDir(path.join(registry, 'rules'));
+    await fs.writeFile(path.join(registry, 'rules', 'GEMINI.md'), '# rules\n');
+    await fs.outputJson(path.join(registry, 'hosts', 'antigravity', 'mcp', 'servers.json'), { servers: {} });
+    await fs.writeJson(path.join(registry, 'bundles.json'), {
+      bundles: { t: { name: 't', tier: 'domain', domain: 'x', category: 'x', description: 'x', orchestrator: 'orchestrator-t.md', agents: [], skills: [], version: '1.0.0' } },
+    });
+    await fs.writeFile(path.join(registry, 'agents', 'orchestrator-t.md'), `---\nname: orchestrator-t\ndescription: t\n---\nBody.\n\n${OPEN}\nFor Antigravity.\n${END}\n`);
+  });
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await fs.remove(root);
+  });
+
+  const engine = (): InstallEngine => new InstallEngine(new RegistryResolver(path.join(root, 'registry')));
+  const install = (options: Record<string, unknown> = {}): Promise<unknown> => engine().install('t', { targetDir: path.join(root, 'ws', '.agents'), method: 'symlink', ...options });
+  const stored = (): string => path.join(root, 'ws', '.agents', 'agents', 'orchestrator-t.md');
+
+  it('refuses a symlink-mode reinstall over an edited rendered copy after its source lost its last section, and leaves the bytes unchanged', async () => {
+    await install();
+    expect((await fs.lstat(stored())).isSymbolicLink()).toBe(false);
+    await fs.appendFile(stored(), '\nMy own note.\n');
+    await fs.writeFile(path.join(root, 'registry', 'agents', 'orchestrator-t.md'), '---\nname: orchestrator-t\ndescription: t\n---\nBody without a section.\n');
+    const before = await fs.readFile(stored());
+    await expect(install()).rejects.toThrow(/user modifications/);
+    expect((await fs.readFile(stored())).equals(before)).toBe(true);
+    await install({ force: true });
+    expect(await fs.readFile(stored(), 'utf8')).not.toContain('My own note.');
+  });
+
+  it('leaves an unedited rendered copy to be replaced by a link after its source lost its last section', async () => {
+    await install();
+    await fs.writeFile(path.join(root, 'registry', 'agents', 'orchestrator-t.md'), '---\nname: orchestrator-t\ndescription: t\n---\nBody without a section.\n');
+    await install();
+    expect(await fs.readFile(stored(), 'utf8')).toContain('Body without a section.');
+  });
+
+  it('finds the lockfile record when a backslash comes back from path.relative on a platform whose separator is a slash', async () => {
+    await install();
+    await fs.appendFile(stored(), '\nMy own note.\n');
+    const before = await fs.readFile(stored());
+    const relative = path.relative.bind(path);
+    const separator = path.sep;
+    vi.spyOn(path, 'relative').mockImplementation((from: string, to: string) => relative(from, to).split('/').join(String.fromCharCode(92)));
+    Object.defineProperty(path, 'sep', { value: '/', configurable: true, writable: true });
+    try {
+      await expect(install()).rejects.toThrow(/user modifications/);
+    } finally {
+      Object.defineProperty(path, 'sep', { value: separator, configurable: true, writable: true });
+      vi.restoreAllMocks();
+    }
+    expect((await fs.readFile(stored())).equals(before)).toBe(true);
+  });
+});
+
+describe('every write helper of the installer is accounted for (ADR 0079, last fix)', () => {
+  it('lists the helpers that write or place a file, so that a new one is reviewed: only the store copy of an agent is a rendered asset of the store', () => {
+    const source = read('src/core/installer.ts');
+    const count = (helper: string): number => [...source.matchAll(new RegExp(`fs\\.${helper}\\(`, 'g'))].length;
+    expect({
+      writeFile: count('writeFile'),
+      outputFile: count('outputFile'),
+      appendFile: count('appendFile'),
+      copy: count('copy'),
+      copyFile: count('copyFile'),
+      move: count('move'),
+      ensureSymlink: count('ensureSymlink'),
+      symlink: count('symlink'),
+      writeJson: count('writeJson'),
+      outputJson: count('outputJson'),
+    }).toEqual({ writeFile: 5, outputFile: 0, appendFile: 0, copy: 3, copyFile: 0, move: 1, ensureSymlink: 1, symlink: 0, writeJson: 3, outputJson: 0 });
+    // writeFile: deployProjection (managed projections and the Codex bridge), two restores, the legacy workflow migration, and the rendered store copy of an agent.
+    // copy: deployFile (twice: the fallback and the plain copy of an asset) and the file of a projection artifact. move: the sidecar upgrade. ensureSymlink: deployFile.
+    // writeJson: the lockfile, three times. None of these writes a rendered asset into the store but the agent copy, which is guarded by the loop that writes it.
+  });
+});
