@@ -1,9 +1,11 @@
+import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
 import yaml from 'yaml';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DoctorEngine } from '../src/core/doctor.js';
+import { installTargetHostKeys } from '../src/core/hosts.js';
 import { InstallEngine } from '../src/core/installer.js';
 import { HOSTED_MEDIA_SERVERS, IMAGE_SERVER_ADD_COMMAND, mcpAddCommand } from '../src/core/mcp-add-commands.js';
 import { PrerequisiteChecker } from '../src/core/prerequisites.js';
@@ -228,5 +230,150 @@ describe('the doctor and the install panel print the add command of the table', 
     const antigravity = await new PrerequisiteChecker().evaluate(agency, { cwd: workspace, targetHosts: ['antigravity'] });
     expect(antigravity.items.find(item => item.name === 'higgsfield')!.details).not.toContain('claude mcp add');
     expect(claude.allSatisfied).toBe(false);
+  });
+});
+
+describe('the install panel reaches the Claude command through the CLI wiring', () => {
+  let root: string;
+  const cli = path.resolve('dist/cli.js');
+  const strip = (text: string): string => text.replace(new RegExp(String.fromCharCode(27) + '\\[[0-9;]*m', 'g'), '');
+
+  beforeEach(async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-media-cli-'));
+    await fs.ensureDir(path.join(root, 'ws'));
+    await fs.ensureDir(path.join(root, 'home'));
+  });
+  afterEach(async () => {
+    await fs.remove(root);
+  });
+
+  const add = (args: string[]): string => {
+    const result = spawnSync(process.execPath, [cli, 'add', ...args, '-y', '--dry-run'], {
+      cwd: path.join(root, 'ws'),
+      encoding: 'utf8',
+      env: { ...process.env, HOME: path.join(root, 'home'), USERPROFILE: path.join(root, 'home'), APPDATA: path.join(root, 'appdata') },
+    });
+    return strip(result.stdout + result.stderr);
+  };
+  const COMMAND = 'claude mcp add --scope project --transport http higgsfield https://mcp.higgsfield.ai';
+
+  it('prints the command when Claude is the target (-t claude puts it in the fan-out)', () => {
+    expect(add(['digital-agency', '-t', 'claude'])).toContain(COMMAND);
+  });
+
+  it('prints it when Claude is named with --fanout', () => {
+    expect(add(['digital-agency', '--fanout', 'claude'])).toContain(COMMAND);
+  });
+
+  it('does not print it when Claude is not a target', () => {
+    const out = add(['digital-agency']);
+    expect(out).toContain('higgsfield');
+    expect(out).not.toContain('claude mcp add');
+  });
+
+  it('joins the hosts and the fan-out in one helper, with the default host when both are empty', () => {
+    expect(installTargetHostKeys(['agents'], ['claude'])).toEqual(['agents', 'claude']);
+    expect(installTargetHostKeys(['agents', 'cline'], ['claude', 'cline'])).toEqual(['agents', 'cline', 'claude']);
+    expect(installTargetHostKeys([], [])).toEqual(['agents']);
+  });
+
+  it('has every evaluation of a bundle in the CLI name the hosts it targets, the guided install included', () => {
+    const source = read('src/cli.ts');
+    const calls = [...source.matchAll(/\.evaluate\(([^;]*)\);/g)].map(match => match[1]!);
+    expect(calls.length).toBeGreaterThanOrEqual(2);
+    for (const call of calls) expect(call, call).toContain('targetHosts');
+  });
+});
+
+describe('optional servers are read through parentBundle (ADR 0079)', () => {
+  type Def = { name: string; parentBundle?: string; prerequisites?: { requiredMcps?: Array<{ name: string; optional?: boolean }> } };
+  const raw = (): Record<string, Def> => (JSON.parse(read('registry/bundles.json')) as { bundles: Record<string, Def> }).bundles;
+  const optionalOf = (def: Def | null | undefined): string[] => (def?.prerequisites?.requiredMcps ?? []).filter(mcp => mcp.optional === true).map(mcp => mcp.name).sort();
+
+  it('changes the optional servers of exactly these bundles, and only by the servers named here', async () => {
+    const resolver = new RegistryResolver();
+    const changes: Record<string, { gains: string[]; loses: string[] }> = {};
+    for (const [name, def] of Object.entries(raw())) {
+      if (def.parentBundle === undefined) continue;
+      const before = optionalOf(def);
+      const after = optionalOf(await resolver.getBundle(name));
+      const gains = after.filter(server => !before.includes(server));
+      const loses = before.filter(server => !after.includes(server));
+      if (gains.length > 0 || loses.length > 0) changes[name] = { gains, loses };
+    }
+    expect(changes).toEqual({
+      'seo-content-marketing': { gains: ['image-gen'], loses: [] },
+      'product-led-growth': { gains: ['image-gen'], loses: [] },
+      'lifecycle-email-marketing': { gains: ['image-gen'], loses: [] },
+    });
+  });
+
+  it('inherits optional entries only: a required server of the parent is never taken', async () => {
+    const resolver = new RegistryResolver();
+    for (const [name, def] of Object.entries(raw())) {
+      if (def.parentBundle === undefined) continue;
+      const own = (def.prerequisites?.requiredMcps ?? []).filter(mcp => mcp.optional !== true).map(mcp => mcp.name).sort();
+      const merged = ((await resolver.getBundle(name))?.prerequisites?.requiredMcps ?? []).filter(mcp => mcp.optional !== true).map(mcp => mcp.name).sort();
+      expect(merged, name).toEqual(own);
+    }
+  });
+
+  it('copies nothing into the raw bundle list: the three children have no prerequisites of their own', () => {
+    for (const name of ['seo-content-marketing', 'product-led-growth', 'lifecycle-email-marketing']) expect(raw()[name]!.prerequisites, name).toBeUndefined();
+  });
+
+  describe('the doctor and the install panel for a standalone child', () => {
+    let root: string;
+    let workspace: string;
+    const originalCwd = process.cwd();
+    const KEYS = ['USERPROFILE', 'HOME', 'APPDATA', 'CLAUDE_BIN_PATH', 'CLINE_BIN_PATH'] as const;
+    const saved: Record<string, string | undefined> = {};
+
+    beforeEach(async () => {
+      root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-media-child-'));
+      workspace = path.join(root, 'ws');
+      await fs.ensureDir(workspace);
+      await fs.ensureDir(path.join(root, 'home'));
+      for (const key of KEYS) saved[key] = process.env[key];
+      process.env.USERPROFILE = path.join(root, 'home');
+      process.env.HOME = path.join(root, 'home');
+      process.env.APPDATA = path.join(root, 'appdata');
+      delete process.env.CLAUDE_BIN_PATH;
+      delete process.env.CLINE_BIN_PATH;
+      process.chdir(workspace);
+    });
+    afterEach(async () => {
+      process.chdir(originalCwd);
+      for (const key of KEYS) {
+        if (saved[key] === undefined) delete process.env[key];
+        else process.env[key] = saved[key];
+      }
+      await fs.remove(root);
+    });
+
+    it('has no warning for the image server after a standalone install of a child that holds the creative designer', async () => {
+      const agentsDir = path.join(workspace, '.agents');
+      await new InstallEngine().install('seo-content-marketing', { targetDir: agentsDir, method: 'copy' });
+      expect(fs.existsSync(path.join(agentsDir, 'agents', 'subagent-marketing-creative-designer.md'))).toBe(true);
+      const report = await DoctorEngine.runDoctor(agentsDir, 'claude');
+      expect([...(report.warnings ?? []), ...(report.issues ?? [])].join('\n')).not.toContain('MCP server "image-gen"');
+    });
+
+    it('shows the image server as an optional line in the install panel of a child, with its command for Claude', async () => {
+      const child = (await new RegistryResolver().getBundle('product-led-growth'))!;
+      const result = await new PrerequisiteChecker().evaluate(child, { cwd: workspace, targetHosts: ['claude'] });
+      const item = result.items.find(entry => entry.name === 'image-gen')!;
+      expect(item).toMatchObject({ satisfied: false, optional: true });
+      expect(item.details).toContain(IMAGE_SERVER_ADD_COMMAND);
+      expect(result.allSatisfied).toBe(true);
+    });
+  });
+});
+
+describe('the mcp-setup skill is installed with the designer that points to it (ADR 0079)', () => {
+  it('is in the skill lists of growth-marketing and performance-paid-acquisition, and the skill exists', () => {
+    const bundles = (JSON.parse(read('registry/bundles.json')) as { bundles: Record<string, { skills?: string[] }> }).bundles;
+    for (const name of ['growth-marketing', 'performance-paid-acquisition']) expect(bundles[name]!.skills, name).toContain('mcp-setup');
+    expect(fs.existsSync(path.resolve('registry/skills/mcp-setup/SKILL.md'))).toBe(true);
   });
 });

@@ -55,14 +55,14 @@ describe('native marketing-creative-designer: the image tool, in the words of th
       expect(tableRow(body(), skill), skill).toBe(tableRow(agency(), skill));
     }
     for (const name of ['growth-marketing', 'performance-paid-acquisition']) {
-      expect(bundles()[name]!.skills, name).toEqual(expect.arrayContaining(['image-creation', 'image-generation']));
+      expect(bundles()[name]!.skills, name).toEqual(expect.arrayContaining(['image-creation', 'image-generation', 'mcp-setup']));
     }
   });
 
   it('says in the Boundaries that it holds the one tool of an optional server and what happens while the server is not connected', () => {
     const boundaries = section('Boundaries of this host');
     expect(boundaries).toContain('You hold the one image tool `mcp__image-gen__generate_image` of the optional `image-gen` server');
-    expect(boundaries).toMatch(/while the server is not connected, a photograph or raster scene is an image brief/i);
+    expect(boundaries).toMatch(/while the server is not connected, a generated photo or raster scene is an image brief/i);
     expect(boundaries).toContain('never say an image was generated that was not');
     expect(boundaries).not.toMatch(/No image-generation tool is bound/);
   });
@@ -70,7 +70,8 @@ describe('native marketing-creative-designer: the image tool, in the words of th
   it('says in its description that photographs come only through the optional image server, within 300 characters', () => {
     const description = /^description: (.*)$/m.exec(text())![1]!;
     expect(description.length).toBeLessThanOrEqual(300);
-    expect(description).toMatch(/photos only via the optional image server/i);
+    expect(description).toMatch(/generated photos only via the optional image server/i);
+    expect(String(/^description: (.*)$/m.exec(nativeText('agency-creative-designer'))![1])).toMatch(/generated photos only via the optional image server/i);
     expect(description).not.toMatch(/No image tool is bound/);
   });
 

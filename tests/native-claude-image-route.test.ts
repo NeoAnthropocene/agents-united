@@ -373,6 +373,19 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     expect(a).toMatch(/follows from the shared tool/);
   });
 
+  it('names the mcp-setup skill added to the same two bundles, because the designer\'s rule on a missing key points to it', () => {
+    const a = adr();
+    expect(a).toMatch(/`mcp-setup`[^.]*`growth-marketing` and `performance-paid-acquisition`/);
+    expect(a).toMatch(/prints the command/);
+  });
+
+  it('says that the bundles that extend growth-marketing read its optional servers through parentBundle, and no longer says they are unchanged', () => {
+    const a = adr();
+    expect(a).toMatch(/through `parentBundle`/);
+    expect(a).toMatch(/`seo-content-marketing`, `product-led-growth` and `lifecycle-email-marketing`/);
+    expect(a).not.toMatch(/do not hold the designer and are unchanged/);
+  });
+
   it('is pointed to from the status of ADR 0049, whose first words stay as they were', () => {
     const status = read('docs/adr/0049-the-creative-designer-may-generate-photographs.md').split('\n').find(line => line.startsWith('- **Status**')) ?? '';
     expect(status).toMatch(/^- \*\*Status\*\*: Accepted, 2026-10-08; amended 2026-10-09/);

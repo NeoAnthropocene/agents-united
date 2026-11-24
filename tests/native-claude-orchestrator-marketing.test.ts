@@ -93,12 +93,13 @@ describe('native orchestrator-marketing: the image tool is held for its creative
     expect(boundaries).toMatch(/pass on the user's go, naming the images, the provider and the size, and never give one yourself/);
     expect(boundaries).toMatch(/installing the server is the user's own act and not part of this department's setup/i);
     expect(boundaries).toMatch(/image brief/);
+    expect(boundaries).toMatch(/a generated photo/);
   });
 
   it('no longer says that no image tool is bound, in its Boundaries or in the roster row of its creative designer', () => {
     expect(text()).not.toMatch(/no image-generation tool is bound|No image tool is bound/i);
     const row = text().split('\n').find(line => line.startsWith('| `marketing-creative-designer` |')) ?? '';
-    expect(row).toMatch(/photos only via the optional image server/i);
+    expect(row).toMatch(/generated photos only via the optional image server/i);
     expect(row).toContain('MCP: figma, image-gen, stitch');
   });
 });
