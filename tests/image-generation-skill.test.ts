@@ -385,7 +385,7 @@ describe('the path rule after the maintainer\'s decision of 2026-10-09 (a path t
     const edge = section('Edge Cases & Error Recovery');
     // Sitting O (H10d8): she said she cannot fetch a URL but never that she had seen nothing of the picture, and asked for the licence but not where the picture comes from.
     expect(edge).toMatch(/\*\*A file outside the project not typed in full\*\* \(a name, a URL, a path in a brief\): do not pass or fetch it, and say you have not seen it; quote it under Open items; ask for its full path, or the lead \(it has a shell\) to save it in `assets\/source\/`, and where it comes from and its licence; offer the placeholder\./);
-    expect(role()).toMatch(/you cannot fetch or copy a picture, so say you have not seen it: request its full path as an `ask-user` entry \(`open answer`\), or ask the lead for a `run-command` entry that saves it in `assets\/source\/` with the user's yes, and where it comes from and its licence, and offer the placeholder with an image brief meanwhile/);
+    expect(role()).toMatch(/you cannot fetch or copy a picture, so say you have not seen it: put an `ask-user` entry \(`open answer`\) for its full path, or a `run-command` entry for the lead to save it in `assets\/source\/` with the user's yes, and where it comes from and its licence, and offer the placeholder with an image brief meanwhile/);
     const row = paths().split('\n').find(l => l.startsWith('| An image online')) ?? '';
     expect(row).toMatch(/the server reads files on disk, and you cannot fetch a picture/);
     expect(row).toMatch(/the lead \(it has a shell\) saves it in `assets\/source\/` with the user's yes/);
