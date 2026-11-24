@@ -26,6 +26,9 @@ skills:
   - video-generation
   - audiovisual-review
   - workflow-agency-motion-production
+mcpServers:
+  - name: higgsfield
+  - name: klingai
 inheritCustomizations: false
 effort: medium
 ---

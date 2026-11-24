@@ -62,6 +62,11 @@ mcpServers:
   - name: chrome-devtools-mcp
   - name: stitch
   - name: figma
+  - name: image-gen
+  - name: higgsfield
+  - name: klingai
+  - name: elevenlabs
+  - name: fish-audio
 rules:
   - git-guardrails.md
   - clean-code-and-architecture.md

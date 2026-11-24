@@ -49,6 +49,7 @@ skills:
 mcpServers:
   - name: stitch
   - name: figma
+  - name: image-gen
 rules:
   - quality-aesthetics-accessibility.md
   - clean-code-and-architecture.md
