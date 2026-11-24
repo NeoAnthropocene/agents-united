@@ -6,6 +6,8 @@ import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { checkFactoryArtifact } from '../src/core/factory-check.js';
 import { checkSharedPair } from '../src/core/shared-pair.js';
 import { inspectNativeAgent } from '../src/core/native-guard.js';
+import { NATIVE_GUARD_FILES } from '../src/core/guard.js';
+import { MODE_LINE_GATE_ROLES, modeLineGateHooks } from '../src/core/mode-line-gate.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import {
   canonicalDirectives, canonicalFloorProblems, canonicalGuardrails, canonicalServerTools, coverageFileProblems, invariantCoverageProblems,
@@ -641,4 +643,72 @@ describe('the re-review of option A', () => {
       expect(result).not.toContain('mcp__playwright');
     }, 120000);
   });
+});
+
+describe('factory-check and the mode-line gate (ADR 0042, ADR 0053)', () => {
+  const GUARD_FINDING = 'Native guard registration differs from its reviewed binding';
+  const GATE = JSON.stringify(modeLineGateHooks().PreToolUse[0]);
+  let full = '';
+  /** The whole registry in a scratch folder, with a minimal contract for the roles these cases measure. */
+  async function stageFull(): Promise<string> {
+    if (full) return full;
+    full = await fs.mkdtemp(path.join(os.tmpdir(), 'au-mode-line-gate-'));
+    await fs.copy(path.join(ROOT, 'registry'), full);
+    for (const stem of ['orchestrator-digital-agency', 'orchestrator-engineering', 'subagent-backend-architect']) {
+      const contract = path.join(full, 'core', `${stem}.contract.json`);
+      if (!fs.existsSync(contract)) await fs.outputJson(contract, { definition: stem, workflows: [], skills: [], hooks: [] });
+    }
+    return full;
+  }
+  afterEach(async () => { if (full) { await fs.remove(full); full = ''; } });
+
+  const roleText = (registry: string, role: string): string => fs.readFileSync(path.join(registry, 'hosts/claude/agents', `${role}.md`), 'utf8').replace(/\r\n/g, '\n');
+  /** The role's hooks line with the gate group appended to its PreToolUse list. */
+  const withGate = (text: string): string => {
+    const start = text.indexOf('  PreToolUse: [');
+    const end = text.indexOf('\n', start);
+    expect(start, 'a generated PreToolUse line').toBeGreaterThan(0);
+    expect(text.slice(start, end).endsWith(']')).toBe(true);
+    return `${text.slice(0, end - 1)},${GATE}]${text.slice(end)}`;
+  };
+  const findingsOf = async (registry: string, role: string, stem: string, loading: 'main' | 'subagent', text: string): Promise<string[]> => {
+    const file = path.join(registry, `${role}.md`);
+    await fs.writeFile(file, text);
+    return (await checkFactoryArtifact({ registryDir: registry, definition: stem, host: 'claude', artifactPath: file, loading, requiredSkills: [] })).findings;
+  };
+
+  it('lists the roles that carry the gate, and a committed role file carries it exactly when it is listed', () => {
+    expect([...MODE_LINE_GATE_ROLES]).toEqual(['orchestrator-digital-agency']);
+    const dir = path.join(ROOT, 'registry/hosts/claude/agents');
+    for (const file of fs.readdirSync(dir).filter(name => name.endsWith('.md'))) {
+      const role = file.replace(/\.md$/, '');
+      const carries = fs.readFileSync(path.join(dir, file), 'utf8').includes(NATIVE_GUARD_FILES['mode-line'].reference);
+      expect(carries, `${role} carries the gate exactly when MODE_LINE_GATE_ROLES lists it`).toBe(MODE_LINE_GATE_ROLES.includes(role));
+    }
+    for (const role of MODE_LINE_GATE_ROLES) expect(fs.existsSync(path.join(dir, `${role}.md`)), `${role} has a committed file`).toBe(true);
+  });
+
+  it('finds no guard-registration finding on the committed digital-agency lead', async () => {
+    const registry = await stageFull();
+    const findings = await findingsOf(registry, 'orchestrator-digital-agency', 'orchestrator-digital-agency', 'main', roleText(registry, 'orchestrator-digital-agency'));
+    expect(findings.filter(finding => finding.startsWith(GUARD_FINDING))).toEqual([]);
+  }, 120000);
+
+  it('refuses the digital-agency lead without its gate', async () => {
+    const registry = await stageFull();
+    const text = roleText(registry, 'orchestrator-digital-agency');
+    expect(text).toContain(`,${GATE}`);
+    const findings = await findingsOf(registry, 'orchestrator-digital-agency', 'orchestrator-digital-agency', 'main', text.replace(`,${GATE}`, ''));
+    expect(findings.filter(finding => finding.startsWith(GUARD_FINDING))).toHaveLength(1);
+  }, 120000);
+
+  it('refuses a role the list does not name when it carries the gate', async () => {
+    const registry = await stageFull();
+    for (const [role, stem, loading] of [['orchestrator-engineering', 'orchestrator-engineering', 'main'], ['backend-architect', 'subagent-backend-architect', 'subagent']] as const) {
+      const committed = await findingsOf(registry, role, stem, loading, roleText(registry, role));
+      expect(committed.filter(finding => finding.startsWith(GUARD_FINDING)), `${role} as committed`).toEqual([]);
+      const gated = await findingsOf(registry, role, stem, loading, withGate(roleText(registry, role)));
+      expect(gated.filter(finding => finding.startsWith(GUARD_FINDING)), `${role} with the gate added`).toHaveLength(1);
+    }
+  }, 120000);
 });
