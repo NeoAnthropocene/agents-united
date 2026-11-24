@@ -406,6 +406,12 @@ describe('ADR 0079: the media servers in the base roles, and the image tool shar
     expect(a).toMatch(/store copy in `\.agents\/agents\/` is the Antigravity copy/);
     expect(a).toMatch(/Other hosts \(Codex, through the `AGENTS\.md` index, which links the store copy and holds no body\) may open it/);
     expect(a).toMatch(/names its host for that reason/);
+    expect(a).toMatch(/Cline's launcher tells the model to read the store copy of the coordinator/);
+    expect(a).toMatch(/only while the Antigravity native lane is on \(`agents add --native`\)/);
+    expect(a).toMatch(/for the image server, on Antigravity the doctor says that no add command is verified/);
+    expect(a).not.toMatch(/Codex has no per-role projection and gets nothing/);
+    expect(a).toMatch(/Codex has no per-role projection; it gets `AGENTS\.md` and the store/);
+    expect(a).toMatch(/refuses[^.]*malformed[^.]*when it loads/);
     expect(a).toContain('If you are running on Antigravity:');
     expect(a).toMatch(/maintainer chose[^.]*keep the four hosted servers on the Claude marketing lead too, with one source for every host/);
     expect(a).toMatch(/Add catalog entries with the corrected addresses/);

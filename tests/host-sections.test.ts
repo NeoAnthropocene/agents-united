@@ -1,11 +1,14 @@
 import os from 'node:os';
 import path from 'node:path';
 import fs from 'fs-extra';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { hostSectionProblems, hostSections } from '../src/core/host-sections.js';
 import { ClaudeProjector } from '../src/core/claude-projector.js';
 import { ClineProjector } from '../src/core/cline-projector.js';
+import { ClineLauncher } from '../src/core/cline-launcher.js';
 import { InstallEngine } from '../src/core/installer.js';
+import { canonicalDirectives, canonicalGuardrails } from '../src/core/native-repository-rules.js';
+import { RegistryResolver } from '../src/core/registry.js';
 import { HostProjector } from '../src/core/projector.js';
 import { scanCoreForHostTokens, validateCoreSchema } from '../src/core/semantic-core.js';
 
@@ -30,7 +33,7 @@ describe('hostSections', () => {
 
   it('removes the whole section, markers included, for every other host', () => {
     for (const host of ['claude', 'cline', 'cursor', 'opencode', 'codex', 'agents', 'gemini']) {
-      expect(hostSections(body('For Antigravity only.'), host), host).toBe('Before.\n\n\nAfter.\n');
+      expect(hostSections(body('For Antigravity only.'), host), host).toBe('Before.\n\nAfter.\n');
     }
   });
 
@@ -242,5 +245,138 @@ describe('the readers of a canonical agent body (the inventory of ADR 0079)', ()
     const bytes = await fs.readFile(path.join(agentsDir, 'agents', 'orchestrator-marketing.md'));
     expect(record!.hash).toBe('sha256:' + crypto.createHash('sha256').update(bytes).digest('hex'));
     await new InstallEngine().install('growth-marketing', { targetDir: agentsDir, method: 'copy' });
+  });
+});
+
+describe('a rendered store copy is guarded like any copy (ADR 0079, review of round 2)', () => {
+  let root: string;
+  beforeEach(async () => {
+    root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-host-guard-'));
+  });
+  afterEach(async () => {
+    vi.restoreAllMocks();
+    await fs.remove(root);
+  });
+
+  const lead = (): string => path.join(root, 'ws', '.agents', 'agents', 'orchestrator-marketing.md');
+  const install = (options: Record<string, unknown> = {}): Promise<unknown> =>
+    new InstallEngine().install('growth-marketing', { targetDir: path.join(root, 'ws', '.agents'), method: 'symlink', ...options });
+
+  it('refuses a symlink-mode reinstall over an edited rendered lead, leaves it byte for byte, and lets --force rewrite it', async () => {
+    await install();
+    expect((await fs.lstat(lead())).isSymbolicLink()).toBe(false);
+    await fs.appendFile(lead(), '\nMy own note.\n');
+    const before = await fs.readFile(lead());
+    await expect(install()).rejects.toThrow(/user modifications/);
+    expect((await fs.readFile(lead())).equals(before)).toBe(true);
+    await install({ force: true });
+    expect(await fs.readFile(lead(), 'utf8')).not.toContain('My own note.');
+  });
+
+  it('finds the lockfile record when the platform path separator is a backslash', async () => {
+    await install();
+    await fs.appendFile(lead(), '\nMy own note.\n');
+    const before = await fs.readFile(lead());
+    const relative = path.relative.bind(path);
+    vi.spyOn(path, 'relative').mockImplementation((from: string, to: string) => relative(from, to).split('/').join('\\'));
+    await expect(install()).rejects.toThrow(/user modifications/);
+    vi.restoreAllMocks();
+    expect((await fs.readFile(lead())).equals(before)).toBe(true);
+  });
+
+  it('is the only rendered store asset: the other writes of the installer are projections (managed copies with their own guard) and a one-time workflow migration', () => {
+    const source = read('src/core/installer.ts');
+    const writes = [...source.matchAll(/await fs\.writeFile\(([^,]+),/g)].map(match => match[1]!.trim());
+    expect(writes.sort()).toEqual(['dest', 'dest', 'file', 'scriptTarget', 'targetSkillFile']);
+  });
+});
+
+describe('the registry refuses a malformed host section when it loads (ADR 0079, review of round 2)', () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await fs.mkdtemp(path.join(os.tmpdir(), 'au-host-registry-'));
+    await fs.ensureDir(path.join(dir, 'agents'));
+    await fs.writeJson(path.join(dir, 'bundles.json'), { bundles: {} });
+  });
+  afterEach(async () => {
+    await fs.remove(dir);
+  });
+  const agent = (text: string): Promise<void> => fs.writeFile(path.join(dir, 'agents', 'subagent-x.md'), `---\nname: subagent-x\n---\n${text}\n`);
+
+  it('loads a registry whose sections are well formed', async () => {
+    await agent(`a\n${OPEN}\nb\n${END}\nc`);
+    await expect(new RegistryResolver(dir).loadBundles()).resolves.toBeDefined();
+  });
+
+  for (const [name, text, pattern] of [
+    ['an unknown host', `a\n<!-- agents-united:host claude -->\nb\n${END}`, /names the host "claude"/],
+    ['a nested section', `a\n${OPEN}\nb\n${OPEN}\nc\n${END}\n${END}`, /nested/],
+    ['an unclosed section', `a\n${OPEN}\nb`, /not closed/],
+    ['a stray end marker', `a\n${END}`, /without a start/],
+  ] as const) {
+    it(`fails at load on ${name}, naming the file, before any asset is written`, async () => {
+      await agent(text);
+      await expect(new RegistryResolver(dir).loadBundles()).rejects.toThrow(new RegExp(`subagent-x\\.md[\\s\\S]*${pattern.source}`));
+    });
+  }
+});
+
+describe('the other readers of the store copy and of a canonical body (ADR 0079, review of round 2)', () => {
+  it('has the two canonical checks of the factory ignore an Antigravity-only guardrail or directive inside a section', () => {
+    const guard = `---\nname: x\n---\n\n## Safety Guardrails\n- Real rule.\n${OPEN}\n- Only for Antigravity.\n${END}\n\n## Next\n`;
+    expect(canonicalGuardrails(guard)).toEqual(['Real rule.']);
+    const directives = `---\nname: x\n---\n\n## Primary Directives\n1. Real directive\n${OPEN}\n2. Only for Antigravity\n${END}\n\n## Next\n`;
+    expect(canonicalDirectives(directives)).toEqual(['1. Real directive']);
+  });
+
+  it('refuses a malformed section at both checks', () => {
+    expect(() => canonicalGuardrails(`## Safety Guardrails\n- a\n${OPEN}\n- b\n`)).toThrow(/not closed/);
+    expect(() => canonicalDirectives(`## Primary Directives\n1. a\n${OPEN}\n2. b\n`)).toThrow(/not closed/);
+  });
+
+  it('shows the Cline launcher pointing at the store copy, whose paragraph opens with the Antigravity clause', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-host-cline-'));
+    try {
+      const workspace = path.join(root, 'ws');
+      await new InstallEngine().install('digital-agency', { targetDir: path.join(workspace, '.agents'), method: 'copy', fanout: ['cline'] });
+      const plan = new ClineLauncher().planActivation({
+        bundleName: 'digital-agency',
+        workspace,
+        scope: 'project',
+        report: { installed: true, version: 'v3.0.55', namedTeams: true, rolePresetConsumer: 'unknown', command: { executable: 'cline', prefixArgs: [], source: 'path-executable' }, diagnostics: [] },
+        orchestrator: 'orchestrator-digital-agency.md',
+      });
+      expect(plan.bootstrapPrompt).toContain('.agents/agents/orchestrator-digital-agency.md');
+      const store = (await fs.readFile(path.join(workspace, '.agents', 'agents', 'orchestrator-digital-agency.md'), 'utf8')).replace(/\r\n/g, '\n');
+      expect(store.indexOf('If you are running on Antigravity:')).toBeGreaterThanOrEqual(0);
+      expect(store.indexOf('If you are running on Antigravity:')).toBeLessThan(store.indexOf(PARAGRAPH));
+    } finally {
+      await fs.remove(root);
+    }
+  });
+
+  it('writes the same rendered copy under the .gemini layout of the legacy Antigravity host', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'au-host-gemini-'));
+    const originalCwd = process.cwd();
+    try {
+      // A host dir is resolved from the working folder when no target dir is given: `.agents` for the store, `.gemini` for the legacy layout.
+      await fs.ensureDir(path.join(root, 'ws'));
+      process.chdir(path.join(root, 'ws'));
+      await new InstallEngine().install('growth-marketing', { method: 'copy', hosts: ['agents', 'gemini'] });
+      const copy = path.join(root, 'ws', '.gemini', 'agents', 'orchestrator-marketing.md');
+      const text = (await fs.readFile(copy, 'utf8')).replace(/\r\n/g, '\n');
+      expect(text).toContain(PARAGRAPH);
+      expect(text).not.toContain('agents-united:host');
+    } finally {
+      process.chdir(originalCwd);
+      await fs.remove(root);
+    }
+  });
+});
+
+describe('a section that is removed leaves one separator, not two', () => {
+  it('collapses the blank lines around a removed section into one', () => {
+    expect(hostSections(body('For Antigravity only.'), 'claude')).toBe('Before.\n\nAfter.\n');
+    expect(hostSections(`a\n\n${OPEN}\nb\n${END}\n\nc\n`, 'cursor')).toBe('a\n\nc\n');
   });
 });

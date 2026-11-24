@@ -153,6 +153,13 @@ describe('the add command is printed from one table', () => {
     }
   });
 
+  it('prints no serverUrl for a name that only the prototype chain knows, on Antigravity or on Claude', () => {
+    for (const name of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+      expect(mcpAddCommand('antigravity', name, '/work/project'), name).toBe(`Add it with: agy mcp add ${name} -- <command> [args...]`);
+      expect(mcpAddCommand('claude', name, '/work/project'), name).toBe(`Add it with: claude mcp add ${name} -- <command> [args...]`);
+    }
+  });
+
   it('keeps the generic form for every other server, and names no verified command for the image server on Antigravity', () => {
     expect(mcpAddCommand('claude', 'github', '/work/project')).toBe('Add it with: claude mcp add github -- <command> [args...]');
     expect(mcpAddCommand('antigravity', 'github', '/work/project')).toBe('Add it with: agy mcp add github -- <command> [args...]');
