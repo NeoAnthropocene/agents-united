@@ -202,7 +202,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     it('carries the planning consultation, the report sections and the inbox rule as written', () => {
       expect(peers()).toContain('- **Planning consultation.** When the lead consults you before the plan is accepted, answer with a bounded scope-of-work statement');
       expect(peers()).toContain('- **Report sections, always present:** `Peer messages received`');
-      expect(peers()).toContain('`Open items` (unanswered questions, missing peer input and blockers, or "none").');
+      expect(peers()).toContain('`Open items` (what you could not do or verify, a question for a peer, or "none"; a question for the user goes under `Requests for the lead`).');
       expect(peers()).toContain('- **Check your inbox before you finish, and do not wait for a reply.**');
       expect(peers()).toContain('- **Your final report is your one hand-back.**');
     });
