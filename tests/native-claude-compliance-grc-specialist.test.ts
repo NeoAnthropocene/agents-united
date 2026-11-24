@@ -12,7 +12,7 @@ import { nativeText } from './helpers/native-roles.js';
  * is persona-free (the digital agency's copy `agency-compliance-grc-specialist` carries Defne in its own body, ADR 0039 decision 4), so this file
  * names no persona, no company, no agency lead and no media planning. The guard bound to the role stops a recursive delete of a root, home or
  * project folder, privilege escalation, shutdown and reboot, cloud resource-group, project or account deletion and disk formatting where a command
- * starts, `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect in the command text, and a tool call whose input it cannot read. Nothing bound stops SQL `DROP` statements, a
+ * starts, `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and a tool call whose input it cannot read. Nothing bound stops SQL `DROP` statements, a
  * recursive delete of an ordinary subfolder or traffic to an external host, so the text says exactly that and leaves the holding back to the role.
  * Every case below fires the real guard script, once for what the text says is blocked (exit 2) and once for what it says is not (exit 0).
  */
@@ -39,7 +39,7 @@ describe('native compliance-grc-specialist: the guard claims', () => {
   it('step 9 names exactly what the bound guard blocks, and what it does not', () => {
     const nine = step(9);
     expect(nine).toContain('is a seat belt, not a boundary');
-    expect(nine).toContain('It blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect in the command text, and a tool call whose input it cannot read.');
+    expect(nine).toContain('It blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and a tool call whose input it cannot read.');
     expect(nine).toContain('a recursive delete of a root, home or project folder (`rm -rf /`, `rm -rf ~`, but not `rm -rf build` of an ordinary subfolder), `sudo` and other privilege escalation, shutdown and reboot, deletion of a cloud resource group, project or account, and disk formatting');
     expect(nine).toContain('It does not stop SQL `DROP` statements, a recursive delete of an ordinary subfolder, network traffic to an external target (a `curl` or a scanner against a host), or anything hidden in variables, aliases, interpreters, encoded commands or scripts.');
     expect(nine).toMatch(/permissionMode: acceptEdits/);
@@ -65,7 +65,7 @@ describe('native compliance-grc-specialist: the guard claims', () => {
     expect(body).not.toMatch(/blocks[^.\n]*\bDROP\b/);
     expect(body).not.toMatch(/blocks[^.\n]*\b(nmap|sqlmap|ffuf|curl)\b/);
     expect(body).not.toMatch(/guard (extension|extended)|ADR 0074|ADR 0073|specs sheet/i);
-    expect(body).toContain("- A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.");
+    expect(body).toContain("- A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.");
   });
 
   describe('against the real guard script', () => {

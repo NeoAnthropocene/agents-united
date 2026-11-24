@@ -208,7 +208,7 @@ describe('the three factory byte checks follow the new script and refuse the old
 
 describe('the role texts say one true sentence about the guard', () => {
   const SENTENCE =
-    'A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+    'A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
   const AGENTS = path.resolve('registry/hosts/claude/agents');
   const named = [
     'accessibility-lead',
@@ -255,7 +255,7 @@ describe('the README says when a role guard runs and when it does not', () => {
   it('says the .env rule sees a shell `>` redirect and not cp, mv or tee', () => {
     const paragraph = README.split('\n').find(line => line.startsWith('**Enforced by the managed guard hook (Claude Code):**'));
     expect(paragraph).toBeDefined();
-    expect(paragraph).toContain('or `notebook_path` (NotebookEdit), or a shell `>` or `>>` redirect in the command text; `cp`, `mv` and `tee` to `.env` are not seen');
+    expect(paragraph).toContain('or `notebook_path` (NotebookEdit), or a shell `>` or `>>` redirect to a `.env` path the guard recognises in the command text; `cp`, `mv` and `tee` to `.env` are not seen');
   });
 
   it('names the cases where a role guard does not run and points to the session guard', () => {
