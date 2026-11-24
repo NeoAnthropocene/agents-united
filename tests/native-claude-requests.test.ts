@@ -288,7 +288,7 @@ describe('the wording that a live run showed a model reading loosely', () => {
     expect(declined).toContain('`R2: declined (user: no answer)`');
     expect(declined).toContain('`R3: declined (lead: read-only role)`');
     expect(declined).toContain('`R4: declined (user: no reason given)`');
-    expect(declined).toContain("relay the user's reason when they give one");
+    expect(declined).toContain("Relay the user's reason when they give one");
     expect(declined).toContain('A line with a who and no why is wrong');
     expect(declined).not.toContain('chose not to schedule');
     expect(declined).not.toContain('When the user gives no answer and you go on, that is');
