@@ -6,10 +6,11 @@
  */
 import yaml from 'yaml';
 import { ClaudeProjector } from './claude-projector.js';
-import { checkPublishing } from './native-publishing.js';
+import { checkPublishing, holdsPublishing } from './native-publishing.js';
+import { connectorToolsOf, storeNeedsOf } from './page-types.js';
 import { REQUESTS_EXEMPT_ROLES, checkRequests } from './native-requests.js';
 import { validateDeclaredDeltas } from './semantic-core.js';
-import type { DeclaredDelta, SemanticCore } from './types.js';
+import type { DeclaredDelta, PageType, PageTypeKind, SemanticCore } from './types.js';
 
 /** What kind of role a native file is: a specialist, a coordinator (it can delegate), or a worker of the agent factory. */
 export type NativeKind = 'specialist' | 'coordinator' | 'factory-worker';
@@ -109,13 +110,50 @@ export function requestsBlockProblems(text: string, role: { kind: NativeKind; na
 /**
  * ADR 0077 - the generated publishing block. A role whose tools hold `Artifact` carries the current block for its kind (specialist or lead);
  * a role without `Artifact` carries no publishing markers. Never throws.
+ *
+ * ADR 0078 - the page types of the role (`types`, from the table of the host; `catalogue` is the table's whole list of types) must agree with its tools line and
+ * its block: a role with a page type holds `Artifact` and a holder of `Artifact` has a page type; the connector tool of a connector type is held exactly when the
+ * list holds a connector type; a store type needs the tool search; the block is the text generated for the list. Every broken rule has its own message.
  */
-export function publishingBlockProblems(text: string, role: { kind: NativeKind; name: string; tools: readonly string[] }): string[] {
-  try {
-    return checkPublishing(text, role.kind === 'coordinator' ? 'coordinator' : 'specialist', role.tools);
-  } catch (error) {
-    return [error instanceof Error ? error.message : String(error)];
+export function publishingBlockProblems(
+  text: string,
+  role: { kind: NativeKind; name: string; tools: readonly string[]; types: readonly PageType[]; catalogue: readonly PageType[] },
+): string[] {
+  const problems: string[] = [];
+  const holds = holdsPublishing(role.tools);
+  const ids = role.types.map(type => type.id).join(', ');
+  if (holds && role.types.length === 0) {
+    if (role.catalogue.length === 0) problems.push(`Native page types: ${role.name} holds Artifact but the page type table of the host is missing; add registry/hosts/claude/page-types.json.`);
+    else if (role.kind === 'coordinator') problems.push(`Native page types: ${role.name} holds Artifact but no role in its Agent roster holds a page type; add a role that holds one to the roster, or take Artifact off the tools line.`);
+    else problems.push(`Native page types: ${role.name} holds Artifact but has no page type; add it to the holders of the page type table.`);
+  } else if (!holds && role.types.length > 0) problems.push(`Native page types: ${role.name} has page types (${ids}) but its tools line holds no Artifact.`);
+  // The tools that the page types need are checked for every role, so that a role without Artifact cannot hold the connector or miss the store tool unnoticed.
+  const connectors = connectorToolsOf(role.types);
+  const typesNeeding = (tool: string, kind: PageTypeKind): string => {
+    const named = role.types.filter(type => type.filledBy === kind && type.needs.includes(tool));
+    return `${kind === 'connector' ? 'connector' : 'store'} type${named.length === 1 ? '' : 's'} ${named.map(type => type.id).join(', ')}`;
+  };
+  const holdsTool = (tool: string): string | undefined => role.tools.find(held => held === tool || held.startsWith(`${tool}__`));
+  for (const tool of connectors) {
+    if (!role.tools.includes(tool)) problems.push(`Native page types: ${role.name} holds the ${typesNeeding(tool, 'connector')} but its tools line lacks ${tool}.`);
   }
+  for (const tool of connectorToolsOf(role.catalogue)) {
+    const held = holdsTool(tool);
+    if (!connectors.includes(tool) && held !== undefined) problems.push(`Native page types: ${role.name} holds the connector tool ${held} but no page type that needs ${tool}.`);
+  }
+  for (const tool of storeNeedsOf(role.types)) {
+    if (!role.tools.includes(tool)) problems.push(`Native page types: ${role.name} holds the ${typesNeeding(tool, 'store')} but its tools line lacks ${tool}.`);
+  }
+  for (const tool of role.tools) {
+    if (/(?:^|__)Artifact(?:Data|Comments)(?:\(|$)/.test(tool)) problems.push(`Native page types: ${role.name} holds ${tool}, which a native role never holds (no artifact store, no artifact comments).`);
+  }
+  if (holds && role.types.length === 0) return problems;
+  try {
+    problems.push(...checkPublishing(text, role.kind === 'coordinator' ? 'coordinator' : 'specialist', role.tools, role.types));
+  } catch (error) {
+    problems.push(error instanceof Error ? error.message : String(error));
+  }
+  return problems;
 }
 
 /** The tools line the generator writes: the class tools sorted, then the server tools in the canonical agent's order. */

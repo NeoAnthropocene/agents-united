@@ -17,7 +17,7 @@ describeMarketingRole({
   role: 'plg-strategist',
   type: 'subagent-plg-strategist',
   servers: ['context7'],
-  artifact: false,
+  artifact: true,
   peers: ['marketing-growth-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-campaign-specialist'],
   returns: 'the user journey flowcharts, the in-app copy specifications, the experiment hypotheses, the event telemetry schemas',
   bundle: 'product-led-growth',

@@ -150,6 +150,7 @@
         "workflow-spec",
         "grill-me",
         "performance-optimization",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -684,6 +685,7 @@
         "grill-with-docs",
         "microservices-architecture",
         "sentry-incident-triage",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1895,6 +1897,7 @@
         "grill-with-docs",
         "telemetry-monitoring",
         "terraform-style-guide",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1938,6 +1941,7 @@
         "turso-distributed-sqlite",
         "postgres-best-practices",
         "clickhouse-architecture-advisor",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"
@@ -1978,6 +1982,7 @@
         "microservices-architecture",
         "runpod-gpu-orchestration",
         "telemetry-monitoring",
+        "design-artifact-publishing",
         "host-agent-router",
         "handoff",
         "git-guardrails"

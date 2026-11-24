@@ -1,0 +1,86 @@
+{
+  "host": "claude",
+  "semantics": "The page types of a Claude account and the roles that hold them (ADR 0078). The data is fixed text in the repository and is never probed at run time. The type titles and the way each type is filled come from the types' own instructions, read from the account with the Artifact tool on 2026-11-22. A role's list is its holder entry, in the order of the catalogue above; only a specialist has an entry. A lead has none, because a lead's list is the union of the lists of the roles in its Agent(...) allowlist, computed from its tools line. filledBy says how the page gets its content: files (files published under the page), connector (the Claude Docs connector writes the content) or store (the page's own store, reached through a store tool that is loaded with ToolSearch). needs lists the tools a role must hold for the type beyond Artifact. takesLook is true for a type whose pages carry a look that a design system can give.",
+  "types": [
+    {
+      "id": "design",
+      "title": "Design",
+      "for": "a prototype or screen flow, a poster or a one-pager",
+      "filledBy": "files",
+      "needs": [],
+      "takesLook": true
+    },
+    {
+      "id": "slides",
+      "title": "Slides",
+      "for": "a deck",
+      "filledBy": "files",
+      "needs": [],
+      "takesLook": true
+    },
+    {
+      "id": "design-system",
+      "title": "Design System",
+      "for": "tokens and a brand book",
+      "filledBy": "files",
+      "needs": [],
+      "takesLook": true
+    },
+    {
+      "id": "docs",
+      "title": "Docs",
+      "for": "a report, a memo or a playbook",
+      "filledBy": "connector",
+      "needs": ["mcp__claude_ai_Claude_Docs"],
+      "takesLook": false
+    },
+    {
+      "id": "sheets",
+      "title": "Sheets",
+      "for": "a model, a scored backlog or a table",
+      "filledBy": "connector",
+      "needs": ["mcp__claude_ai_Claude_Docs"],
+      "takesLook": false
+    },
+    {
+      "id": "whiteboard",
+      "title": "Whiteboard",
+      "for": "a flow or an architecture diagram",
+      "filledBy": "store",
+      "needs": ["ToolSearch"],
+      "takesLook": false
+    },
+    {
+      "id": "data",
+      "title": "Data",
+      "for": "a dashboard built from saved numbers",
+      "filledBy": "store",
+      "needs": ["ToolSearch"],
+      "takesLook": true
+    }
+  ],
+  "holders": {
+    "subagent-ui-designer": ["design", "slides", "design-system"],
+    "subagent-design-systems-architect": ["design", "slides", "design-system"],
+    "subagent-design-ops-lead": ["design", "slides", "design-system"],
+    "subagent-designer-toolkit-expert": ["design", "slides", "design-system", "docs"],
+    "subagent-design-researcher": ["design", "slides", "docs"],
+    "subagent-prototype-tester": ["design", "slides", "docs"],
+    "subagent-ux-strategist": ["design", "slides", "whiteboard"],
+    "subagent-interaction-designer": ["design", "slides"],
+    "subagent-marketing-creative-designer": ["design", "slides", "design-system"],
+    "subagent-marketing-growth-strategist": ["design", "slides", "docs", "sheets", "data"],
+    "subagent-marketing-content-strategist": ["design", "slides", "docs", "sheets"],
+    "subagent-marketing-campaign-specialist": ["design", "slides", "docs", "sheets"],
+    "subagent-marketing-conversion-specialist": ["design", "slides", "docs", "sheets"],
+    "subagent-business-panel-experts": ["design", "slides", "docs"],
+    "subagent-market-intelligence-analyst": ["design", "slides", "docs", "sheets"],
+    "subagent-operations-strategist": ["design", "slides", "docs", "sheets", "data"],
+    "subagent-deep-research": ["design", "slides", "docs"],
+    "subagent-paid-acquisition-specialist": ["sheets"],
+    "subagent-plg-strategist": ["whiteboard"],
+    "subagent-financial-analyst": ["sheets"],
+    "subagent-system-architect": ["whiteboard"],
+    "subagent-finops-cost-engineer": ["sheets", "data"]
+  }
+}

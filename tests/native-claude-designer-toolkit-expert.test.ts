@@ -23,7 +23,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 
 describe('native designer-toolkit-expert: editors, no shell, no scheduling', () => {
   it('holds exactly this tools set, so a stray tool fails', () => {
-    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch'].sort());
+    expect([...tools()].sort()).toEqual(['Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'Write', 'mcp__claude_ai_Claude_Docs', 'mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch'].sort());
   });
 
   it('holds the posture of a native specialist: sonnet model, medium effort', () => {
@@ -96,7 +96,7 @@ describe('native designer-toolkit-expert: the guard and acceptEdits claims', () 
 describe('native designer-toolkit-expert: the MCP servers of its canonical agent', () => {
   it('declares the same servers as the canonical registry agent, and holds both with their plugin route', () => {
     expect([...canonical().matchAll(/^  - name: (\S+)$/gm)].map(match => match[1]).sort()).toEqual(['figma', 'stitch']);
-    expect(tools().filter(tool => tool.startsWith('mcp__')).sort()).toEqual(['mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch']);
+    expect(tools().filter(tool => tool.startsWith('mcp__')).sort()).toEqual(['mcp__claude_ai_Claude_Docs', 'mcp__figma', 'mcp__plugin_figma_figma', 'mcp__stitch']);
   });
 });
 

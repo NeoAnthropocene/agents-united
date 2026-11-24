@@ -10,6 +10,7 @@ import { loadHostProfile, loadToolPolicy, resolveGrant } from './host-profile.js
 import { GUARD_SCRIPT, NATIVE_GUARD_FILES } from './guard.js';
 import { READ_ONLY_GUARD_SCRIPT } from './readonly-guard.js';
 import { expectedWorkerHooks } from './handback-check.js';
+import { connectorToolsOf, delegateNamesOf, loadPageTypesIfPresent, roleStemResolver, typesOfRole, unknownRosterNames } from './page-types.js';
 import { RESIDUE_PATTERNS_BY_HOST } from './residue-patterns.js';
 import { normalizeClaudeFactoryCoordinatorTools } from './claude-factory-declaration.js';
 import { withRoutes } from './claude-mcp-routes.js';
@@ -91,7 +92,16 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
       findings.push(...postureProblems(facts.meta, kind));
       if (core.capabilities?.includes('task-tracking')) findings.push(...sessionTrackingProblems(text, { coordinator }));
       findings.push(...requestsBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
-      findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools }));
+      // ADR 0078: the page types of the role. `coordinator` is the lead kind; the roster check runs for a role that holds an `Agent(...)` roster.
+      const pageTypes = loadPageTypesIfPresent(registry, 'claude');
+      const stemOfRole = roleStemResolver(registry);
+      if (delegates) {
+        for (const name of unknownRosterNames(delegateNamesOf(facts.tools), stemOfRole, stem => fs.existsSync(path.join(registry, 'core', `${stem}.core.md`)))) {
+          findings.push(`Native page types: the Agent roster of ${String(facts.meta.name)} names ${name}, which stands on no core in the registry.`);
+        }
+      }
+      const types = typesOfRole(pageTypes, { stem: input.definition, coordinator, tools: facts.tools }, stemOfRole);
+      findings.push(...publishingBlockProblems(text, { kind, name: String(facts.meta.name), tools: facts.tools, types, catalogue: pageTypes.types }));
       if (canonicalText !== undefined) findings.push(...canonicalFloorProblems(core, canonicalText));
       if (input.coverageFile !== undefined) {
         if (!path.isAbsolute(input.coverageFile)) findings.push('Invariant coverage: the coverage file must be an absolute path.');
@@ -112,7 +122,9 @@ export async function checkFactoryArtifact(input: FactoryCheckInput): Promise<Fa
         // line that holds any route name is compared with the second form, exactly; no other server entry is accepted.
         const servers = canonicalText === undefined ? [] : canonicalServerTools(canonicalText);
         const routed = withRoutes(servers);
-        const expected = nativeToolOrder(grant, facts.tools.some(tool => routed.includes(tool) && !servers.includes(tool)) ? routed : servers);
+        const base = facts.tools.some(tool => routed.includes(tool) && !servers.includes(tool)) ? routed : servers;
+        // A role that holds a connector page type also holds the connector tool of that type (ADR 0078); no canonical agent declares it.
+        const expected = nativeToolOrder(grant, [...base, ...connectorToolsOf(types).filter(tool => !base.includes(tool))]);
         let wanted = nativeToolsWanted(expected, facts.tools, { coordinator: delegates });
         if (factorySkill === 'coordinate-artifact') {
           try {

@@ -339,6 +339,28 @@ describe('the factory\'s checks use the same rules', () => {
     expect(await differs(committed.replace(/^(tools: )/m, '$1Agent(backend-architect, code-reviewer), '))).toContain('Native tools differ from the generator\'s form');
   });
 
+  it('factory-check expects the connector tool on the tools line of a role that holds a connector type, and not on one that holds none', async () => {
+    const registry = path.join(ROOT, 'registry');
+    const findingsOf = async (role: string, stem: string): Promise<string[]> =>
+      (await checkFactoryArtifact({ registryDir: registry, definition: stem, host: 'claude', artifactPath: path.join(ROOT, 'registry/hosts/claude/agents', `${role}.md`), loading: 'subagent', requiredSkills: [] })).findings;
+    const holder = await findingsOf('financial-analyst', 'subagent-financial-analyst');
+    expect(holder.filter(finding => /lacks mcp__claude_ai_Claude_Docs/.test(finding))).toEqual([]);
+    for (const finding of holder.filter(candidate => candidate.startsWith('Native tools differ'))) expect(finding).toContain('mcp__claude_ai_Claude_Docs');
+    const plain = await findingsOf('ui-designer', 'subagent-ui-designer');
+    expect(plain.filter(finding => /lacks mcp__claude_ai_Claude_Docs|holds the connector tool/.test(finding))).toEqual([]);
+    for (const finding of plain.filter(candidate => candidate.startsWith('Native tools differ'))) expect(finding).not.toContain('mcp__claude_ai_Claude_Docs');
+  });
+
+  it('factory-check names a roster name of a lead that stands on no core', async () => {
+    const registry = path.join(ROOT, 'registry');
+    await stage(path.join(FIXTURES, 'final'));
+    const text = nativeOf('orchestrator-marketing').replace('Agent(', 'Agent(no-such-role, ');
+    const file = path.join(scratch, 'orchestrator-marketing.md');
+    await fs.writeFile(file, text);
+    const result = await checkFactoryArtifact({ registryDir: registry, definition: 'orchestrator-marketing', host: 'claude', artifactPath: file, loading: 'main', requiredSkills: [] });
+    expect(result.findings.join('\n')).toContain('the Agent roster of orchestrator-marketing names no-such-role, which stands on no core in the registry');
+  });
+
   it('factory-check refuses a relative canonical or coverage path', async () => {
     const final = path.join(FIXTURES, 'final');
     const registry = await stage(final);

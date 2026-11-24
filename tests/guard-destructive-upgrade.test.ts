@@ -230,3 +230,28 @@ describe('the role texts say one true sentence about the guard', () => {
     }
   });
 });
+
+describe('the README says when a role guard runs and when it does not', () => {
+  const README = fs.readFileSync(path.resolve('README.md'), 'utf8').replace(/\r\n/g, '\n');
+
+  it('no longer claims the guard always runs while a role is active', () => {
+    expect(README).not.toContain('always runs while an Agents United role is active');
+  });
+
+  it('names the cases where a role guard does not run and points to the session guard', () => {
+    const bullet = README.split('\n').find(line => line.startsWith('- A role\'s own guard'));
+    expect(bullet).toBeDefined();
+    expect(bullet).toContain('teammate');
+    expect(bullet).toContain('claude -p');
+    expect(bullet).toContain('does not run');
+    expect(bullet).toContain('`--session-guard`');
+    expect(bullet).toContain('as a subagent or as the main session of `claude --agent <role>`');
+    expect(bullet).toContain('trusted that exact folder');
+    expect(bullet).toContain('`~/.claude/agents`');
+    expect(bullet).not.toContain('skips a project agent');
+  });
+
+  it('does not repeat the session-guard coverage in a second bullet', () => {
+    expect(README).not.toContain('Add `--session-guard` at install time to cover plain `claude` sessions too.');
+  });
+});
