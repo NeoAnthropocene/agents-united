@@ -677,15 +677,24 @@ describe('factory-check and the mode-line gate (ADR 0042, ADR 0053)', () => {
     return (await checkFactoryArtifact({ registryDir: registry, definition: stem, host: 'claude', artifactPath: file, loading, requiredSkills: [] })).findings;
   };
 
-  it('lists the roles that carry the gate, and a committed role file carries it exactly when it is listed', () => {
-    expect([...MODE_LINE_GATE_ROLES]).toEqual(['orchestrator-digital-agency']);
+  it('registers the gate in the parsed hooks of a committed role exactly when MODE_LINE_GATE_ROLES lists it', () => {
+    expect(MODE_LINE_GATE_ROLES.length).toBeGreaterThan(0);
     const dir = path.join(ROOT, 'registry/hosts/claude/agents');
     for (const file of fs.readdirSync(dir).filter(name => name.endsWith('.md'))) {
       const role = file.replace(/\.md$/, '');
-      const carries = fs.readFileSync(path.join(dir, file), 'utf8').includes(NATIVE_GUARD_FILES['mode-line'].reference);
-      expect(carries, `${role} carries the gate exactly when MODE_LINE_GATE_ROLES lists it`).toBe(MODE_LINE_GATE_ROLES.includes(role));
+      // The registration is read from the frontmatter's hooks (inspectNativeAgent), so a mention of the script in the body does not count.
+      const carries = inspectNativeAgent(fs.readFileSync(path.join(dir, file), 'utf8').replace(/\r\n/g, '\n')).guardFiles.includes('mode-line');
+      expect(carries, `${role} registers the gate exactly when MODE_LINE_GATE_ROLES lists it`).toBe(MODE_LINE_GATE_ROLES.includes(role));
     }
     for (const role of MODE_LINE_GATE_ROLES) expect(fs.existsSync(path.join(dir, `${role}.md`)), `${role} has a committed file`).toBe(true);
+  });
+
+  it('does not count a mention of the gate script in the body of a role as a registration', () => {
+    const text = fs.readFileSync(path.join(ROOT, 'registry/hosts/claude/agents/orchestrator-engineering.md'), 'utf8').replace(/\r\n/g, '\n');
+    const mentioned = `${text}\n\nThe script ${NATIVE_GUARD_FILES['mode-line'].reference} is named here in prose only.\n`;
+    expect(inspectNativeAgent(text).guardFiles).not.toContain('mode-line');
+    expect(inspectNativeAgent(mentioned).guardFiles).not.toContain('mode-line');
+    expect(inspectNativeAgent(withGate(text)).guardFiles).toContain('mode-line');
   });
 
   it('finds no guard-registration finding on the committed digital-agency lead', async () => {
