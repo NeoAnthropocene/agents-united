@@ -66,7 +66,7 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('step 6 names exactly what the bound guard blocks, and what it does not', () => {
     const six = step(6);
-    expect(six).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` redirect, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(six).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to an unquoted path without backslashes, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
     expect(six).not.toContain('blocks only');
     expect(six).not.toContain('does not enforce the Safety rule');
     // The blocking clause alone: what follows "it is a seat belt" names the commands the guard does NOT stop.
@@ -118,7 +118,7 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('states what the guard blocks, where it comes from in both modes, and that acceptEdits leaves the limit to the role', () => {
     const boundaries = section(text(), 'Boundaries of this host');
-    expect(boundaries).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` redirect, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
+    expect(boundaries).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to an unquoted path without backslashes, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(boundaries).toContain('`permissionMode: acceptEdits` approves your file edits without asking');
     expect(boundaries).toContain('keeping to infrastructure code, topology documents and ADRs, and changing application source only when your brief asks, is your own obligation.');
     expect(boundaries).not.toContain('It blocks nothing else');

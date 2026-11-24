@@ -25,7 +25,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 describe('native devops-engineer: the guard and production claims', () => {
   it('step 5 names exactly what the bound guard blocks, and what it does not', () => {
     const five = step(5);
-    expect(five).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` redirect, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(five).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to an unquoted path without backslashes, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
     expect(five).not.toContain('blocks only');
     expect(five).not.toMatch(/blocks[^.]*production deploys/);
     for (const other of ['az deployment', 'kubectl apply', 'terraform apply', 'gh workflow run']) expect(five, other).toContain(other);
@@ -53,7 +53,7 @@ describe('native devops-engineer: the guard and production claims', () => {
   });
 
   it('Boundaries say where the guard comes from in both modes', () => {
-    expect(text()).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` redirect, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
+    expect(text()).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to an unquoted path without backslashes, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
   });
 
   it('keeps the destructive-command rule in the Safety floor', () => {
