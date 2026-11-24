@@ -13,6 +13,9 @@ const roles = fs.readdirSync(NATIVE_AGENTS_DIR).filter(name => name.endsWith('.m
 const EXCLUSIVE: RegExp[] = [
   /it blocks nothing else/,
   /It enforces nothing else/,
+  /it enforces nothing else/,
+  /every call when it cannot run/,
+  /It is a seat belt, not a boundary, it also blocks/,
   /Apart from that and a call whose input it cannot read, it enforces nothing/,
   /the only thing the guard bound to this role can stop/,
   /\.env` files made with the editing tools and the shell forms named above, and nothing else/,
@@ -26,24 +29,24 @@ describe('no role text says what its guard stops in a way that leaves out unread
 
   it('the nine marketing roles name the calls the script blocks besides its list, and the rest of the tail is unchanged', () => {
     for (const role of ['lifecycle-email-specialist', 'marketing-campaign-specialist', 'marketing-content-strategist', 'marketing-conversion-specialist', 'marketing-creative-designer', 'marketing-growth-strategist', 'paid-acquisition-specialist', 'plg-strategist', 'seo-specialist']) {
-      expect(nativeText(role), role).toContain('It also blocks a call it cannot read or analyse, and every call when it cannot run, and it enforces nothing else, so the rules in your Safety section are your own obligation. Never try to get around it.');
+      expect(nativeText(role), role).toContain('It also blocks a call it cannot read or analyse, and the calls it guards when it cannot run; the rules in your Safety section are your own obligation. Never try to get around it.');
     }
   });
 
   it('the business lead says what its guard also blocks', () => {
-    expect(nativeText('orchestrator-business')).toContain('refuses writes to `.env` files made with the editing tools and the shell forms named above, and also a call it cannot read or analyse and every call when it cannot run; the limits of step 6 above are yours to keep.');
+    expect(nativeText('orchestrator-business')).toContain('refuses writes to `.env` files made with the editing tools and the shell forms named above, and also a call it cannot read or analyse and the calls it guards when it cannot run; the limits of step 6 above are yours to keep.');
   });
 
   it('the design roles and the accessibility lead say what a shell-less role\'s editor calls meet', () => {
     for (const role of ['design-ops-lead', 'design-researcher', 'design-systems-architect', 'designer-toolkit-expert', 'interaction-designer', 'prototype-tester', 'ui-designer', 'ux-strategist']) {
-      expect(nativeText(role), role).toContain('so the guard bound to this role stops a write to a `.env` file (`.env.example` passes), an editor call whose input it cannot read, and every call when it cannot run.');
+      expect(nativeText(role), role).toContain('so the guard bound to this role stops a write to a `.env` file (`.env.example` passes), an editor call whose input it cannot read, and the calls it guards when it cannot run.');
     }
-    expect(nativeText('accessibility-lead').split('a call whose input it cannot read, and every call when it cannot run;')).toHaveLength(3);
+    expect(nativeText('accessibility-lead').split('a call whose input it cannot read, and the calls it guards when it cannot run;')).toHaveLength(3);
   });
 
   it('the two shell-less architecture roles say what else the guard blocks', () => {
     for (const role of ['sysops-sre-lead', 'system-architect']) {
-      expect(nativeText(role), role).toContain('it also blocks an editor call it cannot read and every call when it cannot run, and `permissionMode: acceptEdits`');
+      expect(nativeText(role), role).toContain('It also blocks an editor call it cannot read and the calls it guards when it cannot run. `permissionMode: acceptEdits`');
     }
   });
 });

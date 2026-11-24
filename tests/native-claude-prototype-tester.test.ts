@@ -73,7 +73,7 @@ describe('native prototype-tester: the browser servers and the heuristic fallbac
 describe('native prototype-tester: the guard and acceptEdits claims', () => {
   it('says exactly what the bound guard can stop, and that staying inside the evaluation documents is its own obligation', () => {
     const body = text();
-    expect(body).toContain('so the guard bound to this role stops a write to a `.env` file (`.env.example` passes), an editor call whose input it cannot read, and every call when it cannot run');
+    expect(body).toContain('so the guard bound to this role stops a write to a `.env` file (`.env.example` passes), an editor call whose input it cannot read, and the calls it guards when it cannot run');
     expect(body).toContain('is your own obligation');
     expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
     expect(body.split(GUARD_SENTENCE)).toHaveLength(2);
