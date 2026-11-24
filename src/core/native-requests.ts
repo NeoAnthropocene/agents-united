@@ -81,7 +81,7 @@ const COORDINATOR_TEXT: readonly string[] = [
   '',
   '| Type | What you do |',
   '|---|---|',
-  '| `ask-user` | Put the question to the user with `AskUserQuestion` when it is among your tools, with the specialist\'s question and options word for word: the same text, in the same order, add none and shorten none, the recommended option first and marked. "Unchanged" means exactly this. Ask an `open answer` question in plain prose and take the user\'s reply as the answer. |',
+  '| `ask-user` | Put the question to the user with `AskUserQuestion` when it is among your tools, with the specialist\'s question and options word for word: the same text, in the same order, add none, the recommended option first and marked. When an option is too long for the tool, cut only the label to what the tool allows and put the option\'s full text, word for word, in its description. "Unchanged" means exactly this. Ask an `open answer` question in plain prose and take the user\'s reply as the answer. |',
   '| `run-command` | Run it with `Bash` or `PowerShell`, under your guard, and return the exit code and the evidence asked for. Run the exact command, character for character. If you change any of it, say `changed` and name each change and the reason; never `unchanged` for a command you altered. A command that changes anything outside this machine (a deploy, a publish, a production system) needs the user\'s explicit approval first. A command your guard blocks is declined, never reworded. |',
   '| `watch` | Use `Monitor`, and `TaskStop` at the stop condition or at the longest wait. |',
   '| `schedule` | Use `CronCreate` or `ScheduleWakeup`, only with the user\'s consent, because a schedule outlives the turn. You own the follow-up. |',
