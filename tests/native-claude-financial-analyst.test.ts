@@ -120,7 +120,7 @@ describe('native financial-analyst: the permission mode, the shell and the guard
 
   it('step 5 states the limit of acceptEdits, what the guard blocks and what it does not, and makes the rest an obligation', () => {
     expect(five()).toContain('file edits inside the working folder are approved without a prompt');
-    expect(five()).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(five()).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to a \`.env\` path the guard recognises in the command text, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
     expect(five()).not.toContain('blocks only');
     expect(five()).toMatch(/does not stop an edit or a command that overwrites another file/);
     expect(five()).toMatch(/your own obligation/);
@@ -185,7 +185,7 @@ describe('native financial-analyst: the permission mode, the shell and the guard
   it('Boundaries say what the shell is for, and where the guard comes from in both modes', () => {
     const body = section('Boundaries of this host');
     expect(body).toContain('- Your shell (`Bash`, `PowerShell`) is for reading project files and running calculations. Show the command you ran and its output in the report.');
-    expect(body).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
+    expect(body).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to a \`.env\` path the guard recognises in the command text, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });

@@ -8,7 +8,7 @@ import { nativeText } from './helpers/native-roles.js';
 
 /** The one sentence every Claude role carries about the guard (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
 const GUARD_SENTENCE =
-  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+  'A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
 
 /**
  * The native `designer-toolkit-expert` (design-research-testing bundle, Tier 1): what its authored body must keep saying. It holds editors and no shell,
@@ -62,7 +62,7 @@ describe('native designer-toolkit-expert: the platforms its description names ar
 describe('native designer-toolkit-expert: the guard and acceptEdits claims', () => {
   it('says exactly what the bound guard can stop, and that staying inside the design documents is its own obligation', () => {
     const body = text();
-    expect(body).toContain('so the only thing the guard bound to this role can stop is a write to a `.env` file (`.env.example` passes)');
+    expect(body).toContain('so the guard bound to this role stops a write to a `.env` file (`.env.example` passes), an editor call whose input it cannot read, and the calls it guards when it cannot run');
     expect(body).toContain('is your own obligation');
     expect(body).toContain(`- ${GUARD_SENTENCE} As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case. Never try to get around it.`);
     expect(body.split(GUARD_SENTENCE)).toHaveLength(2);

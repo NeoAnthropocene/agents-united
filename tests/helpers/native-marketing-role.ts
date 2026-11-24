@@ -46,7 +46,7 @@ const PERSONAS = /\b(Ava|Jamileh|Yavuz|Kaan|Jale|Selin)\b/;
 const IMAGE_TOOL = /\bimage-gen\b|generate_image/;
 /** The shared guard sentence every Claude role carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
 const GUARD_SENTENCE =
-  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+  'A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
 
 export function describeMarketingRole(spec: MarketingRoleSpec): void {
   const text = (): string => nativeText(spec.role);
@@ -140,7 +140,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
         }
         const boundaries = section('Boundaries of this host');
         expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
-        expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
+        expect(boundaries).toContain('It also blocks a call it cannot read or analyse, and the calls it guards when it cannot run; the rules in your Safety section are your own obligation.');
         expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
       });
 
@@ -156,7 +156,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
         for (const tool of ['Bash', 'PowerShell']) expect(attempt(text(), project, { tool, input: { command: 'git push --force origin main' } }, { agentType: spec.role }).offered, tool).toBe(false);
         const boundaries = section('Boundaries of this host');
         expect(boundaries.split(GUARD_SENTENCE)).toHaveLength(2);
-        expect(boundaries).toContain('It enforces nothing else, so the rules in your Safety section are your own obligation.');
+        expect(boundaries).toContain('It also blocks a call it cannot read or analyse, and the calls it guards when it cannot run; the rules in your Safety section are your own obligation.');
         expect(boundaries).not.toContain('which you cannot run without a shell');
         expect(boundaries).not.toMatch(/guard blocks[^.]*production deploys/);
       });
@@ -202,7 +202,7 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     it('carries the planning consultation, the report sections and the inbox rule as written', () => {
       expect(peers()).toContain('- **Planning consultation.** When the lead consults you before the plan is accepted, answer with a bounded scope-of-work statement');
       expect(peers()).toContain('- **Report sections, always present:** `Peer messages received`');
-      expect(peers()).toContain('`Open items` (unanswered questions, missing peer input and blockers, or "none").');
+      expect(peers()).toContain('`Open items` (what you could not do or verify, a question for a peer, or "none"; a question for the user goes under `Requests for the lead`).');
       expect(peers()).toContain('- **Check your inbox before you finish, and do not wait for a reply.**');
       expect(peers()).toContain('- **Your final report is your one hand-back.**');
     });

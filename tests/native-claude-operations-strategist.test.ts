@@ -56,7 +56,7 @@ describe('native operations-strategist: its exact tool set and posture', () => {
 
   it('binds the one server of its canonical agent, and says what it is for, naming only tools of its tools line', () => {
     expect([...CANONICAL().matchAll(/^  - name: (.+)$/gm)].map(match => match[1])).toEqual(['github']);
-    expect(text()).toContain('- Repository, issue and pull-request reads go through `mcp__github`; `ToolSearch` shows what it offers. Do not create, comment on, push or merge anything unless the brief asks for it.');
+    expect(text()).toContain('- Repository, issue and pull-request reads go through `mcp__github`; `ToolSearch` shows what it offers. Do not create or comment on anything unless the brief asks for it; push or merge only on the user\'s explicit word, and never force a push.');
     const named = new Set([...text().split('<!-- agents-united:floor:end -->')[1]!.matchAll(/`(mcp__[a-z0-9_]+)`/g)].map(match => match[1]));
     for (const tool of named) expect(toolsLine().split(', '), tool).toContain(tool);
   });
@@ -127,7 +127,7 @@ describe('native operations-strategist: the permission mode, the shell and the g
 
   it('step 6 states the limit of acceptEdits, what the guard blocks and what it does not, and makes the rest an obligation', () => {
     expect(six()).toContain('file edits inside the working folder are approved without a prompt');
-    expect(six()).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(six()).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to a \`.env\` path the guard recognises in the command text, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
     expect(six()).not.toContain('blocks only');
     expect(six()).toMatch(/does not stop an edit or a command that overwrites another file/);
     expect(six()).toMatch(/your own obligation/);
@@ -192,7 +192,7 @@ describe('native operations-strategist: the permission mode, the shell and the g
   it('Boundaries say what the shell is for, and where the guard comes from in both modes', () => {
     const body = section('Boundaries of this host');
     expect(body).toContain('- Your shell (`Bash`, `PowerShell`) is for reading project files and running calculations. Show the command you ran and its output in the report.');
-    expect(body).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
+    expect(body).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to a \`.env\` path the guard recognises in the command text, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(text().split('A guard blocks')).toHaveLength(2);
   });
 });

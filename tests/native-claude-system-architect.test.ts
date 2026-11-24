@@ -74,7 +74,7 @@ describe('native system-architect: the guard claims, against the real script', (
 
   it('the forced-push and vercel rules are shell rules: the role is offered no shell for them to act on', () => {
     for (const shell of ['Bash', 'PowerShell']) expect(fire(shell, { command: 'git push --force origin main' }).offered, shell).toBe(false);
-    expect(text()).toContain("Its forced-push, `vercel --prod` and destructive-shell rules (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion) apply to shell commands, which you do not hold. It is a seat belt, not a boundary, it blocks nothing else, and `permissionMode: acceptEdits` approves your file edits without asking");
+    expect(text()).toContain("Its forced-push, `vercel --prod` and destructive-shell rules (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion) apply to shell commands, which you do not hold. It is a seat belt, not a boundary. It also blocks an editor call it cannot read and the calls it guards when it cannot run. `permissionMode: acceptEdits` approves your file edits without asking");
   });
 
   it('the destructive-shell rules are shell rules too: the role is offered no shell for `rm -rf /` or `sudo` to act on', () => {
@@ -83,7 +83,7 @@ describe('native system-architect: the guard claims, against the real script', (
 
   it('the guard does not see GitHub MCP calls, so the push, merge and create duty is stated as the role\'s own', () => {
     for (const tool of ['mcp__github__push_files', 'mcp__github__merge_pull_request', 'mcp__github__create_pull_request']) expect(fire(tool, {}).blocked, tool).toBe(false);
-    expect(text()).toContain('the guard does not see its calls, so not pushing, merging or creating anything there without being asked is your own obligation.');
+    expect(text()).toContain('the guard does not see its calls, so pushing or merging only on the user\'s explicit word, never forcing a push, and creating nothing there unasked, is your own obligation.');
   });
 
   it('names no guard behaviour the script does not have', () => {

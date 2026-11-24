@@ -66,7 +66,7 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('step 6 names exactly what the bound guard blocks, and what it does not', () => {
     const six = step(6);
-    expect(six).toContain(`blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
+    expect(six).toContain(`blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to a \`.env\` path the guard recognises in the command text, and ${COMMON_FORMS}; it is a seat belt, not a boundary.`);
     expect(six).not.toContain('blocks only');
     expect(six).not.toContain('does not enforce the Safety rule');
     // The blocking clause alone: what follows "it is a seat belt" names the commands the guard does NOT stop.
@@ -118,10 +118,11 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('states what the guard blocks, where it comes from in both modes, and that acceptEdits leaves the limit to the role', () => {
     const boundaries = section(text(), 'Boundaries of this host');
-    expect(boundaries).toContain(`- A guard blocks forced pushes, \`vercel --prod\`, \`.env\` writes and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
+    expect(boundaries).toContain(`- A guard blocks \`git push --force\` and \`-f\` (not \`--force-with-lease\`), \`vercel --prod\`, \`.env\` files (not \`.env.example\`) written with an editing tool or a \`>\` or \`>>\` redirect to a \`.env\` path the guard recognises in the command text, and ${COMMON_FORMS}; it is a seat belt, not a boundary. As a subagent it comes from this file, when the host runs this file's hooks. As a teammate it comes from the settings-level session guard, which is optional and may be off. You cannot verify from inside that a guard is active, so keep its rules as your own obligation in either case.`);
     expect(boundaries).toContain('`permissionMode: acceptEdits` approves your file edits without asking');
     expect(boundaries).toContain('keeping to infrastructure code, topology documents and ADRs, and changing application source only when your brief asks, is your own obligation.');
     expect(boundaries).not.toContain('It blocks nothing else');
+    expect(boundaries).not.toContain('It does not block `git push --force-with-lease`');
     // `.env` tokens stripped, so the match runs to the end of the line instead of stopping at their dot.
     const claims = boundaries.replace(/`\.env(\.example)?`/g, 'ENV');
     expect(claims).not.toMatch(/blocks[^\n]*(production deploys|terraform|kubectl|az deployment)/);
@@ -130,7 +131,7 @@ describe('native cloud-infrastructure-architect: the guard and provisioning clai
 
   it('the guard does not see GitHub MCP calls, so the push, merge and create duty is stated as the role\'s own', () => {
     for (const tool of ['mcp__github__push_files', 'mcp__github__merge_pull_request', 'mcp__github__create_pull_request']) expect(fire(tool, {}).blocked, tool).toBe(false);
-    expect(text()).toContain('the guard does not see its calls, so not pushing, merging or creating anything there without being asked is your own obligation.');
+    expect(text()).toContain('the guard does not see its calls, so pushing or merging only on the user\'s explicit word, never forcing a push, and creating nothing there unasked, is your own obligation.');
   });
 
   it('step 5 validates without a cloud account, says the validators need network access, and a plan or dry run against an account needs the brief', () => {

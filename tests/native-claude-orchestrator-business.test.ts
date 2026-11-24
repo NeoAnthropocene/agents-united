@@ -50,7 +50,7 @@ const EXPECTED_TOOLS = [
 
 /** The one sentence every Claude role carries about the guard (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
 const GUARD_SENTENCE =
-  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+  'A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
 /** The boundary the legal contract analyst states of itself, copied from its canonical agent, and carried by the lead wherever its synthesis uses that analysis. */
 const LEGAL_BOUNDARY = 'structured technical and operational contract analysis to support business decision-making, not formal legal representation or binding legal counsel';
 
@@ -280,7 +280,7 @@ describe('native orchestrator-business: the guard claims', () => {
     expect(verify).toContain('Do not modify application source code (`src/`): write only strategy, documentation and roadmap files');
     expect(verify).toMatch(/That is your own obligation, and you give it to every specialist in its brief\./);
     const host = section('Boundaries of this host');
-    expect(host).toContain('You run in `acceptEdits` mode, so file edits inside the working folder are approved without a prompt.');
+    expect(host).toContain('Your file sets `acceptEdits`, so file edits inside the working folder are approved without a prompt, when that mode is in force (the main session\'s `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your starting mode follows from the lead\'s and can change).');
     expect(host).toContain('refuses writes to `.env` files made with the editing tools');
     expect(text()).toContain('to leave application source code alone');
   });

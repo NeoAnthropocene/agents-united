@@ -64,7 +64,7 @@ const EXPECTED_TOOLS = [
 
 /** The one sentence every Claude role carries about the guard (ADR 0074, tests/guard-destructive-upgrade.test.ts). */
 const GUARD_SENTENCE =
-  'A guard blocks forced pushes, `vercel --prod`, `.env` writes and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
+  'A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary.';
 
 /** The four invariants of the core that this lane does not bind, because it holds no Agent tool. */
 const DECLARED = [
@@ -379,7 +379,7 @@ describe('native orchestrator-universal: the guard claims', () => {
 
   it('states the limit of acceptEdits: the handoff note is the one file it writes, and no guard stops anything else', () => {
     const host = section('Boundaries of this host');
-    expect(host).toContain('You run in `acceptEdits` mode, so file edits inside the working folder are approved without a prompt.');
+    expect(host).toContain('Your file sets `acceptEdits`, so file edits inside the working folder are approved without a prompt, when that mode is in force (the main session\'s `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your starting mode follows from the lead\'s and can change).');
     expect(host).toContain('The only file you write yourself is the handoff note; the rest of the working folder is not yours to change, and no guard stops you.');
   });
 

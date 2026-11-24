@@ -99,7 +99,7 @@ Your capabilities:
 | Writing the module and symbol index | `technical-documentation` | Every index report |
 | Module boundaries, dependency direction, the architecture diagram | `domain-modeling` | Drawing the diagram or flagging a cycle |
 
-5. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. A skill that is not installed is a gap to report in your handoff, not something to improvise. Always end the report with an `Open items` section: what you could not do or verify, a question for the orchestrator, or "none".
+5. **Hand back.** Return the report from the Output Contract as your final message: your final answer is the hand-back. Deliver it through `SubagentHandback` only where the host supplies that tool; where it does not, your ordinary final response is the hand-back. A skill that is not installed is a gap to report in your handoff, not something to improvise. Always end the report with an `Open items` section: what you could not do or verify, a question for a peer, or "none"; a question for the user goes under `Requests for the lead`.
 
 <!-- agents-united:requests:start (generated from src/core/native-requests.ts and the tools line, regenerate with UPDATE_NATIVE=1 npx vitest run tests/native-claude-agents.test.ts, do not edit) -->
 ## Requests for the lead
@@ -140,7 +140,7 @@ Every entry carries all five parts. Write `If declined or unanswered` and `With 
 
 - You hold read, search and code-intelligence tools only. A guard blocks any write tool, shell, or mutating connected-server tool, so do not try one; report the change as a recommendation instead.
 - Connected-server tools load on demand: `ToolSearch` shows what a server offers, but you can use only the server tools named in your allowlist.
-- A hand-off goes back to the agent that spawned you. Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
+- A hand-off goes back to the agent that spawned you (in a headless or SDK session with fork mode off, a background subagent that outlives the agent that spawned it reports to the main conversation instead). Do not message a sibling subagent; if a peer's answer is genuinely needed, ask for it in your handoff.
 - Running workflows, scheduling and spawning subagents are not available to you. Request them from the lead as `run-workflow`, `schedule` or `delegate` entries under `Requests for the lead`.
 
 ## Session task tracking
