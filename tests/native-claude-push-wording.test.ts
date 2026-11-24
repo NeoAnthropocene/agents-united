@@ -26,6 +26,12 @@ describe('the roles that hold the GitHub server push or merge only on the user\'
     expect(nativeText(role)).toContain(TWO);
   });
 
+  it('operations-strategist does not let the brief authorise a push or a merge', () => {
+    const text = nativeText('operations-strategist');
+    expect(text).toContain("push or merge only on the user's explicit word, and never force a push.");
+    expect(text).not.toContain('push or merge anything unless the brief asks for it');
+  });
+
   it('no role keeps the wording that let a request authorise a force push', () => {
     for (const file of fs.readdirSync(NATIVE_AGENTS_DIR).filter(name => name.endsWith('.md'))) {
       const text = nativeText(file.replace(/\.md$/, ''));

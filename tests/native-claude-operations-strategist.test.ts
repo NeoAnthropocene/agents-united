@@ -56,7 +56,7 @@ describe('native operations-strategist: its exact tool set and posture', () => {
 
   it('binds the one server of its canonical agent, and says what it is for, naming only tools of its tools line', () => {
     expect([...CANONICAL().matchAll(/^  - name: (.+)$/gm)].map(match => match[1])).toEqual(['github']);
-    expect(text()).toContain('- Repository, issue and pull-request reads go through `mcp__github`; `ToolSearch` shows what it offers. Do not create, comment on, push or merge anything unless the brief asks for it.');
+    expect(text()).toContain('- Repository, issue and pull-request reads go through `mcp__github`; `ToolSearch` shows what it offers. Do not create or comment on anything unless the brief asks for it; push or merge only on the user\'s explicit word, and never force a push.');
     const named = new Set([...text().split('<!-- agents-united:floor:end -->')[1]!.matchAll(/`(mcp__[a-z0-9_]+)`/g)].map(match => match[1]));
     for (const tool of named) expect(toolsLine().split(', '), tool).toContain(tool);
   });
