@@ -42,6 +42,7 @@ const EXPECTED_TOOLS = [
   'NotebookEdit', 'PowerShell', 'PushNotification', 'Read', 'ReadMcpResourceTool', 'RemoteTrigger', 'ScheduleWakeup', 'SendMessage', 'SendUserFile', 'Skill', 'TaskCreate',
   'TaskGet', 'TaskList', 'TaskStop', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WaitForMcpServers', 'WebFetch', 'WebSearch', 'Write',
   ...withRoutes(['mcp__chrome-devtools-mcp', 'mcp__context7', 'mcp__figma', 'mcp__firecrawl', 'mcp__github', 'mcp__playwright', 'mcp__stitch']),
+  'mcp__claude_ai_Claude_Docs',
 ];
 
 /** The one sentence every Claude role carries about the guard (ADR 0074, tests/guard-destructive-upgrade.test.ts). */

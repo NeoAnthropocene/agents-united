@@ -6,6 +6,7 @@ import { splitTools } from '../src/core/native-guard.js';
 import { checkRoster, domainTypes } from '../src/core/native-roster.js';
 import { loadSemanticCore } from '../src/core/semantic-core.js';
 import { allowlist, bundles, rosterTypes } from './helpers/native-coordinator.js';
+import { withoutPublishingBlock } from './helpers/artifact-holders.js';
 
 /**
  * The native lead of the system-architecture bundle family, a twin of tests/native-orchestrator.test.ts (which pins the engineering lead): it runs as the main thread,
@@ -57,7 +58,8 @@ describe('native orchestrator-system-architecture (a main-thread coordinator)', 
   });
 
   it('refers only to slash commands that exist as skills, and to bundles that exist', () => {
-    const body = read();
+    // The generated publishing block (ADR 0077) names the commands of the design capability; its own suite checks it.
+    const body = withoutPublishingBlock(read());
     for (const match of body.matchAll(/`\/([a-z0-9-]+)`/g)) {
       if (match[1] === 'reload-skills' || match[1] === 'config') continue; // Claude Code commands, not skills of ours
       expect(fs.existsSync(path.resolve('registry/skills', match[1], 'SKILL.md')), `/${match[1]}`).toBe(true);

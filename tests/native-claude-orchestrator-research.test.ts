@@ -49,6 +49,7 @@ const EXPECTED_TOOLS = [
   'PushNotification', 'Read', 'ReadMcpResourceTool', 'RemoteTrigger', 'ScheduleWakeup', 'SendMessage', 'SendUserFile', 'Skill', 'TaskCreate', 'TaskGet', 'TaskList', 'TaskStop',
   'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WaitForMcpServers', 'WebFetch', 'WebSearch', 'Write',
   ...withRoutes(['mcp__github', 'mcp__context7', 'mcp__firecrawl', 'mcp__markitdown']),
+  'mcp__claude_ai_Claude_Docs',
 ];
 
 /** The shared clause every Claude role that holds a shell carries (ADR 0074, tests/guard-destructive-upgrade.test.ts). */

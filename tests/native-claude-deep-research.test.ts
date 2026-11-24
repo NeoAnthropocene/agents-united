@@ -24,7 +24,7 @@ const peersSection = (body: string): string => /\n## Working with peers\n([\s\S]
 const EXPECTED_TOOLS = [
   'Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
   'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write',
-  'mcp__firecrawl', 'mcp__claude_ai_Firecrawl', 'mcp__context7', 'mcp__plugin_context7_context7',
+  'mcp__firecrawl', 'mcp__claude_ai_Firecrawl', 'mcp__context7', 'mcp__plugin_context7_context7', 'mcp__claude_ai_Claude_Docs',
 ];
 
 describe('native deep-research: its exact tool set and posture', () => {
@@ -37,7 +37,7 @@ describe('native deep-research: its exact tool set and posture', () => {
     const canonical = fs.readFileSync(path.resolve('registry/agents/subagent-deep-research.md'), 'utf8').replace(/\r\n/g, '\n');
     const servers = [...canonical.matchAll(/^  - name: (\S+)$/gm)].map(match => match[1]);
     expect(servers).toEqual(['firecrawl', 'context7']);
-    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual(withRoutes(servers.map(server => `mcp__${server}`)));
+    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual([...withRoutes(servers.map(server => `mcp__${server}`)), 'mcp__claude_ai_Claude_Docs']);
   });
 
   it('is sonnet at medium effort, with the canonical permission mode', () => {

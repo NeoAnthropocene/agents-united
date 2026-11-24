@@ -9,6 +9,7 @@ import { loadSemanticCore } from '../../src/core/semantic-core.js';
 import { attempt } from './claude-host-hooks.js';
 import { evidenceFor } from './native-invariant-evidence.js';
 import { bundles } from './native-coordinator.js';
+import { holdersOfKind } from './artifact-holders.js';
 import { nativeText } from './native-roles.js';
 
 /**
@@ -81,7 +82,9 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
     it('holds the servers its canonical agent declares, under every route, and nothing else', () => {
       const front = yaml.parse(/^---\n([\s\S]*?)\n---/.exec(canonical())![1]!) as { mcpServers?: Array<{ name: string } | string> };
       const declared = (front.mcpServers ?? []).map(entry => (typeof entry === 'string' ? entry : entry.name));
-      expect([...new Set(tools().filter(tool => tool.startsWith('mcp__')).map(integrationOf))].sort()).toEqual([...spec.servers].sort());
+      // The Claude Docs connector (ADR 0078) is held for the Docs and Sheets types and is declared by no canonical agent: it is the one server beyond the declared ones.
+      const connector = holdersOfKind('connector').includes(spec.role) ? ['claude_ai_Claude_Docs'] : [];
+      expect([...new Set(tools().filter(tool => tool.startsWith('mcp__')).map(integrationOf))].sort()).toEqual([...spec.servers, ...connector].sort());
       expect([...declared].sort()).toEqual([...spec.servers].sort());
     });
 

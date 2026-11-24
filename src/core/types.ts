@@ -1359,3 +1359,31 @@ export interface BundleCheckResult {
   licensing: 'unverified';
   acceptedDraft: false;
 }
+
+/** ADR 0078 - how a page type gets its content: files published under the page, a connector that writes it, or the page's own store. */
+export type PageTypeKind = 'files' | 'connector' | 'store';
+
+/** ADR 0078 - the id of a page type, as the catalogue of `registry/hosts/<host>/page-types.json` spells it (for example `design` or `design-system`). */
+export type PageTypeId = string;
+
+/** ADR 0078 - one page type of an account. */
+export interface PageType {
+  id: PageTypeId;
+  /** The title the account shows for the type, and the name a role uses when it starts the type. */
+  title: string;
+  /** What the type is for, as the phrase that follows the title in parentheses in the generated block. */
+  for: string;
+  filledBy: PageTypeKind;
+  /** The tools a role must hold for the type beyond `Artifact`. */
+  needs: string[];
+  /** True for a type whose pages carry a look that a design system can give. */
+  takesLook: boolean;
+}
+
+/** ADR 0078 - the page types of a host and the specialists that hold them (a holder list follows the order of the catalogue). */
+export interface PageTypeTable {
+  semantics: string;
+  types: PageType[];
+  /** By the stem of the specialist's Semantic Core. A lead has no entry: its list is computed from its roster. */
+  holders: Record<string, PageTypeId[]>;
+}

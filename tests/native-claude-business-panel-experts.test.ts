@@ -25,7 +25,7 @@ const sessionSection = (body: string): string => /\n## Session task tracking\n([
 /** The whole tools line: the read, search, edit, web, messaging, hand-back, skill, task and discovery classes of the core. The one server of the pair, markitdown, is bound through its route. */
 const EXPECTED_TOOLS = [
   'Artifact', 'Edit', 'Glob', 'Grep', 'ListAgents', 'ListMcpResourcesTool', 'NotebookEdit', 'Read', 'ReadMcpResourceTool', 'SendMessage', 'Skill', 'SubagentHandback',
-  'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write', 'mcp__markitdown',
+  'TaskCreate', 'TaskGet', 'TaskList', 'TaskUpdate', 'TodoWrite', 'ToolSearch', 'WebFetch', 'WebSearch', 'Write', 'mcp__markitdown', 'mcp__claude_ai_Claude_Docs',
 ];
 
 describe('native business-panel-experts: its exact tool set and posture', () => {
@@ -33,7 +33,7 @@ describe('native business-panel-experts: its exact tool set and posture', () => 
     expect(toolsLine().split(', ')).toEqual(EXPECTED_TOOLS);
     for (const forbidden of ['Bash', 'PowerShell', 'Agent', 'Workflow', 'CronCreate', 'CronList', 'CronDelete', 'Monitor', 'TaskStop', 'AskUserQuestion', 'EnterWorktree', 'ExitWorktree'])
       expect(toolsLine().split(', '), forbidden).not.toContain(forbidden);
-    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual(['mcp__markitdown']);
+    expect(toolsLine().split(', ').filter(tool => tool.startsWith('mcp__'))).toEqual(['mcp__markitdown', 'mcp__claude_ai_Claude_Docs']);
   });
 
   it('is sonnet at medium effort, with the canonical permission mode', () => {

@@ -109,14 +109,9 @@ export function guardHandler(): FailClosedHandler {
   return { type: 'command', command: 'node', args: ['-e', GUARD_SCRIPT], onFailure: 'block' };
 }
 
-/** The PreToolUse groups every guarded surface carries. */
+/** The PreToolUse groups a projected role carries: the matchers of the native guard (`nativeGuardHooks`, the one source), so `PowerShell` and `MultiEdit` are guarded too. */
 export function managedGuardHooks(): { PreToolUse: Array<{ matcher: string; hooks: ReturnType<typeof guardHandler>[] }> } {
-  return {
-    PreToolUse: [
-      { matcher: 'Bash', hooks: [guardHandler()] },
-      { matcher: 'Write|Edit|NotebookEdit', hooks: [guardHandler()] },
-    ],
-  };
+  return nativeGuardHooks();
 }
 
 /** The two native Claude guards: the destructive-command guard (writers) and the read-only guard (roles that never mutate). */
@@ -181,8 +176,8 @@ export function nativeGuardFileHooks(): { PreToolUse: Array<{ matcher: string; h
 
 /**
  * Plan 032 PR E — the destructive-command guard for native agents: same script and exec form, but the shell matcher
- * also covers `PowerShell` (a class-derived grant holds it on Windows, and the legacy `Bash`-only matcher would let a
- * forced push through it). `managedGuardHooks` stays as is: the legacy projection goldens pin it.
+ * also covers `PowerShell` (a class-derived grant holds it on Windows, and a `Bash`-only matcher would let a
+ * forced push through it). `managedGuardHooks`, the guard of a projected role, returns these same groups.
  */
 export function nativeGuardHooks(): { PreToolUse: Array<{ matcher: string; hooks: FailClosedHandler[] }> } {
   return {

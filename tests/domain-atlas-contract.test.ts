@@ -133,6 +133,14 @@ describe('Domain Atlas contract (universal-orchestration / Prime Orchestrator)',
     }
   });
 
+  it('C2: the organizational table states no status that registry/bundles.json does not declare, and keeps the opt-in rule', () => {
+    const text = content.replace(/\r\n/g, '\n');
+    expect(text.includes('under-construction')).toBe(manifestFile.bundles['digital-agency']?.status === 'under-construction');
+    const table = /### 2\. Organizational Bundles[^\n]*\n([\s\S]*?)(?=\n---\n|\n## )/.exec(text)![1]!;
+    expect(table).not.toContain('| Status |');
+    expect(table).toContain('| `digital-agency` | Opt-in only — route to it only if the user explicitly asks for a full-service agency team, and only after explaining the runtime prerequisites. |');
+  });
+
   it('C5: contributor bundles are never ordinary Atlas recommendations', () => {
     const names = atlasCommandNames(rows);
     for (const bundle of Object.values(manifestFile.bundles)) {

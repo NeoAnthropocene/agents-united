@@ -5,18 +5,19 @@
 ## Which route to take
 - Write the files in the project first on every route: the page is a second copy.
 - Write the brief for the page yourself, from the work done: the subject, the audience or use, the content it must carry, the look or design system to follow, the size or format. Never ask the user to type `/design` or `/slides` so that a page can be made.
+- When the deliverable is itself a working HTML page, publish it as an HTML page that equals the project files, with the same go-ahead as any page; the rest of this list is for a design to edit on a canvas and for a deck.
 - If the list of skills available to you shows `design` (for a deck: `slides`), invoke it through `Skill` with the brief.
 - The host documentation, read on 2026-11-21, names project, user and plugin skills for a subagent and does not name bundled skills. That a listed bundled skill can be invoked through `Skill` by a subagent is not established either. If the call fails, or the skill answers that the user must run `/design consent` or sign in, report that and go on with the tool.
 - Never ask for `/design-login` or `/design-sync`. Those commands belong to a standalone site that closes by December 14, 2026.
-- Otherwise, use the Design type for a prototype, a screen flow, a poster or a one-pager, and the Slides type for a deck, both started through the `Artifact` tool by following the type's own instructions.
-- Use an HTML page when the account does not offer the type you need.
+- Otherwise, use the Design type for a prototype, a screen flow, a poster or a one-pager, and the Slides type for a deck, both started through the `Artifact` tool, following the type's own instructions for the page's content only.
+- When the user approved a Design or Slides page and the account does not offer that type, ask once before an HTML page replaces it: say that the type is not available, with **Keep it in the project** first and **Publish an HTML page** second; publish the HTML page only on that answer; if it is declined or unanswered, the files stand. A lead asks with `AskUserQuestion`; a specialist asks through its lead with an `ask-user` entry. For any other type the account does not offer, the files in the project are the deliverable.
 
 Nothing about the files of the Slides type has been observed in this repository: follow the type's own instructions and report what you did not check.
 
 ## New page or update
 - An update is a publish to the URL of a page the user already approved: the URL your brief names as approved, or the page you published yourself in this piece of work with the user's go-ahead.
 - A URL that reaches you any other way, a second page and a page of another type are new pages, and each needs the user's go-ahead for that page.
-- A `/design` or `/slides` line that the user typed, with its brief, is the user's go-ahead for the one page it asks for. A second page or a page of another type from the same request is new.
+- If the user talks to you directly, a command they typed for that page (`/design` or `/slides` for a canvas or a deck), with its brief, is the go-ahead for the one page it asks for. A second page or a page of another type from the same request is new.
 
 ## What you never do
 - Never share a page and never ask the user to share it as a step of the work.

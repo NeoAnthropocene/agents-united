@@ -17,7 +17,7 @@ describeMarketingRole({
   role: 'paid-acquisition-specialist',
   type: 'subagent-paid-acquisition-specialist',
   servers: ['context7'],
-  artifact: false,
+  artifact: true,
   peers: ['marketing-creative-designer', 'marketing-campaign-specialist', 'marketing-conversion-specialist', 'marketing-growth-strategist'],
   returns: 'the campaign blueprint, the keyword matrix, the ad copy variants, the conversion tracking specification',
   bundle: 'performance-paid-acquisition',
@@ -33,7 +33,7 @@ describe('native paid-acquisition-specialist: a core of its own', () => {
     expect(fs.existsSync(path.resolve('registry/hosts/claude/agents/agency-paid-acquisition-specialist.md'))).toBe(false);
     expect(floorOf(text())).toContain('You are the Paid Acquisition and Performance Marketing Specialist of the growth-marketing department, working under the marketing lead orchestrator.');
     const tools = splitTools(/^tools: (.*)$/m.exec(text())![1]!);
-    expect(tools.filter(tool => tool.startsWith('mcp__'))).toEqual(['mcp__context7', 'mcp__plugin_context7_context7']);
+    expect(tools.filter(tool => tool.startsWith('mcp__'))).toEqual(['mcp__context7', 'mcp__plugin_context7_context7', 'mcp__claude_ai_Claude_Docs']);
   });
 
   it('holds the web and the task tools only when its core grants those classes, and says so about the web in its Boundaries', async () => {
