@@ -599,21 +599,29 @@ describe.each(ROLES)('native Claude $name', role => {
   });
 
   it('names no tool outside its grant, and only skills that exist, in the authored guidance', () => {
-    // The generated requests block (ADR 0076): a specialist's block names no tool, so it stays in the scan. A lead's block names `Workflow`, `Bash`, `Monitor` and the schedule tools
-    // for the case the lead holds them (its tools line may lack some), so for a lead the scan leaves the block out; its own suite checks it.
+    // The generated requests block (ADR 0076) stays in the scan. A specialist's block names no tool. A lead's block names `Workflow` only in the sentence that runs a saved workflow
+    // when `Workflow` is among its tools (six leads lack it), so for a lead that one token is exempt inside the block; every other tool the block names must be in the grant.
     // The generated publishing block (ADR 0077) is checked by its own suite: it names the bundled skills design and slides, which only a role that lists them can invoke.
     const authored = read().split('<!-- agents-united:floor:end -->')[1];
-    const withoutRequests = role.mainThread ? authored.replace(/<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/, '') : authored;
-    const body = withoutRequests.replace(/<!-- agents-united:publishing:start[^>]*-->[\s\S]*?<!-- agents-united:publishing:end -->/, '');
+    const requestsBlock = /<!-- agents-united:requests:start[^>]*-->[\s\S]*?<!-- agents-united:requests:end -->/;
+    const withoutPublishing = authored.replace(/<!-- agents-united:publishing:start[^>]*-->[\s\S]*?<!-- agents-united:publishing:end -->/, '');
+    const body = withoutPublishing.replace(requestsBlock, '');
+    const block = requestsBlock.exec(withoutPublishing)?.[0] ?? '';
     const catalog = new Set(loadToolPolicy('registry', 'claude').catalog.map(entry => entry.name));
     const held = new Set(declaredNames());
-    for (const match of body.matchAll(/`([A-Za-z_][\w-]*)`/g)) {
-      const token = match[1];
-      if (catalog.has(token) || token.startsWith('mcp__')) {
-        const covered = held.has(token) || [...held].some(tool => tool.startsWith('mcp__') && token.startsWith(`${tool}__`));
-        expect(covered, `${token} is named but not granted`).toBe(true);
+    const BLOCK_OPTIONAL = new Set(['Workflow']);
+    const scan = (text: string, optional: ReadonlySet<string>): void => {
+      for (const match of text.matchAll(/`([A-Za-z_][\w-]*)`/g)) {
+        const token = match[1];
+        if (optional.has(token)) continue;
+        if (catalog.has(token) || token.startsWith('mcp__')) {
+          const covered = held.has(token) || [...held].some(tool => tool.startsWith('mcp__') && token.startsWith(`${tool}__`));
+          expect(covered, `${token} is named but not granted`).toBe(true);
+        }
       }
-    }
+    };
+    scan(body, new Set());
+    scan(block, role.mainThread ? BLOCK_OPTIONAL : new Set());
     // Only a table whose second column is headed "Skill" names skills; other tables (bundles, say) are not checked here.
     let inSkillTable = false;
     for (const line of body.split('\n')) {
