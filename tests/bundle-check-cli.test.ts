@@ -82,6 +82,20 @@ describe('bundle-check through the real built public CLI', () => {
     for (const check of r.json.checks) expect(check.status).toBe('not-run');
   });
 
+  // CAC nests a dotted option name into an object: one that clashes with another option made it throw a stack trace, and a
+  // dotted help or version flag made it print the usage text and exit 0, before the action could refuse either.
+  it('routes a dotted option name, including a dotted help or version flag, through the JSON exit-2 USAGE result', () => {
+    const f = build();
+    for (const extra of [['--artifact.x', 'y'], ['--registry.a.b', 'z'], ['--help.topic'], ['-h.x'], ['--version.x'], ['--bogus.a', '1']]) {
+      const r = run(f, [...full(f), ...extra]);
+      expect(r.status, extra.join(' ')).toBe(2);
+      expect(r.json, r.stdout).toBeDefined();
+      expect(r.json).toMatchObject({ version: 1, kind: 'deterministic', status: 'unavailable' });
+      expect(r.json.findings.map(item => item.code), extra.join(' ')).toContain('USAGE');
+      for (const check of r.json.checks) expect(check.status).toBe('not-run');
+    }
+  });
+
   for (const missing of ['--artifact', '--registry']) {
     it(`routes a missing ${missing} through the JSON exit-2 USAGE result`, () => {
       const f = build();
