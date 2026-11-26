@@ -503,6 +503,33 @@ describe('author-rule bounded draft helper', () => {
     expect(fs.readdirSync(path.join(f.checkout, 'registry')).filter(entry => entry.endsWith('.tmp'))).toHaveLength(1);
   });
 
+  it('removes the lock when writing the process id into it fails, and writes nothing else', () => {
+    const f = fixture();
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'fail-lock-write' });
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/could not finish/i);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+  });
+
+  it('reports a lock it could not remove after a successful run as a warning, and still succeeds', () => {
+    const f = fixture();
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'fail-lock-removal' });
+    expect(result.exit, result.stdout + result.stderr).toBe(0);
+    expect(result.report.status).toBe('written');
+    expect(result.report.warnings).toHaveLength(1);
+    expect(result.report.warnings[0]).toContain('.bundles.json.lock');
+    expect(bundlesOf(f)['agent-factory'].rules).toEqual(['skill-attribution.md', 'release-notes.md']);
+    // The seam only forces the failure, so the lock is still there, as it would be after a real one.
+    expect(fs.existsSync(path.join(f.checkout, 'registry/.bundles.json.lock'))).toBe(true);
+  });
+
+  it('adds a warning only when something went wrong, so the documented report stays as it is', () => {
+    const f = fixture();
+    expect('warnings' in run(f).report).toBe(false);
+  });
+
   it('prints its usage for a missing or unreadable job argument and writes nothing', () => {
     const f = fixture();
     const none = spawnSync(process.execPath, [helper], { cwd: f.root, encoding: 'utf8' });

@@ -17,6 +17,7 @@ const ENTRY_POINTS = new Set(['claude', 'gemini', 'agents', 'cursor']);
 const DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
 // Test seam. AUTHOR_RULE_TEST_FAULT is a test-only switch (a comma-separated list) that can only force failures: it never
 // writes, changes or deletes a file, it only makes the helper behave as if a step had failed or a file had changed.
+// Faults: manifest-changed, fail-before-rename, rule-replaced, temp-replaced, fail-lock-write, fail-lock-removal.
 // Used only by tests/author-rule-skill.test.ts.
 const faults = new Set((process.env.AUTHOR_RULE_TEST_FAULT ?? '').split(',').filter(Boolean));
 
@@ -124,12 +125,18 @@ function run(argument) {
   const temporary = path.join(registry, `.bundles-${randomBytes(6).toString('hex')}.tmp`);
   // Only what this run created is ever removed: each flag is set just before the create, and cleared again when the create finds the file already there.
   let lockHeld = false, ruleWritten = false, temporaryWritten = false;
-  let target;
+  let target, failure;
   try {
-    try { fs.writeFileSync(lock, `${process.pid}\n`, { flag: 'wx' }); lockHeld = true; } catch (error) {
+    // The flag is set as soon as the exclusive open succeeds, before the process id is written, so a failed write still removes the lock.
+    let descriptor;
+    try { descriptor = fs.openSync(lock, 'wx'); lockHeld = true; } catch (error) {
       if (error?.code === 'EEXIST') block(`Another run holds ${lock}; wait for it to finish, or delete the file if no run is active. Nothing was changed.`);
       throw error;
     }
+    try {
+      if (faults.has('fail-lock-write')) throw Object.assign(new Error('injected failure'), { code: 'EIO' });
+      fs.writeSync(descriptor, `${process.pid}\n`);
+    } finally { fs.closeSync(descriptor); }
     target = bundleFile(registry, job.bundle, ruleFile);
     try { ruleWritten = true; fs.writeFileSync(rulePath, body, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') ruleWritten = false; throw error; }
     try { temporaryWritten = true; fs.writeFileSync(temporary, target.after, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') temporaryWritten = false; throw error; }
@@ -150,11 +157,20 @@ function run(argument) {
       let why = error instanceof Blocked ? error.message : `The helper could not finish (${error?.code ?? 'unexpected error'}).`;
       if (left.length) why += ` Left in place, because its bytes are no longer the ones this run wrote: ${left.join(', ')}. Check it and remove it by hand if it is not yours.`;
       if (stuck.length) why += ` It could not remove: ${stuck.join(', ')}. Remove ${stuck.length === 1 ? 'it' : 'them'} by hand.`;
-      throw new Blocked(why);
-    }
-    throw error;
-  } finally {
-    if (lockHeld) { try { fs.rmSync(lock, { force: true }); } catch { /* a stale lock is reported to the next run, which names the file */ } }
+      failure = new Blocked(why);
+    } else failure = error;
+  }
+  // The lock goes last. A removal that fails is reported (a stale lock would otherwise only surface as the next run's refusal).
+  let lockProblem;
+  if (lockHeld) {
+    try {
+      if (faults.has('fail-lock-removal')) throw Object.assign(new Error('injected failure'), { code: 'EPERM' });
+      fs.rmSync(lock, { force: true });
+    } catch { lockProblem = `The lock file ${lock} could not be removed; delete it by hand before the next run.`; }
+  }
+  if (failure) {
+    if (!lockProblem) throw failure;
+    throw new Blocked(`${failure instanceof Blocked ? failure.message : `The helper could not finish (${failure?.code ?? 'unexpected error'}).`} ${lockProblem}`);
   }
   return {
     version: 1, status: 'written',
@@ -162,6 +178,7 @@ function run(argument) {
     bundle: { name: job.bundle, file: 'registry/bundles.json', rules: target.rules, sha256Before: hash(target.before), sha256After: hash(target.after) },
     validation: { status: 'unverified', reason: 'This helper runs no rule-check; run it on the written rule file.' },
     externalActions: [],
+    ...(lockProblem ? { warnings: [lockProblem] } : {}),
   };
 }
 
