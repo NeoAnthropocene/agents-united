@@ -3,7 +3,7 @@
   "criteria": [
     { "id": "task-fit", "name": "Task fit", "question": "Does the fixed artifact satisfy the original objective, fixed values, constraints and acceptance criteria?" },
     { "id": "shared-semantics", "name": "Shared semantics", "question": "Does each applicable shared definition and four-field contract retain the intended identity, mission, scope, output and safety?" },
-    { "id": "host-fit", "name": "Host fit", "question": "Do applicable native mechanics match the selected guides, snapshots, profile, tool policy and declared surface?" },
+    { "id": "host-fit", "name": "Host fit", "question": "Do applicable native mechanics match the selected guides, snapshots, profile, tool policy and declared surface? For a rule: Claude and Cline delivery only, Antigravity not covered." },
     { "id": "dependency-usefulness", "name": "Dependency usefulness", "question": "Are required delivery/loading edges complete and useful, with optional integrations and unavailable dependencies explicit?" },
     { "id": "evidence-truthfulness", "name": "Evidence truthfulness", "question": "Do inventory, diff, check receipts and claims distinguish deterministic consistency, quality findings and actual Host proof?" },
     { "id": "provenance-ownership", "name": "Provenance and ownership", "question": "Are inspected sources, licences, comparison, notices, authorship, ownership and unresolved holds represented truthfully?" },

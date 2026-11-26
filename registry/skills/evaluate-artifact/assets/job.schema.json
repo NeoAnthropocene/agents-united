@@ -69,7 +69,8 @@
           "enum": [
             "shared-pair",
             "skill",
-            "claude-agent"
+            "claude-agent",
+            "rule"
           ]
         },
         "identity": {

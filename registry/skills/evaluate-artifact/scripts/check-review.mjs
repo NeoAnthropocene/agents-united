@@ -265,6 +265,7 @@ function checkJob(jobFile) {
   const host = job.authoringHost;
   if ((host.observedVersion === null) === (host.unverifiedReason === null)) fail('Authoring Host needs an observed version or an explicit unverified reason.');
   if (job.subject.kind === 'claude-agent' && !job.subject.target) fail('Claude agent review requires its explicit target context.');
+  if (job.subject.kind === 'rule' && !job.subject.target) fail('Rule review requires its explicit target context.');
   const inventory = snapshot(roots.candidate, budget);
   const declared = job.candidate.files.map(({ role: _role, ...pin }) => ({ ...pin, path: relative(pin.path) }))
     .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
@@ -327,7 +328,8 @@ function checkJob(jobFile) {
   }
   const { subject } = job;
   if (subject.kind === 'skill' && subject.definition !== null) fail('A Skill-only review has no shared definition.');
-  if (subject.kind !== 'skill' && !subject.definition) fail('Shared/native review requires its exact shared definition stem.');
+  if (subject.kind === 'rule' && subject.definition !== null) fail('A rule review has no shared definition.');
+  if (subject.kind !== 'skill' && subject.kind !== 'rule' && !subject.definition) fail('Shared/native review requires its exact shared definition stem.');
   if (subject.kind === 'shared-pair') {
     if (subject.identity !== subject.definition || subject.target !== null) fail('Shared definition must match the host-neutral pair identity.');
     if (!same([...subject.paths].sort(), [`core/${subject.definition}.contract.json`, `core/${subject.definition}.core.md`])) fail('Shared definition pair paths are incomplete or substituted.');
@@ -336,8 +338,8 @@ function checkJob(jobFile) {
   if (subject.kind === 'claude-agent') for (const [kind, suffix] of [['shared-core', 'core.md'], ['shared-contract', 'contract.json']]) {
     if (!hasPin(path.join(job.source.registry, 'core', `${subject.definition}.${suffix}`), kind)) fail(`Missing required ${kind} pin for definition ${subject.definition}.`);
   }
-  const pages = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', hook: 'hook/hooks.md', tools: 'tools/tools-reference.md', orchestration: 'orchestration/workflows.md' };
-  const guideKinds = subject.target !== null ? ['agent', 'skill', 'hook', 'tools', 'orchestration'] : subject.kind === 'skill' ? ['skill'] : [];
+  const pages = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', hook: 'hook/hooks.md', tools: 'tools/tools-reference.md', orchestration: 'orchestration/workflows.md', rule: 'rule/memory.md' };
+  const guideKinds = subject.kind === 'rule' ? ['rule'] : subject.target !== null ? ['agent', 'skill', 'hook', 'tools', 'orchestration'] : subject.kind === 'skill' ? ['skill'] : [];
   const library = path.join(job.source.checkout, 'host-library/claude');
   const libraryLock = jsonAt(path.join(library, 'library.lock.json'), budget.maxEvidenceFileBytes, 'Library lock');
   if (libraryLock.host !== 'claude') fail('Selected library lock belongs to a different Host.');
@@ -359,7 +361,7 @@ function checkJob(jobFile) {
   if (!physicallySame(job.rubric.path, rubricFile)) fail('Review rubric must be this bundled rubric.');
   const rubric = JSON.parse(decode(pinned(job.rubric, budget.maxEvidenceFileBytes, 'Rubric')));
   if (rubric.version !== job.rubric.version || !same([...job.rubric.criteria.map(item => item.id)].sort(), rubric.criteria.map(item => item.id).sort())) fail('Fixed rubric criterion coverage mismatch.');
-  const needsShared = job.subject.kind !== 'skill';
+  const needsShared = job.subject.kind !== 'skill' && job.subject.kind !== 'rule';
   const needsHost = job.subject.target !== null;
   const needsCoverage = coverageFilesOf(job).length > 0;
   for (const criterion of job.rubric.criteria) {
