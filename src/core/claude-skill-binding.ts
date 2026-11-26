@@ -119,17 +119,24 @@ function assertBoundSkill(
   return binding;
 }
 
-/** True for the declared bundle itself and for a bundle whose `parentBundle` chain, read from the registry manifest, reaches it. */
+/**
+ * True for the declared bundle itself and for a bundle whose `parentBundle` chain, read from the registry manifest, reaches it. A
+ * `parentBundle` names a bundle by its name or by one of its aliases, resolved the way registry.ts (withInheritedOptionalMcps) and
+ * installer.ts (the parent lookup) resolve it: the name first, then the first bundle listing the alias. That lookup is mirrored here
+ * (both of those are inline in a larger function and not exported).
+ */
 function reachesBundle(bundle: BundleDefinition, registryDir: string): boolean {
   if (bundle.name === BUNDLE) return true;
   let known: Record<string, BundleDefinition> = {};
   try {
     known = (JSON.parse(fs.readFileSync(path.join(registryDir, 'bundles.json'), 'utf8')) as { bundles?: Record<string, BundleDefinition> }).bundles ?? {};
   } catch { /* an unreadable manifest leaves only the bundle's own parent link */ }
+  const named = (identifier: string | undefined): BundleDefinition | undefined =>
+    identifier === undefined ? undefined : known[identifier] ?? Object.values(known).find(candidate => candidate.aliases?.includes(identifier));
   const seen = new Set<string>([bundle.name]);
-  for (let parent = bundle.parentBundle; parent !== undefined && !seen.has(parent); parent = known[parent]?.parentBundle) {
-    if (parent === BUNDLE) return true;
-    seen.add(parent);
+  for (let parent = named(bundle.parentBundle); parent !== undefined && !seen.has(parent.name); parent = named(parent.parentBundle)) {
+    if (parent.name === BUNDLE) return true;
+    seen.add(parent.name);
   }
   return false;
 }

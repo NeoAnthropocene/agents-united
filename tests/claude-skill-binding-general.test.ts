@@ -82,6 +82,33 @@ describe('general Claude factory skill binding (ADR 0082 slice S0b)', () => {
     expect(assertClaudeSkillBindings(child, resolved, registryDir, 'project', true).map(binding => binding.skill)).toEqual(['author-skill', 'author-rule']);
   });
 
+  // The registry and the installer resolve a parentBundle that names an alias of a bundle (registry.ts withInheritedOptionalMcps, installer.ts
+  // parent lookup). The binding's parent walk resolves it the same way, so an aliased link does not hide a bundle that reaches agent-factory.
+  it('follows a parentBundle that names an alias, at any link of the chain', async () => {
+    const copy = path.resolve('scratch/test-binding-alias-registry');
+    await fs.remove(copy);
+    try {
+      await fs.copy(registryDir, copy);
+      const manifestFile = path.join(copy, 'bundles.json');
+      const manifest = await fs.readJson(manifestFile) as { bundles: Record<string, BundleDefinition> };
+      manifest.bundles['agent-factory'] = { ...manifest.bundles['agent-factory']!, aliases: [...(manifest.bundles['agent-factory']!.aliases ?? []), 'factory-alias'] };
+      manifest.bundles['aliased-mid'] = { name: 'aliased-mid', domain: 'contributor', description: 'Extends the factory through its alias', aliases: ['mid-alias'], parentBundle: 'factory-alias' };
+      manifest.bundles['aliased-unrelated'] = { name: 'aliased-unrelated', description: 'Extends another bundle', aliases: ['unrelated-alias'], parentBundle: 'software-engineering' };
+      await fs.writeJson(manifestFile, manifest);
+
+      const resolved = await new RegistryResolver(copy).resolve('agent-factory');
+      const lists: BundleDefinition = { name: 'child', description: 'Lists the bound Skills', skills: ['author-skill', 'author-rule'] };
+      const skills = (bundle: BundleDefinition) => assertClaudeSkillBindings(bundle, resolved, copy, 'project', true).map(binding => binding.skill);
+      // Through an alias of agent-factory itself, through an aliased intermediate, and through both.
+      expect(skills({ ...lists, name: 'via-factory-alias', parentBundle: 'factory-alias' })).toEqual(['author-skill', 'author-rule']);
+      expect(skills({ ...lists, name: 'via-mid-alias', parentBundle: 'mid-alias' })).toEqual(['author-skill', 'author-rule']);
+      // An alias of an unrelated bundle still takes nothing.
+      expect(skills({ ...lists, name: 'via-unrelated-alias', parentBundle: 'unrelated-alias' })).toEqual([]);
+    } finally {
+      await fs.remove(copy);
+    }
+  });
+
   it('installs the attribution rule only under each bound skill for the agent-factory bundle', async () => {
     const bundle = await factoryBundle();
     const resolved = await new RegistryResolver(registryDir).resolve('agent-factory');
