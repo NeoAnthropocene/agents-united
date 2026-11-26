@@ -149,7 +149,8 @@ describe('author-rule bounded draft helper', () => {
   const RULE = '# Release notes\n\n- Name the user-visible change before the internal cause.\n- Link the issue or the pull request for every item.\n';
   interface Fixture { root: string; checkout: string; job: Record<string, unknown>; bundles: string }
   function fixture(): Fixture {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'author-rule-'));
+    // The real path of the temp folder: the helper refuses a checkout path that goes through a link (macOS /var is one).
+    const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'author-rule-'));
     roots.push(root);
     const checkout = path.join(root, 'checkout');
     fs.mkdirSync(path.join(checkout, 'registry/rules'), { recursive: true });
@@ -348,6 +349,54 @@ describe('author-rule bounded draft helper', () => {
     expect(result.blocked.reason).toMatch(/link/i);
     expect(fs.readdirSync(elsewhere)).toEqual([]);
     expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+  });
+
+  // A junction on Windows (no privilege needed), a directory symlink elsewhere; skipped only when the machine refuses to make one.
+  function link(target: string, at: string): boolean {
+    try { fs.symlinkSync(target, at, 'junction'); return true; } catch (error) {
+      if (['EPERM', 'EACCES'].includes((error as NodeJS.ErrnoException).code ?? '')) return false;
+      throw error;
+    }
+  }
+  function expectRealFolderUntouched(f: Fixture): void {
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+  }
+
+  it('refuses a checkout path that is a link to the real checkout, writing nothing in the real folder', () => {
+    const f = fixture();
+    const alias = path.join(f.root, 'alias');
+    if (!link(f.checkout, alias)) return;
+    f.job.checkout = alias;
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/link|real path/i);
+    expectRealFolderUntouched(f);
+  });
+
+  it('refuses a checkout whose parent folder is a link, writing nothing in the real folder', () => {
+    const f = fixture();
+    const parent = path.join(f.root, 'linked-parent');
+    if (!link(f.root, parent)) return;
+    f.job.checkout = path.join(parent, 'checkout');
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/link|real path/i);
+    expectRealFolderUntouched(f);
+  });
+
+  it('refuses a registry folder that is a link to another registry, writing nothing in the target', () => {
+    const f = fixture();
+    const other = path.join(f.root, 'other-registry');
+    fs.renameSync(path.join(f.checkout, 'registry'), other);
+    if (!link(other, path.join(f.checkout, 'registry'))) return;
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/link/i);
+    expect(fs.readdirSync(other).sort()).toEqual(['bundles.json', 'rules']);
+    expect(fs.readdirSync(path.join(other, 'rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+    expect(fs.readFileSync(path.join(other, 'bundles.json'), 'utf8')).toBe(f.bundles);
   });
 
   it('prints its usage for a missing or unreadable job argument and writes nothing', () => {

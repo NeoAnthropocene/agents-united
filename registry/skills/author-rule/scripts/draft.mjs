@@ -29,6 +29,16 @@ function realDirectory(dir, label) {
   if (!entry.isDirectory()) block(`${label} is not a folder: ${dir}`);
 }
 
+// The checkout and every folder above it must be real: a link or junction anywhere in the path would send the writes elsewhere.
+function realCheckout(checkout) {
+  const given = path.resolve(checkout);
+  let real;
+  try { real = fs.realpathSync(given); } catch { block(`The checkout is unavailable: ${given}`); }
+  const same = process.platform === 'win32' ? real.toLowerCase() === given.toLowerCase() : real === given;
+  if (!same) block(`The checkout path goes through a link or junction (it resolves to ${real}); use the real path of the contributor's checkout: ${given}`);
+  return given;
+}
+
 function readJob(argument) {
   if (typeof argument !== 'string' || !path.isAbsolute(argument)) block('The one argument must be the absolute path of the job JSON file.');
   regularFile(argument, 'The job file');
@@ -83,7 +93,7 @@ function bundleFile(registry, bundleName, ruleFile) {
 function run(argument) {
   const job = readJob(argument);
   const ruleFile = `${job.name}.md`;
-  const registry = path.join(path.resolve(job.checkout), 'registry');
+  const registry = path.join(realCheckout(job.checkout), 'registry');
   if (!fs.existsSync(registry)) block(`The checkout has no registry folder: ${registry}`);
   realDirectory(registry, 'The registry folder');
   const rulesDir = path.join(registry, 'rules');
