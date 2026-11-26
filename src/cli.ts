@@ -3295,21 +3295,26 @@ cli.version('1.0.0');
  * The read-only check commands whose every misuse is answered with their own JSON usage result and exit 2. Each maps to the
  * function that builds that result from a list of problems.
  */
-const JSON_USAGE_COMMANDS: Readonly<Record<string, (problems: string[]) => unknown>> = {
-  'rule-check': problems => ruleCheckUsageResult(problems),
-  'skill-check': problems => skillCheckUsageResult(problems),
-  'bundle-check': problems => bundleCheckUsageResult(problems),
-};
+const JSON_USAGE_COMMANDS: ReadonlyMap<string, (problems: string[]) => unknown> = new Map<string, (problems: string[]) => unknown>([
+  ['rule-check', problems => ruleCheckUsageResult(problems)],
+  ['skill-check', problems => skillCheckUsageResult(problems)],
+  ['bundle-check', problems => bundleCheckUsageResult(problems)],
+]);
 
 /**
  * The JSON check commands answer misuse with a JSON usage result and exit 2, but CAC parses the options before any action
  * runs and throws on some input (a dotted option that clashes with another, e.g. `--artifact x --artifact.y z`). So for
  * these commands the parse is done first, on its own, and a throw becomes the same JSON result. `--help` and `-h` are not
  * misuse: CAC prints the usage text for them and the exit code is 0.
+ *
+ * The guarantee covers the documented command-first form, `agents <command> ...`: the command is the first argument after
+ * node and the script, and nothing else. An option-first form (`agents --artifact /p skill-check ...`) or any other first
+ * argument goes to `cli.parse()` unchanged and keeps CAC's own behaviour. A Map holds the table, so an inherited object key
+ * such as `constructor` is never taken for a command.
  */
 function parseCommandLine(): void {
-  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
-  const usageResult = command === undefined ? undefined : JSON_USAGE_COMMANDS[command];
+  const first = process.argv[2];
+  const usageResult = first === undefined || first.startsWith('-') ? undefined : JSON_USAGE_COMMANDS.get(first);
   if (usageResult === undefined) {
     cli.parse();
     return;
