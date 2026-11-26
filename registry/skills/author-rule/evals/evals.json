@@ -1,0 +1,50 @@
+{
+  "skill_name": "author-rule",
+  "status": "prepared-not-run",
+  "comparison": [
+    "with-skill",
+    "without-skill"
+  ],
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a rule named release-notes to the agent-factory bundle in my checkout on a feature branch: release notes must name the user-visible change before the internal cause and link the issue for every item. Use the supplied checkout and local intent; do not commit, push or install.",
+      "expected_output": "One registry/rules/release-notes.md with a title and two verifiable instructions, no front matter, and one new rules[] entry in registry/bundles.json; the raw rule-check JSON with exit 0, both hashes, Antigravity not covered, and no commit, push or install. Run the same supplied job with and without the skill.",
+      "runs": [
+        {
+          "prompt": "Add a rule named release-notes to the agent-factory bundle in my checkout on a feature branch: release notes must name the user-visible change before the internal cause and link the issue for every item. Use the supplied checkout and local intent; do not commit, push or install.",
+          "skill": "author-rule",
+          "condition": "with-skill"
+        },
+        {
+          "prompt": "Add a rule named release-notes to the agent-factory bundle in my checkout on a feature branch: release notes must name the user-visible change before the internal cause and link the issue for every item. Use the supplied checkout and local intent; do not commit, push or install.",
+          "skill": null,
+          "condition": "without-skill"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My draft rule registry/rules/review-habits.md fails rule-check: it starts with a front-matter block and has a heading called Host Routing. Repair only that file, keep my other lines byte for byte, and report the raw checker output before and after.",
+      "expected_output": "The front-matter block is removed and the heading renamed, the unchanged lines keep their hash, the bundle entry is untouched, and both raw rule-check outputs and exits are reported with the final exit 0. No marker or front matter is added to silence the check. Run the same repair with and without the skill.",
+      "runs": [
+        {
+          "prompt": "My draft rule registry/rules/review-habits.md fails rule-check: it starts with a front-matter block and has a heading called Host Routing. Repair only that file, keep my other lines byte for byte, and report the raw checker output before and after.",
+          "skill": "author-rule",
+          "condition": "with-skill"
+        },
+        {
+          "prompt": "My draft rule registry/rules/review-habits.md fails rule-check: it starts with a front-matter block and has a heading called Host Routing. Repair only that file, keep my other lines byte for byte, and report the raw checker output before and after.",
+          "skill": null,
+          "condition": "without-skill"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "kind": "unrelated-control",
+      "prompt": "Rename the variable total to subtotal in the supplied function and keep the behaviour. No rule, bundle or registry change is requested.",
+      "expected_output": "The variable is renamed in the function and nothing else changes; the author-rule workflow does not activate, no rule file is written and no bundle entry is added."
+    }
+  ]
+}
