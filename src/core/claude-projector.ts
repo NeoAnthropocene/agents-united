@@ -91,10 +91,10 @@ const MARKER_PROFILE = 'claude';
  * the JSON plugin manifest (which cannot carry the HTML-comment form) must contain exactly this
  * substring to be recognised as ours by both `applyCompoundLane` and `agents doctor`.
  */
-const MARKER_PREFIX = 'managed-by: agents-united';
+export const MARKER_PREFIX = 'managed-by: agents-united';
 
 const HOST = 'claude';
-const ENTRYPOINT_RULES = new Set(['CLAUDE.md', 'CLAUDE.local.md', 'GEMINI.md', 'AGENTS.md', 'CURSOR.md']);
+export const ENTRYPOINT_RULES: ReadonlySet<string> = new Set(['CLAUDE.md', 'CLAUDE.local.md', 'GEMINI.md', 'AGENTS.md', 'CURSOR.md']);
 
 /**
  * ADR 0018 decision 3 — a coordinator is the delegation hub, so its projected tool set is the

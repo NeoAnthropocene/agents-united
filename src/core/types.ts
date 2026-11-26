@@ -1288,6 +1288,48 @@ export interface SkillCheckResult {
   acceptedDraft: false;
 }
 
+/** ADR 0082: the deterministic rule command (`agents rule-check`); the checks live in rule-check.ts. */
+export type RuleCheckCheckId = 'name' | 'size' | 'encoding' | 'budget' | 'front-matter' | 'structure' | 'managed-marker';
+export type RuleCheckStatus = 'passed' | 'failed' | 'unavailable';
+export type RuleCheckGateStatus = 'passed' | 'failed' | 'not-run';
+export type RuleCheckCode =
+  | 'USAGE' | 'INPUT_UNAVAILABLE'
+  | 'NAME' | 'SIZE' | 'ENCODING' | 'BUDGET' | 'FRONT_MATTER' | 'STRUCTURE' | 'MANAGED_MARKER';
+
+export interface RuleCheckFinding {
+  code: RuleCheckCode;
+  /** The checked file's path, or null for a usage finding (no file was named well enough to report). */
+  path: string | null;
+  message: string;
+}
+
+export interface RuleCheckGate {
+  id: RuleCheckCheckId;
+  status: RuleCheckGateStatus;
+  reason: string | null;
+  findings: RuleCheckFinding[];
+}
+
+export interface RuleCheckInput {
+  /** Absolute path of one canonical rule `.md` file. */
+  artifact?: string;
+}
+
+export interface RuleCheckResult {
+  version: 1;
+  kind: 'deterministic';
+  status: RuleCheckStatus;
+  artifact: string | null;
+  /** Lines counted the way the Claude projector counts them (`split(/\r?\n/).length`), or null when the file was not read. */
+  lines: number | null;
+  /** The Claude rule budget in lines (`ClaudeProjector.CLAUDE_DIALECT.maxRuleLines`). */
+  budget: number;
+  checks: RuleCheckGate[];
+  findings: RuleCheckFinding[];
+  quality: 'pending';
+  live: 'unverified';
+}
+
 /** Plan 033 P20: the deterministic Bundle proposal command (`agents bundle-check`); the rules live in bundle-check.ts. */
 export type BundleCheckCheckId = 'inventory' | 'shape' | 'registry-rules' | 'references' | 'bundle-rules' | 'consistency';
 export type BundleCheckOperation = 'create' | 'update' | 'reuse';

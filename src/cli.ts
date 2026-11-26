@@ -9,6 +9,7 @@ import { checkFactoryArtifact } from './core/factory-check.js';
 import { checkSharedPair } from './core/shared-pair.js';
 import { runSkillCheck, skillCheckExitCode, skillCheckUsageResult } from './core/skill-check.js';
 import { bundleCheckExitCode, bundleCheckUsageResult, runBundleCheck } from './core/bundle-check.js';
+import { ruleCheckExitCode, ruleCheckUsageResult, runRuleCheck } from './core/rule-check.js';
 import type { FactoryCheckResult } from './core/types.js';
 import { resolveStateDir } from './core/state-dir.js';
 import { UninstallEngine } from './core/uninstaller.js';
@@ -408,6 +409,32 @@ cli
     const result = problems.length > 0 ? skillCheckUsageResult(problems, input) : runSkillCheck(input);
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = skillCheckExitCode(result);
+  });
+
+cli
+  .command('rule-check', 'Check one canonical rule .md file against the deterministic rule checks (read-only)')
+  .allowUnknownOptions()
+  .option('--artifact [path]', 'Required: absolute path of the canonical rule .md file to check')
+  .action((options: Record<string, unknown>) => {
+    // Unknown or malformed options take the same JSON exit-2 route as every other normal outcome, not CAC's prose error.
+    const problems: string[] = [];
+    for (const name of Object.keys(options)) {
+      if (name === '--') {
+        if (Array.isArray(options['--']) && options['--'].length > 0) problems.push('Unexpected arguments after --.');
+      } else if (name !== 'artifact') {
+        problems.push(`Unknown option ${name.length > 1 ? `--${name}` : `-${name}`}.`);
+      }
+    }
+    if (cli.args.length > 0) problems.push(`Unexpected argument ${JSON.stringify(String(cli.args[0]))}; use --artifact.`);
+    let artifact: string | undefined;
+    if (options.artifact !== undefined) {
+      if (typeof options.artifact === 'string') artifact = options.artifact;
+      else problems.push('--artifact needs exactly one text value.');
+    }
+    const input = { artifact };
+    const result = problems.length > 0 ? ruleCheckUsageResult(problems, input) : runRuleCheck(input);
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = ruleCheckExitCode(result);
   });
 
 cli
