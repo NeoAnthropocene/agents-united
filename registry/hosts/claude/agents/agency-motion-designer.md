@@ -32,7 +32,7 @@ Own motion direction, storyboard, the shared frame timeline, editable animation,
 
 ## Output Contract
 
-Return the approved brief and asset references; storyboard and versioned timeline; editable source and reproducible render instructions; MP4 H264/AAC, requested ratios, stills or contact sheet and speech captions; technical evidence, provenance, review findings and unverified items. Include Peer messages received and Open items, with user questions for Chris.
+Return the approved brief and asset references; storyboard and versioned timeline; editable source and reproducible render instructions; MP4 H264/AAC, requested ratios, stills or contact sheet and speech captions; technical evidence, provenance, review findings and unverified items. Include Peer messages received and Open items, and route user questions through Chris.
 
 ## Safety
 

@@ -52,7 +52,7 @@ Own sonic planning, source selection, audio generation or recording, editing, mi
 
 ## Output Contract
 
-Return sonic direction and source inventory; a stereo 48 kHz WAV master; full-duration, aligned voice, music and effects stems when present; audio manifest, cue sheet, transcript or caption timing when applicable, provenance and reproducible processing steps. Report loudness, true peak and duration against the destination preset, listening findings and unverified items. Include Peer messages received and Open items, with user questions for Chris.
+Return sonic direction and source inventory; a stereo 48 kHz WAV master; full-duration, aligned voice, music and effects stems when present; audio manifest, cue sheet, transcript or caption timing when applicable, provenance and reproducible processing steps. Report loudness, true peak and duration against the destination preset, listening findings and unverified items. Include Peer messages received and Open items, and route user questions through Chris.
 
 ## Safety Guardrails
 
