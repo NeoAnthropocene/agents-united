@@ -355,6 +355,57 @@ describe('the shipped review-job builder', () => {
       expect(optional.reason).toBe('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
     });
 
+    const RULE_COMMAND = 'The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.';
+    const RULE_ARTIFACT = 'The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.';
+
+    it('refuses a rule-check whose recorded command is not the rule-check CLI on the subject file, in the builder', async () => {
+      const spec = await ruleSpec();
+      const check = spec.checks[0] as Json;
+      const cli = path.join(CHECKOUT, 'dist/cli.js');
+      const subject = path.join(candidate(), `${RULE_NAME}.md`);
+      const withArgv = (argv: string[]) => ({ ...spec, checks: [{ ...check, command: { ...check.command, argv } }] });
+      for (const argv of [
+        [cli, 'skill-check', '--artifact', subject],
+        [path.join(CHECKOUT, 'dist/other.js'), 'rule-check', '--artifact', subject],
+        [cli, 'rule-check', '--artifact', subject, '--extra'],
+        [cli, 'rule-check', subject],
+        [],
+      ]) expect(refusal(build(await writeSpec(withArgv(argv)))).reason, JSON.stringify(argv)).toBe(RULE_COMMAND);
+      for (const artifact of [path.join(candidate(), 'other.md'), `${RULE_NAME}.md`, path.join(CHECKOUT, 'registry/rules/other.md')]) {
+        expect(refusal(build(await writeSpec(withArgv([cli, 'rule-check', '--artifact', artifact])))).reason, artifact).toBe(RULE_ARTIFACT);
+      }
+      // The spellings of the rule file this route documents are all recorded as given.
+      for (const artifact of [subject, path.join(fixture.registry, 'rules', `${RULE_NAME}.md`), path.join(CHECKOUT, 'registry/rules', `${RULE_NAME}.md`)]) {
+        const built = build(await writeSpec(withArgv([cli, 'rule-check', '--artifact', artifact])));
+        expect(built.status, built.stderr).toBe(0);
+        await fs.remove(review()); await fs.remove(readFolder());
+      }
+    });
+
+    it('refuses, in the installed checker, a rule job whose rule-check command or recorded hashes differ', async () => {
+      const { jobFile } = await roundTrip(await ruleSpec());
+      const job = await fs.readJson(jobFile) as Json;
+      const tamper = async (change: (copy: Json) => void) => {
+        const copy = JSON.parse(JSON.stringify(job)) as Json;
+        change(copy);
+        await fs.writeJson(jobFile, copy);
+        return check(['--job', jobFile]);
+      };
+      const text = (run: { stderr: string; stdout: string }) => run.stderr + run.stdout;
+      const wrongCommand = await tamper(copy => { copy.checks[0].command.argv[1] = 'skill-check'; });
+      expect(wrongCommand.status).not.toBe(0);
+      expect(text(wrongCommand)).toContain(RULE_COMMAND);
+      const wrongArtifact = await tamper(copy => { copy.checks[0].command.argv[3] = path.join(candidate(), 'other.md'); });
+      expect(wrongArtifact.status).not.toBe(0);
+      expect(text(wrongArtifact)).toContain(RULE_ARTIFACT);
+      const wrongRaw = await tamper(copy => { copy.checks[0].raw.sha256 = 'f'.repeat(64); });
+      expect(wrongRaw.status).not.toBe(0);
+      expect(text(wrongRaw)).toContain('The rule-check evidence differs from the check record: rule-check-raw.');
+      const wrongReceipt = await tamper(copy => { copy.checks[0].receipt.sha256 = 'e'.repeat(64); });
+      expect(wrongReceipt.status).not.toBe(0);
+      expect(text(wrongReceipt)).toContain('The rule-check evidence differs from the check record: rule-check-receipt.');
+    });
+
     it('refuses, in the installed checker, a rule job with a second subject file, a foreign subject path or no rule-check evidence', async () => {
       const { jobFile } = await roundTrip(await ruleSpec());
       const job = await fs.readJson(jobFile) as Json;

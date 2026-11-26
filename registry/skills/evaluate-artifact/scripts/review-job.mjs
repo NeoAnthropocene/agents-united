@@ -446,6 +446,22 @@ function build(specArg) {
     copies.push([`${check.id}.raw.txt`, rawBytes, `${check.id}-raw`, 'validator', true, []], [`${check.id}.receipt.json`, receiptBytes, `${check.id}-receipt`, 'validator', true, []]);
     return { id: check.id, required: check.required, status: check.status, command, candidateDigest, exit, raw, receipt };
   });
+  // A rule job's rule-check records the documented command on the rule file under review. Only the record is compared: the command
+  // is the caller's statement (this script never runs it), and check-review.mjs refuses the same job with the same reasons.
+  if (subject.kind === 'rule') {
+    const recorded = checks.find(item => item.id === 'rule-check');
+    const cli = path.join(checkout, 'dist/cli.js');
+    const [first, verb, flag, artifact, ...rest] = recorded.command.argv;
+    if (exact(physical(recorded.command.executable.path)) !== exact(physical(runtimeFile)) || rest.length > 0
+      || typeof first !== 'string' || !path.isAbsolute(first) || exact(physical(first)) !== exact(physical(cli)) || verb !== 'rule-check' || flag !== '--artifact' || artifact === undefined) {
+      fail('The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.');
+    }
+    const rule = `${subject.identity}.md`;
+    const own = [path.join(candidate, rule), path.join(registry, 'rules', rule), path.join(checkout, 'registry', 'rules', rule)];
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(file => exact(physical(file)) === exact(physical(artifact)))) {
+      fail('The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.');
+    }
+  }
 
   // Extra evidence the caller exposes: copied byte-identically into the read folder; candidate bytes are never copied.
   for (const item of spec.evidence ?? []) {

@@ -323,6 +323,24 @@ function checkJob(jobFile) {
     const ran = job.checks.some(check => check.id === 'rule-check' && check.required === true && (check.status === 'passed' || check.status === 'failed'));
     const saved = ['rule-check-raw', 'rule-check-receipt'].every(id => job.inputs.some(input => input.id === id && input.kind === 'validator' && input.required && input.status === 'clear'));
     if (!ran || !saved) fail('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+    // Record consistency only (nothing is executed): the recorded command is the documented rule-check on this review's own rule file,
+    // and the two validator inputs (the read-folder copies) have the length and hash of the raw log and receipt the check record pins. The builder refuses the same job with the same reasons.
+    const recorded = job.checks.find(check => check.id === 'rule-check');
+    const cli = path.join(job.source.checkout, 'dist/cli.js');
+    const [first, verb, flag, artifact, ...rest] = recorded.command.argv;
+    if (!physicallySame(recorded.command.executable.path, job.runtime.executable.path) || rest.length > 0
+      || typeof first !== 'string' || !path.isAbsolute(first) || !physicallySame(first, cli) || verb !== 'rule-check' || flag !== '--artifact' || artifact === undefined) {
+      fail('The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.');
+    }
+    const rule = `${job.subject.identity}.md`;
+    const own = [path.join(roots.candidate, rule), path.join(job.source.registry, 'rules', rule), path.join(job.source.checkout, 'registry', 'rules', rule)];
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(file => physicallySame(file, artifact))) {
+      fail('The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.');
+    }
+    for (const [id, pin] of [['rule-check-raw', recorded.raw], ['rule-check-receipt', recorded.receipt]]) {
+      const input = job.inputs.find(item => item.id === id);
+      if (!pin || input.sha256 !== pin.sha256 || input.bytes !== pin.bytes) fail(`The rule-check evidence differs from the check record: ${id}.`);
+    }
   }
   for (const kind of ['profile', 'tool-policy', 'library-lock', 'validator', 'provenance']) {
     if (!job.inputs.some(input => input.kind === kind && input.required && input.status === 'clear')) fail(`Missing required ${kind} evidence.`);
