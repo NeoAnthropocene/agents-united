@@ -109,8 +109,12 @@ const ENTRYPOINT_NAMES_LOWER: ReadonlySet<string> = new Set([...ENTRYPOINT_RULES
  * is refused by the same rule `skill-check` uses (`unsafeEntryName`); the rest must be lower-case kebab-case `.md`.
  */
 export function ruleNameProblem(base: string): string | null {
-  if (ENTRYPOINT_NAMES_LOWER.has(base.toLowerCase())) {
+  if (ENTRYPOINT_RULES.has(base)) {
     return `${base} is a host entry-point file name; the projector skips it, so it never becomes a rule. Pick a kebab-case rule name.`;
+  }
+  if (ENTRYPOINT_NAMES_LOWER.has(base.toLowerCase())) {
+    const entry = [...ENTRYPOINT_RULES].find(name => name.toLowerCase() === base.toLowerCase()) ?? base;
+    return `${base} differs from the host entry-point file name ${entry} only in case; it is refused so the rule stays portable, because a case-insensitive file system (Windows, macOS) treats the two as the same file. Pick a kebab-case rule name.`;
   }
   const unsafe = unsafeEntryName(base);
   if (unsafe !== null) return `The file name ${JSON.stringify(base)} ${unsafe}; pick a lower-case kebab-case name that every operating system accepts.`;
@@ -139,12 +143,8 @@ function renderProblems(raw: string, base: string): string[] {
   if (problems.length > 0) return problems;
 
   // A backstop for any other way the body could come out empty or without its title.
-  let rendered: string;
-  try {
-    rendered = ClaudeProjector.renderRule(raw, `rules/${base}`).content;
-  } catch {
-    return [];
-  }
+  // No catch here: a renderer exception is not a clean render, so it reaches runRuleCheck's catch and the result is unavailable (exit 2).
+  const rendered = ClaudeProjector.renderRule(raw, `rules/${base}`).content;
   const kept = rendered.split(/\r?\n/).slice(2).filter(line => line.trim() !== '');
   const original = body.split(/\r?\n/).filter(line => line.trim() !== '');
   if (original.length === 0) return []; // an empty rule is the structure check's finding

@@ -3303,6 +3303,19 @@ function parseCommandLine(): void {
     cli.parse();
     return;
   }
+  // Option names are validated on the raw arguments before CAC sees them: CAC handles `--help` and `--version` itself during
+  // the parse, so a dotted form (`--help.topic`) would print the usage text and exit 0 before the action could refuse it.
+  const dotted: string[] = [];
+  for (const arg of process.argv.slice(2)) {
+    if (arg === '--') break;
+    const optionName = arg.split('=')[0] ?? '';
+    if (optionName.startsWith('-') && optionName.includes('.')) dotted.push(`Unknown option ${optionName}: option names with a dot are not accepted.`);
+  }
+  if (dotted.length > 0) {
+    console.log(JSON.stringify(ruleCheckUsageResult(dotted), null, 2));
+    process.exitCode = 2;
+    return;
+  }
   try {
     cli.parse(process.argv, { run: false });
   } catch {
