@@ -265,6 +265,99 @@ describe('the shipped review-job builder', () => {
     expect(job.rubric.criteria.find((item: Json) => item.id === 'coverage-evidence')).toMatchObject({ applicable: true, required: true });
   });
 
+  describe('rule kind (ADR 0082 decision 3, slice S1)', () => {
+    const RULE_NAME = 'release-notes';
+    const RULE_TEXT = '# Release notes\n\n- Name the user-visible change before the internal cause.\n- Link the issue or the pull request for every item.\n';
+    const TARGET = { unverifiedReason: 'No Claude process invoked.' };
+    /** A rule candidate: the one rule file `<identity>.md`, checked by the caller with the built rule-check. */
+    async function ruleSpec(overrides: Json = {}): Promise<Json> {
+      const spec = await skillSpec();
+      await fs.emptyDir(candidate());
+      await writeCandidate({ [`${RULE_NAME}.md`]: RULE_TEXT });
+      const argv = [path.join(CHECKOUT, 'dist/cli.js'), 'rule-check', '--artifact', path.join(candidate(), `${RULE_NAME}.md`)];
+      const candidateDigest = await digestOf(spec);
+      const ran = await callerRun('rule-check', argv);
+      expect(ran.exit, await fs.readFile(ran.output, 'utf8')).toBe(0);
+      return { ...spec, id: 'rule-review', subject: { kind: 'rule', identity: RULE_NAME, target: TARGET }, roles: {},
+        fixedValues: [{ name: 'rule-name', value: RULE_NAME }], acceptance: [{ id: 'task-fit', description: 'The rule names its two instructions.' }],
+        checks: [{ id: 'rule-check', required: true, status: 'passed', command: { argv, cwd: fixture.workspace }, candidateDigest, exit: ran.exit, output: ran.output }],
+        ...overrides };
+    }
+
+    it('builds a rule job: the rule file fixed as the one subject, the rule guide and page pinned, host fit applicable and shared semantics not', async () => {
+      const { job, out } = await roundTrip(await ruleSpec());
+      expect(out).toMatchObject({ status: 'job-written', counts: { files: 1, checks: 1 } });
+      expect(job.subject).toEqual({ kind: 'rule', identity: RULE_NAME, target: { host: 'claude', product: 'Claude Code CLI', scope: 'workspace', lane: 'native', observedVersion: null, unverifiedReason: TARGET.unverifiedReason }, paths: [`${RULE_NAME}.md`], definition: null });
+      expect(job.candidate.files.map((item: Json) => item.role)).toEqual(['subject']);
+      expect(job.inputs.filter((item: Json) => item.kind === 'guide').map((item: Json) => item.id)).toEqual(['rule-guide']);
+      expect(job.inputs.find((item: Json) => item.id === 'rule-guide').path).toBe(path.join(CHECKOUT, 'host-library/claude/guide/rule.md'));
+      expect(job.inputs.filter((item: Json) => item.kind === 'snapshot').map((item: Json) => item.id)).toEqual(['rule-page']);
+      expect(job.inputs.find((item: Json) => item.id === 'rule-page').path).toBe(path.join(CHECKOUT, 'host-library/claude/pages/rule/memory.md'));
+      expect(job.inputs.some((item: Json) => ['shared-core', 'shared-contract'].includes(item.kind))).toBe(false);
+      expect(job.rubric.criteria.filter((item: Json) => !item.applicable).map((item: Json) => item.id).sort()).toEqual(['coverage-evidence', 'shared-semantics']);
+      expect(job.rubric.criteria.find((item: Json) => item.id === 'host-fit')).toMatchObject({ applicable: true, required: true });
+      expect(job.rubric.criteria.find((item: Json) => item.id === 'shared-semantics').reason).toBe('A rule review has no shared definition.');
+    });
+
+    it('pins the template for upstream intent, as for any kind', async () => {
+      const { job } = await roundTrip(await ruleSpec({ intent: 'upstream' }));
+      expect(job.inputs.find((item: Json) => item.kind === 'template').path).toBe(path.join(CHECKOUT, '.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md'));
+    });
+
+    it('accepts a result for the rule job that cites the rule file and the saved check output', async () => {
+      const { out, job, jobFile, record } = await roundTrip(await ruleSpec());
+      const raw = job.inputs.find((item: Json) => item.id === 'rule-check-raw');
+      const rule = record.inventory.find((item: Json) => item.path === `${RULE_NAME}.md`);
+      const cites = [{ sourceId: 'candidate', path: `${RULE_NAME}.md`, sha256: rule.sha256, quote: '# Release notes' },
+        { sourceId: 'rule-check-raw', path: 'rule-check.raw.txt', sha256: raw.sha256, quote: '"status": "passed"' }];
+      const result = {
+        version: 2, jobId: job.id, jobDigest: out.jobDigest, candidateDigest: out.candidateDigest, status: 'reviewed', opinion: 'no-blocking-findings',
+        subject: job.subject, inventory: record.inventory, inventorySource: 'caller-provided',
+        coverage: record.inventory.map((item: Json) => ({ path: item.path, status: 'reviewed', rationale: 'Read in full.' })),
+        criteria: job.rubric.criteria.map((item: Json) => ({ id: item.id, outcome: item.applicable ? 'satisfactory' : 'not-applicable', rationale: item.reason, citations: item.applicable ? cites : [] })),
+        findings: [], deterministicEvidence: job.checks.map((item: Json) => ({ id: item.id, status: item.status, exit: item.exit, rawSha256: item.raw.sha256, receiptSha256: item.receipt.sha256, observation: 'Caller-run rule-check.' })),
+        limitations: ['Synthetic result; no reviewer was invoked. Antigravity delivery is not covered.'], live: 'unverified', openItems: [], acceptedDraft: false,
+      };
+      const resultFile = path.join(review(), 'result.json');
+      await fs.writeJson(resultFile, result);
+      const cited = check(['--job', jobFile, '--result', resultFile]);
+      expect(cited.status, cited.stderr).toBe(0);
+      expect(JSON.parse(cited.stdout)).toMatchObject({ candidateMatch: true, opinion: 'no-blocking-findings', acceptedDraft: false });
+    });
+
+    it('refuses a rule review that names a shared definition, lacks its target, lacks its rule file or reassigns its role', async () => {
+      const spec = await ruleSpec();
+      const subject = (extra: Json) => ({ kind: 'rule', identity: RULE_NAME, target: TARGET, ...extra });
+      expect(refusal(build(await writeSpec({ ...spec, subject: subject({ definition: STEM }) }))).reason).toBe('A rule review has no shared definition.');
+      expect(refusal(build(await writeSpec({ ...spec, subject: { kind: 'rule', identity: RULE_NAME } }))).reason).toBe('Rule review requires its explicit target context.');
+      expect(refusal(build(await writeSpec({ ...spec, subject: subject({ identity: 'other-rule' }) }))).reason).toBe('The rule candidate lacks its fixed subject file other-rule.md.');
+      await writeCandidate({ 'notes/keep.md': 'Unchanged note.\n' });
+      expect(refusal(build(await writeSpec({ ...spec, roles: { [`${RULE_NAME}.md`]: 'support', 'notes/keep.md': 'preservation-only' } }))).reason).toBe(`The rule kind fixes the role of ${RULE_NAME}.md as subject.`);
+    });
+
+    it('names the rule kind in its refusal for an unknown subject kind', async () => {
+      const spec = await ruleSpec();
+      expect(refusal(build(await writeSpec({ ...spec, subject: { kind: 'hook', identity: RULE_NAME, target: TARGET } }))).reason).toBe('Spec subject kind must be skill, shared-pair, claude-agent or rule.');
+    });
+
+    it('is refused by the installed checker when the job lacks its rule guide pin or claims a shared definition', async () => {
+      const { jobFile } = await roundTrip(await ruleSpec());
+      const job = await fs.readJson(jobFile) as Json;
+      const tamper = async (change: (copy: Json) => void) => {
+        const copy = JSON.parse(JSON.stringify(job)) as Json;
+        change(copy);
+        await fs.writeJson(jobFile, copy);
+        return check(['--job', jobFile]);
+      };
+      const noGuide = await tamper(copy => { copy.inputs = copy.inputs.filter((item: Json) => item.id !== 'rule-guide'); });
+      expect(noGuide.status).not.toBe(0);
+      expect(noGuide.stderr + noGuide.stdout).toMatch(/guide/i);
+      const shared = await tamper(copy => { copy.subject.definition = STEM; });
+      expect(shared.status).not.toBe(0);
+      expect(shared.stderr + shared.stdout).toMatch(/shared definition/i);
+    });
+  });
+
   it('builds the live session shape: a portable Skill, one passed skill-check and the task file as extra evidence, accepted at the first call', async () => {
     await writeCandidate(INVOICE_FILES);
     const cli = path.join(CHECKOUT, 'dist/cli.js');

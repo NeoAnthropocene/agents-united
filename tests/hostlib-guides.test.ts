@@ -123,7 +123,7 @@ describe('checkGuides', () => {
 
 describe('the committed Claude guides', () => {
   const hostDir = path.resolve('host-library/claude');
-  const GUIDES = ['agent', 'skill', 'hook', 'tools', 'orchestration', 'plugin', 'mcp', 'permissions'];
+  const GUIDES = ['agent', 'skill', 'hook', 'tools', 'orchestration', 'plugin', 'mcp', 'permissions', 'rule'];
   const read = (type: string): string => fs.readFileSync(path.join(hostDir, 'guide', `${type}.md`), 'utf8');
 
   it.each(GUIDES)('ships guide/%s.md with at least eight cited rules', type => {
