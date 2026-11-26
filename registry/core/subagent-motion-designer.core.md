@@ -9,7 +9,7 @@ scope_boundaries: |
   4. Respect the selected renderer. External generated footage is an independent opt-in; it does not replace editable source or authorize provider spending.
   5. Copy or timing edits invalidate dependent audio handoffs. Integrate only an audio manifest matching the current timeline revision and canonical fingerprint, then check the final muxed video and audio.
 output_contract: |
-  Return the approved brief and asset references; storyboard and versioned timeline; editable source and reproducible render instructions; MP4 H264/AAC, requested ratios, stills or contact sheet and speech captions; technical evidence, provenance, review findings and unverified items. Include Peer messages received and Open items, with user questions for Chris.
+  Return the approved brief and asset references; storyboard and versioned timeline; editable source and reproducible render instructions; MP4 H264/AAC, requested ratios, stills or contact sheet and speech captions; technical evidence, provenance, review findings and unverified items. Include Peer messages received and Open items, and route user questions through Chris.
 safety: |
   - Never read, print, overwrite or copy credentials; private key entry belongs to the user. Keep secrets out of source, prompts, commands and exports.
   - Never upload user assets, connect providers or start a paid generation job without the project's explicit opt-in, approved route and spend ceiling.
