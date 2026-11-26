@@ -1,7 +1,7 @@
 # Pilot 041 Human-Review & Measured Sync/Range Report + Plan 043 Job V5 Evaluation Protocol
 
 - **Date**: 2026-10-29
-- **Related Plans & ADRs**: [Plan 040](../../plans/040-signature-shot-motion-prompts.md), [Plan 041](../../plans/041-remotion-official-skills-addon.md), [Plan 042](../../plans/042-spec-driven-sound-routing-and-pilot-041.md), [Plan 043](../../plans/043-reference-led-visual-craft-gate.md), [ADR 0059](../adr/0059-sound-model-catalogue-capability-probe-and-remotion-skills-addon.md), [ADR 0060](../adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md)
+- **Related Plans & ADRs**: [Plan 040](../../plans/040-signature-shot-motion-prompts.md), [Plan 041](../../plans/041-remotion-official-skills-addon.md), [Plan 042](../../plans/042-spec-driven-sound-routing-and-pilot-041.md), [Plan 043](../../plans/043-reference-led-visual-craft-gate.md), [ADR 0059](../adr/0059-remotion-source-available-agent-skills-add-on.md), [ADR 0060](../adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md)
 - **Status**: Pilot 041 human review & measured root-cause audit **VERIFIED**; Plan 043 Jobs V0–V5 **IMPLEMENTED & HEADLESS-EVALUATED ON CLAUDE CLI** (`105e5468-1bf2-4310-89b8-219555facfe9` at `0.2362 USD` + `e7962c8a-5484-45fb-a09c-796dcf212f86` at `0.7434 USD`, total `0.9796 USD`); human listening/viewing sign-off on `chicken-lifecycle-r4.mp4` remains `unverified`.
 
 ---
