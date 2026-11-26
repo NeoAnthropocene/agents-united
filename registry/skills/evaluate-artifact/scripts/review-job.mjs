@@ -360,6 +360,12 @@ function build(specArg) {
   });
   const paths = files.filter(item => item.role === 'subject').map(item => item.path);
   if (!paths.length) fail('The candidate needs at least one subject file.');
+  // A rule is one file: exactly one subject, at <identity>.md (check-review.mjs refuses the same job).
+  if (subject.kind === 'rule' && (paths.length !== 1 || paths[0] !== `${subject.identity}.md`)) fail(`A rule review has exactly one subject file, ${subject.identity}.md.`);
+  // The route's checker ran: a rule job records an executed, required rule-check (check-review.mjs requires its validator inputs).
+  if (subject.kind === 'rule' && !(spec.checks ?? []).some(check => check.id === 'rule-check' && check.required === true && (check.status === 'passed' || check.status === 'failed'))) {
+    fail('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+  }
   const candidateDigest = hash(canonical(inventory));
 
   // Computed inputs: [id, kind, absolute file].

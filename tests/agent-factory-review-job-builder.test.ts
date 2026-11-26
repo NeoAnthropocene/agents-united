@@ -335,6 +335,56 @@ describe('the shipped review-job builder', () => {
       expect(refusal(build(await writeSpec({ ...spec, roles: { [`${RULE_NAME}.md`]: 'support', 'notes/keep.md': 'preservation-only' } }))).reason).toBe(`The rule kind fixes the role of ${RULE_NAME}.md as subject.`);
     });
 
+    it('refuses a rule candidate with a second subject file or a subject at another path, in the builder', async () => {
+      const spec = await ruleSpec();
+      await writeCandidate({ 'extra.md': 'A second file.\n' });
+      const extra = refusal(build(await writeSpec({ ...spec, roles: { 'extra.md': 'subject' } })));
+      expect(extra.reason).toBe(`A rule review has exactly one subject file, ${RULE_NAME}.md.`);
+      const other = refusal(build(await writeSpec({ ...spec, subject: { kind: 'rule', identity: 'extra', target: TARGET }, roles: { [`${RULE_NAME}.md`]: 'subject' } })));
+      expect(other.reason).toBe(`A rule review has exactly one subject file, extra.md.`);
+    });
+
+    it('refuses a rule review without an executed rule-check, in the builder', async () => {
+      const spec = await ruleSpec();
+      const check = spec.checks[0] as Json;
+      const renamed = refusal(build(await writeSpec({ ...spec, checks: [{ ...check, id: 'other-check' }] })));
+      expect(renamed.reason).toBe('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+      const notRun = refusal(build(await writeSpec({ ...spec, checks: [{ id: 'rule-check', required: true, status: 'not-run', command: check.command }] })));
+      expect(notRun.reason).toBe('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+      const optional = refusal(build(await writeSpec({ ...spec, checks: [{ ...check, required: false }] })));
+      expect(optional.reason).toBe('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+    });
+
+    it('refuses, in the installed checker, a rule job with a second subject file, a foreign subject path or no rule-check evidence', async () => {
+      const { jobFile } = await roundTrip(await ruleSpec());
+      const job = await fs.readJson(jobFile) as Json;
+      const tamper = async (change: (copy: Json) => void) => {
+        const copy = JSON.parse(JSON.stringify(job)) as Json;
+        change(copy);
+        await fs.writeJson(jobFile, copy);
+        return check(['--job', jobFile]);
+      };
+      const identity = await tamper(copy => { copy.subject.identity = 'other-rule'; });
+      expect(identity.status).not.toBe(0);
+      expect(identity.stderr + identity.stdout).toContain(`A rule review has exactly one subject file, other-rule.md.`);
+      // The second file really exists, so the candidate inventory matches and only the one-subject rule can refuse the job.
+      const extraBytes = Buffer.from('A second file.\n');
+      await writeCandidate({ 'extra.md': extraBytes });
+      const second = await tamper(copy => {
+        copy.candidate.files.push({ path: 'extra.md', kind: 'file', bytes: extraBytes.length, sha256: digest(extraBytes), role: 'subject' });
+        copy.subject.paths.push('extra.md');
+      });
+      await fs.remove(path.join(candidate(), 'extra.md'));
+      expect(second.status).not.toBe(0);
+      expect(second.stderr + second.stdout).toContain(`A rule review has exactly one subject file, ${RULE_NAME}.md.`);
+      const renamed = await tamper(copy => { copy.checks[0].id = 'other-check'; });
+      expect(renamed.status).not.toBe(0);
+      expect(renamed.stderr + renamed.stdout).toContain('A rule review needs its executed rule-check');
+      const noInput = await tamper(copy => { copy.inputs = copy.inputs.filter((item: Json) => !item.id.startsWith('rule-check')); });
+      expect(noInput.status).not.toBe(0);
+      expect(noInput.stderr + noInput.stdout).toContain('A rule review needs its executed rule-check');
+    });
+
     it('names the rule kind in its refusal for an unknown subject kind', async () => {
       const spec = await ruleSpec();
       expect(refusal(build(await writeSpec({ ...spec, subject: { kind: 'hook', identity: RULE_NAME, target: TARGET } }))).reason).toBe('Spec subject kind must be skill, shared-pair, claude-agent or rule.');

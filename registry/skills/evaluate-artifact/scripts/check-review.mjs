@@ -272,6 +272,9 @@ function checkJob(jobFile) {
   if (!same(inventory, declared)) fail('Candidate inventory/hash mismatch: missing, changed or unreported files.');
   unique(job.subject.paths.map(relative), 'Subject paths');
   if (!same([...job.subject.paths].sort(), job.candidate.files.filter(item => item.role === 'subject').map(item => item.path).sort())) fail('Subject coverage differs from the fixed candidate role inventory.');
+  if (job.subject.kind === 'rule' && (job.subject.paths.length !== 1 || job.subject.paths[0] !== `${job.subject.identity}.md`)) {
+    fail(`A rule review has exactly one subject file, ${job.subject.identity}.md.`);
+  }
   const candidateDigest = hash(canonical(inventory));
   if (job.inputs.length > budget.maxEvidenceFiles) fail('Evidence file budget exceeded.');
   unique(job.inputs.map(input => input.id), 'Input IDs');
@@ -315,6 +318,12 @@ function checkJob(jobFile) {
     if (!hasPin(path.join(workspace, relative(rel)), 'loading')) fail(`Missing required installed loading pin: ${rel}.`);
   }
   if (!hasPin(path.join(workspace, '.claude/hooks/agents-united-readonly-guard.js'), 'guard')) fail('Missing required read-only guard pin.');
+  // A rule review shows the route's checker ran: an executed, required rule-check and its saved output and receipt as validator inputs.
+  if (job.subject.kind === 'rule') {
+    const ran = job.checks.some(check => check.id === 'rule-check' && check.required === true && (check.status === 'passed' || check.status === 'failed'));
+    const saved = ['rule-check-raw', 'rule-check-receipt'].every(id => job.inputs.some(input => input.id === id && input.kind === 'validator' && input.required && input.status === 'clear'));
+    if (!ran || !saved) fail('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+  }
   for (const kind of ['profile', 'tool-policy', 'library-lock', 'validator', 'provenance']) {
     if (!job.inputs.some(input => input.kind === kind && input.required && input.status === 'clear')) fail(`Missing required ${kind} evidence.`);
   }
