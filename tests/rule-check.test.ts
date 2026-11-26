@@ -9,7 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ruleCheckExitCode, ruleCheckUsageResult, runRuleCheck } from '../src/core/rule-check.js';
+import { ruleCheckExitCode, ruleCheckUsageResult, ruleNameProblem, runRuleCheck } from '../src/core/rule-check.js';
 import { ClaudeProjector, ENTRYPOINT_RULES } from '../src/core/claude-projector.js';
 import type { RuleCheckResult } from '../src/core/types.js';
 
@@ -180,6 +180,36 @@ describe('rule-check', () => {
         expect(codesOf(result), name).toEqual(['NAME']);
         expect(checkOf(result, 'name')?.status).toBe('failed');
         expect(result.findings[0]?.path).toBe(result.artifact);
+      }
+    });
+
+    it('refuses every Windows reserved device name, with or without an extension, in any case (the pure rule, on every host)', () => {
+      const devices = ['con', 'prn', 'aux', 'nul', ...Array.from({ length: 9 }, (_, index) => `com${index + 1}`), ...Array.from({ length: 9 }, (_, index) => `lpt${index + 1}`)];
+      for (const device of devices) {
+        for (const name of [`${device}.md`, `${device.toUpperCase()}.md`, `${device}.txt`, device, `${device}.a.md`]) {
+          expect(ruleNameProblem(name), name).toMatch(/reserved/i);
+        }
+      }
+      for (const name of ['good-rule.md', 'console.md', 'com10.md', 'lpt0.md', 'conn.md', 'a-con.md', 'aux-rule.md', 'com1x.md']) expect(ruleNameProblem(name), name).toBeNull();
+    });
+
+    // Not run on Windows: there `con.md` is the console device, so the file cannot exist and a write would go to the console.
+    it.skipIf(process.platform === 'win32')('fails con.md, nul.md and lpt9.md with NAME and names the reserved device', () => {
+      for (const name of ['con.md', 'nul.md', 'lpt9.md', 'aux.md', 'com1.md', 'prn.md']) {
+        const result = check(GOOD, name);
+        expect(result.status, name).toBe('failed');
+        expect(codesOf(result), name).toEqual(['NAME']);
+        expect(result.findings[0]?.message, name).toMatch(/reserved/i);
+        expect(result.findings[0]?.message, name).toContain(name);
+      }
+    });
+
+    it('compares entry-point names without regard to case, and says they are entry points', () => {
+      for (const name of ['claude.md', 'Agents.md', 'GEMINI.MD', 'cursor.md', 'claude.local.md', 'Claude.Local.Md']) {
+        const result = check(GOOD, name);
+        expect(result.status, name).toBe('failed');
+        expect(codesOf(result), name).toEqual(['NAME']);
+        expect(result.findings[0]?.message, name).toMatch(/entry/i);
       }
     });
 

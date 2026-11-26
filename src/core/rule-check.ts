@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ClaudeProjector, ENTRYPOINT_RULES, MARKER_PREFIX } from './claude-projector.js';
-import { errorCode, shortened, validUtf8 } from './skill-check.js';
+import { errorCode, shortened, unsafeEntryName, validUtf8 } from './skill-check.js';
 import type {
   RuleCheckCheckId, RuleCheckCode, RuleCheckFinding, RuleCheckGate, RuleCheckInput, RuleCheckResult, RuleCheckStatus,
 } from './types.js';
@@ -100,6 +100,26 @@ function structureProblem(text: string): string | null {
   return null;
 }
 
+const ENTRYPOINT_NAMES_LOWER: ReadonlySet<string> = new Set([...ENTRYPOINT_RULES].map(name => name.toLowerCase()));
+
+/**
+ * Why a rule file name is refused, or null when it is a good one. The pure rule behind the name check, so the Windows
+ * device names stay tested on a host whose file system cannot hold them. A host entry-point file name is compared without
+ * regard to case (on a case-insensitive file system `claude.md` and `CLAUDE.md` are one file); a name Windows cannot hold
+ * is refused by the same rule `skill-check` uses (`unsafeEntryName`); the rest must be lower-case kebab-case `.md`.
+ */
+export function ruleNameProblem(base: string): string | null {
+  if (ENTRYPOINT_NAMES_LOWER.has(base.toLowerCase())) {
+    return `${base} is a host entry-point file name; the projector skips it, so it never becomes a rule. Pick a kebab-case rule name.`;
+  }
+  const unsafe = unsafeEntryName(base);
+  if (unsafe !== null) return `The file name ${JSON.stringify(base)} ${unsafe}; pick a lower-case kebab-case name that every operating system accepts.`;
+  if (!NAME_PATTERN.test(base)) {
+    return `The file name ${JSON.stringify(base)} must be lower-case kebab-case ending in .md (letters, digits and single hyphens, e.g. my-rule.md).`;
+  }
+  return null;
+}
+
 const quoted = (value: string): string => JSON.stringify(value.length > 80 ? `${value.slice(0, 80)}...` : value);
 
 /**
@@ -149,13 +169,8 @@ export function runRuleCheck(input: RuleCheckInput): RuleCheckResult {
     const done = (id: RuleCheckCheckId, problems: RuleCheckFinding[]): RuleCheckGate => gate(id, problems.length > 0 ? 'failed' : 'passed', null, problems);
 
     const base = path.basename(artifact);
-    const nameProblems: RuleCheckFinding[] = [];
-    if (ENTRYPOINT_RULES.has(base)) {
-      nameProblems.push(found('NAME', `${base} is a host entry-point file name; the projector skips it, so it never becomes a rule. Pick a kebab-case rule name.`));
-    } else if (!NAME_PATTERN.test(base)) {
-      nameProblems.push(found('NAME', `The file name ${JSON.stringify(base)} must be lower-case kebab-case ending in .md (letters, digits and single hyphens, e.g. my-rule.md).`));
-    }
-    const name = done('name', nameProblems);
+    const nameMessage = ruleNameProblem(base);
+    const name = done('name', nameMessage === null ? [] : [found('NAME', nameMessage)]);
 
     if (read.kind === 'oversize') {
       const reason = `The file is over ${RULE_CHECK_MAX_BYTES} bytes, so its content was not read.`;
