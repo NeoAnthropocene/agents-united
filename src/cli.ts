@@ -426,6 +426,13 @@ cli
       }
     }
     if (cli.args.length > 0) problems.push(`Unexpected argument ${JSON.stringify(String(cli.args[0]))}; use --artifact.`);
+    // CAC nests a dotted name (--artifact.x) into an object and, when two clash, keeps only one, so the raw arguments are
+    // read as well: an option name with a dot is unknown, whatever else was given.
+    for (const arg of cli.rawArgs.slice(2)) {
+      if (arg === '--') break;
+      const optionName = arg.split('=')[0] ?? '';
+      if (optionName.startsWith('-') && optionName.includes('.')) problems.push(`Unknown option ${optionName}: option names with a dot are not accepted.`);
+    }
     let artifact: string | undefined;
     if (options.artifact !== undefined) {
       if (typeof options.artifact === 'string') artifact = options.artifact;
@@ -3284,4 +3291,26 @@ export function renderClaudeActivationPlan(
 cli.help();
 cli.version('1.0.0');
 
-cli.parse();
+/**
+ * `rule-check` answers misuse with a JSON usage result and exit 2, but CAC parses the options before any action runs and
+ * throws on some input (a dotted option that clashes with another, e.g. `--artifact x --artifact.y z`). So for this
+ * command the parse is done first, on its own, and a throw becomes the same JSON result. `--help` and `-h` are not misuse:
+ * CAC prints the usage text for them and the exit code is 0.
+ */
+function parseCommandLine(): void {
+  const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
+  if (command !== 'rule-check') {
+    cli.parse();
+    return;
+  }
+  try {
+    cli.parse(process.argv, { run: false });
+  } catch {
+    console.log(JSON.stringify(ruleCheckUsageResult(['The options could not be parsed: an option name with a dot clashes with another option. Pass --artifact once, with an absolute path.']), null, 2));
+    process.exitCode = 2;
+    return;
+  }
+  void cli.runMatchedCommand();
+}
+
+parseCommandLine();

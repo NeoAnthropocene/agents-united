@@ -536,9 +536,21 @@ describe('rule-check', () => {
       expect(codesOf(done.json)).toEqual(['INPUT_UNAVAILABLE']);
     });
 
-    it('exits 2 with a JSON USAGE result for every misuse, never CAC prose', () => {
+    // `--help` and `-h` are the one documented exception: they print the usage text and exit 0 (see the help test below).
+    it('exits 2 with a JSON USAGE result for every misuse, never CAC prose or a stack trace', () => {
       const file = rule(GOOD);
       const cases: string[][] = [
+        // Dotted option names: CAC nests them into an object, and one that clashes with another option made CAC throw.
+        ['--artifact.x', 'foo'],
+        ['--foo.bar', '1'],
+        ['--artifact', file, '--artifact.x', 'y'],
+        ['--artifact', file, '--artifact.x.y', 'z'],
+        ['--artifact', file, '--artifact.0', 'z'],
+        ['--artifact.x', 'y', '--artifact', file],
+        ['--artifact', file, '--a.b', '1', '--a.b.c', '2'],
+        ['--a', '1', '--a.b', '2'],
+        ['--constructor.prototype.x', '1'],
+        ['--artifact', file, '--no-artifact'],
         [],
         ['--artifact'],
         ['--artifact', file, '--artifact', file],
@@ -555,6 +567,7 @@ describe('rule-check', () => {
         expect(done.json.status, argv.join(' ')).toBe('unavailable');
         expect(codesOf(done.json), argv.join(' ')).toEqual(['USAGE']);
         expect(done.json.checks.every(item => item.status === 'not-run')).toBe(true);
+        expect(done.stderr, argv.join(' ')).toBe('');
       }
     });
 
