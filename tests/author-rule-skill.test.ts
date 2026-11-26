@@ -480,6 +480,28 @@ describe('author-rule bounded draft helper', () => {
     expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
   });
 
+  it('leaves a rule file whose bytes are not the ones this run wrote, and names it as left in place', () => {
+    const f = fixture();
+    // The seam makes the helper see different bytes in the rule at rollback time; no file is touched.
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'fail-before-rename,rule-replaced' });
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/left in place/i);
+    expect(result.blocked.reason).toContain('release-notes.md');
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/rules/release-notes.md'), 'utf8')).toBe(RULE);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+  });
+
+  it('leaves a temporary file whose bytes are not the ones this run wrote, and removes the rule it did write', () => {
+    const f = fixture();
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'fail-before-rename,temp-replaced' });
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/left in place/i);
+    expect(result.blocked.reason).toMatch(/\.bundles-[0-9a-f]+\.tmp/);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).filter(entry => entry.endsWith('.tmp'))).toHaveLength(1);
+  });
+
   it('prints its usage for a missing or unreadable job argument and writes nothing', () => {
     const f = fixture();
     const none = spawnSync(process.execPath, [helper], { cwd: f.root, encoding: 'utf8' });

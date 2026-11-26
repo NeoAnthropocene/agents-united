@@ -15,6 +15,10 @@ const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // The host entry-point names the projectors skip, without .md (rule-check compares them without regard to case).
 const ENTRY_POINTS = new Set(['claude', 'gemini', 'agents', 'cursor']);
 const DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
+// Test seam. AUTHOR_RULE_TEST_FAULT is a test-only switch (a comma-separated list) that can only force failures: it never
+// writes, changes or deletes a file, it only makes the helper behave as if a step had failed or a file had changed.
+// Used only by tests/author-rule-skill.test.ts.
+const faults = new Set((process.env.AUTHOR_RULE_TEST_FAULT ?? '').split(',').filter(Boolean));
 
 function regularFile(file, label) {
   const entry = fs.lstatSync(file, { throwIfNoEntry: false });
@@ -93,6 +97,17 @@ function bundleFile(registry, bundleName, ruleFile) {
   return { manifest, before: raw, after: Buffer.from(crlf ? written.replace(/\n/g, '\r\n') : written), rules: next };
 }
 
+// Rollback removes a file only while it is still the file this run wrote: a pathname alone could now name a replacement
+// that someone else created. Gone is fine; different or unreadable bytes are left in place and named.
+function removeIfMine(file, expected, replacedFault, stuck, left) {
+  try {
+    let mine;
+    try { mine = !faults.has(replacedFault) && hash(fs.readFileSync(file)) === hash(expected); } catch (error) { if (error?.code === 'ENOENT') return; throw error; }
+    if (!mine) { left.push(file); return; }
+    fs.rmSync(file, { force: true });
+  } catch { stuck.push(file); }
+}
+
 function run(argument) {
   const job = readJob(argument);
   const ruleFile = `${job.name}.md`;
@@ -120,21 +135,22 @@ function run(argument) {
     try { temporaryWritten = true; fs.writeFileSync(temporary, target.after, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') temporaryWritten = false; throw error; }
     // Test seam, inert unless AUTHOR_RULE_TEST_FAULT is set: 'manifest-changed' edits the manifest as another process would, and
     // 'fail-before-rename' fails between the two writes. Used only by tests/author-rule-skill.test.ts.
-    const fault = process.env.AUTHOR_RULE_TEST_FAULT;
-    if (fault === 'manifest-changed') fs.appendFileSync(target.manifest, ' ');
-    if (fault === 'fail-before-rename') throw Object.assign(new Error('injected failure'), { code: 'EIO' });
+    if (faults.has('manifest-changed')) fs.appendFileSync(target.manifest, ' ');
+    if (faults.has('fail-before-rename')) throw Object.assign(new Error('injected failure'), { code: 'EIO' });
     // The lock only keeps other runs of this helper out; an editor can still change the file, so compare the bytes once more.
     if (!fs.readFileSync(target.manifest).equals(target.before)) block('registry/bundles.json changed while the helper was working; nothing was written. Run it again.');
     fs.renameSync(temporary, target.manifest);
     temporaryWritten = false;
   } catch (error) {
     // Zero orphaned files: a failure removes what this run created. Each removal has its own try, so one failing does not stop the next.
-    const stuck = [];
-    if (temporaryWritten) { try { fs.rmSync(temporary, { force: true }); } catch { stuck.push(temporary); } }
-    if (ruleWritten) { try { fs.rmSync(rulePath, { force: true }); } catch { stuck.push(rulePath); } }
-    if (stuck.length) {
-      const why = error instanceof Blocked ? error.message : `The helper could not finish (${error?.code ?? 'unexpected error'}).`;
-      throw new Blocked(`${why} It could not remove: ${stuck.join(', ')}. Remove ${stuck.length === 1 ? 'it' : 'them'} by hand.`);
+    const stuck = [], left = [];
+    if (temporaryWritten) removeIfMine(temporary, target?.after, 'temp-replaced', stuck, left);
+    if (ruleWritten) removeIfMine(rulePath, body, 'rule-replaced', stuck, left);
+    if (stuck.length || left.length) {
+      let why = error instanceof Blocked ? error.message : `The helper could not finish (${error?.code ?? 'unexpected error'}).`;
+      if (left.length) why += ` Left in place, because its bytes are no longer the ones this run wrote: ${left.join(', ')}. Check it and remove it by hand if it is not yours.`;
+      if (stuck.length) why += ` It could not remove: ${stuck.join(', ')}. Remove ${stuck.length === 1 ? 'it' : 'them'} by hand.`;
+      throw new Blocked(why);
     }
     throw error;
   } finally {
