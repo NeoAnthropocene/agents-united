@@ -496,7 +496,11 @@ describe('rule-check', () => {
       expect(result.status).toBe('passed');
       const projected = ClaudeProjector.renderRule(GOOD, 'rules/good-rule.md').content;
       expect(projected.startsWith('<!-- managed-by: agents-united')).toBe(true);
-      expect(projected.startsWith('---')).toBe(false);
+      // The marker is the first line (the check above implies nothing precedes it, so no front matter), and the canonical text follows it unchanged.
+      const [marker, blank, ...rest] = projected.split('\n');
+      expect(marker).toMatch(/^<!-- .* -->$/);
+      expect(blank).toBe('');
+      expect(rest.join('\n')).toBe(GOOD);
     });
   });
 
