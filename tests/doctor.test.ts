@@ -300,28 +300,78 @@ describe('DoctorEngine', () => {
       ).toEqual([]);
     });
 
-    // The generative_ui -> generative-ui rename (Plan 016 Step 4) changed the projection FOLDER of a skill by the underscore normalisation.
-    // The same shape on a real native-lane skill: the legacy folder is recorded but the current renderer no longer produces it.
-    it('classifies a legacy projection in a renamed skill folder (the generative_ui shape) as stale, though the folders differ', async () => {
+    // The generative_ui -> generative-ui rename (Plan 016 Step 4) changed the projection FOLDER of a skill by the underscore normalisation, and
+    // the canonical key changed with it: the legacy lockfile records the projection under `skills/generative_ui/SKILL.md`, the current one under
+    // `skills/generative-ui/SKILL.md`. The doctor looks for a survivor of the SAME canonical, so it cannot see this rename: a deleted legacy
+    // copy is reported as Missing, never as superseded. `agents update` owns that rename (UpdateEngine.migrateLegacyGenerativeUiProjections
+    // removes the legacy records; tests/generative-ui-rename.test.ts). Here: the same shape on the native author-rule skill.
+    it('reports a deleted legacy projection whose canonical key was renamed with its folder (the generative_ui shape) as missing, not superseded', async () => {
       await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
 
       const lockfilePath = path.join(tempDir, 'agents-united.json');
       const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
       const canonical = 'skills/author-rule/SKILL.md';
+      const legacyCanonical = 'skills/author_rule/SKILL.md';
       const current = '.claude/skills/author-rule/SKILL.md';
       const legacy = '.claude/skills/author_rule/SKILL.md';
       expect(lockfile.projections?.[current]?.canonical).toBe(canonical);
-      lockfile.projections![legacy] = { ...lockfile.projections![current]! };
-      lockfile.files[canonical]!.projectedTo = [...(lockfile.files[canonical]!.projectedTo ?? []), legacy];
+      lockfile.projections![legacy] = { ...lockfile.projections![current]!, canonical: legacyCanonical };
+      lockfile.files[legacyCanonical] = { ...lockfile.files[canonical]!, projectedTo: [legacy] };
       await fs.writeJson(lockfilePath, lockfile);
 
       const report = await DoctorEngine.runDoctor(tempDir);
       const lines = [...report.issues, ...report.warnings].filter(line => line.includes(legacy));
 
       expect(lines).toHaveLength(1);
-      expect(lines[0]).toContain(`Stale projection ${legacy}`);
-      expect(lines[0]).toContain(`(superseded by ${current}).`);
-      expect(lines.filter(line => line.includes('Missing'))).toEqual([]);
+      expect(lines[0]).toMatch(/^Missing .*projection /);
+      expect(lines[0]).toContain(legacy);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
+    // The missing path is judged by ITS OWN host's renderer. A survivor of the same canonical that belongs to another host says nothing about
+    // whether the missing path is still current.
+    it('asks the missing path\'s own host renderer, not the survivor\'s: a deleted current Claude copy stays missing though a Cline survivor exists', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const scratchRoot = path.dirname(tempDir);
+      const gone = '.claude/skills/author-skill/references/skill-attribution.md';
+      const survivor = '.cline/rules/survivor-of-the-same-canonical.md';
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      const record = lockfile.projections![gone]!;
+      expect(record.host).toBe('claude');
+      await fs.outputFile(path.join(scratchRoot, survivor), 'survivor\n');
+      lockfile.projections![survivor] = { ...record, host: 'cline' };
+      await fs.writeJson(lockfilePath, lockfile);
+      await fs.remove(path.join(scratchRoot, gone));
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+      expect(hits).toHaveLength(1);
+      expect(hits[0]).toMatch(/^Missing .*projection /);
+      expect(hits[0]).not.toContain(survivor);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
+    // When the missing path's renderer is unavailable (here: its record names no owner bundle, so nothing can be rendered), nothing is guessed.
+    it('reports a missing path as missing when its own renderer is unavailable, though another projection of the canonical exists', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const scratchRoot = path.dirname(tempDir);
+      const gone = '.cline/rules/renamed-away.md';
+      const survivor = '.claude/skills/author-skill/references/skill-attribution.md';
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      const record = lockfile.projections![survivor]!;
+      expect(await fs.pathExists(path.join(scratchRoot, survivor))).toBe(true);
+      lockfile.projections![gone] = { ...record, host: 'cline', owners: [] };
+      await fs.writeJson(lockfilePath, lockfile);
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+      expect(hits).toHaveLength(1);
+      expect(hits[0]).toMatch(/^Missing .*projection /);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
     });
 
     // ADR 0082: the attribution rule is projected under each bound factory Skill. Both copies are CURRENT; a deleted one is missing.

@@ -164,35 +164,56 @@ export class DoctorEngine {
   }
 
   /**
+   * The host a recorded projection path belongs to: the host of its `projections` record, else (a path only `projectedTo` knows, as the
+   * Claude lane and older lockfiles record it) the one its own folder names. A path in any other folder has no host to ask: `undefined`.
+   */
+  private static hostOfProjectionPath(manifest: LockfileManifest, projPath: string): string | undefined {
+    const recorded = manifest.projections?.[projPath]?.host;
+    if (recorded) return recorded;
+    const posix = projPath.replace(/\\/g, '/');
+    if (posix.startsWith('.claude/')) return 'claude';
+    if (posix.startsWith('.cline/')) return 'cline';
+    return undefined;
+  }
+
+  /**
    * Plan 015 §5.9 item 3 / ADR 0018 decision 2 — find the projection that now serves
    * `canonical` at a *different* path and actually exists on disk. A hit turns an absent
    * recorded path into self-healing staleness (`Stale projection … (superseded by …)`)
    * instead of a user-deletion report.
    *
-   * Covers every rename the lockfile can still carry: the ADR 0016 workflow slug rename
+   * Covers the renames that keep the canonical key: the ADR 0016 workflow slug rename
    * (`.cline/workflows/implement-feature-or-fix.md` → `…/workflow-implement.md`) and the
-   * ADR 0018 prefix strip (`.claude/agents/subagent-<role>.md` → `.claude/agents/<role>.md`) and
-   * the skill folder rename by the underscore normalisation (`generative_ui` → `generative-ui`).
+   * ADR 0018 prefix strip (`.claude/agents/subagent-<role>.md` → `.claude/agents/<role>.md`).
+   * The lookup is by the exact canonical key, so a rename that also changed the key (the
+   * `generative_ui` → `generative-ui` skill: `skills/generative_ui/SKILL.md` became
+   * `skills/generative-ui/SKILL.md`) has no survivor under the old key here: a deleted legacy copy
+   * is reported as missing, and `agents update` owns that rename
+   * (UpdateEngine.migrateLegacyGenerativeUiProjections).
    *
    * Two CURRENT projections of one canonical are not a rename (ADR 0082: the attribution rule is
    * projected under each bound factory Skill). A missing path that the current renderer still
-   * produces is therefore a deleted copy, whatever its folder: `currentPaths(host)` gives the paths
-   * the installed bundles render now, or `null` when the registry is unavailable (nothing is guessed,
-   * and the earlier behaviour applies).
+   * produces is therefore a deleted copy, whatever its folder. The renderer asked is the MISSING
+   * path's own (`missingHost`), never the survivor's: `currentPaths(host)` gives the paths the
+   * installed bundles render for that host now, or `null` when they cannot be rendered (unknown
+   * host, no owner, registry unavailable, a renderer that throws). Nothing is guessed then: the path
+   * is not classified as superseded and is reported as missing.
    */
   private static async findSupersedingProjection(
     projPath: string,
     canonical: string | undefined,
+    missingHost: string | undefined,
     manifest: LockfileManifest,
     workspaceRoot: string,
     currentPaths: (host: string) => Promise<ReadonlySet<string> | null>
   ): Promise<SupersedingProjection | null> {
-    if (!canonical) return null;
+    if (!canonical || !missingHost) return null;
     for (const [projRelPath, proj] of Object.entries(manifest.projections ?? {})) {
       if (projRelPath === projPath) continue;
       if (proj.canonical !== canonical) continue;
       if (!await fs.pathExists(path.join(workspaceRoot, projRelPath))) continue;
-      if ((await currentPaths(proj.host))?.has(projPath)) continue;
+      const rendered = await currentPaths(missingHost);
+      if (!rendered || rendered.has(projPath)) return null;
       return { relPath: projRelPath, host: proj.host, owners: proj.owners ?? [] };
     }
     return null;
@@ -478,7 +499,8 @@ export class DoctorEngine {
       const currentPaths = (host: string): Promise<ReadonlySet<string> | null> => {
         let pending = renderedByHost.get(host);
         if (!pending) {
-          pending = DoctorEngine.currentProjectionPaths(manifest, host, workspaceRoot);
+          // A renderer that throws is as unavailable as one that cannot render: null, so the path stays missing.
+          pending = DoctorEngine.currentProjectionPaths(manifest, host, workspaceRoot).catch(() => null);
           renderedByHost.set(host, pending);
         }
         return pending;
@@ -495,7 +517,7 @@ export class DoctorEngine {
             // (the same canonical is served by a newer path, so `agents update
             // --fanout` self-heals it) from one the user DELETED (which must keep
             // the "Missing projection" advice).
-            const superseding = await this.findSupersedingProjection(projPath, relPath, manifest, workspaceRoot, currentPaths);
+            const superseding = await this.findSupersedingProjection(projPath, relPath, DoctorEngine.hostOfProjectionPath(manifest, projPath), manifest, workspaceRoot, currentPaths);
 
             if (superseding) {
               const owner = superseding.owners[0];
@@ -528,7 +550,7 @@ export class DoctorEngine {
         for (const [projRelPath, proj] of Object.entries(manifest.projections)) {
           const absPath = path.join(workspaceRoot, projRelPath);
           if (!await fs.pathExists(absPath)) {
-            const superseding = await this.findSupersedingProjection(projRelPath, proj.canonical, manifest, workspaceRoot, currentPaths);
+            const superseding = await this.findSupersedingProjection(projRelPath, proj.canonical, proj.host, manifest, workspaceRoot, currentPaths);
             if (superseding) {
               const owner = superseding.owners[0];
               pushProjectionWarning(
