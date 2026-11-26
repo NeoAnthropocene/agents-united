@@ -60,7 +60,7 @@
       "roles": ["orchestrator-marketing", "marketing-creative-designer", "orchestrator-digital-agency", "agency-creative-designer"],
       "feature": "When the host has an image generator of its own, it is offered first and recommended among the image options.",
       "disposition": "unsupported",
-      "rationale": "Claude Code has no image generator of its own, so the case the rule names does not arise on this host and the native files do not state it. Their image route stays the one ADR 0049 and ADR 0079 give: the image-gen server with the user's own key, through the creative designer and her lead, then the other options. The rule is in the Semantic Core for the hosts that have one, Antigravity among them, and reaches them when their native lane is projected (ADR 0079 decision 12)."
+      "rationale": "Claude Code has no image generator of its own, so the case the rule names does not arise on this host and the native files do not state it. Generation here goes through the optional image-gen server with the user's own key (ADR 0049, ADR 0079), within the order of the image-creation skill. A host that has its own generator must bind the rule in its native role text or declare it (ADR 0079 decision 12)."
     }
   ]
 }
