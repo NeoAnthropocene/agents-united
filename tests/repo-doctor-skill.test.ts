@@ -343,6 +343,13 @@ describe('the repo-doctor Skill in the repository', () => {
     expect(bundles.bundles['agent-factory'].skills).toContain('repo-doctor');
   });
 
+  it('is linked from CONTRIBUTING.md, which no longer calls it future work', () => {
+    const guide = fs.readFileSync(path.join(ROOT, 'CONTRIBUTING.md'), 'utf8');
+    expect(guide).toContain('](./registry/skills/repo-doctor/SKILL.md)');
+    expect(guide).not.toMatch(/once the Skill is on `dev`/);
+    expect(guide).not.toMatch(/The factory runs it before it prepares a pull request/);
+  });
+
   it('keeps its report out of git', () => {
     const ignored = spawnSync('git', ['check-ignore', '-q', '.repo-doctor-report.md'], { cwd: ROOT });
     expect(ignored.status).toBe(0);
