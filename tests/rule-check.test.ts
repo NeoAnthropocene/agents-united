@@ -571,6 +571,22 @@ describe('rule-check', () => {
       }
     });
 
+    it('prints the usage text and exits 0 for --help, the one input that is not answered with JSON', () => {
+      for (const flag of ['--help', '-h']) {
+        const done = spawnSync(process.execPath, [cli, 'rule-check', flag], { cwd: folder(), encoding: 'utf8', timeout: 30_000 });
+        expect(done.status, flag).toBe(0);
+        expect(done.stdout, flag).toContain('--artifact');
+        expect(done.stdout, flag).toContain('rule-check');
+        expect(done.stderr, flag).toBe('');
+      }
+    });
+
+    it('lists rule-check in the top-level help', () => {
+      const done = spawnSync(process.execPath, [cli, '--help'], { cwd: folder(), encoding: 'utf8', timeout: 30_000 });
+      expect(done.status).toBe(0);
+      expect(done.stdout).toMatch(/rule-check\s+Check one canonical rule/);
+    });
+
     it('leaves the rule untouched', () => {
       const file = rule(GOOD);
       const before = fs.readFileSync(file);

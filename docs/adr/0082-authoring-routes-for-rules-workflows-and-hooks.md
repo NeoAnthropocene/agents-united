@@ -20,7 +20,7 @@
    - The three products differ (Markdown text, a Skill plus a host script, executable code with a registration), and so do their checks and their risk. One Skill would not fit the entry budget without moving most of its runbook into references.
 2. **Order: rule, then workflow, then hook.** Each route ships and is shown live before the next starts.
 3. **Each route has a read-only CLI checker in `src/` and an evaluator subject kind.**
-   - The checkers are `rule-check`, `workflow-check` and `hook-check`. Like `skill-check`, they print JSON and exit 0 when passed, 1 when failed, and 2 when unavailable or misused.
+   - The checkers are `rule-check`, `workflow-check` and `hook-check`. Like `skill-check`, they print JSON and exit 0 when passed, 1 when failed, and 2 when unavailable or misused. The one exception is `--help` (or `-h`), which prints the usage text and exits 0.
    - The evaluator gains the subject kinds `rule`, `workflow` and `hook`, each with host-fit wording of its own.
    - The repo doctor (Plan 052 step 1) and contributors can then run the same checks outside the test suite.
 4. **The hook route delivers a reviewed draft only.**
