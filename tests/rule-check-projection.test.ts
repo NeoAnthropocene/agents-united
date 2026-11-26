@@ -18,6 +18,16 @@ const NORMAL = '# Keep commits small\n\nCommit one logical change at a time.\nUs
 const ROUTING = '# Host Routing\n\nSend each task to the host that owns it.\n';
 const OVERSIZE = ['# Long rule', '', ...Array.from({ length: BUDGET + 5 }, (_, index) => `Line ${index} of the rule.`)].join('\n');
 const ENTRY_POINT = '# Agents\n\nThe entry-point file of a host.\n';
+/** The only vocabulary rewrite the fixtures meet: the canonical tool name in NORMAL becomes the Claude one. */
+const KNOWN_REWRITES: ReadonlyArray<readonly [string, string]> = [['read_file', 'Read']];
+/** The body a canonical rule should render to when nothing but the known vocabulary is rewritten. */
+function expectedBody(source: string): string {
+  let body = source.trim();
+  for (const [from, to] of KNOWN_REWRITES) body = body.split(from).join(to);
+  return `${body}\n`;
+}
+/** The rendered rule without its marker line and the blank line after it. */
+const bodyOf = (content: string): string => content.split('\n').slice(2).join('\n');
 
 describe('rule-check agrees with the Claude compound projection', () => {
   let registry: string;
@@ -50,6 +60,7 @@ describe('rule-check agrees with the Claude compound projection', () => {
     expect(content).toContain('# Keep commits small');
     expect(content).toContain('Commit one logical change at a time.');
     expect(content).toContain('Use Read before you edit.');
+    expect(bodyOf(content)).toBe(expectedBody(NORMAL));
     expect(checked('normal-rule.md').status).toBe('passed');
   });
 
@@ -74,7 +85,7 @@ describe('rule-check agrees with the Claude compound projection', () => {
     const intact = (await emitted()).filter(item => {
       const name = path.posix.basename(item.relPath);
       const source = fs.readFileSync(path.join(registry, 'rules', name), 'utf8');
-      return String(item.content).includes(source.split('\n')[0] ?? '');
+      return bodyOf(String(item.content)) === expectedBody(source);
     }).map(item => path.posix.basename(item.relPath));
     expect(intact).toEqual(['normal-rule.md']);
     const passing = ['normal-rule.md', 'oversize-rule.md', 'AGENTS.md', 'host-routing.md'].filter(name => checked(name).status === 'passed');

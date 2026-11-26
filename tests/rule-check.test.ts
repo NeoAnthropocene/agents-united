@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ruleCheckExitCode, ruleCheckUsageResult, ruleNameProblem, runRuleCheck } from '../src/core/rule-check.js';
 import { ClaudeProjector, ENTRYPOINT_RULES } from '../src/core/claude-projector.js';
 import type { RuleCheckResult } from '../src/core/types.js';
@@ -211,6 +211,16 @@ describe('rule-check', () => {
         expect(codesOf(result), name).toEqual(['NAME']);
         expect(result.findings[0]?.message, name).toMatch(/entry/i);
       }
+    });
+
+    it('says a case variant of an entry-point name is refused for portability, not skipped by the projector', () => {
+      for (const name of ['claude.md', 'Agents.md', 'GEMINI.MD']) {
+        const message = check(GOOD, name).findings[0]?.message ?? '';
+        expect(message, name).toMatch(/case/i);
+        expect(message, name).toMatch(/portab/i);
+        expect(message, name).not.toMatch(/projector skips/i);
+      }
+      expect(check(GOOD, 'CLAUDE.md').findings[0]?.message).toMatch(/projector skips/i);
     });
 
     it('fails every host entry-point name and says it is an entry point', () => {
@@ -550,6 +560,11 @@ describe('rule-check', () => {
         ['--artifact', file, '--a.b', '1', '--a.b.c', '2'],
         ['--a', '1', '--a.b', '2'],
         ['--constructor.prototype.x', '1'],
+        // A dotted help or version flag: CAC would set options.help to an object, print the usage text and exit 0.
+        ['--help.topic'],
+        ['-h.x'],
+        ['--artifact', file, '--help.topic'],
+        ['--version.x'],
         ['--artifact', file, '--no-artifact'],
         [],
         ['--artifact'],
@@ -647,4 +662,28 @@ describe('rule-check', () => {
       expect(fs.existsSync(path.resolve(checkout, link?.[1] ?? 'missing'))).toBe(true);
     });
   });
+});
+
+describe('rule-check: an unexpected renderer error', () => {
+  const made: string[] = [];
+  afterEach(() => {
+    vi.restoreAllMocks();
+    for (const dir of made.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
+  });
+  function goodRule(): string {
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'au-rule-render-error-')));
+    made.push(dir);
+    const file = path.join(dir, 'good-rule.md');
+    fs.writeFileSync(file, '# A rule\n\nSay one thing.\n');
+    return file;
+  }
+  for (const method of ['renderRule', 'bodyRewriteLosses'] as const) {
+    it(`is unavailable (exit 2), not passed, when ClaudeProjector.${method} throws`, () => {
+      vi.spyOn(ClaudeProjector, method).mockImplementation(() => { throw new Error('renderer broke'); });
+      const result = runRuleCheck({ artifact: goodRule() });
+      expect(result.status).toBe('unavailable');
+      expect(ruleCheckExitCode(result)).toBe(2);
+      expect(result.findings.some(item => item.code === 'INPUT_UNAVAILABLE')).toBe(true);
+    });
+  }
 });
