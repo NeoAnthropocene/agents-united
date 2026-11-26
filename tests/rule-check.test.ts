@@ -634,4 +634,17 @@ describe('rule-check', () => {
       }
     });
   });
+
+  describe('Documentation: the README command table', () => {
+    it('lists agents rule-check --artifact <path> in the CLI Reference, with a link to its ADR that resolves', () => {
+      const readme = fs.readFileSync(path.resolve(checkout, 'README.md'), 'utf8').replace(/\r\n/g, '\n');
+      const reference = readme.slice(readme.indexOf('CLI Reference'));
+      const row = reference.split('\n').find(line => line.startsWith('| `agents rule-check'));
+      expect(row, 'a table row that starts with `agents rule-check').toBeDefined();
+      expect(row).toContain('--artifact <path>');
+      const link = /\]\((\.\/docs\/adr\/0082-[^)#]+\.md)(#[^)]*)?\)/.exec(row ?? '');
+      expect(link, 'a link to ADR 0082').not.toBeNull();
+      expect(fs.existsSync(path.resolve(checkout, link?.[1] ?? 'missing'))).toBe(true);
+    });
+  });
 });
