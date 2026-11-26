@@ -91,10 +91,10 @@ const MARKER_PROFILE = 'claude';
  * the JSON plugin manifest (which cannot carry the HTML-comment form) must contain exactly this
  * substring to be recognised as ours by both `applyCompoundLane` and `agents doctor`.
  */
-const MARKER_PREFIX = 'managed-by: agents-united';
+export const MARKER_PREFIX = 'managed-by: agents-united';
 
 const HOST = 'claude';
-const ENTRYPOINT_RULES = new Set(['CLAUDE.md', 'CLAUDE.local.md', 'GEMINI.md', 'AGENTS.md', 'CURSOR.md']);
+export const ENTRYPOINT_RULES: ReadonlySet<string> = new Set(['CLAUDE.md', 'CLAUDE.local.md', 'GEMINI.md', 'AGENTS.md', 'CURSOR.md']);
 
 /**
  * ADR 0018 decision 3 — a coordinator is the delegation hub, so its projected tool set is the
@@ -488,25 +488,64 @@ export class ClaudeProjector {
     interview_command: { disposition: 'mapped', rationale: 'Rewritten to the host interview command.' },
   };
 
-  /** Plan 019 safety net: residue-headed sections never survive into a projection body. */
-  private static dropResidueSections(body: string): string {
+  /**
+   * Plan 019 safety net: residue-headed sections never survive into a projection body.
+   * When `dropped` is given, the heading line of each removed section is pushed onto it (the removal itself is unchanged).
+   */
+  private static dropResidueSections(body: string, dropped?: string[]): string {
     let out = body;
     for (const pattern of RESIDUE_PATTERNS_BY_HOST.claude) {
       out = out.replace(
         new RegExp(`(^|\\n)#{1,6}[^\\n]*${pattern.source}[^\\n]*\\n[\\s\\S]*?(?=\\n#{1,6} |$)`, 'g'),
-        '$1'
+        (section: string, lead: string) => {
+          dropped?.push(section.slice(lead.length).split('\n')[0].trimEnd());
+          return lead;
+        }
       );
     }
     return out;
   }
 
-  /** Plan 019 safety net: residual residue phrases in prose are neutralized deterministically. */
-  private static scrubResiduePhrases(body: string): string {
-    return body
-      .replace(/Cline & CLI/g, 'other hosts')
-      .replace(/language_server(\.exe)?/g, 'the runtime')
-      .replace(/Nested Subagent Delegation/g, 'peer delegation')
-      .replace(/Host Routing/g, 'host delegation');
+  /** The residue phrases the safety net replaces in prose, and what each becomes. */
+  private static readonly RESIDUE_PHRASE_SCRUBS: ReadonlyArray<readonly [RegExp, string]> = [
+    [/Cline & CLI/g, 'other hosts'],
+    [/language_server(\.exe)?/g, 'the runtime'],
+    [/Nested Subagent Delegation/g, 'peer delegation'],
+    [/Host Routing/g, 'host delegation'],
+  ];
+
+  /**
+   * Plan 019 safety net: residual residue phrases in prose are neutralized deterministically.
+   * When `scrubbed` is given, each phrase that was replaced is pushed onto it once (the replacement itself is unchanged).
+   */
+  private static scrubResiduePhrases(body: string, scrubbed?: string[]): string {
+    let out = body;
+    for (const [phrase, replacement] of ClaudeProjector.RESIDUE_PHRASE_SCRUBS) {
+      for (const hit of out.match(phrase) ?? []) {
+        if (scrubbed && !scrubbed.includes(hit)) scrubbed.push(hit);
+      }
+      out = out.replace(phrase, replacement);
+    }
+    return out;
+  }
+
+  /**
+   * What `rewriteBody` removes or replaces beyond the ordinary tool and command vocabulary pass: the residue-headed
+   * sections it drops, the residue phrases it replaces and the headed sections its overrides replace.
+   * Pure and read-only; it runs the same three steps in the same order as `rewriteBody`, so the two cannot disagree.
+   */
+  public static bodyRewriteLosses(body: string): { droppedSections: string[]; scrubbedPhrases: string[]; overriddenSections: string[] } {
+    const droppedSections: string[] = [];
+    const scrubbedPhrases: string[] = [];
+    const overriddenSections: string[] = [];
+    let text = ClaudeProjector.dropResidueSections(body, droppedSections);
+    text = ClaudeProjector.scrubResiduePhrases(text, scrubbedPhrases);
+    for (const override of ClaudeProjector.CLAUDE_DIALECT.bodySectionOverrides) {
+      const line = text.split('\n').find(candidate => override.heading.test(candidate));
+      if (line !== undefined) overriddenSections.push(line.trimEnd());
+      text = ClaudeProjector.replaceSection(text, override.heading, override.replacement);
+    }
+    return { droppedSections, scrubbedPhrases, overriddenSections };
   }
 
   /** Whole-word canonical tokens surviving OUTSIDE code fences after the rewrite pass. */

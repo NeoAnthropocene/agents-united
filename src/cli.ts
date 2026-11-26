@@ -9,6 +9,7 @@ import { checkFactoryArtifact } from './core/factory-check.js';
 import { checkSharedPair } from './core/shared-pair.js';
 import { runSkillCheck, skillCheckExitCode, skillCheckUsageResult } from './core/skill-check.js';
 import { bundleCheckExitCode, bundleCheckUsageResult, runBundleCheck } from './core/bundle-check.js';
+import { ruleCheckExitCode, ruleCheckUsageResult, runRuleCheck } from './core/rule-check.js';
 import type { FactoryCheckResult } from './core/types.js';
 import { resolveStateDir } from './core/state-dir.js';
 import { UninstallEngine } from './core/uninstaller.js';
@@ -408,6 +409,39 @@ cli
     const result = problems.length > 0 ? skillCheckUsageResult(problems, input) : runSkillCheck(input);
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = skillCheckExitCode(result);
+  });
+
+cli
+  .command('rule-check', 'Check one canonical rule .md file against the deterministic rule checks (read-only)')
+  .allowUnknownOptions()
+  .option('--artifact [path]', 'Required: absolute path of the canonical rule .md file to check')
+  .action((options: Record<string, unknown>) => {
+    // Unknown or malformed options take the same JSON exit-2 route as every other normal outcome, not CAC's prose error.
+    const problems: string[] = [];
+    for (const name of Object.keys(options)) {
+      if (name === '--') {
+        if (Array.isArray(options['--']) && options['--'].length > 0) problems.push('Unexpected arguments after --.');
+      } else if (name !== 'artifact') {
+        problems.push(`Unknown option ${name.length > 1 ? `--${name}` : `-${name}`}.`);
+      }
+    }
+    if (cli.args.length > 0) problems.push(`Unexpected argument ${JSON.stringify(String(cli.args[0]))}; use --artifact.`);
+    // CAC nests a dotted name (--artifact.x) into an object and, when two clash, keeps only one, so the raw arguments are
+    // read as well: an option name with a dot is unknown, whatever else was given.
+    for (const arg of cli.rawArgs.slice(2)) {
+      if (arg === '--') break;
+      const optionName = arg.split('=')[0] ?? '';
+      if (optionName.startsWith('-') && optionName.includes('.')) problems.push(`Unknown option ${optionName}: option names with a dot are not accepted.`);
+    }
+    let artifact: string | undefined;
+    if (options.artifact !== undefined) {
+      if (typeof options.artifact === 'string') artifact = options.artifact;
+      else problems.push('--artifact needs exactly one text value.');
+    }
+    const input = { artifact };
+    const result = problems.length > 0 ? ruleCheckUsageResult(problems, input) : runRuleCheck(input);
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = ruleCheckExitCode(result);
   });
 
 cli
@@ -3257,4 +3291,55 @@ export function renderClaudeActivationPlan(
 cli.help();
 cli.version('1.0.0');
 
-cli.parse();
+/**
+ * The read-only check commands whose every misuse is answered with their own JSON usage result and exit 2. Each maps to the
+ * function that builds that result from a list of problems.
+ */
+const JSON_USAGE_COMMANDS: ReadonlyMap<string, (problems: string[]) => unknown> = new Map<string, (problems: string[]) => unknown>([
+  ['rule-check', problems => ruleCheckUsageResult(problems)],
+  ['skill-check', problems => skillCheckUsageResult(problems)],
+  ['bundle-check', problems => bundleCheckUsageResult(problems)],
+]);
+
+/**
+ * The JSON check commands answer misuse with a JSON usage result and exit 2, but CAC parses the options before any action
+ * runs and throws on some input (a dotted option that clashes with another, e.g. `--artifact x --artifact.y z`). So for
+ * these commands the parse is done first, on its own, and a throw becomes the same JSON result. `--help` and `-h` are not
+ * misuse: CAC prints the usage text for them and the exit code is 0.
+ *
+ * The guarantee covers the documented command-first form, `agents <command> ...`: the command is the first argument after
+ * node and the script, and nothing else. An option-first form (`agents --artifact /p skill-check ...`) or any other first
+ * argument goes to `cli.parse()` unchanged and keeps CAC's own behaviour. A Map holds the table, so an inherited object key
+ * such as `constructor` is never taken for a command.
+ */
+function parseCommandLine(): void {
+  const first = process.argv[2];
+  const usageResult = first === undefined || first.startsWith('-') ? undefined : JSON_USAGE_COMMANDS.get(first);
+  if (usageResult === undefined) {
+    cli.parse();
+    return;
+  }
+  // Option names are validated on the raw arguments before CAC sees them: CAC handles `--help` and `--version` itself during
+  // the parse, so a dotted form (`--help.topic`) would print the usage text and exit 0 before the action could refuse it.
+  const dotted: string[] = [];
+  for (const arg of process.argv.slice(2)) {
+    if (arg === '--') break;
+    const optionName = arg.split('=')[0] ?? '';
+    if (optionName.startsWith('-') && optionName.includes('.')) dotted.push(`Unknown option ${optionName}: option names with a dot are not accepted.`);
+  }
+  if (dotted.length > 0) {
+    console.log(JSON.stringify(usageResult(dotted), null, 2));
+    process.exitCode = 2;
+    return;
+  }
+  try {
+    cli.parse(process.argv, { run: false });
+  } catch {
+    console.log(JSON.stringify(usageResult(['The options could not be parsed: an option name clashes with another option. Pass each option once.']), null, 2));
+    process.exitCode = 2;
+    return;
+  }
+  void cli.runMatchedCommand();
+}
+
+parseCommandLine();

@@ -320,6 +320,7 @@ Every command also runs as `npx agents-united <command>`. Add `--dry-run` to `ad
 | `agents factory-check` | Read-only contributor validation of a supplied shared pair and optional Claude agent draft; [scope and prerequisites](./plans/033-slice-4-p2-record-design.md) |
 | `agents contract-check` | Read-only shared definition/contract validation without native inputs; [scope and limits](./plans/033-slice-4-p3-contract-design.md) |
 | `agents skill-check` | Read-only deterministic check of one Skill folder (`--policy agents-united-original`, `private-owner`, or `adapted-source`) against the existing quality gates and the frozen corpus; [scope and limits](./plans/033-slice-4-p8-skill-design.md) |
+| `agents rule-check --artifact <path>` | Read-only deterministic check of one canonical rule `.md` file (name, size, encoding, line budget, front matter, title, managed marker, and whether the Claude rendering keeps its text); [scope and limits](./docs/adr/0082-authoring-routes-for-rules-workflows-and-hooks.md) |
 | `agents init` | Set up a workspace and install a default bundle (`-b`, default `software-engineering`) |
 
 ### `agents add [bundle]`
