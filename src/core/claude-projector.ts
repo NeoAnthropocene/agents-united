@@ -925,7 +925,7 @@ export class ClaudeProjector {
     nativeLane = false
   ): Promise<PlannedClaudeArtifact[]> {
     const contractBinding = assertClaudeContractTaskBinding(bundle, resolved, registryDir, scope, nativeLane);
-    const skillBinding = assertClaudeSkillBindings(bundle, resolved, registryDir, scope, nativeLane);
+    const skillBindings = assertClaudeSkillBindings(bundle, resolved, registryDir, scope, nativeLane);
     // A global install writes its roles into `~/.claude/agents`, where `${CLAUDE_PROJECT_DIR}` cannot name a script, so the native
     // roles keep the inline guard there and no script file is planned (see `nativeRoleContent`).
     const guardForm = scope === 'global' ? 'inline' : 'file';
@@ -1030,16 +1030,19 @@ export class ClaudeProjector {
       if (!(await fs.pathExists(src))) continue;
       const canonicalRel = `rules/${ruleFile}`;
       const content = await fs.readFile(src, 'utf8');
-      const boundRule = skillBinding?.rule.source === canonicalRel;
+      // A bound rule is installed under every bound Skill that consults it, and never in `.claude/rules/`.
+      const boundTargets = [...new Set(skillBindings.filter(binding => binding.rule.source === canonicalRel).map(binding => binding.rule.installed))];
       // The required on-demand rule must never disappear behind the ordinary rule budget.
-      if (!boundRule && content.split(/\r?\n/).length > ClaudeProjector.CLAUDE_DIALECT.maxRuleLines) continue;
-      artifacts.push({
-        kind: 'rule',
-        canonical: canonicalRel,
-        relPath: boundRule ? skillBinding.rule.installed : `.claude/rules/${ruleFile}`,
-        content: ClaudeProjector.renderRule(content, canonicalRel).content,
-        managedMarker: true,
-      });
+      if (boundTargets.length === 0 && content.split(/\r?\n/).length > ClaudeProjector.CLAUDE_DIALECT.maxRuleLines) continue;
+      for (const relPath of boundTargets.length > 0 ? boundTargets : [`.claude/rules/${ruleFile}`]) {
+        artifacts.push({
+          kind: 'rule',
+          canonical: canonicalRel,
+          relPath,
+          content: ClaudeProjector.renderRule(content, canonicalRel).content,
+          managedMarker: true,
+        });
+      }
     }
 
     assertClaudeContractTaskDelivery(contractBinding, registryDir, artifacts);
