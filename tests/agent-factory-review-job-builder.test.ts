@@ -309,7 +309,7 @@ describe('the shipped review-job builder', () => {
       const raw = job.inputs.find((item: Json) => item.id === 'rule-check-raw');
       const rule = record.inventory.find((item: Json) => item.path === `${RULE_NAME}.md`);
       const cites = [{ sourceId: 'candidate', path: `${RULE_NAME}.md`, sha256: rule.sha256, quote: '# Release notes' },
-        { sourceId: 'rule-check-raw', path: 'rule-check.raw.txt', sha256: raw.sha256, quote: '"status": "passed"' }];
+        { sourceId: 'rule-check-raw', path: 'rule-check.raw.txt', sha256: raw.sha256, quote: '"quality": "pending"' }];
       const result = {
         version: 2, jobId: job.id, jobDigest: out.jobDigest, candidateDigest: out.candidateDigest, status: 'reviewed', opinion: 'no-blocking-findings',
         subject: job.subject, inventory: record.inventory, inventorySource: 'caller-provided',

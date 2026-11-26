@@ -13,7 +13,7 @@ import { prepareFactoryNative } from './helpers/factory-native.js';
 /** Focused source fixture retaining slice 3 + sync-host, with no realizer or evaluator dependency. */
 export async function prepareFactorySync(root: string) {
   const fixture = await prepareFactoryNative(root);
-  fixture.bundle.skills = ['author-skill', 'sync-host'];
+  fixture.bundle.skills = ['author-skill', 'author-rule', 'sync-host'];
   await fs.outputJson(fixture.source('bundles.json'), { version: 1, bundles: { 'agent-factory': fixture.bundle } });
   for (const rel of ['hosts/claude/agent-factory-realize.binding.json', 'hosts/claude/agents/factory-realizer.md',
     'hosts/claude/skills/realize-artifact', 'skills/realize-artifact', 'core/subagent-realize-for-host.core.md',
@@ -74,7 +74,7 @@ describe('independent factory sync delivery', () => {
     await fs.outputFile(path.join(registry, 'skills/sync-host/SKILL.md'),
       '---\nname: sync-host\ndescription: Plan one fixed host-update sync without changing any file.\nlicense: MIT\n---\nInspect the caller-selected sync job.\n');
     await fs.outputJson(path.join(registry, 'bundles.json'), { version: 1, bundles: {
-      'agent-factory': { ...fixture.bundle, skills: ['author-skill', 'sync-host'] },
+      'agent-factory': { ...fixture.bundle, skills: ['author-skill', 'author-rule', 'sync-host'] },
     } });
     await fs.remove(fixture.source('hosts/claude/agent-factory-realize.binding.json'));
     await expect(new InstallEngine(new RegistryResolver(registry)).install('agent-factory', {

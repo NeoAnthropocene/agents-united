@@ -139,7 +139,7 @@ describe('author-contract required native loading through the public installer',
   it('refuses plugin distribution through installer and public planner without relying on the realizer', async () => {
     const file = path.join(registry, 'bundles.json');
     const catalog = await fs.readJson(file) as { bundles: Record<string, BundleDefinition> };
-    catalog.bundles['agent-factory']!.skills = ['author-skill', 'author-contract'];
+    catalog.bundles['agent-factory']!.skills = ['author-skill', 'author-rule', 'author-contract'];
     await fs.writeJson(file, catalog);
     const resolver = new RegistryResolver(registry);
     let error: unknown;

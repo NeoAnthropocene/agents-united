@@ -18,7 +18,7 @@ const support = [
 const skillRoot = '.claude/skills/author-skill';
 const bundle: BundleDefinition = {
   name: 'agent-factory', domain: 'contributor', description: 'Fixture authoring entry',
-  status: 'under-construction', hostAvailability: { claude: { lane: 'native', scopes: ['workspace'] } }, skills: ['author-skill'], rules: ['skill-attribution.md'],
+  status: 'under-construction', hostAvailability: { claude: { lane: 'native', scopes: ['workspace'] } }, skills: ['author-skill', 'author-rule'], rules: ['skill-attribution.md'],
 };
 const shared = '---\nname: author-skill\ndescription: Create one local skill draft.\nmetadata:\n  author: NeoAnthropocene\n  version: "1.0.0"\n  license: MIT\n---\n# Shared authoring job\n';
 const native = shared.replace('metadata:', 'context: fork\nagent: general-purpose\nbackground: false\nmetadata:')
@@ -33,7 +33,11 @@ const binding = {
   rule: { source: 'rules/skill-attribution.md', installed: `${skillRoot}/references/skill-attribution.md`, consultation: 'before-source-or-draft' },
   reviewedInputs: ['host-library/claude/guide/skill.md', 'host-library/claude/pages/skill/skills.md#run-skills-in-a-subagent'],
 };
-const resolved = { targetBundle: bundle.name, agents: [], skills: ['author-skill'], rules: ['skill-attribution.md'], workflows: [] };
+const resolved = { targetBundle: bundle.name, agents: [], skills: ['author-skill', 'author-rule'], rules: ['skill-attribution.md'], workflows: [] };
+// ADR 0082 S1: the closed list holds a second entry, and the agent-factory bundle applies every entry, so the fixture carries author-rule too.
+const ruleShared = shared.replaceAll('author-skill', 'author-rule');
+const ruleNative = native.replaceAll('author-skill', 'author-rule');
+const ruleBinding = JSON.parse(JSON.stringify(binding).replaceAll('author-skill', 'author-rule')) as typeof binding;
 const at = (rel: string) => path.join(registryDir, ...rel.split('/'));
 const installed = (rel: string) => path.join(workspace, ...rel.split('/'));
 
@@ -68,6 +72,11 @@ describe('Plan 033 slice 3 Claude skill loading', () => {
     await fs.outputFile(at('rules/GEMINI.md'), '# Baseline fixture\n');
     await fs.outputFile(at(binding.rule.source), '# Attribution fixture\n\nPreserve source and licence evidence.\n');
     await fs.outputJson(at('hosts/claude/agent-factory.binding.json'), binding, { spaces: 2 });
+    await fs.outputFile(at('skills/author-rule/SKILL.md'), ruleShared);
+    for (const rel of support) await fs.outputFile(at(`skills/author-rule/${rel}`), `Support for ${rel}
+`);
+    await fs.outputFile(at(ruleBinding.source), ruleNative);
+    await fs.outputJson(at('hosts/claude/agent-factory-rule.binding.json'), ruleBinding, { spaces: 2 });
   });
   afterEach(async () => { await fs.remove(root); });
 
