@@ -41,6 +41,21 @@ describe('CONTRIBUTING.md', () => {
     expect(named.length).toBeGreaterThan(0);
     expect(named.filter(f => !fs.existsSync(path.join(ROOT, f)))).toEqual([]);
   });
+
+  it('names only CLI subcommands that src/cli.ts registers', () => {
+    const cli = read(path.join(ROOT, 'src/cli.ts'));
+    const named = [...guide().matchAll(/node dist\/cli\.js ([a-z][a-z-]*)/g)].map(m => m[1]);
+    expect(named.length).toBeGreaterThan(0);
+    expect(named.filter(c => !cli.includes(`.command('${c}'`))).toEqual([]);
+  });
+
+  it('has a heading for every in-page anchor it links to', () => {
+    const slug = (h: string): string => h.trim().toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s/g, '-');
+    const headings = guide().split('\n').filter(l => /^#{1,6} /.test(l)).map(l => slug(l.replace(/^#+ /, '')));
+    const anchors = listMarkdownLinks(guide()).map(l => l.target).filter(t => t.startsWith('#')).map(t => t.slice(1));
+    expect(anchors.length).toBeGreaterThan(0);
+    expect(anchors.filter(a => !headings.includes(a))).toEqual([]);
+  });
 });
 
 describe('README.md', () => {

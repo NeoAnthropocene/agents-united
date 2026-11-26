@@ -137,13 +137,13 @@ All work lands on `dev` through a reviewed pull request. `main` receives release
 3. **Run the gate** that fits the change (see [The gates](#the-gates)).
 4. **Inspect what you stage.** Run `git diff --cached` before every commit. Never stage `.env` files, keys, tokens or credentials. Commit only real changes, not line-ending noise.
 5. **Commit with a Conventional Commit message** (`feat:`, `fix:`, `docs:`, `test:`, ...). The type drives the release notes.
-6. **Get one independent review** of the diff before the pull request is merged.
+6. **Get one independent review** of the diff before the pull request is merged (Plan 052 asks for one read-only review per step).
 7. **Open the pull request against `dev`**, never `main`.
 
 Never:
 
 - force-push (`git push --force` or `-f`);
-- rebase or amend: add a new commit instead;
+- rewrite pushed history (rebase or amend a commit that is already pushed): add a new commit instead;
 - commit to `main`, `master`, `production` or `release/*`;
 - push a follow-up to a branch whose pull request is already merged: it never reaches `dev`. Check `gh pr list --state all` first, and start a new branch from `origin/dev` if it is merged.
 
@@ -160,6 +160,6 @@ Never:
 
 - **Before a pull request:** the gate for its size (focused tests and the test-tree type check for a local change; typecheck, the full suite, the addon matrix and `npm run hostlib:verify` for a cross-area change), and the repo doctor's report once the Skill is on `dev`.
 - **After a push:** read the pull request's CI result once, when it finishes. Fix a red run on the same branch with a new commit.
-- **Merging is the maintainer's.** Contributors and agents never merge. An agent pushes or opens a pull request only at the maintainer's word.
+- **Merging is the maintainer's.** The maintainer merges pull requests to `dev`. An agent never merges, and pushes or opens a pull request only at the maintainer's word ([ADR 0080](./docs/adr/0080-factory-maintainer-workbench.md), decision 6).
 - **Live host sessions** (Claude Code, Cline, Antigravity, Codex) spend the maintainer's account. Keep each run bounded and read the host's own records afterwards: see [docs/live-test-protocol.md](./docs/live-test-protocol.md).
 - **Say what was verified and what was not.** Write "unverified" plainly in pull requests, plans and ADRs.
