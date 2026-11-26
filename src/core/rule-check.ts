@@ -24,7 +24,7 @@ const NAME_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*\.md$/;
 /** A leading `---` line, then (optionally) lines up to a closing `---` line. An unclosed leading rule is not front matter. */
 const FRONT_MATTER = /^---[ \t]*\r?\n(?:[\s\S]*?\r?\n)?---[ \t]*(?:\r?\n|$)/;
 const TITLE = /^# \S/;
-const BOM = '﻿';
+const BOM = String.fromCharCode(0xfeff);
 
 const UNAVAILABLE_CODES: ReadonlySet<RuleCheckCode> = new Set<RuleCheckCode>(['USAGE', 'INPUT_UNAVAILABLE']);
 
