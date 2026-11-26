@@ -44,6 +44,7 @@ describe('RegistryResolver', () => {
     for (const identifier of ['full', 'domain:engineering', 'digital-agency']) {
       const ordinary = await resolver.resolve(identifier);
       expect(ordinary.skills).not.toContain('author-skill');
+      expect(ordinary.skills).not.toContain('author-rule');
       expect(ordinary.skills).not.toContain('realize-artifact');
       expect(ordinary.skills).not.toContain('author-contract');
       expect(ordinary.skills).not.toContain('evaluate-artifact');

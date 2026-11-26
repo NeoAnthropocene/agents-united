@@ -157,6 +157,7 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     }
     const full = await new RegistryResolver().resolve('full');
     expect(full.skills).not.toContain('author-skill');
+    expect(full.skills).not.toContain('author-rule');
     expect(full.rules).not.toContain('skill-attribution.md');
     for (const name of shared) expect(full.skills).toContain(name);
   });
