@@ -457,8 +457,15 @@ function build(specArg) {
       fail('The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.');
     }
     const rule = `${subject.identity}.md`;
-    const own = [path.join(candidate, rule), path.join(registry, 'rules', rule), path.join(checkout, 'registry', 'rules', rule)];
-    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(file => exact(physical(file)) === exact(physical(artifact)))) {
+    // The candidate's own file is always the rule under review. A registry spelling counts only when that file exists as an ordinary
+    // file with the pinned bytes of the candidate's rule: a path alone says nothing about which rule the check read.
+    const pinned = inventory.find(item => item.path === rule)?.sha256;
+    const sameBytes = file => {
+      const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+      return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, 'Registry rule')) === pinned;
+    };
+    const own = [[path.join(candidate, rule), true], [path.join(registry, 'rules', rule), false], [path.join(checkout, 'registry', 'rules', rule), false]];
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => exact(physical(file)) === exact(physical(artifact)) && (isCandidate || sameBytes(file)))) {
       fail('The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.');
     }
   }

@@ -374,12 +374,34 @@ describe('the shipped review-job builder', () => {
       for (const artifact of [path.join(candidate(), 'other.md'), `${RULE_NAME}.md`, path.join(CHECKOUT, 'registry/rules/other.md')]) {
         expect(refusal(build(await writeSpec(withArgv([cli, 'rule-check', '--artifact', artifact])))).reason, artifact).toBe(RULE_ARTIFACT);
       }
-      // The spellings of the rule file this route documents are all recorded as given.
-      for (const artifact of [subject, path.join(fixture.registry, 'rules', `${RULE_NAME}.md`), path.join(CHECKOUT, 'registry/rules', `${RULE_NAME}.md`)]) {
-        const built = build(await writeSpec(withArgv([cli, 'rule-check', '--artifact', artifact])));
-        expect(built.status, built.stderr).toBe(0);
-        await fs.remove(review()); await fs.remove(readFolder());
+      // A registry spelling of the rule file is refused while that file does not exist (round 3: the path alone proves nothing).
+      for (const artifact of [path.join(fixture.registry, 'rules', `${RULE_NAME}.md`), path.join(CHECKOUT, 'registry/rules', `${RULE_NAME}.md`)]) {
+        expect(refusal(build(await writeSpec(withArgv([cli, 'rule-check', '--artifact', artifact])))).reason, artifact).toBe(RULE_ARTIFACT);
       }
+      // The candidate spelling is recorded as given.
+      const built = build(await writeSpec(withArgv([cli, 'rule-check', '--artifact', subject])));
+      expect(built.status, built.stderr).toBe(0);
+      await fs.remove(review()); await fs.remove(readFolder());
+    });
+
+    it('accepts a registry spelling of the rule file only when that file has the candidate\'s bytes, in the builder', async () => {
+      const spec = await ruleSpec();
+      const check = spec.checks[0] as Json;
+      const registryRule = path.join(fixture.registry, 'rules', `${RULE_NAME}.md`);
+      const withArgv = (artifact: string) => ({ ...spec, checks: [{ ...check, command: { ...check.command, argv: [path.join(CHECKOUT, 'dist/cli.js'), 'rule-check', '--artifact', artifact] } }] });
+      try {
+        // A registry copy with identical bytes is the same rule: recorded as given.
+        await fs.outputFile(registryRule, RULE_TEXT);
+        const same = build(await writeSpec(withArgv(registryRule)));
+        expect(same.status, same.stderr).toBe(0);
+        await fs.remove(review()); await fs.remove(readFolder());
+        // A registry copy with other bytes is another rule: the check on it says nothing about this candidate.
+        await fs.outputFile(registryRule, `${RULE_TEXT}\n- A line the candidate does not have.\n`);
+        expect(refusal(build(await writeSpec(withArgv(registryRule)))).reason).toBe(RULE_ARTIFACT);
+        // A directory in the place of the file is no rule file.
+        await fs.remove(registryRule); await fs.ensureDir(registryRule);
+        expect(refusal(build(await writeSpec(withArgv(registryRule)))).reason).toBe(RULE_ARTIFACT);
+      } finally { await fs.remove(registryRule); }
     });
 
     it('refuses, in the installed checker, a rule job whose rule-check command or recorded hashes differ', async () => {
@@ -404,6 +426,26 @@ describe('the shipped review-job builder', () => {
       const wrongReceipt = await tamper(copy => { copy.checks[0].receipt.sha256 = 'e'.repeat(64); });
       expect(wrongReceipt.status).not.toBe(0);
       expect(text(wrongReceipt)).toContain('The rule-check evidence differs from the check record: rule-check-receipt.');
+    });
+
+    it('accepts, in the installed checker, a registry spelling of the rule file only while that file has the recorded bytes of the subject', async () => {
+      const spec = await ruleSpec();
+      const registryRule = path.join(fixture.registry, 'rules', `${RULE_NAME}.md`);
+      const argv = [path.join(CHECKOUT, 'dist/cli.js'), 'rule-check', '--artifact', registryRule];
+      const text = (run: { stderr: string; stdout: string }) => run.stderr + run.stdout;
+      try {
+        await fs.outputFile(registryRule, RULE_TEXT);
+        const { jobFile } = await roundTrip({ ...spec, checks: [{ ...spec.checks[0], command: { ...spec.checks[0].command, argv } }] });
+        // The registry copy changed after the job was built: its path no longer names the rule the job pins.
+        await fs.outputFile(registryRule, `${RULE_TEXT}\n- A line the candidate does not have.\n`);
+        const other = check(['--job', jobFile]);
+        expect(other.status).not.toBe(0);
+        expect(text(other)).toContain(RULE_ARTIFACT);
+        await fs.remove(registryRule);
+        const absent = check(['--job', jobFile]);
+        expect(absent.status).not.toBe(0);
+        expect(text(absent)).toContain(RULE_ARTIFACT);
+      } finally { await fs.remove(registryRule); }
     });
 
     it('refuses, in the installed checker, a rule job with a second subject file, a foreign subject path or no rule-check evidence', async () => {

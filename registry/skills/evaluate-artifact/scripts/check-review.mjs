@@ -333,8 +333,15 @@ function checkJob(jobFile) {
       fail('The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.');
     }
     const rule = `${job.subject.identity}.md`;
-    const own = [path.join(roots.candidate, rule), path.join(job.source.registry, 'rules', rule), path.join(job.source.checkout, 'registry', 'rules', rule)];
-    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(file => physicallySame(file, artifact))) {
+    // The candidate's own file is always the rule under review. A registry spelling counts only when that file exists as an ordinary
+    // file with the sha256 the job pins for the subject (the checker already reads the registry and checkout it names).
+    const pinnedRule = job.candidate.files.find(item => item.path === rule)?.sha256;
+    const sameBytes = file => {
+      const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+      return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, 'Registry rule')) === pinnedRule;
+    };
+    const own = [[path.join(roots.candidate, rule), true], [path.join(job.source.registry, 'rules', rule), false], [path.join(job.source.checkout, 'registry', 'rules', rule), false]];
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => physicallySame(file, artifact) && (isCandidate || sameBytes(file)))) {
       fail('The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.');
     }
     for (const [id, pin] of [['rule-check-raw', recorded.raw], ['rule-check-receipt', recorded.receipt]]) {
