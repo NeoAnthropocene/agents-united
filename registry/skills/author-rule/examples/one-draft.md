@@ -14,7 +14,7 @@ Invented scenario: a contributor on branch `feature/release-notes-rule` wants th
    - Link the issue or the pull request for every item.
    ```
 4. Put the text in the job's `content` and run `scripts/draft.mjs`. The report shows `registry/rules/release-notes.md` and `rules: ["skill-attribution.md", "release-notes.md"]` with their hashes.
-5. Run `node <checkout>/dist/cli.js rule-check --artifact <checkout>/registry/rules/release-notes.md`. Exit 0 with no findings: keep the raw JSON.
+5. Run the checkout's built CLI (the `cli.js` file in its `dist` folder) with `rule-check --artifact <checkout>/registry/rules/release-notes.md`. Exit 0 with no findings: keep the raw JSON.
 6. Return the report: both hashes, the two-file diff, the raw check, and the open items: quality pending, live unverified, Antigravity not covered.
 
 ## Repair after a failed check

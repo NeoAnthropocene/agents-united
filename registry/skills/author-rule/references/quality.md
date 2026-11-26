@@ -6,7 +6,7 @@ Measure the final rule, then record exact commands, raw output and actual exit c
 
 `rule-check` is read-only and takes one absolute path. It belongs to the declared source checkout, not to the installed Skill, so run it there on the written file:
 
-`node <checkout>/dist/cli.js rule-check --artifact <absolute path of registry/rules/<name>.md>`
+the checkout's built CLI, the `cli.js` file in its `dist` folder, run with Node: `rule-check --artifact <absolute path of registry/rules/<name>.md>`
 
 The checkout needs a built `dist/`. If it has none, or the command cannot run, report the checker as blocked with the consequence; do not substitute a reading of your own. It prints JSON and exits 0 when passed, 1 when failed and 2 when unavailable or misused. Keep the raw JSON. It keeps `quality: pending` and `live: unverified`, and passing means only these checks passed:
 
