@@ -13,7 +13,7 @@ import { ruleCheckExitCode, ruleCheckUsageResult, runRuleCheck } from '../src/co
 import { ClaudeProjector, ENTRYPOINT_RULES } from '../src/core/claude-projector.js';
 import type { RuleCheckResult } from '../src/core/types.js';
 
-const CHECK_IDS = ['name', 'size', 'encoding', 'budget', 'front-matter', 'structure', 'managed-marker'];
+const CHECK_IDS = ['name', 'size', 'encoding', 'budget', 'front-matter', 'structure', 'managed-marker', 'claude-render'];
 const BUDGET = ClaudeProjector.CLAUDE_DIALECT.maxRuleLines;
 const SIZE_CAP = 64 * 1024;
 const checkout = process.cwd();
@@ -210,7 +210,7 @@ describe('rule-check', () => {
     it('does not run the content checks on an oversize file, and says so', () => {
       const result = check(filler(SIZE_CAP + 10));
       expect(result.lines).toBeNull();
-      for (const id of ['encoding', 'budget', 'front-matter', 'structure', 'managed-marker']) expect(checkOf(result, id)?.status, id).toBe('not-run');
+      for (const id of ['encoding', 'budget', 'front-matter', 'structure', 'managed-marker', 'claude-render']) expect(checkOf(result, id)?.status, id).toBe('not-run');
       expect(checkOf(result, 'name')?.status).toBe('passed');
     });
 
@@ -352,6 +352,73 @@ describe('rule-check', () => {
     });
   });
 
+  describe('Tier 2: RENDER_CHANGE (what the Claude rendering would drop or rewrite)', () => {
+    const renderedBody = (text: string): string => ClaudeProjector.renderRule(text, 'rules/good-rule.md').content.split('\n').slice(2).join('\n');
+
+    it('fails a rule titled "Host Routing", whose heading and paragraph the projector would drop', () => {
+      const text = '# Host Routing\n\nSend each task to the host that owns it.\n';
+      expect(renderedBody(text)).not.toContain('Send each task');
+      const result = check(text);
+      expect(result.status).toBe('failed');
+      expect(codesOf(result)).toEqual(['RENDER_CHANGE']);
+      expect(checkOf(result, 'claude-render')?.status).toBe('failed');
+      expect(result.findings[0]?.message).toContain('Host Routing');
+      expect(result.findings[0]?.path).toBe(result.artifact);
+    });
+
+    it("fails a later section whose heading names another host's routing, and names that heading", () => {
+      const result = check('# Title\n\nIntro.\n\n## Nested Subagent Delegation\n\nDetails.\n\n## Other\n\nKept.\n');
+      expect(codesOf(result)).toEqual(['RENDER_CHANGE']);
+      expect(result.findings[0]?.message).toContain('Nested Subagent Delegation');
+    });
+
+    it('fails a residue phrase in prose, which the projector would replace', () => {
+      for (const phrase of ['language_server', 'language_server.exe', 'Cline & CLI', 'Nested Subagent Delegation', 'Host Routing']) {
+        const text = '# Title\n\nMention ' + phrase + ' in a sentence.\n';
+        expect(renderedBody(text), phrase).not.toContain(phrase);
+        const result = check(text);
+        expect(codesOf(result), phrase).toEqual(['RENDER_CHANGE']);
+        expect(result.findings[0]?.message, phrase).toContain(phrase);
+      }
+    });
+
+    it('fails a heading the projector would replace with its own section, and names it', () => {
+      const result = check('# Title\n\n## Delegation Mechanics\n\nHow work is handed on.\n');
+      expect(codesOf(result)).toEqual(['RENDER_CHANGE']);
+      expect(result.findings[0]?.message).toContain('Delegation Mechanics');
+    });
+
+    it('passes the ordinary tool and command vocabulary rewrite', () => {
+      const fence = '```';
+      const text = '# Tools\n\nUse read_file, then run_command and send_message.\nStart with team_command.\n\n' + fence + '\nread_file stays in a fence\n' + fence + '\n';
+      expect(renderedBody(text)).toContain('Use Read, then Bash and SendMessage.');
+      const result = check(text);
+      expect(result.status).toBe('passed');
+      expect(checkOf(result, 'claude-render')?.status).toBe('passed');
+    });
+
+    it('keeps the title line and a non-empty body for every rule that passes', () => {
+      for (const text of [GOOD, '# Title\nx', '\n\n# Title\nBody text', toCrlf(GOOD), '# Use read_file\n\nBody.\n']) {
+        const result = check(text);
+        expect(result.status, JSON.stringify(text)).toBe('passed');
+        const lines = renderedBody(text).split(/\r?\n/).filter(line => line.trim() !== '');
+        expect(lines.length, JSON.stringify(text)).toBeGreaterThanOrEqual(2);
+        expect(lines[0], JSON.stringify(text)).toMatch(/^# \S/);
+      }
+    });
+
+    it('does not run on a rule over the budget, which the projector skips', () => {
+      const result = check(ruleOfLines(BUDGET + 1).replace('Line 3 of the rule.', 'Host Routing'));
+      expect(codesOf(result)).toEqual(['BUDGET']);
+      expect(checkOf(result, 'claude-render')?.status).toBe('not-run');
+    });
+
+    it('reports a rewrite together with the other failures', () => {
+      const result = check('---\nname: x\n---\n# Host Routing\n\nBody.\n');
+      expect(codesOf(result)).toEqual(['FRONT_MATTER', 'RENDER_CHANGE']);
+    });
+  });
+
   describe('Tier 2: all failures together', () => {
     it('reports every failed check in one result, each with the file path', () => {
       const text = Buffer.concat([
@@ -485,6 +552,15 @@ describe('rule-check', () => {
         expect(result.lines, name).toBeLessThanOrEqual(BUDGET);
       }
       expect(failures).toEqual([]);
+    });
+
+    it('keeps the title and body of every authored rule in the Claude rendering', () => {
+      for (const name of authored) {
+        const text = fs.readFileSync(path.join(REAL_RULES, name), 'utf8');
+        const lines = ClaudeProjector.renderRule(text, 'rules/' + name).content.split(/\r?\n/).slice(2).filter(line => line.trim() !== '');
+        expect(lines.length, name).toBeGreaterThanOrEqual(2);
+        expect(lines[0], name).toBe(text.split(/\r?\n/).find(line => line.trim() !== '')?.trimEnd());
+      }
     });
 
     it('refuses the entry-point files by name, as the projector skips them', () => {

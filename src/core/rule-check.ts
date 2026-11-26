@@ -17,7 +17,7 @@ import type {
   RuleCheckCheckId, RuleCheckCode, RuleCheckFinding, RuleCheckGate, RuleCheckInput, RuleCheckResult, RuleCheckStatus,
 } from './types.js';
 
-const CHECK_IDS: readonly RuleCheckCheckId[] = ['name', 'size', 'encoding', 'budget', 'front-matter', 'structure', 'managed-marker'];
+const CHECK_IDS: readonly RuleCheckCheckId[] = ['name', 'size', 'encoding', 'budget', 'front-matter', 'structure', 'managed-marker', 'claude-render'];
 /** A rule is a few dozen lines; the 200-line budget alone allows about 16 KiB at 80 columns, so 64 KiB is generous. */
 export const RULE_CHECK_MAX_BYTES = 64 * 1024;
 const NAME_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*\.md$/;
@@ -100,6 +100,41 @@ function structureProblem(text: string): string | null {
   return null;
 }
 
+const quoted = (value: string): string => JSON.stringify(value.length > 80 ? `${value.slice(0, 80)}...` : value);
+
+/**
+ * What the Claude rendering of the rule would drop or rewrite beyond the ordinary tool and command vocabulary pass.
+ * The losses come from the projector's own rewrite steps (`ClaudeProjector.bodyRewriteLosses`), so this check cannot drift
+ * from them; the rendered body must also be non-empty and keep the title line.
+ */
+function renderProblems(raw: string, base: string): string[] {
+  // `renderRule` trims the canonical content before it rewrites it, so the same trim is applied here.
+  const body = raw.trim();
+  const losses = ClaudeProjector.bodyRewriteLosses(body);
+  const problems = [
+    ...losses.droppedSections.map(heading => `The Claude rendering would drop the section ${quoted(heading)} and everything under it: its heading names another host's routing. Rename the heading.`),
+    ...losses.scrubbedPhrases.map(phrase => `The Claude rendering would replace the phrase ${quoted(phrase)} in the text. Reword it.`),
+    ...losses.overriddenSections.map(heading => `The Claude rendering would replace the section ${quoted(heading)} with its own text. Rename the heading.`),
+  ];
+  if (problems.length > 0) return problems;
+
+  // A backstop for any other way the body could come out empty or without its title.
+  let rendered: string;
+  try {
+    rendered = ClaudeProjector.renderRule(raw, `rules/${base}`).content;
+  } catch {
+    return [];
+  }
+  const kept = rendered.split(/\r?\n/).slice(2).filter(line => line.trim() !== '');
+  const original = body.split(/\r?\n/).filter(line => line.trim() !== '');
+  if (original.length === 0) return []; // an empty rule is the structure check's finding
+  if (kept.length === 0) return ['The Claude rendering of the rule would be empty.'];
+  const title = ClaudeProjector.rewriteBody(original[0] ?? '').body.trim();
+  if (kept[0]?.trim() !== title) return [`The Claude rendering would not keep the title line ${quoted(original[0] ?? '')}.`];
+  if (original.length > 1 && kept.length < 2) return ['The Claude rendering would keep the title but none of the rule text under it.'];
+  return [];
+}
+
 export function runRuleCheck(input: RuleCheckInput): RuleCheckResult {
   const artifact = typeof input?.artifact === 'string' && input.artifact !== '' ? input.artifact : null;
   try {
@@ -163,6 +198,9 @@ export function runRuleCheck(input: RuleCheckInput): RuleCheckResult {
       done('front-matter', frontMatterProblems),
       done('structure', structureProblems),
       done('managed-marker', markerProblems),
+      lines > budgetOf()
+        ? gate('claude-render', 'not-run', 'The rule is over the Claude budget, so the projector skips it and renders nothing.')
+        : done('claude-render', renderProblems(raw, base).map(message => found('RENDER_CHANGE', message))),
     ], []);
   } catch (error) {
     return unavailable(artifact, 'INPUT_UNAVAILABLE', [`The rule check could not run (${errorCode(error)}).`], 'The rule check hit an unexpected error, so no check ran.');

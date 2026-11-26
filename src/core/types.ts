@@ -1289,12 +1289,12 @@ export interface SkillCheckResult {
 }
 
 /** ADR 0082: the deterministic rule command (`agents rule-check`); the checks live in rule-check.ts. */
-export type RuleCheckCheckId = 'name' | 'size' | 'encoding' | 'budget' | 'front-matter' | 'structure' | 'managed-marker';
+export type RuleCheckCheckId = 'name' | 'size' | 'encoding' | 'budget' | 'front-matter' | 'structure' | 'managed-marker' | 'claude-render';
 export type RuleCheckStatus = 'passed' | 'failed' | 'unavailable';
 export type RuleCheckGateStatus = 'passed' | 'failed' | 'not-run';
 export type RuleCheckCode =
   | 'USAGE' | 'INPUT_UNAVAILABLE'
-  | 'NAME' | 'SIZE' | 'ENCODING' | 'BUDGET' | 'FRONT_MATTER' | 'STRUCTURE' | 'MANAGED_MARKER';
+  | 'NAME' | 'SIZE' | 'ENCODING' | 'BUDGET' | 'FRONT_MATTER' | 'STRUCTURE' | 'MANAGED_MARKER' | 'RENDER_CHANGE';
 
 export interface RuleCheckFinding {
   code: RuleCheckCode;
