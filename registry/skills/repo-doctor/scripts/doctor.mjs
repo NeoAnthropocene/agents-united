@@ -145,11 +145,17 @@ function readmeCounts(root) {
   // The catalogue sentence repeats the Skill counts: "The N skills are ... N are **domain skills** ... N are **workflow playbooks**".
   const rows = text.split(/\r?\n/);
   const sentence = rows.findIndex(row => /^The \d+ skills are/.test(row));
-  if (sentence >= 0) {
+  if (sentence < 0) {
+    findings.push({ check: 'readme-counts', evidence: 'README.md has no catalogue sentence ("The N skills are …").',
+      proposedFix: `Restore the catalogue sentence with ${skills.length} skills, ${skills.length - workflows} domain skills and ${workflows} workflow playbooks.` });
+  } else {
     const row = rows[sentence];
     for (const [pattern, actual, label] of [[/^The (\d+) skills/, skills.length, 'skills'], [/(\d+) are \*\*domain skills\*\*/, skills.length - workflows, 'domain skills'], [/(\d+) are \*\*workflow playbooks\*\*/, workflows, 'workflow playbooks']]) {
       const match = pattern.exec(row);
-      if (match && Number(match[1]) !== actual) {
+      if (!match) {
+        findings.push({ check: 'readme-counts', evidence: `README.md:${sentence + 1} catalogue sentence states no count of ${label}.`,
+          proposedFix: `Restore "${actual}" ${label} to the catalogue sentence at README.md:${sentence + 1}.` });
+      } else if (Number(match[1]) !== actual) {
         findings.push({ check: 'readme-counts', evidence: `README.md:${sentence + 1} says ${match[1]} ${label}; registry/skills has ${actual}.`,
           proposedFix: `Set the catalogue sentence at README.md:${sentence + 1} to ${actual} ${label}.` });
       }
@@ -232,13 +238,15 @@ function openPrAdrNumbers(root, base, prs) {
   if (tree.error || tree.status !== 0) return { skipped: `open-pr-adr-numbers: ${base} not readable (git ls-tree); fetch it or pass --base` };
   const baseFiles = new Set(tree.stdout.split(/\r?\n/).filter(name => /^\d{4}-.*\.md$/.test(name)));
   const baseNumbers = new Map([...baseFiles].map(name => [name.slice(0, 4), name]));
+  // gh's file list has no change type: a path the base lacks counts as added. A pull request that renames a base ADR and
+  // keeps its number therefore shows as a collision; the evidence names both files so the reader can tell.
   const added = new Map();
   for (const pr of prs) {
     for (const file of pr.files ?? []) {
       const match = /^docs\/adr\/((\d{4})-.*\.md)$/.exec(file.path);
       if (!match || baseFiles.has(match[1])) continue;
       const claims = added.get(match[2]) ?? [];
-      if (!claims.some(claim => claim.pr === pr.number)) claims.push({ pr: pr.number, name: match[1] });
+      if (!claims.some(claim => claim.pr === pr.number && claim.name === match[1])) claims.push({ pr: pr.number, name: match[1] });
       added.set(match[2], claims);
     }
   }
@@ -262,15 +270,22 @@ function listOpenPrs(root, prJson) {
   return { prs: JSON.parse(listed.stdout) };
 }
 
-/** The report path must be `<root>/.repo-doctor-report.md`, not a symbolic link and not a tracked file. */
+/**
+ * The report path must be `<root>/.repo-doctor-report.md`, ignored by git and not tracked, and, if it exists, a plain file
+ * with one link (not a symbolic or hard link to another file). When git cannot answer, the report is refused.
+ */
 function reportPathProblem(root, out) {
   const resolved = path.resolve(out);
   if (resolved !== path.join(root, REPORT_NAME)) return `--out must be ${path.join(root, REPORT_NAME)}`;
+  const tracked = spawnSync('git', ['ls-files', '--error-unmatch', '--', REPORT_NAME], { cwd: root, encoding: 'utf8' });
+  if (tracked.error) return 'git is not available to confirm the report is untracked';
+  if (tracked.status === 0) return `${resolved} is tracked by git`;
+  const ignored = spawnSync('git', ['check-ignore', '-q', '--', REPORT_NAME], { cwd: root, encoding: 'utf8' });
+  if (ignored.error || ignored.status !== 0) return `${REPORT_NAME} is not ignored by git in ${root}`;
   let stat;
   try { stat = fs.lstatSync(resolved); } catch { return undefined; }
   if (stat.isSymbolicLink() || !stat.isFile()) return `${resolved} exists and is not a plain file`;
-  const tracked = spawnSync('git', ['ls-files', '--error-unmatch', REPORT_NAME], { cwd: root, encoding: 'utf8' });
-  if (!tracked.error && tracked.status === 0) return `${resolved} is tracked by git`;
+  if (stat.nlink > 1) return `${resolved} has other hard links`;
   return undefined;
 }
 

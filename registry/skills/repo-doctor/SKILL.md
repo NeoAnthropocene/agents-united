@@ -22,8 +22,8 @@ Output: the untracked, git-ignored `.repo-doctor-report.md` at the checkout root
 ## Step-by-Step Runbook
 1. Confirm the checkout: `git -C <checkout> rev-parse --abbrev-ref HEAD` and `git -C <checkout> rev-parse --short HEAD`. Note uncommitted changes; they are part of what you check.
 2. Run the fast checks: `node "${CLAUDE_SKILL_DIR}/scripts/doctor.mjs" --root <checkout> --out <checkout>/.repo-doctor-report.md` (add `--offline` without network). It prints one JSON line and exits 0 (clean), 1 (findings) or 2 (refused: not a checkout, or a report path other than a plain untracked `.repo-doctor-report.md` at the root). [The checks](references/checks.md) lists what it reads.
-3. Run the quick gates that write nothing, from the checkout, and record each actual exit: `npm run hostlib:verify`, `npx tsc --noEmit` and `npx tsc --noEmit -p tsconfig.test.json`. Never run the package's `typecheck` or `build` scripts: they rebuild `dist/`. Read the build-dependent checks from CI (step 4).
-4. Read, do not run, the slow results ([slow results](references/checks.md#slow-results)): the latest CI run for the branch with `gh run list --branch <branch> --limit 1 --json conclusion,headSha,createdAt`, and any full-gate log the maintainer names. Say how old each is and whether its commit is HEAD; a result for another commit proves nothing about HEAD.
+3. Run the quick gates that write nothing, from the checkout, and record each actual exit: `npm run hostlib:verify`, `node node_modules/typescript/bin/tsc --noEmit` and the same with `-p tsconfig.test.json`; without `node_modules/typescript`, report those two as unavailable (never `npx`, which may download). Never run the package's `typecheck` or `build` scripts: they rebuild `dist/`. Read the build-dependent checks from CI (step 4).
+4. Read, do not run, the slow results ([slow results](references/checks.md#slow-results)): the latest CI run for the branch with `gh run list --workflow CI --branch <branch> --limit 1 --json conclusion,headSha,createdAt`, and any full-gate log the maintainer names. Say how old each is and whether its commit is HEAD; a result for another commit proves nothing about HEAD, and none covers uncommitted changes.
 5. Judge what has no script ([judgement reads](references/checks.md#judgement-reads)): terms used against `CONTEXT.md`, ADR status lines against what merged, and stale mentions of removed files in the changed files.
 6. Add the gate exits, slow results and judgement findings to the report, each finding with its evidence (file and line, command and exit) and one proposed fix. Return the summary and stop.
 
@@ -31,7 +31,7 @@ Output: the untracked, git-ignored `.repo-doctor-report.md` at the checkout root
 Read [the worked example](examples/one-run.md): a run that found a README count and a broken ADR link, read a CI result for an older commit, and proposed three fixes without making any.
 
 ## Edge Cases & Error Recovery
-- Exit 2 from the script: the path is not an agents-united checkout. Report it and ask for the right path.
+- Exit 2 from the script: the path is not an agents-united checkout, or the report path was refused. Report the reason and stop; write no report elsewhere.
 - No `gh` or no network: run with `--offline`, list `open-pr-adr-numbers` and the CI read as skipped, and never present them as passed.
 - A quick gate fails: report the command, exit and first failing lines as a finding; do not rerun it until it passes and do not fix code to make it pass.
 - Anti-patterns: editing a file to clear a finding; reporting a CI result for another commit as the state of HEAD; running the hour-long full suite instead of reading its latest result; committing the report.

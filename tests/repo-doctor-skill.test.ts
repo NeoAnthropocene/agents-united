@@ -48,6 +48,8 @@ function cleanFixture(): string {
     '',
     '**In numbers:** 2 end-user bundles · 3 canonical agents (1 orchestrators + 2 sub-agents) · 2 skills (1 domain skills + 1 workflow playbooks).',
     '',
+    'The 2 skills are open-standard. 1 are **domain skills** and 1 are **workflow playbooks**.',
+    '',
     'See [the plans](plans/README.md) and `[an example](missing.md)`.',
     '',
   ].join('\n'));
@@ -56,6 +58,21 @@ function cleanFixture(): string {
   write(root, 'docs/adr/0001-first.md', '# ADR 0001\n');
   write(root, 'docs/adr/0002-second.md', '# ADR 0002\n');
   return root;
+}
+
+/** The clean checkout as a git repository with one commit; the report is ignored unless `ignoreReport` is false. */
+function gitFixture(ignoreReport = true): string {
+  const root = cleanFixture();
+  if (ignoreReport) write(root, '.gitignore', '.repo-doctor-report.md\n');
+  git(root, 'init', '-q');
+  git(root, 'add', '-A');
+  git(root, 'commit', '-q', '-m', 'base');
+  return root;
+}
+
+function git(root: string, ...args: string[]): void {
+  const child = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid', '-c', 'core.autocrlf=false', ...args], { cwd: root, encoding: 'utf8' });
+  expect(child.status, child.stderr).toBe(0);
 }
 
 function run(root: string, ...args: string[]): { status: number | null; result: Result; stdout: string; stderr: string } {
@@ -90,9 +107,11 @@ describe('the repo-doctor script on a clean checkout', () => {
   });
 
   it('writes nothing without --out, and only the named report with it', () => {
-    const root = cleanFixture();
+    const root = gitFixture();
     const before = listTree(root);
-    run(root);
+    const plain = run(root);
+    expect(plain.status).toBe(0);
+    expect(plain.result.ok).toBe(true);
     expect(listTree(root)).toEqual(before);
 
     const report = path.join(root, '.repo-doctor-report.md');
@@ -113,8 +132,28 @@ describe('the repo-doctor script finds drift, with evidence and a proposed fix',
     expect(counts.map(finding => finding.evidence)).toEqual([
       'README.md says 2 skills; registry/skills has 3.',
       'README.md says 1 domain skills; registry/skills has 2.',
+      'README.md:5 says 2 skills; registry/skills has 3.',
+      'README.md:5 says 1 domain skills; registry/skills has 2.',
     ]);
     for (const finding of counts) expect(finding.proposedFix).toMatch(/README\.md/);
+  });
+
+  it('a Bundle, orchestrator or workflow count that differs from the registry', () => {
+    const root = cleanFixture();
+    write(root, 'registry/bundles.json', JSON.stringify({ bundles: { one: { name: 'one' } } }));
+    write(root, 'registry/agents/orchestrator-two.md', '# two\n');
+    fs.rmSync(path.join(root, 'registry', 'agents', 'subagent-b.md'));
+    fs.renameSync(path.join(root, 'registry', 'skills', 'alpha'), path.join(root, 'registry', 'skills', 'workflow-alpha'));
+    const evidence = run(root).result.findings.filter(finding => finding.check === 'readme-counts').map(finding => finding.evidence);
+    expect(evidence).toEqual([
+      'README.md says 2 end-user bundles; registry/bundles.json has 1.',
+      'README.md says 1 orchestrators; registry/agents has 2.',
+      'README.md says 2 sub-agents; registry/agents has 1.',
+      'README.md says 1 domain skills; registry/skills has 0.',
+      'README.md says 1 workflow playbooks; registry/skills has 2.',
+      'README.md:5 says 1 domain skills; registry/skills has 0.',
+      'README.md:5 says 1 workflow playbooks; registry/skills has 2.',
+    ]);
   });
 
   it('a broken relative link, a link into scratch/ and a link with the wrong case, but not a code-span example', () => {
@@ -133,14 +172,18 @@ describe('the repo-doctor script finds drift, with evidence and a proposed fix',
     const readme = path.join(root, 'README.md');
     fs.writeFileSync(readme, fs.readFileSync(readme, 'utf8')
       .replace(' · 3 canonical agents (1 orchestrators + 2 sub-agents)', '')
-      .concat('\nThe 5 skills are open-standard. 1 are **domain skills** and 1 are **workflow playbooks**.\n'));
+      .replace('The 2 skills are open-standard. 1 are **domain skills** and', 'The 5 skills are open-standard, and'));
     const evidence = run(root).result.findings.filter(finding => finding.check === 'readme-counts').map(finding => finding.evidence);
     expect(evidence).toEqual([
       'README.md:3 "**In numbers:**" line states no count of canonical agents.',
       'README.md:3 "**In numbers:**" line states no count of orchestrators.',
       'README.md:3 "**In numbers:**" line states no count of sub-agents.',
-      'README.md:7 says 5 skills; registry/skills has 2.',
+      'README.md:5 says 5 skills; registry/skills has 2.',
+      'README.md:5 catalogue sentence states no count of domain skills.',
     ]);
+
+    fs.writeFileSync(readme, fs.readFileSync(readme, 'utf8').replace(/^The 5 skills are.*$/m, ''));
+    expect(run(root).result.findings.map(finding => finding.evidence)).toContain('README.md has no catalogue sentence ("The N skills are …").');
   });
 
   it('a plan that plans/README.md does not reach', () => {
@@ -176,34 +219,39 @@ describe('the repo-doctor script finds drift, with evidence and a proposed fix',
 });
 
 describe('the repo-doctor script on open pull requests (gh output given with --pr-json)', () => {
-  function gitFixture(): string {
-    const root = cleanFixture();
-    const git = (...args: string[]): void => {
-      const child = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.invalid', '-c', 'core.autocrlf=false', ...args], { cwd: root, encoding: 'utf8' });
-      expect(child.status, child.stderr).toBe(0);
-    };
-    git('init', '-q');
-    git('add', '-A');
-    git('commit', '-q', '-m', 'base');
-    return root;
+  function prFile(root: string, prs: unknown): string {
+    const file = path.join(root, '..', `${path.basename(root)}-prs.json`);
+    temps.push(file);
+    fs.writeFileSync(file, JSON.stringify(prs));
+    return file;
   }
 
   it('reports a number taken on the base and a number two pull requests share, and ignores an edit of a base ADR', () => {
     const root = gitFixture();
-    const prs = path.join(root, '..', `${path.basename(root)}-prs.json`);
-    temps.push(prs);
-    fs.writeFileSync(prs, JSON.stringify([
+    const prs = prFile(root, [
       { number: 10, files: [{ path: 'docs/adr/0002-other.md' }, { path: 'docs/adr/0001-first.md' }] },
       { number: 11, files: [{ path: 'docs/adr/0003-a.md' }] },
       { number: 12, files: [{ path: 'docs/adr/0003-b.md' }, { path: 'README.md' }] },
-    ]));
+      { number: 13, files: [{ path: 'docs/adr/0004-x.md' }, { path: 'docs/adr/0004-y.md' }] },
+    ]);
     const { status, result } = run(root, '--pr-json', prs, '--base', 'HEAD');
     expect(status).toBe(1);
     expect(result.checks).toContain('open-pr-adr-numbers');
     expect(result.findings.filter(finding => finding.check === 'open-pr-adr-numbers').map(finding => finding.evidence)).toEqual([
       'ADR 0002 is added by #10 (docs/adr/0002-other.md) and HEAD already has docs/adr/0002-second.md.',
       'ADR 0003 is added by #11 (docs/adr/0003-a.md) and #12 (docs/adr/0003-b.md).',
+      'ADR 0004 is added by #13 (docs/adr/0004-x.md) and #13 (docs/adr/0004-y.md).',
     ]);
+  });
+
+  it('compares with the base ref, not the worktree', () => {
+    const root = gitFixture();
+    fs.rmSync(path.join(root, 'docs', 'adr', '0002-second.md'));
+    write(root, 'docs/adr/0005-local-only.md', '# ADR 0005, uncommitted\n');
+    const prs = prFile(root, [{ number: 20, files: [{ path: 'docs/adr/0002-other.md' }, { path: 'docs/adr/0005-local-only.md' }] }]);
+    const evidence = run(root, '--pr-json', prs, '--base', 'HEAD').result.findings
+      .filter(finding => finding.check === 'open-pr-adr-numbers').map(finding => finding.evidence);
+    expect(evidence).toEqual(['ADR 0002 is added by #20 (docs/adr/0002-other.md) and HEAD already has docs/adr/0002-second.md.']);
   });
 
   it('skips, never passes, when the base ref cannot be read', () => {
@@ -228,11 +276,43 @@ describe('the repo-doctor script writes its report only at the checkout root, as
   });
 
   it('refuses a report path that is a directory', () => {
-    const root = cleanFixture();
+    const root = gitFixture();
     fs.mkdirSync(path.join(root, '.repo-doctor-report.md'));
     const { status, stdout } = run(root, '--out', path.join(root, '.repo-doctor-report.md'));
     expect(status).toBe(2);
     expect(stdout).toMatch(/is not a plain file/);
+  });
+
+  it('refuses a report with another hard link, and leaves the other file as it was', () => {
+    const root = gitFixture();
+    const other = path.join(root, 'docs', 'keep.md');
+    fs.writeFileSync(other, 'keep me\n');
+    fs.linkSync(other, path.join(root, '.repo-doctor-report.md'));
+    const { status, stdout } = run(root, '--out', path.join(root, '.repo-doctor-report.md'));
+    expect(status).toBe(2);
+    expect(stdout).toMatch(/has other hard links/);
+    expect(fs.readFileSync(other, 'utf8')).toBe('keep me\n');
+  });
+
+  it('refuses a report path that git tracks, even when it is deleted from the worktree', () => {
+    const root = gitFixture();
+    write(root, '.repo-doctor-report.md', 'committed by mistake\n');
+    git(root, 'add', '-f', '.repo-doctor-report.md');
+    git(root, 'commit', '-q', '-m', 'tracked report');
+    fs.rmSync(path.join(root, '.repo-doctor-report.md'));
+    const { status, stdout } = run(root, '--out', path.join(root, '.repo-doctor-report.md'));
+    expect(status).toBe(2);
+    expect(stdout).toMatch(/is tracked by git/);
+    expect(fs.existsSync(path.join(root, '.repo-doctor-report.md'))).toBe(false);
+  });
+
+  it('refuses when git does not ignore the report, or is not a repository', () => {
+    const notIgnored = gitFixture(false);
+    expect(run(notIgnored, '--out', path.join(notIgnored, '.repo-doctor-report.md')).stdout).toMatch(/is not ignored by git/);
+    const noRepo = cleanFixture();
+    const { status } = run(noRepo, '--out', path.join(noRepo, '.repo-doctor-report.md'));
+    expect(status).toBe(2);
+    expect(fs.existsSync(path.join(noRepo, '.repo-doctor-report.md'))).toBe(false);
   });
 });
 

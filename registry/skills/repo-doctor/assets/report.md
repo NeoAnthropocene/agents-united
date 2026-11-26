@@ -14,8 +14,8 @@ Skipped: each skipped check with its reason
 | Command | Exit |
 | --- | --- |
 | `npm run hostlib:verify` | <exit> |
-| `npx tsc --noEmit` | <exit> |
-| `npx tsc --noEmit -p tsconfig.test.json` | <exit> |
+| `node node_modules/typescript/bin/tsc --noEmit` | <exit or unavailable> |
+| the same with `-p tsconfig.test.json` | <exit or unavailable> |
 
 ## Slow results read
 

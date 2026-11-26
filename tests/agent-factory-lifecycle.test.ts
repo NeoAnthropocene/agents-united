@@ -104,6 +104,11 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
       expect(lock.projections?.[rel]?.hash, name).toBe(`sha256:${crypto.createHash('sha256').update(await fs.readFile(path.join(root, rel))).digest('hex')}`);
       expect((await fs.lstat(path.join(root, '.claude/skills', name))).isSymbolicLink(), name).toBe(false);
     }
+    // Plan 052 step 1: the repo doctor arrives with its script, checks reference and report outline; its evals stay in the source.
+    for (const rel of ['scripts/doctor.mjs', 'references/checks.md', 'assets/report.md']) {
+      expect(await fs.pathExists(path.join(root, '.claude/skills/repo-doctor', rel)), rel).toBe(true);
+    }
+    expect(await fs.pathExists(path.join(root, '.claude/skills/repo-doctor/evals'))).toBe(false);
     await new UninstallEngine().uninstall('agent-factory', { targetDir: state });
     for (const name of factorySkills) {
       expect(await fs.pathExists(path.join(root, '.claude/skills', name, 'SKILL.md')), name).toBe(false);
