@@ -55,6 +55,12 @@
       "feature": "The coordinator relays between specialists and wakes a finished peer before expecting its reply.",
       "disposition": "unsupported",
       "rationale": "The Prime Orchestrator spawns no specialist, so there is no peer to relay between and none to wake. A department lead does that in its own session."
+    },
+    {
+      "roles": ["orchestrator-marketing", "marketing-creative-designer", "orchestrator-digital-agency", "agency-creative-designer"],
+      "feature": "When the host has an image generator of its own, it is offered first and recommended among the image options.",
+      "disposition": "unsupported",
+      "rationale": "Claude Code has no image generator of its own, so the case the rule names does not arise on this host and the native files do not state it. Their image route stays the one ADR 0049 and ADR 0079 give: the image-gen server with the user's own key, through the creative designer and her lead, then the other options. The rule is in the Semantic Core for the hosts that have one, Antigravity among them, and reaches them when their native lane is projected (ADR 0079 decision 12)."
     }
   ]
 }

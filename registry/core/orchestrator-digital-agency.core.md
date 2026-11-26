@@ -39,6 +39,7 @@ invariants:
   - "The coordinator relays between specialists and wakes a finished peer before expecting its reply."
   - "Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs."
   - "A brief lists the peers a specialist may message directly only when a live team session runs; otherwise peers are reached through the coordinator."
+  - "When the host has an image generator of its own, it is offered first and recommended among the image options."
 capabilities:
   - read
   - search
