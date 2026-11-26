@@ -44,12 +44,19 @@ This directory contains self-contained implementation plans for building the **`
 
 | Plan | Scope | Current status |
 |---|---|---|
+| [037](037-agency-motion-sound.md) | Motion and Sound Designers for the digital agency ([ADR 0056](../docs/adr/0056-agency-motion-sound-production.md)) | Its status line: J0–J9 complete within the measured scope, tested with Claude 2.1.308 |
+| [038](038-sound-model-catalogue.md) | Local sound-model catalogue and sound/orchestrator skill improvements | Its status line: complete (J0–J8); the full parallel suite was not green on that machine, see the plan |
+| [039](039-sound-catalogue-publication.md) | Sound catalogue gate close-out and publication | Its status line: P0–P3 complete, P4–P5 waited for a push signal |
 | [040](040-signature-shot-motion-prompts.md) | Signature-shot prompts and pre-render proof | Implemented and full 231/231 test suite green; r3 technical pilot passes, not reference-quality creative acceptance |
 | [041](041-remotion-official-skills-addon.md) | Official Remotion add-on, version currency, optional Studio | Implemented, multi-host install, CI gates, and headless Claude CLI skill-routing + r4 render verification (`0.9796 USD`) green; redistribution/licence scope remains a public-release hold |
 | [042](042-spec-driven-sound-routing-and-pilot-041.md) | Measured sound routing, FFmpeg and chicken-life-cycle pilots | Both technical exports delivered and full-suite CI green; measured sync-drift and yuvj420p root causes recorded and resolved in r4b (`21/21` `verify.mjs both`) |
 | [043](043-reference-led-visual-craft-gate.md) | Actual reference-frame proof comparison, material passes and final-mux sync | Jobs V0–V5 implemented and headless-evaluated on Claude CLI ([ADR 0060](../docs/adr/0060-reference-led-visual-craft-and-final-mux-sync-gate.md), session `e7962c8a-5484-45fb-a09c-796dcf212f86`); human playback/listening sign-off on `chicken-lifecycle-r4.mp4` remains `unverified` |
 | [049](049-host-agent-router.md) | `host-agent-router`: cross-host dispatch skill in `universal-orchestration` ([ADR 0065](../docs/adr/0065-host-agent-router-cross-host-dispatch.md)) | Skill, tests, catalog wiring and install proof done; full lifecycle matrix 317/317; four-host live smoke passed; second round: shared worker contract (guardrails + handoff) with per-host enforcement, per-tier timeouts, Cline model pre-flight, large/ambiguous/kill tests on Cline, edit mode run live on all four hosts; no real limit refusal provoked |
 | [050](050-host-agent-router-in-every-bundle.md) | `host-agent-router` (with `handoff` and `git-guardrails`) in every bundle, opt-in for the orchestrators | Locally implemented; sampled installation and integrated gate passed with recorded skips and separate matrix proof. Actual model non-invocation remains unverified. |
+
+## Plan 033 slice-4 design files
+
+The separate designs of [Plan 033](033-agent-factory-bundle.md) slice 4: [Claude realize](033-slice-4-claude-realize-design.md), [P2 record](033-slice-4-p2-record-design.md), [P3 contract](033-slice-4-p3-contract-design.md), [P3b record](033-slice-4-p3b-record-design.md), [P4 session reader](033-slice-4-p4-session-reader-design.md), [P5 evaluator](033-slice-4-p5-evaluator-design.md), [P6 bundle template](033-slice-4-p6-bundle-template-design.md), [P7 coordinator](033-slice-4-p7-coordinator-design.md), [P8 skill](033-slice-4-p8-skill-design.md).
 
 ## Execution Order & Status
 

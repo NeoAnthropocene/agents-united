@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted** (2026-09-15). Implementation per [Plan 014](../plans/014-workflows-to-skills-migration.md) — 69 canonical workflows converted into standard skill directory bundles (`registry/skills/workflow-<name>/SKILL.md`); all 26 bundles in `registry/bundles.json` migrated from `workflows` to `skills`; `src/core/types.ts` marks `workflows` `@deprecated`; silent auto-migration implemented in `UpdateEngine` and `InstallEngine`; dual-benefit `.cline/workflows/` projection preserved for chat slash commands; 4-tier test suite synchronized.
+**Accepted** (2026-09-15). Implementation per [Plan 014](../../plans/014-workflows-to-skills-migration.md) — 69 canonical workflows converted into standard skill directory bundles (`registry/skills/workflow-<name>/SKILL.md`); all 26 bundles in `registry/bundles.json` migrated from `workflows` to `skills`; `src/core/types.ts` marks `workflows` `@deprecated`; silent auto-migration implemented in `UpdateEngine` and `InstallEngine`; dual-benefit `.cline/workflows/` projection preserved for chat slash commands; 4-tier test suite synchronized.
 
 > Records the decision that Agents United conducts a complete canonical cutover from legacy Markdown workflows to the open-standard **Agent Skills** format (`.agents/skills/<name>/SKILL.md`), responding to Google Antigravity's official deprecation and scheduled retirement on November 1, 2026.
 
