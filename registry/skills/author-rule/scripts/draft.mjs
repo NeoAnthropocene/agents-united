@@ -100,21 +100,42 @@ function run(argument) {
   realDirectory(rulesDir, 'registry/rules');
   const clash = fs.readdirSync(rulesDir).find(entry => entry.toLowerCase() === ruleFile);
   if (clash) block(`registry/rules/${clash} already exists; it collides with ${ruleFile}. Repair it by hand or pick another name.`);
-  const target = bundleFile(registry, job.bundle, ruleFile);
   const body = Buffer.from(/\n$/.test(job.content) ? job.content : `${job.content}\n`);
   const rulePath = path.join(rulesDir, ruleFile);
+  const lock = path.join(registry, '.bundles.json.lock');
   const temporary = path.join(registry, `.bundles-${randomBytes(6).toString('hex')}.tmp`);
-  let ruleWritten = false;
+  // Only what this run created is ever removed: each flag is set just before the create, and cleared again when the create finds the file already there.
+  let lockHeld = false, ruleWritten = false, temporaryWritten = false;
+  let target;
   try {
-    fs.writeFileSync(rulePath, body, { flag: 'wx' });
-    ruleWritten = true;
-    fs.writeFileSync(temporary, target.after, { flag: 'wx' });
+    try { fs.writeFileSync(lock, `${process.pid}\n`, { flag: 'wx' }); lockHeld = true; } catch (error) {
+      if (error?.code === 'EEXIST') block(`Another run holds ${lock}; wait for it to finish, or delete the file if no run is active. Nothing was changed.`);
+      throw error;
+    }
+    target = bundleFile(registry, job.bundle, ruleFile);
+    try { ruleWritten = true; fs.writeFileSync(rulePath, body, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') ruleWritten = false; throw error; }
+    try { temporaryWritten = true; fs.writeFileSync(temporary, target.after, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') temporaryWritten = false; throw error; }
+    // Test seam, inert unless AUTHOR_RULE_TEST_FAULT is set: 'manifest-changed' edits the manifest as another process would, and
+    // 'fail-before-rename' fails between the two writes. Used only by tests/author-rule-skill.test.ts.
+    const fault = process.env.AUTHOR_RULE_TEST_FAULT;
+    if (fault === 'manifest-changed') fs.appendFileSync(target.manifest, ' ');
+    if (fault === 'fail-before-rename') throw Object.assign(new Error('injected failure'), { code: 'EIO' });
+    // The lock only keeps other runs of this helper out; an editor can still change the file, so compare the bytes once more.
+    if (!fs.readFileSync(target.manifest).equals(target.before)) block('registry/bundles.json changed while the helper was working; nothing was written. Run it again.');
     fs.renameSync(temporary, target.manifest);
+    temporaryWritten = false;
   } catch (error) {
-    // Zero orphaned files: a failure after the first write removes what this run created.
-    fs.rmSync(temporary, { force: true });
-    if (ruleWritten) fs.rmSync(rulePath, { force: true });
+    // Zero orphaned files: a failure removes what this run created. Each removal has its own try, so one failing does not stop the next.
+    const stuck = [];
+    if (temporaryWritten) { try { fs.rmSync(temporary, { force: true }); } catch { stuck.push(temporary); } }
+    if (ruleWritten) { try { fs.rmSync(rulePath, { force: true }); } catch { stuck.push(rulePath); } }
+    if (stuck.length) {
+      const why = error instanceof Blocked ? error.message : `The helper could not finish (${error?.code ?? 'unexpected error'}).`;
+      throw new Blocked(`${why} It could not remove: ${stuck.join(', ')}. Remove ${stuck.length === 1 ? 'it' : 'them'} by hand.`);
+    }
     throw error;
+  } finally {
+    if (lockHeld) { try { fs.rmSync(lock, { force: true }); } catch { /* a stale lock is reported to the next run, which names the file */ } }
   }
   return {
     version: 1, status: 'written',

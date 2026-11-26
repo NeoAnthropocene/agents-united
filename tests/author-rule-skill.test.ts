@@ -165,10 +165,10 @@ describe('author-rule bounded draft helper', () => {
     fs.writeFileSync(path.join(checkout, 'registry/bundles.json'), text);
     return { root, checkout, bundles: text, job: { checkout, name: 'release-notes', bundle: 'agent-factory', content: RULE } };
   }
-  function run(f: Fixture, executable = helper): { exit: number | null; stdout: string; stderr: string; report: Record<string, any>; blocked: Record<string, any> } {
+  function run(f: Fixture, executable = helper, env: Record<string, string> = {}): { exit: number | null; stdout: string; stderr: string; report: Record<string, any>; blocked: Record<string, any> } {
     const jobPath = path.join(f.root, 'job.json');
     fs.writeFileSync(jobPath, JSON.stringify(f.job));
-    const result = spawnSync(process.execPath, [executable, jobPath], { cwd: f.root, encoding: 'utf8' });
+    const result = spawnSync(process.execPath, [executable, jobPath], { cwd: f.root, encoding: 'utf8', env: { ...process.env, ...env } });
     return { exit: result.status, stdout: result.stdout, stderr: result.stderr,
       report: result.status === 0 ? JSON.parse(result.stdout) as Record<string, any> : {},
       blocked: result.status === 1 ? JSON.parse(result.stderr) as Record<string, any> : {} };
@@ -397,6 +397,46 @@ describe('author-rule bounded draft helper', () => {
     expect(fs.readdirSync(other).sort()).toEqual(['bundles.json', 'rules']);
     expect(fs.readdirSync(path.join(other, 'rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
     expect(fs.readFileSync(path.join(other, 'bundles.json'), 'utf8')).toBe(f.bundles);
+  });
+
+  it('leaves no lock or temporary file behind after a successful run', () => {
+    const f = fixture();
+    expect(run(f).exit).toBe(0);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+  });
+
+  it('refuses to run while another run holds the lock, changes nothing and leaves the other run its lock', () => {
+    const f = fixture();
+    const lock = path.join(f.checkout, 'registry/.bundles.json.lock');
+    fs.writeFileSync(lock, 'another run\n');
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/lock/i);
+    expect(fs.readFileSync(lock, 'utf8')).toBe('another run\n');
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['.bundles.json.lock', 'bundles.json', 'rules']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+  });
+
+  // The helper's only test seam: AUTHOR_RULE_TEST_FAULT, read once, inert unless set to one of two documented values.
+  it('refuses a manifest that changed between the read and the rename, leaving nothing behind', () => {
+    const f = fixture();
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'manifest-changed' });
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/changed/i);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(`${f.bundles} `);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+  });
+
+  it('removes the rule file, the temporary file and the lock when a failure comes between the two writes', () => {
+    const f = fixture();
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'fail-before-rename' });
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/could not finish/i);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
   });
 
   it('prints its usage for a missing or unreadable job argument and writes nothing', () => {
