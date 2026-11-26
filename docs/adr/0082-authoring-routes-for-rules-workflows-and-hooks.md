@@ -32,27 +32,29 @@
 5. **Workflow scope.** `author-workflow` writes the portable Skill (`registry/skills/workflow-<name>/`, ADR 0016). It may also write a native Claude workflow script (`registry/hosts/claude/workflows/<name>.js`) that passes `workflow-check`. Cline `.md` workflows wait for the Cline factory stage.
 6. **The rule route writes into the contributor's branch.**
    - `author-rule` writes `registry/rules/<name>.md` and the rule's entry in the chosen bundle's `rules[]` in the contributor's branch. It does not return a proposal for manual import.
-   - There is no native `registry/hosts/claude/rules/` folder: the projectors already render rules for Claude, Cline and Antigravity.
+   - There is no native `registry/hosts/claude/rules/` folder. The Claude projector renders `.claude/rules/<name>.md` from the canonical rule, and Cline gets a copy with the managed marker in `.cline/rules/`.
+   - Antigravity is different. The installer copies or links the canonical file as it is into the store's `rules/` folder (`.agents/rules/`). The Antigravity guide says a modular rule there without frontmatter and a valid `trigger` is silently dropped, and a rule over 24,000 bytes is truncated (`host-library/antigravity/guide/rule.md`). A canonical rule without frontmatter therefore does not reach Antigravity unless a native rule under `registry/hosts/antigravity/rules/` replaces it. An Antigravity rule check (trigger frontmatter, the byte limit) belongs to the Antigravity factory stage, not to this route.
 7. **One generalized Skill binding.** `claude-skill-binding.ts` and the installer's `author-skill` special cases are generalized once, so each new factory Skill adds a binding file, not a new module.
-8. **Oversize rules fail at authoring time; the installer only warns.**
+8. **Oversize rules fail at authoring time.**
    - `rule-check` fails a rule over the Claude budget.
-   - The installer keeps installing the other assets but reports the skipped rule, instead of the current silent skip.
-   - Changing the skip into a refusal is not part of this ADR.
+   - An installer warning for the rule the Claude projector skips is proposed but out of scope for these slices; it needs its own slice in the installer and doctor, with the maintainer's word. Changing the skip into a refusal is not part of this ADR either.
 9. **A small host guide page.** `host-library/claude/guide/rule.md` is added before `author-rule`. Rules are the only artifact kind without a Claude guide page, and `realize-for-host` works from the guides.
 10. **Path scoping is out of the first rule route.**
     - `renderRule` accepts `paths`, but no caller passes them, so a canonical rule is always unscoped.
-    - A canonical rule therefore carries no front matter, and `rule-check` refuses one that does. Without that check, the projector would put the author's front matter after its own marker.
+    - A canonical rule therefore carries no front matter, and `rule-check` refuses one that does. Without that check, the Claude projector would put the author's front matter after its own marker.
+    - This is the Claude and Cline shape. Antigravity needs the opposite (frontmatter with a `trigger`, decision 6); that conflict is left to the Antigravity stage.
 
 ## What `rule-check` checks (first slice)
 
-One canonical rule file, given by absolute path. Nothing in it is executed. The checks:
+One canonical rule file, given by absolute path. Nothing in it is executed. Its scope is the Claude and Cline delivery of a canonical rule; it says nothing about Antigravity (decision 6). The checks:
 
-- The file name is a lower-case kebab-case `.md` name. It is not a host entry-point file (`CLAUDE.md`, `CLAUDE.local.md`, `GEMINI.md`, `AGENTS.md`, `CURSOR.md`), which the projector skips.
+- The file name is a lower-case kebab-case `.md` name, portable on Windows: no reserved device name (CON, PRN, AUX, NUL, COM1 to COM9, LPT1 to LPT9, any case, with or without an extension). It is not a host entry-point file (`CLAUDE.md`, `CLAUDE.local.md`, `GEMINI.md`, `AGENTS.md`, `CURSOR.md`, compared without regard to case), which the projectors skip.
 - The file is readable UTF-8 text within a size limit.
 - It is within the Claude rule budget, counted the way the projector counts.
 - There is no front matter (decision 10).
 - There is a level-1 title and a non-empty body.
 - There is no Agents United managed marker, which the projector writes itself.
+- The Claude rendering keeps the rule's content. The Claude projector's residue safety net drops any section whose heading names another host's routing (for example a heading containing "Host Routing") and rewrites a few phrases, and its section overrides replace some headed sections. A rule that would lose or change text that way fails, with the heading or phrase named, and the rendered body must keep the title and a non-empty body.
 
 Passing means only these deterministic checks passed. The JSON keeps `quality: pending` and `live: unverified`, as `skill-check` does.
 
@@ -68,9 +70,10 @@ Passing means only these deterministic checks passed. The JSON keeps `quality: p
   - Generalizing the binding touches installer code that `author-skill` relies on, so that slice needs the full gate.
 - Hooks stay the riskiest kind: they run code, may fail open, and headless runs skip agent-frontmatter hooks (ADR 0042). A draft-only route keeps the shipped guard set under hand review.
 - Not decided here:
-  - the Workspace Source Registry (ADR 0046; design under review in ADR 0083);
+  - the Workspace Source Registry (ADR 0046; its design is reviewed separately);
   - the other hosts' factory stages;
-  - any change to how the installer treats an oversize rule beyond a warning.
+  - any change to how the installer treats an oversize rule (decision 8);
+  - an Antigravity rule check (decision 6).
 
 ## Slices
 
