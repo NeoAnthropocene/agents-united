@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const CHECKS = ['readme-counts', 'relative-links', 'plans-index', 'adr-numbers'];
+const REPORT_NAME = '.repo-doctor-report.md';
 const ROOT_DOCS = ['README.md', 'PROJECT.md', 'CONTEXT.md', 'ROADMAP.md', 'AGENTS.md', 'CLAUDE.md', 'TEST_INFRA.md', 'CHANGELOG.md', 'TEST_READY.md', 'CONTRIBUTING.md'];
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const CLOSING_FENCE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
@@ -14,11 +15,12 @@ const CODE_SPAN = /(?<!`)(`+)(?!`)((?:(?!\n[ \t]*\n)[\s\S])*?)(?<!`)\1(?!`)/g;
 const INLINE_LINK = /((?<!\\)!)?\[((?:(?!\n[ \t]*\n)(?:[^[\]]|\[[^[\]]*\]))*)\]\(\s*<?([^()\s<>]+)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
 
 function parseArgs(argv) {
-  const args = { root: undefined, out: undefined, offline: false };
+  const args = { root: undefined, out: undefined, offline: false, base: 'origin/dev', prJson: undefined };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     if (flag === '--offline') args.offline = true;
-    else if ((flag === '--root' || flag === '--out') && argv[i + 1] !== undefined) args[flag.slice(2)] = argv[++i];
+    else if ((flag === '--root' || flag === '--out' || flag === '--base') && argv[i + 1] !== undefined) args[flag.slice(2)] = argv[++i];
+    else if (flag === '--pr-json' && argv[i + 1] !== undefined) args.prJson = argv[++i];
     else return { error: `Unknown or incomplete option ${flag}.` };
   }
   if (!args.root) return { error: 'Missing --root <absolute checkout path>.' };
@@ -73,6 +75,18 @@ function resolvedLinks(file) {
   });
 }
 
+/** The 1-based line of the first `](target` in the file, for the evidence. */
+function lineOf(file, target) {
+  const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+  const index = lines.findIndex(line => line.includes(`](${target}`) || line.includes(`](<${target}`));
+  return index >= 0 ? index + 1 : undefined;
+}
+
+const at = (root, file, target) => {
+  const line = lineOf(file, target);
+  return line === undefined ? rel(root, file) : `${rel(root, file)}:${line}`;
+};
+
 /** Inside the checkout and present with this exact case in every segment, as on a case-sensitive file system. */
 function existsExactly(root, absolute) {
   const inside = path.relative(root, absolute);
@@ -111,9 +125,14 @@ function readmeCounts(root) {
     [/(\d+) domain skills/, skills.length - workflows, 'domain skills', 'registry/skills'],
     [/(\d+) workflow playbooks/, workflows, 'workflow playbooks', 'registry/skills (workflow-*)'],
   ];
+  const lineNo = text.split(/\r?\n/).indexOf(line) + 1;
   for (const [pattern, actual, label, source] of expected) {
     const match = pattern.exec(line);
-    if (!match) continue;
+    if (!match) {
+      findings.push({ check: 'readme-counts', evidence: `README.md:${lineNo} "**In numbers:**" line states no count of ${label}.`,
+        proposedFix: `Restore "${actual} ${label}" to the "**In numbers:**" line of README.md, counted from ${source}.` });
+      continue;
+    }
     const stated = Number(match[1]);
     if (stated !== actual) {
       findings.push({
@@ -121,6 +140,19 @@ function readmeCounts(root) {
         evidence: `README.md says ${stated} ${label}; ${source.split(' ')[0]} has ${actual}.`,
         proposedFix: `Set the "**In numbers:**" line of README.md (and every other README.md sentence that repeats it) to ${actual} ${label}, counted from ${source}.`,
       });
+    }
+  }
+  // The catalogue sentence repeats the Skill counts: "The N skills are ... N are **domain skills** ... N are **workflow playbooks**".
+  const rows = text.split(/\r?\n/);
+  const sentence = rows.findIndex(row => /^The \d+ skills are/.test(row));
+  if (sentence >= 0) {
+    const row = rows[sentence];
+    for (const [pattern, actual, label] of [[/^The (\d+) skills/, skills.length, 'skills'], [/(\d+) are \*\*domain skills\*\*/, skills.length - workflows, 'domain skills'], [/(\d+) are \*\*workflow playbooks\*\*/, workflows, 'workflow playbooks']]) {
+      const match = pattern.exec(row);
+      if (match && Number(match[1]) !== actual) {
+        findings.push({ check: 'readme-counts', evidence: `README.md:${sentence + 1} says ${match[1]} ${label}; registry/skills has ${actual}.`,
+          proposedFix: `Set the catalogue sentence at README.md:${sentence + 1} to ${actual} ${label}.` });
+      }
     }
   }
   return findings;
@@ -140,10 +172,10 @@ function relativeLinks(root) {
     for (const link of resolvedLinks(file)) {
       const first = path.relative(root, link.absolute).split(path.sep)[0].toLowerCase();
       if (first === 'scratch') {
-        findings.push({ check: 'relative-links', evidence: `${rel(root, file)} links ${link.target}, inside the ignored scratch/ folder.`,
+        findings.push({ check: 'relative-links', evidence: `${at(root, file, link.target)} links ${link.target}, inside the ignored scratch/ folder.`,
           proposedFix: `Name the local path as plain text in ${rel(root, file)}, or move the evidence into the repository and link it there.` });
       } else if (!existsExactly(root, link.absolute)) {
-        findings.push({ check: 'relative-links', evidence: `${rel(root, file)} links ${link.target}, which does not exist.`,
+        findings.push({ check: 'relative-links', evidence: `${at(root, file, link.target)} links ${link.target}, which does not exist.`,
           proposedFix: `Point the link in ${rel(root, file)} at the file that exists (check the ../ depth and the exact case), or remove it.` });
       }
     }
@@ -153,14 +185,20 @@ function relativeLinks(root) {
 
 function plansIndex(root) {
   const plansDir = path.join(root, 'plans');
+  if (!fs.existsSync(plansDir)) return [];
   const index = path.join(plansDir, 'README.md');
-  if (!fs.existsSync(index)) return [];
   const isPlan = file => path.dirname(file) === plansDir && /^\d{3}-.*\.md$/.test(path.basename(file));
-  const plansFrom = file => resolvedLinks(file).filter(link => !link.image && isPlan(link.absolute)).map(link => link.absolute);
+  const plans = fs.readdirSync(plansDir).map(name => path.join(plansDir, name)).filter(isPlan);
+  if (!existsExactly(root, index)) {
+    return plans.length === 0 ? [] : [{ check: 'plans-index', evidence: `plans/README.md is missing; ${plans.length} numbered plans have no index.`,
+      proposedFix: 'Restore plans/README.md from the base branch.' }];
+  }
+  // A link counts only when its target exists with the exact case, so Windows and Linux agree.
+  const plansFrom = file => resolvedLinks(file).filter(link => !link.image && isPlan(link.absolute) && existsExactly(root, link.absolute)).map(link => link.absolute);
   const direct = new Set(plansFrom(index));
   const reached = new Set(direct);
-  for (const plan of direct) if (fs.existsSync(plan)) for (const target of plansFrom(plan)) reached.add(target);
-  return fs.readdirSync(plansDir).map(name => path.join(plansDir, name)).filter(isPlan).filter(plan => !reached.has(plan)).map(plan => ({
+  for (const plan of direct) for (const target of plansFrom(plan)) reached.add(target);
+  return plans.filter(plan => !reached.has(plan)).map(plan => ({
     check: 'plans-index',
     evidence: `${rel(root, plan)} is not reached from plans/README.md.`,
     proposedFix: `Add a row or line linking ${path.basename(plan)} to plans/README.md, or link it from the plan it belongs to.`,
@@ -182,27 +220,58 @@ function adrNumbers(root) {
   }));
 }
 
-/** ADR numbers that open pull requests to dev add, against dev's own and each other's. Needs gh; skipped offline. */
-function openPrAdrNumbers(root) {
-  const listed = spawnSync('gh', ['pr', 'list', '--base', 'dev', '--state', 'open', '--json', 'number,files', '--limit', '100'], { cwd: root, encoding: 'utf8' });
-  if (listed.error || listed.status !== 0) return { skipped: `open-pr-adr-numbers: gh pr list failed${listed.stderr ? ` (${listed.stderr.trim().split(/\r?\n/)[0]})` : ''}` };
-  const ownFiles = new Set(fs.existsSync(path.join(root, 'docs', 'adr')) ? fs.readdirSync(path.join(root, 'docs', 'adr')) : []);
-  const own = new Set([...ownFiles].map(name => name.slice(0, 4)));
-  const claimed = new Map();
-  for (const pr of JSON.parse(listed.stdout)) {
+const PR_LIMIT = 100;
+
+/**
+ * ADR files that open pull requests to dev add, against the ADRs on the base ref and each other. An ADR path the base
+ * already has is an edit, not an addition. Base names come from `git ls-tree <base>`; when that ref cannot be read the
+ * check is skipped rather than compared with a possibly stale worktree. `prs` is the parsed `gh pr list --json number,files`.
+ */
+function openPrAdrNumbers(root, base, prs) {
+  const tree = spawnSync('git', ['ls-tree', '--name-only', `${base}:docs/adr`], { cwd: root, encoding: 'utf8' });
+  if (tree.error || tree.status !== 0) return { skipped: `open-pr-adr-numbers: ${base} not readable (git ls-tree); fetch it or pass --base` };
+  const baseFiles = new Set(tree.stdout.split(/\r?\n/).filter(name => /^\d{4}-.*\.md$/.test(name)));
+  const baseNumbers = new Map([...baseFiles].map(name => [name.slice(0, 4), name]));
+  const added = new Map();
+  for (const pr of prs) {
     for (const file of pr.files ?? []) {
-      const match = /^docs\/adr\/(\d{4})-.*\.md$/.exec(file.path);
-      if (match && !ownFiles.has(path.basename(file.path))) claimed.set(match[1], [...(claimed.get(match[1]) ?? []), `#${pr.number}`]);
+      const match = /^docs\/adr\/((\d{4})-.*\.md)$/.exec(file.path);
+      if (!match || baseFiles.has(match[1])) continue;
+      const claims = added.get(match[2]) ?? [];
+      if (!claims.some(claim => claim.pr === pr.number)) claims.push({ pr: pr.number, name: match[1] });
+      added.set(match[2], claims);
     }
   }
   const findings = [];
-  for (const [number, prs] of claimed) {
-    if (own.has(number) || prs.length > 1) {
-      findings.push({ check: 'open-pr-adr-numbers', evidence: `ADR ${number} is added by ${prs.join(' and ')}${own.has(number) ? ' and already used in this checkout' : ''}.`,
-        proposedFix: `Give the newer ADR the next number free on dev and in every open pull request.` });
+  for (const [number, claims] of added) {
+    const onBase = baseNumbers.get(number);
+    if (onBase || claims.length > 1) {
+      const who = claims.map(claim => `#${claim.pr} (docs/adr/${claim.name})`).join(' and ');
+      findings.push({ check: 'open-pr-adr-numbers', evidence: `ADR ${number} is added by ${who}${onBase ? ` and ${base} already has docs/adr/${onBase}` : ''}.`,
+        proposedFix: `Give the newer ADR the next number free on ${base} and in every open pull request, and update its links.` });
     }
   }
-  return { findings };
+  const partial = prs.length >= PR_LIMIT ? [`open-pr-adr-numbers: only the first ${PR_LIMIT} open pull requests were read`] : [];
+  return { findings, partial };
+}
+
+function listOpenPrs(root, prJson) {
+  if (prJson) return { prs: JSON.parse(fs.readFileSync(path.resolve(prJson), 'utf8')) };
+  const listed = spawnSync('gh', ['pr', 'list', '--base', 'dev', '--state', 'open', '--json', 'number,files', '--limit', String(PR_LIMIT)], { cwd: root, encoding: 'utf8' });
+  if (listed.error || listed.status !== 0) return { skipped: `open-pr-adr-numbers: gh pr list failed${listed.stderr ? ` (${listed.stderr.trim().split(/\r?\n/)[0]})` : ''}` };
+  return { prs: JSON.parse(listed.stdout) };
+}
+
+/** The report path must be `<root>/.repo-doctor-report.md`, not a symbolic link and not a tracked file. */
+function reportPathProblem(root, out) {
+  const resolved = path.resolve(out);
+  if (resolved !== path.join(root, REPORT_NAME)) return `--out must be ${path.join(root, REPORT_NAME)}`;
+  let stat;
+  try { stat = fs.lstatSync(resolved); } catch { return undefined; }
+  if (stat.isSymbolicLink() || !stat.isFile()) return `${resolved} exists and is not a plain file`;
+  const tracked = spawnSync('git', ['ls-files', '--error-unmatch', REPORT_NAME], { cwd: root, encoding: 'utf8' });
+  if (!tracked.error && tracked.status === 0) return `${resolved} is tracked by git`;
+  return undefined;
 }
 
 function report(result) {
@@ -221,13 +290,19 @@ let name;
 try { name = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).name; } catch { name = undefined; }
 if (name !== 'agents-united' || !fs.existsSync(path.join(root, 'registry', 'bundles.json'))) stop(`${root} is not an agents-united checkout (package.json name and registry/bundles.json).`);
 
+if (args.out) {
+  const problem = reportPathProblem(root, args.out);
+  if (problem) stop(problem);
+}
+
 const result = { ok: true, root, checks: [...CHECKS], skipped: [], findings: [] };
 result.findings.push(...readmeCounts(root), ...relativeLinks(root), ...plansIndex(root), ...adrNumbers(root));
-if (args.offline) result.skipped.push('open-pr-adr-numbers: --offline');
+if (args.offline && !args.prJson) result.skipped.push('open-pr-adr-numbers: --offline');
 else {
-  const open = openPrAdrNumbers(root);
+  const listed = listOpenPrs(root, args.prJson);
+  const open = listed.skipped ? listed : openPrAdrNumbers(root, args.base, listed.prs);
   if (open.skipped) result.skipped.push(open.skipped);
-  else { result.checks.push('open-pr-adr-numbers'); result.findings.push(...open.findings); }
+  else { result.checks.push('open-pr-adr-numbers'); result.findings.push(...open.findings); result.skipped.push(...open.partial); }
 }
 result.ok = result.findings.length === 0;
 if (args.out) fs.writeFileSync(path.resolve(args.out), report(result));

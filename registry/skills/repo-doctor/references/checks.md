@@ -10,13 +10,17 @@ The maintainer decided on 2026-11-26 (Plan 052 step 1): the doctor runs the fast
 | `relative-links` | Every relative inline link in the root documents, `docs/` and `plans/`, outside code: the target exists inside the checkout with the exact case, and is not in the ignored `scratch/` folder | `docs/adr/0015-….md links ../plans/013-….md, which does not exist.` |
 | `plans-index` | Every `plans/NNN-*.md` is linked from `plans/README.md`, or from a numbered plan it links | `plans/038-sound-model-catalogue.md is not reached from plans/README.md.` |
 | `adr-numbers` | No two files in `docs/adr/` share a number | `ADR 0060 is used by … and ….` |
-| `open-pr-adr-numbers` | ADR files that open pull requests to `dev` add, against the checkout's numbers and each other (needs `gh`; skipped with `--offline`) | `ADR 0081 is added by #300 and #301.` |
+| `open-pr-adr-numbers` | ADR files that open pull requests to `dev` add (paths not on the base ref; an edit of a base ADR is not an addition), against the ADRs on the base ref (`--base`, default `origin/dev`, read with `git ls-tree`) and each other. Needs `gh`; skipped with `--offline`, and skipped, never passed, when the base ref cannot be read. Only the first 100 open pull requests are read, and the run says so when it reaches that | `ADR 0081 is added by #300 (docs/adr/0081-a.md) and #301 (docs/adr/0081-b.md).` |
 
-The test suite already pins the Skill counts that README.md, PROJECT.md and CONTEXT.md state (`tests/skill-rewrite-s6-orchestration.test.ts`); the script's count check is the fast read of the README line, including the agent and Bundle counts, without the hour-long suite. The same link and plans rules are pinned for the repository itself by `tests/docs-links-and-plans-index.test.ts`; the script carries its own copy so an installed Skill does not depend on the test suite. Its scanner reads inline links with regular expressions, not a full CommonMark parser: fences inside blockquotes, reference-style links and angle-bracket destinations with spaces are not read.
+Link findings carry the file and line (`docs/adr/0015-….md:5`). A count field missing from the `**In numbers:**` line is a finding, not a pass, and the catalogue sentence ("The N skills are …") is checked too. `plans/README.md` missing while numbered plans exist is a finding; a plan link counts only when its target exists with the exact case.
+
+`--out` accepts only `<checkout>/.repo-doctor-report.md`, and only when that path is absent or a plain, untracked file; anything else exits 2 and writes nothing.
+
+The test suite already pins the total Skill count that README.md and PROJECT.md state (`tests/skill-rewrite-s6-orchestration.test.ts`); the script's count check is the fast read of the README line, including the agent and Bundle counts, without the hour-long suite. The same link and plans rules are pinned for the repository itself by `tests/docs-links-and-plans-index.test.ts` (added by #291); the script carries its own copy so an installed Skill does not depend on the test suite. Its scanner reads inline links with regular expressions, not a full CommonMark parser: fences inside blockquotes, reference-style links and angle-bracket destinations with spaces are not read.
 
 ## Quick gates (run by the runbook)
 
-`npm run hostlib:verify` and the package's `typecheck` script. Record each actual exit; a failure is a finding with its first failing lines.
+`npm run hostlib:verify` (reads the lock hashes and guide citations), `npx tsc --noEmit` and `npx tsc --noEmit -p tsconfig.test.json`. They write nothing. The package's `typecheck` and `build` scripts rebuild `dist/`, so the doctor never runs them; their result comes from CI. Record each actual exit; a failure is a finding with its first failing lines.
 
 ## Slow results
 

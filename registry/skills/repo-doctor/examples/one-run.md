@@ -3,14 +3,14 @@
 The maintainer asks, on a branch that adds a new Skill: "Run the repo doctor before I open the PR."
 
 1. The checkout is `C:\github\scratch-pilot\p033-wt\new-skill`, branch `feat/new-skill`, HEAD `1a2b3c4d`, no uncommitted changes.
-2. `node "${CLAUDE_SKILL_DIR}/scripts/doctor.mjs" --root C:\github\scratch-pilot\p033-wt\new-skill --out C:\github\scratch-pilot\p033-wt\new-skill\.repo-doctor-report.md` exits 1 with two findings:
+2. `node "${CLAUDE_SKILL_DIR}/scripts/doctor.mjs" --root C:\github\scratch-pilot\p033-wt\new-skill --out C:\github\scratch-pilot\p033-wt\new-skill\.repo-doctor-report.md` exits 1 with three findings:
    - `readme-counts`: `README.md says 217 skills; registry/skills has 218.` and `README.md says 146 domain skills; registry/skills has 147.`
-   - `relative-links`: `docs/adr/0081-new-skill.md links ../plans/053-new-skill.md, which does not exist.` (the ADR sits one folder deeper than it assumed).
-3. `npm run hostlib:verify` exits 0; the `typecheck` script exits 0.
-4. `gh run list --branch feat/new-skill --limit 1 --json conclusion,headSha,createdAt` shows `success` for `9f8e7d6c`, three hours old. That is not HEAD, so the report says: "CI passed for 9f8e7d6c, three hours ago; HEAD 1a2b3c4d has no CI result yet."
+   - `relative-links`: `docs/adr/0081-new-skill.md:5 links ../plans/053-new-skill.md, which does not exist.` (the ADR sits one folder deeper than it assumed).
+3. `npm run hostlib:verify`, `npx tsc --noEmit` and `npx tsc --noEmit -p tsconfig.test.json` each exit 0.
+4. `gh run list --branch feat/new-skill --limit 1 --json conclusion,headSha,createdAt` shows `success` for `9f8e7d6c`, three hours old. That is not HEAD, so the report says: "The latest CI run on the branch passed for 9f8e7d6c, three hours ago; it says nothing about HEAD 1a2b3c4d."
 5. Judgement: the new SKILL.md calls a Bundle a "pack"; `CONTEXT.md` defines Bundle and has no "pack". One finding, with the line.
 
-The report lists three findings with their proposed fixes:
+The report lists four findings (two README counts, the link, the term) with three proposed fixes:
 
 - Set the README counts to 218 and 147.
 - Change the ADR link to `../../plans/053-new-skill.md`.

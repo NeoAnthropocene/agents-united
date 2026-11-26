@@ -5,7 +5,7 @@
     {
       "id": 1,
       "prompt": "Run the repo doctor on my worktree C:\\github\\scratch-pilot\\p033-wt\\new-skill before I open the pull request to dev.",
-      "expected_output": "A git-ignored .repo-doctor-report.md at the worktree root listing the fast checks run, the hostlib:verify and typecheck exits, the latest CI result with its commit and age, and each finding with evidence and a proposed fix; no other file changed."
+      "expected_output": "A git-ignored .repo-doctor-report.md at the worktree root listing the fast checks run, the exits of hostlib:verify and the two no-emit tsc checks, the latest CI result with its commit and age, and each finding with evidence and a proposed fix; no other file changed."
     },
     {
       "id": 2,

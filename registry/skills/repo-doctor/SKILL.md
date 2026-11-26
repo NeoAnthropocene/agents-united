@@ -13,7 +13,7 @@ metadata:
 Answer one question for the maintainer: is this agents-united checkout consistent? Run the fast mechanical checks, run the quick gates, read the latest slow results and judge what needs judgement. Return findings, each with evidence and a proposed fix. The doctor writes only its report; every fix goes through the normal factory route (tests first, independent review, the maintainer's word), never through this Skill.
 
 ## Execution Triggers
-Run on "repo doctor", "is the repo healthy", "check the repository before the PR", or as the gate the factory runs before it prepares a pull request (ADR 0080 decision 5). Do not run on an installed workspace: `agents doctor` checks that. Do not run to check one Skill, contract, agent or Bundle draft: the four `*-check` commands do that.
+Run on "repo doctor", "is the repo healthy" or "check the repository before the PR"; run it by hand until the factory's automatic gate before a pull request (ADR 0080 decision 5, Plan 052 step 4) is wired. Do not run on an installed workspace: `agents doctor` checks that. Do not run to check one Skill, contract, agent or Bundle draft: the four `*-check` commands do that.
 
 ## Input/Output Requirements
 Input: the absolute path of an agents-united checkout or worktree, its branch and HEAD, and whether the network may be used (`gh` for open pull requests and CI). Ask once if the path is missing; never pick a checkout yourself.
@@ -21,8 +21,8 @@ Output: the untracked, git-ignored `.repo-doctor-report.md` at the checkout root
 
 ## Step-by-Step Runbook
 1. Confirm the checkout: `git -C <checkout> rev-parse --abbrev-ref HEAD` and `git -C <checkout> rev-parse --short HEAD`. Note uncommitted changes; they are part of what you check.
-2. Run the fast checks: `node "${CLAUDE_SKILL_DIR}/scripts/doctor.mjs" --root <checkout> --out <checkout>/.repo-doctor-report.md` (add `--offline` without network). It prints one JSON line and exits 0 (clean), 1 (findings) or 2 (not a checkout). [The checks](references/checks.md) lists what it reads.
-3. Run the quick gates from the checkout and record each actual exit: `npm run hostlib:verify`, then the package's `typecheck` script.
+2. Run the fast checks: `node "${CLAUDE_SKILL_DIR}/scripts/doctor.mjs" --root <checkout> --out <checkout>/.repo-doctor-report.md` (add `--offline` without network). It prints one JSON line and exits 0 (clean), 1 (findings) or 2 (refused: not a checkout, or a report path other than a plain untracked `.repo-doctor-report.md` at the root). [The checks](references/checks.md) lists what it reads.
+3. Run the quick gates that write nothing, from the checkout, and record each actual exit: `npm run hostlib:verify`, `npx tsc --noEmit` and `npx tsc --noEmit -p tsconfig.test.json`. Never run the package's `typecheck` or `build` scripts: they rebuild `dist/`. Read the build-dependent checks from CI (step 4).
 4. Read, do not run, the slow results ([slow results](references/checks.md#slow-results)): the latest CI run for the branch with `gh run list --branch <branch> --limit 1 --json conclusion,headSha,createdAt`, and any full-gate log the maintainer names. Say how old each is and whether its commit is HEAD; a result for another commit proves nothing about HEAD.
 5. Judge what has no script ([judgement reads](references/checks.md#judgement-reads)): terms used against `CONTEXT.md`, ADR status lines against what merged, and stale mentions of removed files in the changed files.
 6. Add the gate exits, slow results and judgement findings to the report, each finding with its evidence (file and line, command and exit) and one proposed fix. Return the summary and stop.
