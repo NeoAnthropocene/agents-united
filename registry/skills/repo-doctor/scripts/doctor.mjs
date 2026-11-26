@@ -105,7 +105,6 @@ function readmeCounts(root) {
   if (!fs.existsSync(readme)) return [{ check: 'readme-counts', evidence: 'README.md is missing.', proposedFix: 'Restore README.md from the base branch.' }];
   const text = fs.readFileSync(readme, 'utf8');
   const line = text.split(/\r?\n/).find(row => row.includes('**In numbers:**'));
-  if (!line) return [{ check: 'readme-counts', evidence: 'README.md has no "**In numbers:**" line.', proposedFix: 'Restore the "**In numbers:**" line in README.md.' }];
 
   const skillsDir = path.join(root, 'registry', 'skills');
   const skills = fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).filter(name => fs.existsSync(path.join(skillsDir, name, 'SKILL.md'))) : [];
@@ -125,8 +124,9 @@ function readmeCounts(root) {
     [/(\d+) domain skills/, skills.length - workflows, 'domain skills', 'registry/skills'],
     [/(\d+) workflow playbooks/, workflows, 'workflow playbooks', 'registry/skills (workflow-*)'],
   ];
-  const lineNo = text.split(/\r?\n/).indexOf(line) + 1;
-  for (const [pattern, actual, label, source] of expected) {
+  if (!line) findings.push({ check: 'readme-counts', evidence: 'README.md has no "**In numbers:**" line.', proposedFix: 'Restore the "**In numbers:**" line in README.md.' });
+  const lineNo = line ? text.split(/\r?\n/).indexOf(line) + 1 : 0;
+  for (const [pattern, actual, label, source] of line ? expected : []) {
     const match = pattern.exec(line);
     if (!match) {
       findings.push({ check: 'readme-counts', evidence: `README.md:${lineNo} "**In numbers:**" line states no count of ${label}.`,
@@ -256,7 +256,9 @@ function openPrAdrNumbers(root, base, prs) {
     if (onBase || claims.length > 1) {
       const who = claims.map(claim => `#${claim.pr} (docs/adr/${claim.name})`).join(' and ');
       findings.push({ check: 'open-pr-adr-numbers', evidence: `ADR ${number} is added by ${who}${onBase ? ` and ${base} already has docs/adr/${onBase}` : ''}.`,
-        proposedFix: `Give the newer ADR the next number free on ${base} and in every open pull request, and update its links.` });
+        proposedFix: onBase && claims.length === 1
+          ? `First confirm whether #${claims[0].pr} renames docs/adr/${onBase}; if it adds a new ADR, give it the next number free on ${base} and in every open pull request, and update its links.`
+          : `Give the newer ADR the next number free on ${base} and in every open pull request, and update its links.` });
     }
   }
   const partial = prs.length >= PR_LIMIT ? [`open-pr-adr-numbers: only the first ${PR_LIMIT} open pull requests were read`] : [];
@@ -277,16 +279,33 @@ function listOpenPrs(root, prJson) {
 function reportPathProblem(root, out) {
   const resolved = path.resolve(out);
   if (resolved !== path.join(root, REPORT_NAME)) return `--out must be ${path.join(root, REPORT_NAME)}`;
-  const tracked = spawnSync('git', ['ls-files', '--error-unmatch', '--', REPORT_NAME], { cwd: root, encoding: 'utf8' });
-  if (tracked.error) return 'git is not available to confirm the report is untracked';
-  if (tracked.status === 0) return `${resolved} is tracked by git`;
+  const tracked = spawnSync('git', ['ls-files', '--', REPORT_NAME], { cwd: root, encoding: 'utf8' });
+  if (tracked.error || tracked.status !== 0) return 'git could not confirm the report is untracked (git ls-files failed)';
+  if (tracked.stdout.trim() !== '') return `${resolved} is tracked by git`;
   const ignored = spawnSync('git', ['check-ignore', '-q', '--', REPORT_NAME], { cwd: root, encoding: 'utf8' });
   if (ignored.error || ignored.status !== 0) return `${REPORT_NAME} is not ignored by git in ${root}`;
+  return existingReportProblem(resolved);
+}
+
+/** Absent, or a plain file with one link. Any error other than "does not exist" refuses. */
+function existingReportProblem(resolved) {
   let stat;
-  try { stat = fs.lstatSync(resolved); } catch { return undefined; }
+  try { stat = fs.lstatSync(resolved); } catch (error) { return error && error.code === 'ENOENT' ? undefined : `${resolved} could not be inspected (${error && error.code})`; }
   if (stat.isSymbolicLink() || !stat.isFile()) return `${resolved} exists and is not a plain file`;
   if (stat.nlink > 1) return `${resolved} has other hard links`;
   return undefined;
+}
+
+/**
+ * Write the report to a new temporary file beside it and rename it into place. The rename replaces the directory entry,
+ * so it never writes through a link that appeared after the check; the path is checked again just before.
+ */
+function writeReport(resolved, text) {
+  const problem = existingReportProblem(resolved);
+  if (problem) stop(problem);
+  const temp = `${resolved}.${process.pid}.tmp`;
+  fs.writeFileSync(temp, text, { flag: 'wx' });
+  try { fs.renameSync(temp, resolved); } catch (error) { fs.rmSync(temp, { force: true }); throw error; }
 }
 
 function report(result) {
@@ -320,6 +339,6 @@ else {
   else { result.checks.push('open-pr-adr-numbers'); result.findings.push(...open.findings); result.skipped.push(...open.partial); }
 }
 result.ok = result.findings.length === 0;
-if (args.out) fs.writeFileSync(path.resolve(args.out), report(result));
+if (args.out) writeReport(path.resolve(args.out), report(result));
 process.stdout.write(`${JSON.stringify(result)}\n`);
 process.exit(result.ok ? 0 : 1);

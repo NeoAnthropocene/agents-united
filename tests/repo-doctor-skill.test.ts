@@ -138,6 +138,16 @@ describe('the repo-doctor script finds drift, with evidence and a proposed fix',
     for (const finding of counts) expect(finding.proposedFix).toMatch(/README\.md/);
   });
 
+  it('a missing "In numbers" line does not hide a stale catalogue sentence', () => {
+    const root = cleanFixture();
+    const readme = path.join(root, 'README.md');
+    fs.writeFileSync(readme, fs.readFileSync(readme, 'utf8').replace(/^\*\*In numbers:\*\*.*$/m, '').replace('The 2 skills', 'The 9 skills'));
+    expect(run(root).result.findings.filter(finding => finding.check === 'readme-counts').map(finding => finding.evidence)).toEqual([
+      'README.md has no "**In numbers:**" line.',
+      'README.md:5 says 9 skills; registry/skills has 2.',
+    ]);
+  });
+
   it('a Bundle, orchestrator or workflow count that differs from the registry', () => {
     const root = cleanFixture();
     write(root, 'registry/bundles.json', JSON.stringify({ bundles: { one: { name: 'one' } } }));
