@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { InstallEngine } from '../src/core/installer.js';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { RegistryResolver } from '../src/core/registry.js';
+import { ClaudeProjector } from '../src/core/claude-projector.js';
 import type { LockfileManifest } from '../src/core/types.js';
 
 describe('DoctorEngine', () => {
@@ -390,6 +391,44 @@ describe('DoctorEngine', () => {
       expect(hits[0]).toMatch(/^Missing .*projection /);
       expect(hits[0]).not.toContain(kept);
       expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
+    // When one owner's render fails, the paths that owner would have produced are unknown: the host did not render fully this run, so a
+    // missing path of that host is Missing and is never called superseded because the owners that did render do not list it.
+    it('reports a missing path as missing when its host failed to render for one owner, though another projection of the canonical exists', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const skillsDir = path.join(path.dirname(tempDir), '.claude', 'skills');
+      const gone = '.claude/skills/author-skill/references/skill-attribution.md';
+      const kept = '.claude/skills/author-rule/references/skill-attribution.md';
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      // A second owner whose render succeeds and does not list the missing path; the factory's own render is the one that fails below.
+      const record = lockfile.projections![gone]!;
+      expect(record.host).toBe('claude');
+      expect(record.owners).toContain('agent-factory');
+      for (const projection of Object.values(lockfile.projections!)) {
+        if (projection.host === 'claude' && !projection.owners.includes('software-engineering')) projection.owners = [...projection.owners, 'software-engineering'];
+      }
+      lockfile.installed!.bundles = [...lockfile.installed!.bundles, 'software-engineering'];
+      await fs.writeJson(lockfilePath, lockfile);
+      expect(await fs.pathExists(path.join(skillsDir, 'author-rule/references/skill-attribution.md'))).toBe(true);
+      await fs.remove(path.join(skillsDir, 'author-skill/references/skill-attribution.md'));
+
+      const original = ClaudeProjector.planCompoundProjection.bind(ClaudeProjector);
+      const spy = vi.spyOn(ClaudeProjector, 'planCompoundProjection').mockImplementation(async (bundleDef, ...rest) => {
+        if (bundleDef.name === 'agent-factory') throw new Error('the render of this owner fails');
+        return original(bundleDef, ...rest);
+      });
+      try {
+        const report = await DoctorEngine.runDoctor(tempDir);
+        const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+        expect(spy.mock.calls.some(call => call[0].name === 'software-engineering')).toBe(true);
+        expect(hits, hits.join(' | ')).toHaveLength(1);
+        expect(hits[0]).toMatch(/^Missing .*projection /);
+        expect(hits[0]).not.toContain(kept);
+        expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+      } finally { spy.mockRestore(); }
     });
 
   });

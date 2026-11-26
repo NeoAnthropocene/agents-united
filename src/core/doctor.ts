@@ -219,7 +219,11 @@ export class DoctorEngine {
     return null;
   }
 
-  /** The projection paths the installed bundles render now for `host`, or `null` when they cannot be rendered (unknown host, registry unavailable). */
+  /**
+   * The projection paths the installed bundles render now for `host`, or `null` when they cannot be rendered (unknown host, registry
+   * unavailable) or when the render of any one owner failed this run: the paths of that owner are unknown, so a path of this host that is
+   * not listed cannot be called renamed (the caller then reports it Missing).
+   */
   private static async currentProjectionPaths(
     manifest: LockfileManifest,
     host: string,
@@ -230,15 +234,17 @@ export class DoctorEngine {
     for (const proj of Object.values(manifest.projections ?? {})) {
       if (proj.host === host) for (const owner of proj.owners) owners.add(owner);
     }
+    const failedOwners: string[] = [];
     const rendered = await DoctorEngine.renderProjectionVariants(
       owners,
       manifest.installed?.bundles ?? [],
       host,
       host === 'claude' ? manifest.nativeLane === true : manifest.nativeLanes?.[host] === true,
       manifest.scope ?? 'project',
-      workspaceRoot
+      workspaceRoot,
+      failedOwners
     );
-    return rendered ? new Set(rendered.keys()) : null;
+    return rendered && failedOwners.length === 0 ? new Set(rendered.keys()) : null;
   }
 
   /**
@@ -264,6 +270,8 @@ export class DoctorEngine {
    * a global install names `~/.agents/...` in its coordinator rule and the absolute path of a workflow skill's supporting files
    * (ADR 0016 decision 6 amendment). Rendering every install as `project` made a global one look outdated. The Claude and
    * Antigravity renders keep the `project` scope they always had.
+   *
+   * `failedOwners`, when given, receives each owner whose render threw: the returned map then lacks that owner's paths.
    */
   private static async renderProjectionVariants(
     owners: Set<string>,
@@ -271,7 +279,8 @@ export class DoctorEngine {
     host: CompoundLaneHost,
     nativeLane = false,
     scope: InstallScope = 'project',
-    workspaceRoot?: string
+    workspaceRoot?: string,
+    failedOwners?: string[]
   ): Promise<Map<string, string[]> | null> {
     if (owners.size === 0) return null;
 
@@ -323,7 +332,8 @@ export class DoctorEngine {
           }
         }
       } catch {
-        continue; // degrade gracefully — never emit a speculative warning
+        failedOwners?.push(owner); // degrade gracefully — never emit a speculative warning; the caller learns this owner did not render
+        continue;
       }
     }
 
