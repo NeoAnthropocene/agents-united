@@ -7,6 +7,10 @@ import { describe, expect, it } from 'vitest';
  * docs/ and plans/ points at a file that exists (with the exact case, as on Linux CI), and every plan is reachable from
  * plans/README.md (linked there, or from a numbered plan that is). Images are not navigation. A link inside a code fence or a
  * code span is an example, not a link; a link whose label holds a code span or runs over two lines is a link.
+ *
+ * Known limits of this scanner (a regular-expression reading, not a full CommonMark parser; none of these forms is in the
+ * repository today): fences inside blockquotes or list items, a stray backtick pairing across a heading, destinations in angle
+ * brackets with spaces or with parentheses, reference-style links, and a root folder whose case differs on Windows.
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -16,7 +20,8 @@ const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const CLOSING_FENCE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
 /** A code span: equal backtick runs inside one paragraph (CommonMark); an unmatched backtick stays literal. */
 const CODE_SPAN = /(?<!`)(`+)(?!`)((?:(?!\n[ \t]*\n)[\s\S])*?)(?<!`)\1(?!`)/g;
-const INLINE_LINK = /(!?)\[((?:[^[\]]|\[[^[\]]*\])*)\]\(\s*<?([^()\s<>]+)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
+/** An inline link or image; the label may hold one nested bracket pair and line breaks, never a blank line; `\![` is a link. */
+const INLINE_LINK = /((?<!\\)!)?\[((?:(?!\n[ \t]*\n)(?:[^[\]]|\[[^[\]]*\]))*)\]\(\s*<?([^()\s<>]+)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
 
 interface Link { target: string; image: boolean }
 
@@ -41,7 +46,8 @@ function inlineLinks(markdown: string): Link[] {
 
 function relativeTarget(target: string): string | undefined {
   if (target.startsWith('#') || /^[A-Za-z][A-Za-z0-9+.-]*:/.test(target) || target.startsWith('/') || target.startsWith('~')) return undefined;
-  const file = decodeURI(target.split('#')[0]);
+  let file = target.split('#')[0];
+  try { file = decodeURI(file); } catch { /* a malformed escape is checked as written */ }
   return file === '' ? undefined : file;
 }
 
@@ -91,6 +97,9 @@ describe('the link scanner of this test', () => {
       '',
       '[real](e.md) and `[example](example.md)`',
       '``[two](f.md)` still code``',
+      '[split',
+      '',
+      'label](not-a-link.md) and \\![escaped](g.md) and [odd](100%.md)',
     ].join('\n');
     expect(inlineLinks(md)).toEqual([
       { image: false, target: 'a.md' },
@@ -98,7 +107,17 @@ describe('the link scanner of this test', () => {
       { image: true, target: 'c.png' },
       { image: false, target: 'd.md#part' },
       { image: false, target: 'e.md' },
+      { image: false, target: 'g.md' },
+      { image: false, target: '100%.md' },
     ]);
+    expect(relativeTarget('100%.md')).toBe('100%.md');
+  });
+
+  it('treats a link out of the repository as broken, and a name starting with two dots as inside', () => {
+    expect(existsExactly(path.resolve(ROOT, '..', 'README.md'))).toBe(false);
+    expect(existsExactly(path.join(ROOT, '..notes.md'))).toBe(false);
+    expect(existsExactly(path.join(ROOT, 'README.md'))).toBe(true);
+    expect(existsExactly(path.join(ROOT, 'readme.md'))).toBe(false);
   });
 });
 
