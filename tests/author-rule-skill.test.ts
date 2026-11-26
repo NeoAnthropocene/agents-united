@@ -77,6 +77,34 @@ describe('author-rule source gates', () => {
     expect(text).toMatch(/never pushes|no commit, push/i);
   });
 
+  it('separates create from repair in the shared entry and the native loader: only create needs a free name and the helper', () => {
+    const shared = fs.readFileSync(path.join(candidate, 'SKILL.md'), 'utf8');
+    const native = fs.readFileSync(loaderFile, 'utf8');
+    for (const [label, text] of [['shared', shared], ['native', native]] as const) {
+      const lines = text.split(/\r?\n/);
+      const step = (n: number): string => lines.find(line => line.startsWith(`${n}. `)) ?? '';
+      const [check, apply] = [step(2), step(5)];
+      for (const line of [check, apply]) { expect(line, label).toMatch(/Create mode/); expect(line, label).toMatch(/Repair mode/); }
+      const [createCheck = '', repairCheck = ''] = check.split('Repair mode');
+      expect(createCheck, label).toMatch(/free/);
+      expect(repairCheck, label).not.toMatch(/free/);
+      expect(repairCheck, label).toMatch(/exists/);
+      expect(repairCheck, label).toMatch(/baseline/);
+      const [createApply = '', repairApply = ''] = apply.split('Repair mode');
+      expect(createApply, label).toMatch(/draft\.mjs/);
+      expect(repairApply, label).not.toMatch(/draft\.mjs/);
+      expect(repairApply, label).toMatch(/do not run the helper/i);
+      expect(repairApply, label).toMatch(/by hand/);
+      expect(repairApply, label).toMatch(/bundles\.json/);
+      // The stop list names the collision and the existing bundle entry as create-only stops.
+      expect(lines.find(line => /^Stop the dependent action/.test(line)) ?? '', label).toMatch(/when creating/);
+    }
+    const job = fs.readFileSync(path.join(candidate, 'references/job.md'), 'utf8');
+    expect(job).toMatch(/Repair mode/);
+    expect(job).toMatch(/by hand/);
+    expect(fs.readFileSync(path.join(candidate, 'examples/one-draft.md'), 'utf8')).toMatch(/Repair mode|repair mode/);
+  });
+
   it('prepares an explicit same-prompt eval pair and one unrelated control without runs or thresholds', () => {
     const evals = JSON.parse(fs.readFileSync(path.join(candidate, 'evals/evals.json'), 'utf8')) as { skill_name: string; status: string; evals: Array<{ id: number; prompt: string; expected_output: string; kind?: string; runs?: Array<{ condition: string; prompt: string }> }>; results?: unknown; success_threshold?: unknown };
     expect(evals.skill_name).toBe('author-rule');

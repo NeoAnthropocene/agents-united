@@ -21,10 +21,10 @@ Return the rule path and hash, the bundle diff, the raw `rule-check` JSON with i
 
 ## Step-by-Step Runbook
 1. Read the supplied attribution rule before adopting a source or writing text. Resolve missing inputs with one focused question; reuse inputs already supplied.
-2. Check the checkout with [the job contract](references/job.md): a branch that is not protected, the name free in `registry/rules/`, the bundle present. Capture the baseline for a repair.
+2. Check the checkout with [the job contract](references/job.md): a branch that is not protected and the bundle present. Create mode: the name is free in `registry/rules/`. Repair mode: the rule exists and the bundle lists it, or the job names the bundle that should; capture its bytes and hash as the baseline.
 3. Classify original, inspired or adapted text with [provenance](references/provenance.md). Unresolved required evidence blocks reuse.
 4. Write the rule: a title, then short instructions the model can verify, one topic, no front matter and no managed marker. Follow the budget and rendering limits in [quality](references/quality.md); a rule over the Claude budget is skipped by the installer.
-5. To create, apply the text with Node >=24: `node "${CLAUDE_SKILL_DIR}/scripts/draft.mjs" <absolute-job.json>`. It writes the rule and the bundle entry, refuses collisions and host entry-point names, prints hashes and runs no validator. To repair, edit the existing file in place; the helper refuses a file that exists.
+5. Create mode: apply the text with Node >=24: `node "${CLAUDE_SKILL_DIR}/scripts/draft.mjs" <absolute-job.json>`. It writes the rule and the bundle entry, refuses collisions and host entry-point names, prints hashes and runs no validator. Repair mode: do not run the helper, which refuses a file that exists; edit the file in place and leave `bundles.json` alone unless the entry is missing, then add it by hand, keeping that file's formatting.
 6. Run the checker on the written file from the checkout and keep its raw JSON and exit: the checkout's built CLI (the `cli.js` file in its `dist` folder) run with Node: `rule-check --artifact <absolute rule path>`. Fix each finding by editing the rule file in place and run the checker again. Report an unbuilt or missing checker as blocked.
 7. Compare the final inventory with the baseline and return the report. Local intent ends here. Upstream intent only prepares the pinned `.github/PULL_REQUEST_TEMPLATE/artifact-contribution.md`, base `dev`, `sent: false`, following `docs/artifact-contribution.md`; no commit, push, pull request or publication follows.
 
@@ -32,7 +32,7 @@ Return the rule path and hash, the bundle diff, the raw `rule-check` JSON with i
 Read [the worked example](examples/one-draft.md) for a new rule and a repair that fixes a failed check. The route covers Claude and Cline delivery only: Antigravity needs front matter with a trigger and a native rule, which this route does not write.
 
 ## Edge Cases & Error Recovery
-Stop the dependent action for a name collision, an entry-point name, a bundle that already lists the file, a `bundles.json` the helper cannot write back unchanged, a missing attribution binding or an unavailable checker. Preserve the draft and name the remedy. Do not edit other files to make a check pass.
+Stop the dependent action, when creating, for a name collision or a bundle that already lists the file; stop in either mode for an entry-point name, a `bundles.json` the helper cannot write back unchanged, a missing attribution binding or an unavailable checker. Preserve the draft and name the remedy. Do not edit other files to make a check pass.
 Anti-patterns: a rule that restates a procedure or a hook; vague instructions such as "write good code"; front matter copied from another host; a heading naming another host's routing, which the Claude rendering drops; replacing a failed check with the author's own success claim.
 
 ## Verification Checklist

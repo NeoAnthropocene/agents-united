@@ -19,7 +19,7 @@ Invented scenario: a contributor on branch `feature/release-notes-rule` wants th
 
 ## Repair after a failed check
 
-A later draft added a heading `## Host Routing` with a note about another host. `rule-check` exits 1 with a `RENDER_CHANGE` finding: the Claude rendering would drop that section and everything under it, because its heading names another host's routing. Save the baseline hash, edit the rule in place so the heading reads `## Where each host reads this`, run the checker again and keep both raw outputs. The helper is not run again, because the file exists and the bundle already lists it. The other lines of the rule keep their hash-checked bytes.
+Repair mode: the rule file exists and `agent-factory` already lists it, so the name is not free and does not need to be. A later draft added a heading `## Host Routing` with a note about another host. `rule-check` exits 1 with a `RENDER_CHANGE` finding: the Claude rendering would drop that section and everything under it, because its heading names another host's routing. Save the baseline hash, edit the rule in place so the heading reads `## Where each host reads this`, run the checker again and keep both raw outputs. The helper is not run again, because the file exists and the bundle already lists it. The other lines of the rule keep their hash-checked bytes.
 
 Had the rule started with a `---` block copied from another host, the `FRONT_MATTER` finding would be fixed by removing the block, not by adding a marker.
 

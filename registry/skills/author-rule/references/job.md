@@ -9,11 +9,11 @@ Use this before editing. A forked task does not inherit the caller's conversatio
 | Target bundle | The key in `registry/bundles.json` whose `rules[]` receives the file name. One bundle per run. |
 | Intent | Private local draft or upstream preparation; neither implies publication. |
 | Source checkout | The absolute path of the contributor's checkout on a feature branch. The route writes into it, so confirm with `git branch --show-current` that the branch is not `main`, `dev`, `master`, `production` or `release/*`, and that the tree holds no unrelated edits to `registry/bundles.json`. |
-| Existing file / scope | Create or repair. For a repair, keep a copy and the SHA-256 of the current rule before editing. |
+| Existing file / scope | Create mode (the name is free; the helper writes the rule and the bundle entry) or Repair mode (the rule exists and the bundle lists it, or the job names the bundle that should). For a repair, keep a copy and the SHA-256 of the current rule before editing. |
 | References / provenance | Actual supplied sources, pins and licences, and unresolved facts. |
 | Constraints | The budgets in [quality](quality.md), user choices, and the evidence budget. |
 
-Refuse a checkout whose `registry/rules` or `registry/bundles.json` is a link. If the name collides with an existing rule, or the bundle already lists the file, preserve the draft and ask for another name or a repair scope; never overwrite a rule silently.
+Refuse a checkout whose path, `registry`, `registry/rules` or `registry/bundles.json` is a link. In Create mode, if the name collides with an existing rule, or the bundle already lists the file, preserve the draft and ask for another name or a repair scope; never overwrite a rule silently. Repair mode does not need a free name: the rule is expected to exist.
 
 ## Bounded helper
 
@@ -56,6 +56,6 @@ No other key is allowed. A prepared run exits 0 and prints this report on stdout
 
 A refusal exits 1, writes nothing and prints one line on stderr, `{"status":"blocked","reason":"..."}`. It refuses a name that is not kebab-case, an entry-point or device name, an existing rule (any letter case), an unknown bundle, a bundle that already lists the file, a link or junction in the checkout path or in `registry/` or `registry/rules`, text over 64 KiB, and a `bundles.json` it could not write back unchanged (it writes 2-space JSON and keeps the file's line endings, and refuses a file that mixes CRLF and LF). A rule without a final newline gets one. The helper holds the lock file `registry/.bundles.json.lock` while it works and refuses to start when that file exists (delete it only when no run is active); it re-reads `bundles.json` before the rename and refuses when the bytes changed. If a write fails, it removes the rule, the temporary file and the lock it created. Save stdout, stderr and the exit code with the other evidence.
 
-The helper creates only. A repair edits the existing rule in place; the bundle entry stays as it is. Record the baseline hash first and compare the final inventory against it.
+The helper creates only; Repair mode never runs it. A repair records the baseline bytes and hash first, edits the existing rule in place and compares the final inventory against the baseline. It leaves `registry/bundles.json` alone when the bundle already lists the file. When the entry is missing, add the file name to the bundle's `rules[]` by hand, keeping the file's formatting and line endings, and report that diff too.
 
 Without a shell, follow the same procedure by hand: write the file under `registry/rules/`, append the name to the bundle's `rules[]` in `registry/bundles.json` keeping its formatting, then run the checker.
