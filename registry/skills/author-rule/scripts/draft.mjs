@@ -62,8 +62,11 @@ function bundleFile(registry, bundleName, ruleFile) {
   const manifest = path.join(registry, 'bundles.json');
   regularFile(manifest, 'registry/bundles.json');
   const raw = fs.readFileSync(manifest);
-  const crlf = raw.includes('\r\n');
-  const text = raw.toString('utf8').replace(/\r\n/g, '\n');
+  const original = raw.toString('utf8');
+  const crlf = original.includes('\r\n');
+  // One ending throughout: a file that mixes CRLF and LF would come back all one way, so it is refused instead.
+  if (crlf && /(?<!\r)\n/.test(original)) block('registry/bundles.json mixes CRLF and LF line endings; the helper would rewrite them all one way. Make the endings uniform or edit the entry by hand.');
+  const text = original.replace(/\r\n/g, '\n');
   let parsed;
   try { parsed = JSON.parse(text); } catch { block('registry/bundles.json is not valid JSON.'); }
   // The helper writes 2-space JSON; refuse a manifest whose bytes it could not reproduce, rather than reformat it.

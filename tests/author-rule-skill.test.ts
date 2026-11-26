@@ -262,7 +262,18 @@ describe('author-rule bounded draft helper', () => {
     const after = fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8');
     expect(after.includes('\r\n')).toBe(true);
     expect(after.replace(/\r\n/g, '\n').includes('\r')).toBe(false);
+    expect(after.match(/(?<!\r)\n/g)).toBeNull(); // every newline is CRLF, none is a lone LF
+    expect(after.split('\r\n').length - 1).toBe(after.split('\n').length - 1);
     expect(bundlesOf(f)['agent-factory'].rules).toContain('release-notes.md');
+  });
+
+  it('refuses a bundles.json with mixed line endings rather than rewrite it all one way', () => {
+    const f = fixture();
+    f.bundles = f.bundles.replace('\n', '\r\n'); // the first newline only: CRLF and LF in one file
+    expect(f.bundles).toMatch(/\r\n/);
+    expect(f.bundles).toMatch(/(?<!\r)\n/);
+    fs.writeFileSync(path.join(f.checkout, 'registry/bundles.json'), f.bundles);
+    expectBlocked(f, /mixed|line ending/i);
   });
 
   it.each([
@@ -284,12 +295,14 @@ describe('author-rule bounded draft helper', () => {
     const f = fixture();
     f.job.name = 'skill-attribution';
     expectBlocked(f, /already exists|collides/i);
+    // A differently-cased file: a real second file on a case-sensitive disk, the same file on Windows; both must be refused.
     const g = fixture();
-    fs.writeFileSync(path.join(g.checkout, 'registry/rules/release-notes.md'), '# Existing\n');
+    fs.writeFileSync(path.join(g.checkout, 'registry/rules/Release-Notes.md'), '# Existing\n');
     const result = run(g);
     expect(result.exit).toBe(1);
     expect(result.blocked.reason).toMatch(/already exists|collides/i);
-    expect(fs.readFileSync(path.join(g.checkout, 'registry/rules/release-notes.md'), 'utf8')).toBe('# Existing\n');
+    expect(fs.readFileSync(path.join(g.checkout, 'registry/rules/Release-Notes.md'), 'utf8')).toBe('# Existing\n');
+    expect(fs.readdirSync(path.join(g.checkout, 'registry/rules')).filter(name => name.toLowerCase() === 'release-notes.md')).toHaveLength(1);
     expect(fs.readFileSync(path.join(g.checkout, 'registry/bundles.json'), 'utf8')).toBe(g.bundles);
   });
 
