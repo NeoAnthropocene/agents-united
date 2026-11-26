@@ -10,7 +10,7 @@ import { attempt } from './claude-host-hooks.js';
 import { evidenceFor } from './native-invariant-evidence.js';
 import { bundles } from './native-coordinator.js';
 import { holdersOfKind } from './artifact-holders.js';
-import { nativeText } from './native-roles.js';
+import { loadNativeDeltas, nativeText } from './native-roles.js';
 
 /**
  * What the Tier 1 marketing specialists (growth-marketing) have in common, as the factory pilot's `devops-engineer` test has it for one role: posture, the tools and servers as bound,
@@ -250,10 +250,12 @@ export function describeMarketingRole(spec: MarketingRoleSpec): void {
   });
 
   describe(`native ${spec.role}: the invariants of its core`, () => {
-    it('are all evidenced in the file as it stands, so no delta has to be declared for this role', async () => {
+    it('are all evidenced in the file as it stands, except those this role declares as Claude deltas', async () => {
       const core = (await loadSemanticCore('registry')).get(spec.type)!;
       expect(core.invariants.length).toBeGreaterThanOrEqual(8);
-      const unbound = core.invariants.filter(invariant => !evidenceFor(spec.role, invariant)?.test(text()));
+      // ADR 0079 decision 12: the host image generator rule is declared, not evidenced, because Claude Code has no image generator of its own.
+      const declared = new Set(loadNativeDeltas('registry', 'claude').filter(delta => delta.roles.includes(spec.role)).map(delta => delta.feature));
+      const unbound = core.invariants.filter(invariant => !evidenceFor(spec.role, invariant)?.test(text()) && !declared.has(invariant));
       expect(unbound).toEqual([]);
     });
   });

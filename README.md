@@ -569,6 +569,8 @@ Run `agents doctor` at any time to audit schemas, hooks, and lockfile state.
 
 ## 🧰 Contributing
 
+Maintainers and contributors: setup, the test gates, line-ending traps and the pull request route are in [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 **Developers only: contribute to Agents United** is a separate catalog section for authoring and maintaining Agents United artifacts. Local drafts do not require an upstream contribution; the upstream route is a reviewed PR to `dev` using [the artifact contribution guide](./docs/artifact-contribution.md).
 
 The under-construction `agent-factory` Domain Bundle contains `author-skill` for one complete skill folder, `author-contract` for a shared definition/contract pair, and the bounded `factory-realizer` worker with its required `realize-artifact` runbook. The realizer prepares one Claude agent draft from a supplied shared pair and checked job. The read-only factory-evaluator with its required evaluate-artifact runbook supplies a separately checked opinion protocol for shared pairs, Skills and Claude agents. The read-only `factory-sync` worker with its required `sync-host` runbook supplies read-only host-update sync planning: the coordinator starts it and runs its checker before and after. The local candidate also includes the proposal-only `author-bundle` Skill for Domain and Organization templates; P6 and the bounded P7 coordinator have passed their offline gates; actual Host behavior and the complete Claude stage remain unverified. This delivery is **Claude Code CLI, workspace scope, native lane**:

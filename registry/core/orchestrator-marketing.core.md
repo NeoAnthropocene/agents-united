@@ -51,6 +51,7 @@ invariants:
   - "Every piece of marketing copy carries exactly one clear call to action."
   - "Search metadata is unique per page: titles under 60 characters, descriptions under 155 characters, valid OpenGraph tags."
   - "Email work respects consent, GDPR and CAN-SPAM, and user data is never harvested without consent."
+  - "When the host has an image generator of its own, it is offered first and recommended among the image options."
 capabilities:
   - read
   - search
