@@ -459,13 +459,14 @@ describe('author-rule bounded draft helper', () => {
     expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
   });
 
-  // The helper's only test seam: AUTHOR_RULE_TEST_FAULT, read once, inert unless set to one of two documented values.
+  // The helper's only test seam: AUTHOR_RULE_TEST_FAULT, read once, inert unless set; every fault only simulates, none writes.
   it('refuses a manifest that changed between the read and the rename, leaving nothing behind', () => {
     const f = fixture();
     const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'manifest-changed' });
     expect(result.exit, result.stdout + result.stderr).toBe(1);
     expect(result.blocked.reason).toMatch(/changed/i);
-    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(`${f.bundles} `);
+    // The seam only simulates the change: the test checkout's manifest bytes are exactly what they were.
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'))).toEqual(Buffer.from(f.bundles));
     expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
     expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
   });

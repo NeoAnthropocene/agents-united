@@ -133,12 +133,12 @@ function run(argument) {
     target = bundleFile(registry, job.bundle, ruleFile);
     try { ruleWritten = true; fs.writeFileSync(rulePath, body, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') ruleWritten = false; throw error; }
     try { temporaryWritten = true; fs.writeFileSync(temporary, target.after, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') temporaryWritten = false; throw error; }
-    // Test seam, inert unless AUTHOR_RULE_TEST_FAULT is set: 'manifest-changed' edits the manifest as another process would, and
-    // 'fail-before-rename' fails between the two writes. Used only by tests/author-rule-skill.test.ts.
-    if (faults.has('manifest-changed')) fs.appendFileSync(target.manifest, ' ');
+    // Test seam (see `faults` above), inert unless AUTHOR_RULE_TEST_FAULT is set: 'fail-before-rename' fails between the two writes
+    // and 'manifest-changed' makes the re-read below count as different. Neither writes a byte.
     if (faults.has('fail-before-rename')) throw Object.assign(new Error('injected failure'), { code: 'EIO' });
     // The lock only keeps other runs of this helper out; an editor can still change the file, so compare the bytes once more.
-    if (!fs.readFileSync(target.manifest).equals(target.before)) block('registry/bundles.json changed while the helper was working; nothing was written. Run it again.');
+    // The 'manifest-changed' fault treats the re-read bytes as different, in memory: it writes nothing.
+    if (faults.has('manifest-changed') || !fs.readFileSync(target.manifest).equals(target.before)) block('registry/bundles.json changed while the helper was working; nothing was written. Run it again.');
     fs.renameSync(temporary, target.manifest);
     temporaryWritten = false;
   } catch (error) {
