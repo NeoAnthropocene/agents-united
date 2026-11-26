@@ -560,7 +560,8 @@ describe('rule-check', () => {
         ['--artifact', file, '--a.b', '1', '--a.b.c', '2'],
         ['--a', '1', '--a.b', '2'],
         ['--constructor.prototype.x', '1'],
-        // A dotted help or version flag: CAC would set options.help to an object, print the usage text and exit 0.
+        // A dotted help flag: CAC would set options.help to an object, print the usage text and exit 0. A dotted version flag
+        // is refused too (CAC prints the version only when no command matched, so it never showed that exit 0 here).
         ['--help.topic'],
         ['-h.x'],
         ['--artifact', file, '--help.topic'],
