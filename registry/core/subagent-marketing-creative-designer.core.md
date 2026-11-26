@@ -52,6 +52,7 @@ invariants:
   - "Check for delivered peer messages before the final report."
   - "The handoff report lists peer messages received and open items."
   - "Message a peer directly only in team mode, when the brief lists that peer."
+  - "When the host has an image generator of its own, it is offered first and recommended among the image options."
 capabilities:
   - task-tracking
   - read
