@@ -15,11 +15,16 @@ const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // The host entry-point names the projectors skip, without .md (rule-check compares them without regard to case).
 const ENTRY_POINTS = new Set(['claude', 'gemini', 'agents', 'cursor']);
 const DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
-// Test seam. AUTHOR_RULE_TEST_FAULT is a test-only switch (a comma-separated list) that can only force failures: it never
-// writes, changes or deletes a file, it only makes the helper behave as if a step had failed or a file had changed.
-// Faults: manifest-changed, fail-before-rename, rule-replaced, temp-replaced, fail-lock-write, fail-lock-removal.
-// Used only by tests/author-rule-skill.test.ts.
+// Test seam. AUTHOR_RULE_TEST_FAULT is a test-only switch (a comma-separated list) that can only force failures: it makes the
+// helper behave as if a step had failed or a file had changed. Used only by tests/author-rule-skill.test.ts.
+// Faults that write nothing: manifest-changed, fail-before-rename, rule-replaced, temp-replaced, fail-lock-write, fail-lock-removal.
+// Faults that cut a write short: partial-rule-write and partial-temp-write write the first half of the intended bytes through the
+// real write path, then throw EIO, as a full disk would.
+// Faults that replace the rule file just before the rollback looks at it: rule-becomes-directory, rule-becomes-link,
+// rule-becomes-oversized, rule-becomes-prefix. These are the only faults that touch a file other than the one this run wrote, and
+// they act only when AUTHOR_RULE_TEST_ROOT is set and the rule path lies inside that folder; otherwise they do nothing.
 const faults = new Set((process.env.AUTHOR_RULE_TEST_FAULT ?? '').split(',').filter(Boolean));
+const READ_CHUNK = 64 * 1024;
 
 function regularFile(file, label) {
   const entry = fs.lstatSync(file, { throwIfNoEntry: false });
@@ -98,15 +103,56 @@ function bundleFile(registry, bundleName, ruleFile) {
   return { manifest, before: raw, after: Buffer.from(crlf ? written.replace(/\n/g, '\r\n') : written), rules: next };
 }
 
-// Rollback removes a file only while it is still the file this run wrote: a pathname alone could now name a replacement
-// that someone else created. Gone is fine; different or unreadable bytes are left in place and named.
-function removeIfMine(file, expected, replacedFault, stuck, left) {
+// Reads at most `limit` bytes of a regular file through one descriptor, so a huge file is never read whole. Returns null for
+// anything that is not a regular file (a link, a folder, a device), and undefined for a file that is gone.
+function boundedRead(file, limit) {
+  let entry;
+  try { entry = fs.lstatSync(file); } catch (error) { if (error?.code === 'ENOENT') return undefined; throw error; }
+  if (!entry.isFile()) return null;
+  const descriptor = fs.openSync(file, 'r');
   try {
-    let mine;
-    try { mine = !faults.has(replacedFault) && hash(fs.readFileSync(file)) === hash(expected); } catch (error) { if (error?.code === 'ENOENT') return; throw error; }
+    if (!fs.fstatSync(descriptor).isFile()) return null;
+    const buffer = Buffer.alloc(limit);
+    let count = 0;
+    while (count < limit) {
+      const got = fs.readSync(descriptor, buffer, count, Math.min(READ_CHUNK, limit - count), count);
+      if (got === 0) break;
+      count += got;
+    }
+    return buffer.subarray(0, count);
+  } finally { fs.closeSync(descriptor); }
+}
+
+// Rollback removes a file only while it is still the file this run wrote: a pathname alone could now name a replacement
+// that someone else created. Gone is fine. A file that is not a regular file, or whose bytes are not the intended ones, is left in
+// place and named. When this run's own write of the file threw, a prefix of the intended bytes is this run's truncated write and
+// is removed too. At most the intended length plus one byte is read.
+function removeIfMine(file, expected, replacedFault, writeThrew, stuck, left) {
+  try {
+    const found = boundedRead(file, expected.length + 1);
+    if (found === undefined) return;
+    const mine = !faults.has(replacedFault) && found !== null && (found.equals(expected) || (writeThrew && found.length < expected.length + 1 && expected.subarray(0, found.length).equals(found)));
     if (!mine) { left.push(file); return; }
     fs.rmSync(file, { force: true });
   } catch { stuck.push(file); }
+}
+
+// Test seam only (see `faults`): replaces the rule file, inside the test's own folder, just before the rollback inspects it.
+function replaceRuleForTest(rulePath, body) {
+  const root = process.env.AUTHOR_RULE_TEST_ROOT;
+  const kind = ['directory', 'link', 'oversized', 'prefix'].find(name => faults.has(`rule-becomes-${name}`));
+  if (!kind || !root) return;
+  const inside = path.relative(path.resolve(root), rulePath);
+  if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return;
+  fs.rmSync(rulePath, { force: true });
+  if (kind === 'directory') fs.mkdirSync(rulePath);
+  else if (kind === 'link') {
+    const target = path.join(path.resolve(root), 'link-target');
+    fs.mkdirSync(target, { recursive: true });
+    fs.writeFileSync(path.join(target, 'keep.txt'), 'keep\n');
+    fs.symlinkSync(target, rulePath, 'junction');
+  } else if (kind === 'oversized') fs.writeFileSync(rulePath, Buffer.concat([body, Buffer.alloc(2 * 1024 * 1024, 'x')]));
+  else fs.writeFileSync(rulePath, body.subarray(0, 20));
 }
 
 function run(argument) {
@@ -124,8 +170,15 @@ function run(argument) {
   const lock = path.join(registry, '.bundles.json.lock');
   const temporary = path.join(registry, `.bundles-${randomBytes(6).toString('hex')}.tmp`);
   // Only what this run created is ever removed: each flag is set just before the create, and cleared again when the create finds the file already there.
-  let lockHeld = false, ruleWritten = false, temporaryWritten = false;
+  // A *WriteThrew flag means this run's own write of that file threw, so a truncated file under that name is this run's.
+  let lockHeld = false, ruleWritten = false, temporaryWritten = false, ruleWriteThrew = false, temporaryWriteThrew = false;
   let target, failure;
+  // Creates the file exclusively. The partial faults (test seam) write the first half through this same call, then fail as a full disk would.
+  const writeFile = (file, bytes, partialFault) => {
+    if (!faults.has(partialFault)) { fs.writeFileSync(file, bytes, { flag: 'wx' }); return; }
+    fs.writeFileSync(file, bytes.subarray(0, Math.floor(bytes.length / 2)), { flag: 'wx' });
+    throw Object.assign(new Error('injected failure'), { code: 'EIO' });
+  };
   try {
     // The flag is set as soon as the exclusive open succeeds, before the process id is written, so a failed write still removes the lock.
     let descriptor;
@@ -138,8 +191,8 @@ function run(argument) {
       fs.writeSync(descriptor, `${process.pid}\n`);
     } finally { fs.closeSync(descriptor); }
     target = bundleFile(registry, job.bundle, ruleFile);
-    try { ruleWritten = true; fs.writeFileSync(rulePath, body, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') ruleWritten = false; throw error; }
-    try { temporaryWritten = true; fs.writeFileSync(temporary, target.after, { flag: 'wx' }); } catch (error) { if (error?.code === 'EEXIST') temporaryWritten = false; throw error; }
+    try { ruleWritten = true; writeFile(rulePath, body, 'partial-rule-write'); } catch (error) { if (error?.code === 'EEXIST') ruleWritten = false; else ruleWriteThrew = true; throw error; }
+    try { temporaryWritten = true; writeFile(temporary, target.after, 'partial-temp-write'); } catch (error) { if (error?.code === 'EEXIST') temporaryWritten = false; else temporaryWriteThrew = true; throw error; }
     // Test seam (see `faults` above), inert unless AUTHOR_RULE_TEST_FAULT is set: 'fail-before-rename' fails between the two writes
     // and 'manifest-changed' makes the re-read below count as different. Neither writes a byte.
     if (faults.has('fail-before-rename')) throw Object.assign(new Error('injected failure'), { code: 'EIO' });
@@ -151,11 +204,14 @@ function run(argument) {
   } catch (error) {
     // Zero orphaned files: a failure removes what this run created. Each removal has its own try, so one failing does not stop the next.
     const stuck = [], left = [];
-    if (temporaryWritten) removeIfMine(temporary, target?.after, 'temp-replaced', stuck, left);
-    if (ruleWritten) removeIfMine(rulePath, body, 'rule-replaced', stuck, left);
+    if (temporaryWritten) removeIfMine(temporary, target?.after, 'temp-replaced', temporaryWriteThrew, stuck, left);
+    if (ruleWritten) {
+      try { replaceRuleForTest(rulePath, body); } catch { /* test seam only */ }
+      removeIfMine(rulePath, body, 'rule-replaced', ruleWriteThrew, stuck, left);
+    }
     if (stuck.length || left.length) {
       let why = error instanceof Blocked ? error.message : `The helper could not finish (${error?.code ?? 'unexpected error'}).`;
-      if (left.length) why += ` Left in place, because its bytes are no longer the ones this run wrote: ${left.join(', ')}. Check it and remove it by hand if it is not yours.`;
+      if (left.length) why += ` Left in place, because it is no longer the file this run wrote (other bytes, or not a regular file): ${left.join(', ')}. Check it and remove it by hand if it is not yours.`;
       if (stuck.length) why += ` It could not remove: ${stuck.join(', ')}. Remove ${stuck.length === 1 ? 'it' : 'them'} by hand.`;
       failure = new Blocked(why);
     } else failure = error;

@@ -503,6 +503,78 @@ describe('author-rule bounded draft helper', () => {
     expect(fs.readdirSync(path.join(f.checkout, 'registry')).filter(entry => entry.endsWith('.tmp'))).toHaveLength(1);
   });
 
+  // Round 3: a write that this run started and that threw leaves a truncated file, which is this run's own and is removed;
+  // anything else that is not the exact bytes, or not a regular file, is left in place and named.
+  it('removes a truncated rule file that this run wrote when its own write threw, leaves no lock or temp, and a retry then succeeds', () => {
+    const f = fixture();
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'partial-rule-write' });
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/could not finish/i);
+    expect(result.blocked.reason).not.toMatch(/left in place/i);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+    const retry = run(f);
+    expect(retry.exit, retry.stdout + retry.stderr).toBe(0);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/rules/release-notes.md'), 'utf8')).toBe(RULE);
+    expect(bundlesOf(f)['agent-factory'].rules).toEqual(['skill-attribution.md', 'release-notes.md']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+  });
+
+  it('removes a truncated temporary file that this run wrote when its own write threw, and the rule it wrote before it', () => {
+    const f = fixture();
+    const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'partial-temp-write' });
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/could not finish/i);
+    expect(result.blocked.reason).not.toMatch(/left in place/i);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['bundles.json', 'rules']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry/rules')).sort()).toEqual(['CLAUDE.md', 'skill-attribution.md']);
+  });
+
+  // The replacement faults act only inside AUTHOR_RULE_TEST_ROOT, which the test sets to its own temp folder.
+  const replaced = (f: Fixture, fault: string) => run(f, helper, { AUTHOR_RULE_TEST_FAULT: `fail-before-rename,${fault}`, AUTHOR_RULE_TEST_ROOT: f.root });
+
+  it('leaves a rule path that has become a folder in place and names it', () => {
+    const f = fixture();
+    const result = replaced(f, 'rule-becomes-directory');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/left in place/i);
+    expect(result.blocked.reason).toContain('release-notes.md');
+    expect(fs.lstatSync(path.join(f.checkout, 'registry/rules/release-notes.md')).isDirectory()).toBe(true);
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/bundles.json'), 'utf8')).toBe(f.bundles);
+  });
+
+  it('leaves a rule path that has become a link in place, names it, and never touches what it points at', () => {
+    const f = fixture();
+    const result = replaced(f, 'rule-becomes-link');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/left in place/i);
+    expect(result.blocked.reason).toContain('release-notes.md');
+    expect(fs.lstatSync(path.join(f.checkout, 'registry/rules/release-notes.md')).isSymbolicLink()).toBe(true);
+    expect(fs.readFileSync(path.join(f.root, 'link-target', 'keep.txt'), 'utf8')).toBe('keep\n');
+  });
+
+  it('leaves a rule file that grew far past what this run wrote in place and names it, without needing to read it whole', () => {
+    const f = fixture();
+    const result = replaced(f, 'rule-becomes-oversized');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/left in place/i);
+    expect(result.blocked.reason).toContain('release-notes.md');
+    const file = path.join(f.checkout, 'registry/rules/release-notes.md');
+    expect(fs.statSync(file).size).toBeGreaterThan(1024 * 1024);
+    expect(fs.readFileSync(file).subarray(0, Buffer.byteLength(RULE)).toString('utf8')).toBe(RULE); // it starts with the intended bytes, yet is not them
+  });
+
+  it('removes a prefix of the intended bytes only when this run\'s own write threw: a shorter file after a later failure is left', () => {
+    const f = fixture();
+    const result = replaced(f, 'rule-becomes-prefix');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/left in place/i);
+    expect(result.blocked.reason).toContain('release-notes.md');
+    expect(fs.readFileSync(path.join(f.checkout, 'registry/rules/release-notes.md'), 'utf8')).toBe(RULE.slice(0, 20));
+  });
+
   it('removes the lock when writing the process id into it fails, and writes nothing else', () => {
     const f = fixture();
     const result = run(f, helper, { AUTHOR_RULE_TEST_FAULT: 'fail-lock-write' });
