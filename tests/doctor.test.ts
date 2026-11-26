@@ -300,6 +300,48 @@ describe('DoctorEngine', () => {
       ).toEqual([]);
     });
 
+    // The generative_ui -> generative-ui rename (Plan 016 Step 4) changed the projection FOLDER of a skill by the underscore normalisation.
+    // The same shape on a real native-lane skill: the legacy folder is recorded but the current renderer no longer produces it.
+    it('classifies a legacy projection in a renamed skill folder (the generative_ui shape) as stale, though the folders differ', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      const canonical = 'skills/author-rule/SKILL.md';
+      const current = '.claude/skills/author-rule/SKILL.md';
+      const legacy = '.claude/skills/author_rule/SKILL.md';
+      expect(lockfile.projections?.[current]?.canonical).toBe(canonical);
+      lockfile.projections![legacy] = { ...lockfile.projections![current]! };
+      lockfile.files[canonical]!.projectedTo = [...(lockfile.files[canonical]!.projectedTo ?? []), legacy];
+      await fs.writeJson(lockfilePath, lockfile);
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const lines = [...report.issues, ...report.warnings].filter(line => line.includes(legacy));
+
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain(`Stale projection ${legacy}`);
+      expect(lines[0]).toContain(`(superseded by ${current}).`);
+      expect(lines.filter(line => line.includes('Missing'))).toEqual([]);
+    });
+
+    // ADR 0082: the attribution rule is projected under each bound factory Skill. Both copies are CURRENT; a deleted one is missing.
+    it('classifies a deleted copy of a rule that two bound Skills carry as missing, never as superseded by the other copy', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const skillsDir = path.join(path.dirname(tempDir), '.claude', 'skills');
+      const gone = '.claude/skills/author-skill/references/skill-attribution.md';
+      const kept = '.claude/skills/author-rule/references/skill-attribution.md';
+      expect(await fs.pathExists(path.join(skillsDir, 'author-rule/references/skill-attribution.md'))).toBe(true);
+      await fs.remove(path.join(skillsDir, 'author-skill/references/skill-attribution.md'));
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+      expect(hits).toHaveLength(1);
+      expect(hits[0]).toMatch(/^Missing .*projection /);
+      expect(hits[0]).not.toContain(kept);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
   });
 
   // ADR 0017 — renderer-backed projection freshness (drift + stale render).
