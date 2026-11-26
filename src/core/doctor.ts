@@ -183,6 +183,9 @@ export class DoctorEngine {
     for (const [projRelPath, proj] of Object.entries(manifest.projections ?? {})) {
       if (projRelPath === projPath) continue;
       if (proj.canonical !== canonical) continue;
+      // Every rename above keeps its folder. A projection of the same canonical in another folder is a second current copy (ADR 0082: the
+      // attribution rule under each bound factory Skill), not the successor of this path, so it never turns a missing copy into staleness.
+      if (path.posix.dirname(projRelPath) !== path.posix.dirname(projPath)) continue;
       if (!await fs.pathExists(path.join(workspaceRoot, projRelPath))) continue;
       return { relPath: projRelPath, host: proj.host, owners: proj.owners ?? [] };
     }

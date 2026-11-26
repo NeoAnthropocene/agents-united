@@ -64,9 +64,11 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     const report = await DoctorEngine.runDoctor(state);
     expect(report.warnings.join('\n')).toMatch(/Content drift .*author-skill\/SKILL.md/);
     expect(report.warnings.join('\n')).toMatch(/user-modified projection .*author-skill\/references\/job.md/);
-    // The canonical attribution rule is projected under each bound Skill (author-skill and author-rule), so a deleted copy is reported as
-    // superseded by the other one, with the same remedy (agents update), rather than as a plain missing projection.
-    expect([...report.issues, ...report.warnings].join('\n')).toMatch(/(Missing|Stale) projection .*author-skill\/references\/skill-attribution.md/i);
+    // The canonical attribution rule is projected under each bound Skill (author-skill and author-rule). The author-rule copy is a second
+    // current projection, not a rename, so a deleted author-skill copy is still reported as missing, never as superseded by it.
+    const lines = [...report.issues, ...report.warnings].join('\n');
+    expect(lines).toMatch(/Missing .*projection .*author-skill\/references\/skill-attribution.md/i);
+    expect(lines).not.toMatch(/Stale projection .*author-skill\/references\/skill-attribution.md/i);
   });
   it('update retains the recorded native choice and restores an absent attribution file', async () => {
     await new InstallEngine().install('agent-factory', options());
