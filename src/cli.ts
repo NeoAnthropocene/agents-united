@@ -3292,14 +3292,25 @@ cli.help();
 cli.version('1.0.0');
 
 /**
- * `rule-check` answers misuse with a JSON usage result and exit 2, but CAC parses the options before any action runs and
- * throws on some input (a dotted option that clashes with another, e.g. `--artifact x --artifact.y z`). So for this
- * command the parse is done first, on its own, and a throw becomes the same JSON result. `--help` and `-h` are not misuse:
- * CAC prints the usage text for them and the exit code is 0.
+ * The read-only check commands whose every misuse is answered with their own JSON usage result and exit 2. Each maps to the
+ * function that builds that result from a list of problems.
+ */
+const JSON_USAGE_COMMANDS: Readonly<Record<string, (problems: string[]) => unknown>> = {
+  'rule-check': problems => ruleCheckUsageResult(problems),
+  'skill-check': problems => skillCheckUsageResult(problems),
+  'bundle-check': problems => bundleCheckUsageResult(problems),
+};
+
+/**
+ * The JSON check commands answer misuse with a JSON usage result and exit 2, but CAC parses the options before any action
+ * runs and throws on some input (a dotted option that clashes with another, e.g. `--artifact x --artifact.y z`). So for
+ * these commands the parse is done first, on its own, and a throw becomes the same JSON result. `--help` and `-h` are not
+ * misuse: CAC prints the usage text for them and the exit code is 0.
  */
 function parseCommandLine(): void {
   const command = process.argv.slice(2).find(arg => !arg.startsWith('-'));
-  if (command !== 'rule-check') {
+  const usageResult = command === undefined ? undefined : JSON_USAGE_COMMANDS[command];
+  if (usageResult === undefined) {
     cli.parse();
     return;
   }
@@ -3312,14 +3323,14 @@ function parseCommandLine(): void {
     if (optionName.startsWith('-') && optionName.includes('.')) dotted.push(`Unknown option ${optionName}: option names with a dot are not accepted.`);
   }
   if (dotted.length > 0) {
-    console.log(JSON.stringify(ruleCheckUsageResult(dotted), null, 2));
+    console.log(JSON.stringify(usageResult(dotted), null, 2));
     process.exitCode = 2;
     return;
   }
   try {
     cli.parse(process.argv, { run: false });
   } catch {
-    console.log(JSON.stringify(ruleCheckUsageResult(['The options could not be parsed: an option name with a dot clashes with another option. Pass --artifact once, with an absolute path.']), null, 2));
+    console.log(JSON.stringify(usageResult(['The options could not be parsed: an option name clashes with another option. Pass each option once.']), null, 2));
     process.exitCode = 2;
     return;
   }
