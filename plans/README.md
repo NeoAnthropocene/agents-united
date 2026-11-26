@@ -46,7 +46,7 @@ This directory contains self-contained implementation plans for building the **`
 |---|---|---|
 | [037](037-agency-motion-sound.md) | Motion and Sound Designers for the digital agency ([ADR 0056](../docs/adr/0056-agency-motion-sound-production.md)) | Its status line: J0–J9 complete within the measured scope, tested with Claude 2.1.308 |
 | [038](038-sound-model-catalogue.md) | Local sound-model catalogue and sound/orchestrator skill improvements | Its status line: complete (J0–J8); the full parallel suite was not green on that machine, see the plan |
-| [039](039-sound-catalogue-publication.md) | Sound catalogue gate close-out and publication | Its status line: P0–P3 complete, P4–P5 waited for a push signal |
+| [039](039-sound-catalogue-publication.md) | Sound catalogue gate close-out and publication | Its status line: P0–P3 complete, P4–P5 await an explicit push signal |
 | [040](040-signature-shot-motion-prompts.md) | Signature-shot prompts and pre-render proof | Implemented and full 231/231 test suite green; r3 technical pilot passes, not reference-quality creative acceptance |
 | [041](041-remotion-official-skills-addon.md) | Official Remotion add-on, version currency, optional Studio | Implemented, multi-host install, CI gates, and headless Claude CLI skill-routing + r4 render verification (`0.9796 USD`) green; redistribution/licence scope remains a public-release hold |
 | [042](042-spec-driven-sound-routing-and-pilot-041.md) | Measured sound routing, FFmpeg and chicken-life-cycle pilots | Both technical exports delivered and full-suite CI green; measured sync-drift and yuvj420p root causes recorded and resolved in r4b (`21/21` `verify.mjs both`) |
