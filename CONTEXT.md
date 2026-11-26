@@ -514,7 +514,7 @@ The registry catalog maintains **62 agents** (9 orchestrators and 53 sub-agents)
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `git-guardrails` + `grill-me` + `host-agent-router`; routes to the correct department Essentials bundle and hands off, and on request runs a slice on another host CLI.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 206 end-user Skills (136 domain + 70 workflow playbooks); contributor-only `author-skill`, `realize-artifact`, `author-contract`, `evaluate-artifact`, `author-bundle`, `coordinate-artifact` and `sync-host`, and four optional 3D Skills are excluded. The physical registry totals 62 canonical agents and 217 Skills, plus a separately bound native-only factory main and three workers.
+   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 206 end-user Skills (136 domain + 70 workflow playbooks); contributor-only `author-skill`, `author-rule`, `realize-artifact`, `author-contract`, `evaluate-artifact`, `author-bundle`, `coordinate-artifact` and `sync-host`, and four optional 3D Skills are excluded. The physical registry totals 62 canonical agents and 218 Skills, plus a separately bound native-only factory main and three workers.
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)
