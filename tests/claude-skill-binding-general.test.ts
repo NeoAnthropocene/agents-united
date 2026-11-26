@@ -68,6 +68,20 @@ describe('general Claude factory skill binding (ADR 0082 slice S0b)', () => {
     expect(none).toEqual([]);
   });
 
+  it('applies a binding only to the bundle it declares or a bundle whose parent chain reaches it', async () => {
+    const resolved = await new RegistryResolver(registryDir).resolve('agent-factory');
+    // A foreign bundle that merely lists a bound Skill does not take the binding of agent-factory.
+    const foreign: BundleDefinition = { name: 'author-skill-fixture', description: 'Lists a bound Skill', skills: ['author-skill', 'author-rule'] };
+    expect(assertClaudeSkillBindings(foreign, resolved, registryDir, 'project', true)).toEqual([]);
+    const unrelatedParent: BundleDefinition = { ...foreign, name: 'unrelated-child', parentBundle: 'software-engineering' };
+    expect(assertClaudeSkillBindings(unrelatedParent, resolved, registryDir, 'project', true)).toEqual([]);
+    const unknownParent: BundleDefinition = { ...foreign, name: 'orphan-child', parentBundle: 'no-such-bundle' };
+    expect(assertClaudeSkillBindings(unknownParent, resolved, registryDir, 'project', true)).toEqual([]);
+    // A bundle that extends agent-factory takes both bindings.
+    const child: BundleDefinition = { ...foreign, name: 'factory-child', parentBundle: 'agent-factory' };
+    expect(assertClaudeSkillBindings(child, resolved, registryDir, 'project', true).map(binding => binding.skill)).toEqual(['author-skill', 'author-rule']);
+  });
+
   it('installs the attribution rule only under each bound skill for the agent-factory bundle', async () => {
     const bundle = await factoryBundle();
     const resolved = await new RegistryResolver(registryDir).resolve('agent-factory');

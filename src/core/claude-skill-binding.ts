@@ -119,6 +119,21 @@ function assertBoundSkill(
   return binding;
 }
 
+/** True for the declared bundle itself and for a bundle whose `parentBundle` chain, read from the registry manifest, reaches it. */
+function reachesBundle(bundle: BundleDefinition, registryDir: string): boolean {
+  if (bundle.name === BUNDLE) return true;
+  let known: Record<string, BundleDefinition> = {};
+  try {
+    known = (JSON.parse(fs.readFileSync(path.join(registryDir, 'bundles.json'), 'utf8')) as { bundles?: Record<string, BundleDefinition> }).bundles ?? {};
+  } catch { /* an unreadable manifest leaves only the bundle's own parent link */ }
+  const seen = new Set<string>([bundle.name]);
+  for (let parent = bundle.parentBundle; parent !== undefined && !seen.has(parent); parent = known[parent]?.parentBundle) {
+    if (parent === BUNDLE) return true;
+    seen.add(parent);
+  }
+  return false;
+}
+
 /**
  * Read-only preflight; callers invoke this before state migrations or any filesystem write.
  * Returns the bindings that apply to this bundle and asset set (empty when none does).
@@ -131,6 +146,8 @@ export function assertClaudeSkillBindings(
   nativeLane: boolean,
 ): ClaudeSkillBinding[] {
   const bindings: ClaudeSkillBinding[] = [];
+  // The binding declares its bundle: another bundle that merely lists a bound Skill takes no binding.
+  if (!reachesBundle(bundle, registryDir)) return bindings;
   for (const entry of BOUND_FACTORY_SKILLS) {
     if (bundle.name !== BUNDLE && !(resolved.skills ?? []).includes(entry.skill)) continue;
     bindings.push(assertBoundSkill(entry, resolved, registryDir, scope, nativeLane));
