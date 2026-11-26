@@ -12,6 +12,10 @@ import { describe, expect, it } from 'vitest';
 const ROOT = path.resolve(__dirname, '..');
 const ROOT_DOCS = ['README.md', 'PROJECT.md', 'CONTEXT.md', 'ROADMAP.md', 'AGENTS.md', 'CLAUDE.md', 'TEST_INFRA.md', 'CHANGELOG.md', 'TEST_READY.md'];
 const FENCE = /^ {0,3}(`{3,}|~{3,})/;
+/** A closing fence carries no info string: only the fence characters and spaces. */
+const CLOSING_FENCE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
+/** A code span: equal backtick runs inside one paragraph (CommonMark); an unmatched backtick stays literal. */
+const CODE_SPAN = /(?<!`)(`+)(?!`)((?:(?!\n[ \t]*\n)[\s\S])*?)(?<!`)\1(?!`)/g;
 const INLINE_LINK = /(!?)\[((?:[^[\]]|\[[^[\]]*\])*)\]\(\s*<?([^()\s<>]+)>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
 
 interface Link { target: string; image: boolean }
@@ -23,14 +27,15 @@ function inlineLinks(markdown: string): Link[] {
   for (const line of markdown.split(/\r?\n/)) {
     const open = FENCE.exec(line);
     if (fence !== undefined) {
-      if (open && open[1][0] === fence[0] && open[1].length >= fence.length) fence = undefined;
+      const close = CLOSING_FENCE.exec(line);
+      if (close && close[1][0] === fence[0] && close[1].length >= fence.length) fence = undefined;
       kept.push('');
     } else if (open) {
       fence = open[1];
       kept.push('');
     } else kept.push(line);
   }
-  const text = kept.join('\n').replace(/(`+)([\s\S]*?)\1/g, span => span.replace(/[[\]()]/g, ' '));
+  const text = kept.join('\n').replace(CODE_SPAN, span => span.replace(/[[\]()]/g, ' '));
   return [...text.matchAll(INLINE_LINK)].map(match => ({ image: match[1] === '!', target: match[3] }));
 }
 
@@ -40,10 +45,10 @@ function relativeTarget(target: string): string | undefined {
   return file === '' ? undefined : file;
 }
 
-/** Whether the path exists with this exact case in every segment below the repository root. */
+/** Whether the path lies inside the repository and exists with this exact case in every segment. A link out of the repository is broken. */
 function existsExactly(absolute: string): boolean {
   const rel = path.relative(ROOT, absolute);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) return fs.existsSync(absolute);
+  if (rel === '..' || rel.startsWith('..' + path.sep) || path.isAbsolute(rel)) return false;
   let dir = ROOT;
   for (const segment of rel.split(path.sep).filter(Boolean)) {
     if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory() || !fs.readdirSync(dir).includes(segment)) return false;
@@ -78,12 +83,21 @@ describe('the link scanner of this test', () => {
       '[y](fenced.md)',
       '```',
       '[z](d.md#part "title")',
+      '```',
+      '```still in the fence',
+      '[w](still-fenced.md)',
+      '```',
+      'Unmatched `',
+      '',
+      '[real](e.md) and `[example](example.md)`',
+      '``[two](f.md)` still code``',
     ].join('\n');
     expect(inlineLinks(md)).toEqual([
       { image: false, target: 'a.md' },
       { image: false, target: 'b.md' },
       { image: true, target: 'c.png' },
       { image: false, target: 'd.md#part' },
+      { image: false, target: 'e.md' },
     ]);
   });
 });
