@@ -58,6 +58,21 @@ One canonical rule file, given by absolute path. Nothing in it is executed. Its 
 
 Passing means only these deterministic checks passed. The JSON keeps `quality: pending` and `live: unverified`, as `skill-check` does.
 
+## What `workflow-check` checks
+
+A portable workflow is a Skill, `registry/skills/workflow-<name>/` (ADR 0016), so `skill-check` covers it. `workflow-check` covers the other half of decision 5: one native Claude workflow script, `registry/hosts/claude/workflows/<name>.js`, given by absolute path. Nothing in it is executed; it is parsed only. Cline `.md` workflows are out of scope. The checks:
+
+- **Name.** The file name is a lower-case kebab-case `.js` name. The native package lists only such names, so any other file is never installed.
+- **Size and encoding.** The file is readable UTF-8 text within a size limit, with no byte order mark and no NUL byte.
+- **Placement.** The file sits at `<registry>/hosts/claude/workflows/<name>.js`; the registry is the folder four levels up. The projector looks nowhere else.
+- **Lint.** The script passes the workflow lint the repository already applies to its own workflows: `export const meta` first and a pure literal, phase titles that match `meta.phases`, no module loading, and none of the calls that break resume.
+- **Name match.** `meta.name` equals the file name. Claude Code runs a saved workflow as `/<name>`.
+- **Skill pair.** `<registry>/skills/<name>/SKILL.md` exists. The projector installs a native workflow only in place of a Skill of the same name, so a workflow without one is never installed.
+- **Agent types.** Every `agentType` the script asks for is a native Claude agent in `<registry>/hosts/claude/agents/`.
+- **Rendering.** The installed form keeps the script's text. The installed form is the native package's own rendering: line endings normalised and the managed marker appended as the last line. The script carries no managed marker itself, and the rendered script still passes the lint.
+
+The last three checks run only when the placement check passes. Passing means only these deterministic checks passed: `quality: pending` and `live: unverified`, as for `rule-check`.
+
 ## Consequences
 
 - Positive:
@@ -81,7 +96,7 @@ Passing means only these deterministic checks passed. The JSON keeps `quality: p
 2. `rule-check` (`src/core/rule-check.ts`, `src/cli.ts`), tests first.
 3. The generalized binding.
 4. `host-library/claude/guide/rule.md` and `author-rule`, with the evaluator kind `rule`.
-5. `workflow-check` (moving `lintWorkflow` into `src/core/`) and `author-workflow`, with the evaluator kind `workflow`.
+5. `workflow-check` (moving `lintWorkflow` into `src/core/`), then `author-workflow` with the evaluator kind `workflow`.
 6. `hook-check` and `author-hook` (draft only), with the evaluator kind `hook`.
 7. Records: the completion matrix, `CONTEXT.md` terms, and a host-library observation of one live run per route.
 
