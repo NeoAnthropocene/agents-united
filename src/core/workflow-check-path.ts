@@ -1,6 +1,6 @@
 /**
  * ADR 0082: where `agents workflow-check` may read. The checker is given an absolute path and finds the registry from its
- * spelling (the folder four levels up), so the path alone proves nothing about where the bytes live: a link or junction in a
+ * spelling (the folder four levels up, named exactly `registry`), so the path alone proves nothing about where the bytes live: a link or junction in a
  * folder above the file, or a lower-case spelling of an upper-case entry on Windows, would let the read land outside the tree
  * the path names. This module closes that, for the workflow-check only (the shared `bounded-file.ts` keeps rule-check's
  * messages). The file system is only read: lstat, readdir and realpath, never a write. No terminal I/O.
@@ -20,7 +20,7 @@ const sameName = (a: string, b: string): boolean => a.normalize('NFC') === b.nor
 
 /**
  * `artifact` is an absolute path that has passed the pure name and placement checks (it ends in
- * `<registry>/hosts/claude/workflows/<name>.js`, and the registry has a parent). Returns the real registry folder and the real
+ * `registry/hosts/claude/workflows/<name>.js`, the folder named exactly `registry`, and it has a parent). Returns the real registry folder and the real
  * file path to read, or why the path is refused.
  */
 export function resolveWorkflowTree(artifact: string): WorkflowTree {
@@ -29,7 +29,11 @@ export function resolveWorkflowTree(artifact: string): WorkflowTree {
   const hosts = path.dirname(claude);
   const root = path.dirname(hosts);
   const checkout = path.dirname(root);
-  const names = [path.basename(root), 'hosts', 'claude', 'workflows', path.basename(artifact)];
+  // The caller's placement check has already required this name; the walk does not take another one, so it holds on its own.
+  if (path.basename(root) !== 'registry') {
+    return { ok: false, message: `The registry folder must be named exactly "registry"; it is named ${JSON.stringify(path.basename(root))}: ${artifact}` };
+  }
+  const names = ['registry', 'hosts', 'claude', 'workflows', path.basename(artifact)];
 
   let current: string;
   try {

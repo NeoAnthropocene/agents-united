@@ -92,7 +92,13 @@ export function workflowNameProblem(base: string): string | null {
   return null;
 }
 
-/** The registry four levels up when the file sits at `<registry>/hosts/claude/workflows/<name>.js`, else the reason it does not. */
+const REGISTRY_FOLDER = 'registry';
+
+/**
+ * The registry four levels up when the file sits at `<registry>/hosts/claude/workflows/<name>.js`, else the reason it does not.
+ * The registry folder must be named exactly `registry`, as it is in the repository and in the Source Registry layout; the match is
+ * on the spelling of the path, so another name or another case is refused here, before any file is read.
+ */
 function registryOf(file: string): { registry: string } | { problem: string } {
   const workflows = path.dirname(file);
   const claude = path.dirname(workflows);
@@ -101,9 +107,12 @@ function registryOf(file: string): { registry: string } | { problem: string } {
   if (path.basename(workflows) === 'workflows' && path.basename(claude) === 'claude' && path.basename(hosts) === 'hosts') {
     // The registry is a folder with a name and a parent: a file-system root has neither, so no path below it can be confirmed.
     if (path.dirname(root) === root) return { problem: `The registry cannot be a file-system root (${shortened(root)}); the file must sit at <registry>/hosts/claude/workflows/<name>.js in a registry folder.` };
+    if (path.basename(root) !== REGISTRY_FOLDER) {
+      return { problem: `The registry folder four levels up must be named exactly "${REGISTRY_FOLDER}" (the file must sit at registry/hosts/claude/workflows/<name>.js); it is named ${JSON.stringify(path.basename(root))} in ${shortened(root)}.` };
+    }
     return { registry: root };
   }
-  return { problem: `The file must sit at <registry>/hosts/claude/workflows/<name>.js (the registry is the folder four levels up); the projector looks nowhere else. It is in ${shortened(workflows)}.` };
+  return { problem: `The file must sit at ${REGISTRY_FOLDER}/hosts/claude/workflows/<name>.js (the registry is the folder four levels up and must be named exactly "${REGISTRY_FOLDER}"); the projector looks nowhere else. It is in ${shortened(workflows)}.` };
 }
 
 const EXCERPT_MAX = 120;
