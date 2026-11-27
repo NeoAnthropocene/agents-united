@@ -51,10 +51,12 @@ const GUIDE_PAGES = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', ho
 // A Skill or Claude agent with a Claude target pins these five; a rule review pins only its own guide and page.
 const TARGET_GUIDES = ['agent', 'skill', 'hook', 'tools', 'orchestration'];
 // The kinds whose subject is one file, with the checker their route runs on it and the folder of the registry copy it may also name
-// (a workflow review pins only the orchestration guide and page, a rule review only the rule ones). check-review.mjs holds the same table.
+// (a workflow review pins only the orchestration guide and page, a rule review only the rule ones). candidatePath says whether the check
+// may also name the candidate's own file: a rule's may, a workflow's may not, because workflow-check passes only at
+// registry/hosts/claude/workflows/<name>.js. check-review.mjs holds the same table.
 const SINGLE_FILE_KINDS = {
-  rule: { noun: 'rule', check: 'rule-check', extension: '.md', registryFolder: ['rules'], guide: 'rule' },
-  workflow: { noun: 'workflow', check: 'workflow-check', extension: '.js', registryFolder: ['hosts', 'claude', 'workflows'], guide: 'orchestration' },
+  rule: { noun: 'rule', check: 'rule-check', extension: '.md', registryFolder: ['rules'], candidatePath: true, guide: 'rule' },
+  workflow: { noun: 'workflow', check: 'workflow-check', extension: '.js', registryFolder: ['hosts', 'claude', 'workflows'], candidatePath: false, guide: 'orchestration' },
 };
 // Input kinds the caller may add as extra evidence; every other kind is computed here.
 const EVIDENCE_KINDS = ['provenance', 'validator', 'source', 'baseline', 'diff', 'observation', 'rule'];
@@ -466,16 +468,19 @@ function build(specArg) {
       fail(`The ${single.check} must record the command node <checkout>/dist/cli.js ${single.check} --artifact <the ${single.noun} file>.`);
     }
     const reviewed = `${subject.identity}${single.extension}`;
-    // The candidate's own file is always the one under review. A registry spelling counts only when that file exists as an ordinary
+    // A rule's own candidate file may be the one under review; a workflow's never (candidatePath). A registry spelling counts only when that file exists as an ordinary
     // file with the pinned bytes of the candidate's file: a path alone says nothing about which file the check read.
     const pinned = inventory.find(item => item.path === reviewed)?.sha256;
     const sameBytes = file => {
       const stat = fs.lstatSync(file, { throwIfNoEntry: false });
       return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, `Registry ${single.noun}`)) === pinned;
     };
-    const own = [[path.join(candidate, reviewed), true], [path.join(registry, ...single.registryFolder, reviewed), false], [path.join(checkout, 'registry', ...single.registryFolder, reviewed), false]];
+    const own = [...(single.candidatePath ? [[path.join(candidate, reviewed), true]] : []), [path.join(registry, ...single.registryFolder, reviewed), false], [path.join(checkout, 'registry', ...single.registryFolder, reviewed), false]];
     if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => exact(physical(file)) === exact(physical(artifact)) && (isCandidate || sameBytes(file)))) {
-      fail(`The ${single.check} must check this review's own ${single.noun} file: the candidate's <identity>${single.extension} or <registry>/${single.registryFolder.join('/')}/<identity>${single.extension}.`);
+      const folder = single.registryFolder.join('/');
+      fail(single.candidatePath
+        ? `The ${single.check} must check this review's own ${single.noun} file: the candidate's <identity>${single.extension} or <registry>/${folder}/<identity>${single.extension}.`
+        : `The ${single.check} must check the registry copy of this review's own ${single.noun}: <registry>/${folder}/<identity>${single.extension} or <checkout>/registry/${folder}/<identity>${single.extension}, a regular file with the candidate's bytes. A candidate path can never pass: ${single.check} passes only at registry/${folder}/<name>${single.extension}.`);
     }
   }
 
