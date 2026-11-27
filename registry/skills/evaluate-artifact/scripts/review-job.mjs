@@ -53,10 +53,12 @@ const TARGET_GUIDES = ['agent', 'skill', 'hook', 'tools', 'orchestration'];
 // The kinds whose subject is one file, with the checker their route runs on it and the folder of the registry copy it may also name
 // (a workflow review pins only the orchestration guide and page, a rule review only the rule ones). candidatePath says whether the check
 // may also name the candidate's own file: a rule's may, a workflow's may not, because workflow-check passes only at
-// registry/hosts/claude/workflows/<name>.js. check-review.mjs holds the same table.
+// registry/hosts/claude/workflows/<name>.js. exactSpelling says the recorded path must be one expected spelling, compared as written after
+// path.normalize and in exact case on every platform (a link, another letter case or a registry folder not named exactly "registry" is
+// refused by workflow-check itself, so a path that merely reaches the same file proves nothing); a rule's path is compared by its physical file. check-review.mjs holds the same table.
 const SINGLE_FILE_KINDS = {
-  rule: { noun: 'rule', check: 'rule-check', extension: '.md', registryFolder: ['rules'], candidatePath: true, guide: 'rule' },
-  workflow: { noun: 'workflow', check: 'workflow-check', extension: '.js', registryFolder: ['hosts', 'claude', 'workflows'], candidatePath: false, guide: 'orchestration' },
+  rule: { noun: 'rule', check: 'rule-check', extension: '.md', registryFolder: ['rules'], candidatePath: true, exactSpelling: false, guide: 'rule' },
+  workflow: { noun: 'workflow', check: 'workflow-check', extension: '.js', registryFolder: ['hosts', 'claude', 'workflows'], candidatePath: false, exactSpelling: true, guide: 'orchestration' },
 };
 // Input kinds the caller may add as extra evidence; every other kind is computed here.
 const EVIDENCE_KINDS = ['provenance', 'validator', 'source', 'baseline', 'diff', 'observation', 'rule'];
@@ -475,8 +477,11 @@ function build(specArg) {
       const stat = fs.lstatSync(file, { throwIfNoEntry: false });
       return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, `Registry ${single.noun}`)) === pinned;
     };
-    const own = [...(single.candidatePath ? [[path.join(candidate, reviewed), true]] : []), [path.join(registry, ...single.registryFolder, reviewed), false], [path.join(checkout, 'registry', ...single.registryFolder, reviewed), false]];
-    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => exact(physical(file)) === exact(physical(artifact)) && (isCandidate || sameBytes(file)))) {
+    // The declared registry spelling counts only where the folder is named exactly "registry", as workflow-check requires; the checkout's own is always so named.
+    const registryNamed = !single.exactSpelling || path.basename(registry) === 'registry';
+    const own = [...(single.candidatePath ? [[path.join(candidate, reviewed), true]] : []), ...(registryNamed ? [[path.join(registry, ...single.registryFolder, reviewed), false]] : []), [path.join(checkout, 'registry', ...single.registryFolder, reviewed), false]];
+    const sameSpelling = (file, given) => (single.exactSpelling ? path.normalize(file) === path.normalize(given) : exact(physical(file)) === exact(physical(given)));
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => sameSpelling(file, artifact) && (isCandidate || sameBytes(file)))) {
       const folder = single.registryFolder.join('/');
       fail(single.candidatePath
         ? `The ${single.check} must check this review's own ${single.noun} file: the candidate's <identity>${single.extension} or <registry>/${folder}/<identity>${single.extension}.`
