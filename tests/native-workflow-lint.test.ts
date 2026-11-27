@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import vm from 'node:vm';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { listNativeRoles, listNativeWorkflows, nativeWorkflowSource } from '../src/core/native-package.js';
+import { workflowMetaName } from '../src/core/workflow-lint.js';
 import { agentTypesUsed, extractMetaLiteral, lintWorkflow } from './helpers/workflow-lint.js';
 
 /**
@@ -58,6 +60,61 @@ describe('lintWorkflow', () => {
 
   it('lists the agent types a script asks for', () => {
     expect(agentTypesUsed(GOOD)).toEqual(['code-reviewer']);
+  });
+});
+
+// ADR 0082: `meta` is read as data. The lint never evaluates it, and a malformed shape is a lint problem, never an exception.
+describe('lintWorkflow reads meta as data', () => {
+  const PROBE = '__workflowLintMetaRan';
+  const probe = (): unknown => (globalThis as Record<string, unknown>)[PROBE];
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete (globalThis as Record<string, unknown>)[PROBE];
+  });
+  const withMeta = (meta: string): string => `export const meta = ${meta}\n\nreturn 1\n`;
+
+  it.each([
+    ['phases that is an empty object', "{ name: 'a', description: 'b', phases: {} }"],
+    ['phases that is a string', "{ name: 'a', description: 'b', phases: 'Find' }"],
+    ['phases that is null', "{ name: 'a', description: 'b', phases: null }"],
+    ['a null phase entry', "{ name: 'a', description: 'b', phases: [null] }"],
+    ['a phase entry that is not an object', "{ name: 'a', description: 'b', phases: ['Find'] }"],
+    ['a phase entry without a title', "{ name: 'a', description: 'b', phases: [{}] }"],
+    ['a phase title that is not a string', "{ name: 'a', description: 'b', phases: [{ title: 1 }] }"],
+  ])('reports %s as a problem and does not throw', (_label, meta) => {
+    const problems = lintWorkflow(withMeta(meta));
+    expect(problems.join('\n')).toMatch(/meta\.phases/);
+  });
+
+  it.each([
+    ['a getter', `{ name: 'a', description: 'b', get phases() { globalThis.${PROBE} = true; throw new Error('boom') } }`],
+    ['a toString and valueOf trap', `{ name: 'a', description: 'b', phases: [{ title: { toString() { globalThis.${PROBE} = true; throw new Error('boom') }, valueOf() { throw new Error('boom') } } }] }`],
+    ['a non-literal value', `{ name: ['a', 'b'].join('-'), description: 'b' }`],
+    ['an identifier value', `{ name: 'a', description: undefined }`],
+    ['a __proto__ key', `{ name: 'a', description: 'b', __proto__: { phases: 5 } }`],
+    ['a quoted __proto__ key', `{ name: 'a', description: 'b', '__proto__': { phases: 5 } }`],
+    ['a method', `{ name: 'a', description: 'b', phases() { return [] } }`],
+    ['a spread', `{ name: 'a', ...globalThis }`],
+    ['a computed key', `{ name: 'a', description: 'b', ['x' + 'y']: 1 }`],
+  ])('reports %s as a pure-literal problem, never evaluates it and does not throw', (_label, meta) => {
+    const spy = vi.spyOn(vm, 'runInNewContext');
+    const problems = lintWorkflow(withMeta(meta));
+    expect(problems.join('\n')).toMatch(/pure literal/);
+    expect(spy).not.toHaveBeenCalled();
+    expect(probe()).toBeUndefined();
+    expect(workflowMetaName(withMeta(meta))).toBeUndefined();
+  });
+
+  it('does not evaluate a well-formed meta either', () => {
+    const spy = vi.spyOn(vm, 'runInNewContext');
+    expect(lintWorkflow(GOOD)).toEqual([]);
+    expect(workflowMetaName(GOOD)).toBe('demo-flow');
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('accepts a meta with quoted keys, comments, trailing commas and a backtick string', () => {
+    const meta = "{ 'name': \"a\", // the name\n  description: `b`, /* phases */ phases: [{ 'title': 'Find', },], }";
+    expect(lintWorkflow(`export const meta = ${meta}\nphase('Find')\n`)).toEqual([]);
   });
 });
 

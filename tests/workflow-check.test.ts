@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import vm from 'node:vm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   runWorkflowCheck, workflowCheckExitCode, workflowCheckUsageResult, workflowNameProblem, WORKFLOW_CHECK_MAX_BYTES,
@@ -408,6 +409,46 @@ describe('workflow-check', () => {
       const empty = check({ content: '' });
       expect(empty.status).toBe('failed');
       expect(codesOf(empty)).toEqual(['LINT']);
+    });
+  });
+
+  // Blocker 1 of Codex round 1: the checker used to evaluate `meta` in a vm and then read its properties outside the vm, so a
+  // getter or a coercion hook could run and a malformed shape threw (exit 2). `meta` is now data: any such draft is a LINT
+  // finding and exit 1, and nothing in it runs.
+  describe('Tier 2: LINT reads meta as data and never runs it', () => {
+    const PROBE = '__workflowCheckMetaRan';
+    const probe = (): unknown => (globalThis as Record<string, unknown>)[PROBE];
+    afterEach(() => { delete (globalThis as Record<string, unknown>)[PROBE]; });
+    const draft = (meta: string): string => `export const meta = ${meta}\n\nreturn 1\n`;
+    const header = "name: 'demo-flow', description: 'A demo workflow.'";
+
+    it.each([
+      ['a getter', `{ ${header}, get phases() { globalThis.${PROBE} = true; throw new Error('boom') } }`],
+      ['a toString and valueOf coercion trap', `{ ${header}, phases: [{ title: { toString() { globalThis.${PROBE} = true; throw new Error('boom') }, valueOf() { throw new Error('boom') } } }] }`],
+      ['phases that is an object', `{ ${header}, phases: {} }`],
+      ['a null phase entry', `{ ${header}, phases: [null] }`],
+      ['a non-literal value', `{ name: ['demo', 'flow'].join('-'), description: 'A demo workflow.' }`],
+      ['a __proto__ key', `{ ${header}, __proto__: { phases: 5 } }`],
+      ['a quoted __proto__ key', `{ ${header}, '__proto__': { phases: 5 } }`],
+    ])('fails %s as LINT with exit 1, runs nothing and never evaluates the meta', (_label, meta) => {
+      const spy = vi.spyOn(vm, 'runInNewContext');
+      try {
+        const result = check({ content: draft(meta) });
+        expect(result.status).toBe('failed');
+        expect(workflowCheckExitCode(result)).toBe(1);
+        expect(codesOf(result)).toContain('LINT');
+        expect(codesOf(result)).not.toContain('INPUT_UNAVAILABLE');
+        expect(checkOf(result, 'lint')?.status).toBe('failed');
+        expect(spy).not.toHaveBeenCalled();
+        expect(probe()).toBeUndefined();
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    it('still passes a meta written with quoted keys, comments, trailing commas and a backtick string', () => {
+      const meta = "{ 'name': \"demo-flow\", // the name\n  description: `A demo workflow.`, /* none */ phases: [{ 'title': 'Find', },], }";
+      expect(check({ content: `export const meta = ${meta}\nphase('Find')\n` }).status).toBe('passed');
     });
   });
 
