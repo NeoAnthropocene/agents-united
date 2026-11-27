@@ -118,4 +118,14 @@ describe('S6: the new planning skill agency-brief-and-premises', () => {
       expect(text, `${f} states the skill count`).toMatch(new RegExp(`\\b${dirs} (modular )?skills`));
     }
   });
+
+  it('the domain-skill count in README and PROJECT.md and the physical total in CONTEXT.md follow the catalog', () => {
+    const names = fs.readdirSync(SKILLS, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+    const domain = names.filter((n) => !n.startsWith('workflow-')).length;
+    for (const f of ['README.md', 'PROJECT.md']) {
+      const text = fs.readFileSync(path.join(ROOT, f), 'utf8');
+      expect(text, `${f} states the domain-skill count`).toMatch(new RegExp(`\\b${domain} (are \\*\\*)?domain skills`));
+    }
+    expect(fs.readFileSync(path.join(ROOT, 'CONTEXT.md'), 'utf8'), 'CONTEXT.md states the physical Skill total').toMatch(new RegExp(`\\b${names.length} Skills`));
+  });
 });

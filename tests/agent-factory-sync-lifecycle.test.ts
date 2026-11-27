@@ -13,7 +13,7 @@ import { evaluationTree, reviewPin } from './helpers/factory-evaluation.js';
 
 async function prepareProductionSync(root: string) {
   const fixture = await prepareFactoryNative(root);
-  fixture.bundle.skills = ['author-skill', 'author-rule', 'sync-host'];
+  fixture.bundle.skills = ['author-skill', 'author-rule', 'author-workflow', 'sync-host'];
   await fs.outputJson(fixture.source('bundles.json'), { version: 1, bundles: { 'agent-factory': fixture.bundle } });
   for (const rel of ['hosts/claude/agent-factory-realize.binding.json', 'hosts/claude/agents/factory-realizer.md',
     'hosts/claude/skills/realize-artifact', 'skills/realize-artifact', 'core/subagent-realize-for-host.core.md',
@@ -172,7 +172,7 @@ describe('production sync lifecycle independently of realization', () => {
 
   it('resolves the direct author-skill route to its complete owning factory with the sync worker', async () => {
     const result = await new InstallEngine(resolver).install('author-skill', fixture.options);
-    expect(result.installed.skills).toEqual(['author-skill', 'author-rule', 'sync-host']);
+    expect(result.installed.skills).toEqual(['author-skill', 'author-rule', 'author-workflow', 'sync-host']);
     expect(await fs.pathExists(fixture.installed('.claude/skills/author-skill/SKILL.md'))).toBe(true);
     expect(await fs.pathExists(fixture.installed('.claude/agents/factory-sync.md'))).toBe(true);
     expect(await fs.pathExists(fixture.installed(`${skill}/SKILL.md`))).toBe(true);

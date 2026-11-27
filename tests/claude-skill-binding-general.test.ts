@@ -19,13 +19,15 @@ async function factoryBundle(): Promise<BundleDefinition> {
 }
 
 describe('general Claude factory skill binding (ADR 0082 slice S0b)', () => {
-  it('lists author-skill and author-rule with their binding files in the closed reviewed list', () => {
+  it('lists author-skill, author-rule and author-workflow with their binding files in the closed reviewed list', () => {
     expect(BOUND_FACTORY_SKILLS).toEqual([
       { skill: 'author-skill', file: 'hosts/claude/agent-factory.binding.json' },
       { skill: 'author-rule', file: 'hosts/claude/agent-factory-rule.binding.json' },
+      { skill: 'author-workflow', file: 'hosts/claude/agent-factory-workflow.binding.json' },
     ]);
     expect(isBoundFactorySkill('author-skill')).toBe(true);
     expect(isBoundFactorySkill('author-rule')).toBe(true);
+    expect(isBoundFactorySkill('author-workflow')).toBe(true);
     expect(isBoundFactorySkill('realize-artifact')).toBe(false);
     expect(isBoundFactorySkill('author-x')).toBe(false);
   });
@@ -59,9 +61,10 @@ describe('general Claude factory skill binding (ADR 0082 slice S0b)', () => {
     const resolved = await new RegistryResolver(registryDir).resolve('agent-factory');
     const bindings = assertClaudeSkillBindings(bundle, resolved, registryDir, 'project', true);
     expect(Array.isArray(bindings)).toBe(true);
-    expect(bindings).toHaveLength(2);
+    expect(bindings).toHaveLength(3);
     expect(bindings[0]).toMatchObject({ skill: 'author-skill', bundle: 'agent-factory', invocation: '/author-skill' });
     expect(bindings[1]).toMatchObject({ skill: 'author-rule', bundle: 'agent-factory', invocation: '/author-rule' });
+    expect(bindings[2]).toMatchObject({ skill: 'author-workflow', bundle: 'agent-factory', invocation: '/author-workflow' });
 
     const ordinary: BundleDefinition = { name: 'ordinary', description: 'Existing bundle', skills: ['ordinary-skill'] };
     const none = assertClaudeSkillBindings(ordinary, { agents: [], skills: ['ordinary-skill'], rules: [], workflows: [] }, registryDir, 'project', true);
@@ -71,15 +74,15 @@ describe('general Claude factory skill binding (ADR 0082 slice S0b)', () => {
   it('applies a binding only to the bundle it declares or a bundle whose parent chain reaches it', async () => {
     const resolved = await new RegistryResolver(registryDir).resolve('agent-factory');
     // A foreign bundle that merely lists a bound Skill does not take the binding of agent-factory.
-    const foreign: BundleDefinition = { name: 'author-skill-fixture', description: 'Lists a bound Skill', skills: ['author-skill', 'author-rule'] };
+    const foreign: BundleDefinition = { name: 'author-skill-fixture', description: 'Lists a bound Skill', skills: ['author-skill', 'author-rule', 'author-workflow'] };
     expect(assertClaudeSkillBindings(foreign, resolved, registryDir, 'project', true)).toEqual([]);
     const unrelatedParent: BundleDefinition = { ...foreign, name: 'unrelated-child', parentBundle: 'software-engineering' };
     expect(assertClaudeSkillBindings(unrelatedParent, resolved, registryDir, 'project', true)).toEqual([]);
     const unknownParent: BundleDefinition = { ...foreign, name: 'orphan-child', parentBundle: 'no-such-bundle' };
     expect(assertClaudeSkillBindings(unknownParent, resolved, registryDir, 'project', true)).toEqual([]);
-    // A bundle that extends agent-factory takes both bindings.
+    // A bundle that extends agent-factory takes every binding.
     const child: BundleDefinition = { ...foreign, name: 'factory-child', parentBundle: 'agent-factory' };
-    expect(assertClaudeSkillBindings(child, resolved, registryDir, 'project', true).map(binding => binding.skill)).toEqual(['author-skill', 'author-rule']);
+    expect(assertClaudeSkillBindings(child, resolved, registryDir, 'project', true).map(binding => binding.skill)).toEqual(['author-skill', 'author-rule', 'author-workflow']);
   });
 
   // The registry and the installer resolve a parentBundle that names an alias of a bundle (registry.ts withInheritedOptionalMcps, installer.ts
@@ -97,11 +100,11 @@ describe('general Claude factory skill binding (ADR 0082 slice S0b)', () => {
       await fs.writeJson(manifestFile, manifest);
 
       const resolved = await new RegistryResolver(copy).resolve('agent-factory');
-      const lists: BundleDefinition = { name: 'child', description: 'Lists the bound Skills', skills: ['author-skill', 'author-rule'] };
+      const lists: BundleDefinition = { name: 'child', description: 'Lists the bound Skills', skills: ['author-skill', 'author-rule', 'author-workflow'] };
       const skills = (bundle: BundleDefinition) => assertClaudeSkillBindings(bundle, resolved, copy, 'project', true).map(binding => binding.skill);
       // Through an alias of agent-factory itself, through an aliased intermediate, and through both.
-      expect(skills({ ...lists, name: 'via-factory-alias', parentBundle: 'factory-alias' })).toEqual(['author-skill', 'author-rule']);
-      expect(skills({ ...lists, name: 'via-mid-alias', parentBundle: 'mid-alias' })).toEqual(['author-skill', 'author-rule']);
+      expect(skills({ ...lists, name: 'via-factory-alias', parentBundle: 'factory-alias' })).toEqual(['author-skill', 'author-rule', 'author-workflow']);
+      expect(skills({ ...lists, name: 'via-mid-alias', parentBundle: 'mid-alias' })).toEqual(['author-skill', 'author-rule', 'author-workflow']);
       // An alias of an unrelated bundle still takes nothing.
       expect(skills({ ...lists, name: 'via-unrelated-alias', parentBundle: 'unrelated-alias' })).toEqual([]);
     } finally {
@@ -114,7 +117,7 @@ describe('general Claude factory skill binding (ADR 0082 slice S0b)', () => {
     const resolved = await new RegistryResolver(registryDir).resolve('agent-factory');
     const artifacts = await ClaudeProjector.planCompoundProjection(bundle, 'project', resolved, registryDir, undefined, true);
     const rules = artifacts.filter(artifact => artifact.kind === 'rule' && artifact.canonical === 'rules/skill-attribution.md');
-    expect(rules.map(rule => rule.relPath).sort()).toEqual(['.claude/skills/author-rule/references/skill-attribution.md', '.claude/skills/author-skill/references/skill-attribution.md']);
+    expect(rules.map(rule => rule.relPath).sort()).toEqual(['.claude/skills/author-rule/references/skill-attribution.md', '.claude/skills/author-skill/references/skill-attribution.md', '.claude/skills/author-workflow/references/skill-attribution.md']);
     expect(artifacts.some(artifact => artifact.relPath === '.claude/rules/skill-attribution.md')).toBe(false);
   });
 });

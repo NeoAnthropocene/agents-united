@@ -12,7 +12,7 @@ import { UninstallEngine } from '../src/core/uninstaller.js';
 import type { InstallOptions, LockfileManifest } from '../src/core/types.js';
 
 // Exact reviewed factory declaration, including the P7 coordinator and dormant router companions.
-const factorySkills = ['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host'];
+const factorySkills = ['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'author-workflow', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host'];
 
 describe('shipped factory native lifecycle in fresh workspaces', () => {
   let root: string;
@@ -163,6 +163,7 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     const full = await new RegistryResolver().resolve('full');
     expect(full.skills).not.toContain('author-skill');
     expect(full.skills).not.toContain('author-rule');
+    expect(full.skills).not.toContain('author-workflow');
     expect(full.rules).not.toContain('skill-attribution.md');
     for (const name of shared) expect(full.skills).toContain(name);
   });
