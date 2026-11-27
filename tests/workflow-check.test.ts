@@ -793,6 +793,21 @@ describe('workflow-check', () => {
         expect(divisionAfterPostfix.findings[0]?.message).toContain('ghost');
       });
 
+      it('numbers the lines of unresolved sites by every line terminator, and cuts the excerpt at the same ones (Codex round 2)', () => {
+        const LS = String.fromCharCode(0x2028);
+        const PS = String.fromCharCode(0x2029);
+        const prefix = withCall('{ agentType: kind }');
+        const first = prefix.split('\n').length - 1;
+        const content = `${prefix}const a = 1\rconst b = 2${LS}const c = 3${PS}const d = await agent('x', { agentType: other })\r\nconst e = await agent('y', { agentType: more })\n`;
+        const result = check({ content });
+        expect(result.unresolvedAgentTypes.map(item => item.line)).toEqual([first, first + 4, first + 5]);
+        expect(result.unresolvedAgentTypes.map(item => item.excerpt)).toEqual([
+          "const found = await agent('look', { agentType: kind })",
+          "const d = await agent('x', { agentType: other })",
+          "const e = await agent('y', { agentType: more })",
+        ]);
+      });
+
       it('does not take an example in a comment for a request', () => {
         const result = check({ content: `${GOOD}// ask for { agentType: 'ghost' } here\n/* agentType: 'ghost2', agentType: kind */\n` });
         expect(result.status).toBe('passed');

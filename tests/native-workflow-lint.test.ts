@@ -185,6 +185,57 @@ describe('agentTypeRequests: regular expression or division', () => {
   });
 });
 
+// Codex round 2, blocker 3: a lone CR, U+2028 and U+2029 end a line like LF does; CRLF is one line end.
+describe('agentTypeRequests: line terminators', () => {
+  const LS = String.fromCharCode(0x2028);
+  const PS = String.fromCharCode(0x2029);
+  const terminators: Array<[string, string]> = [['a lone CR', '\r'], ['U+2028', LS], ['U+2029', PS], ['CRLF', '\r\n'], ['LF', '\n']];
+
+  it.each(terminators)('ends a // comment at %s, so the code after it is seen', (_label, end) => {
+    const source = `const a = 1 // { agentType: 'inside' }${end}const b = { agentType: 'seen' }`;
+    expect(agentTypeRequests(source)).toEqual({ literals: ['seen'], unresolved: [] });
+  });
+
+  it.each(terminators)('counts %s as one line in the line numbers of unresolved requests', (_label, end) => {
+    const source = ['const a = 1', 'const b = 2', "// note: { agentType: 'inside' }", 'const d = await agent(\'x\', { agentType: kind })'].join(end);
+    expect(agentTypeRequests(source)).toEqual({ literals: [], unresolved: [4] });
+  });
+
+  it('counts every kind of line end, mixed, once each', () => {
+    const source = `a\rb${LS}c${PS}d\r\ne\nf\r\n\r\n{ agentType: kind }`;
+    // a, b, c, d, e, f, the empty line and the request: line 8.
+    expect(agentTypeRequests(source)).toEqual({ literals: [], unresolved: [8] });
+  });
+
+  it('counts the line ends inside a block comment, a string continuation and a template', () => {
+    const source = [
+      `/* one\rtwo${LS}three${PS}four\r\nfive */`,
+      `const s = 'a\\\r\nb\\\rc\\${LS}d'`,
+      `const t = \`x\ry${LS}z${PS}w\r\nv\``,
+      `{ agentType: kind }`,
+    ].join('\n');
+    // The comment spans lines 1 to 5, the string 6 to 9, the template 10 to 14 and the request is on line 15.
+    expect(agentTypeRequests(source)).toEqual({ literals: [], unresolved: [15] });
+  });
+
+  it.each([
+    ['CRLF', '\r\n'], ['a lone CR', '\r'], ['U+2028', LS], ['U+2029', PS], ['LF', '\n'],
+  ])('joins a string across a backslash and %s (a line continuation) into one value', (_label, end) => {
+    const source = `const a = await agent('x', { agentType: 'code-\\${end}reviewer' })\nconst b = { agentType: kind }`;
+    expect(agentTypeRequests(source)).toEqual({ literals: ['code-reviewer'], unresolved: [3] });
+  });
+
+  it('ends an unterminated string at a lone CR, as at LF', () => {
+    const source = "const s = 'open\r{ agentType: 'ghost' }";
+    expect(agentTypeRequests(source)).toEqual({ literals: ['ghost'], unresolved: [] });
+  });
+
+  it('ends a regular expression at a lone CR, so the code on the next line is seen', () => {
+    const source = "const r = /open\r{ agentType: 'ghost' }";
+    expect(agentTypeRequests(source)).toEqual({ literals: ['ghost'], unresolved: [] });
+  });
+});
+
 // ADR 0082: `meta` is read as data. The lint never evaluates it, and a malformed shape is a lint problem, never an exception.
 describe('lintWorkflow reads meta as data', () => {
   const PROBE = '__workflowLintMetaRan';
