@@ -1,5 +1,5 @@
 import { parseJsLiteral, type JsLiteralObject } from './js-literal.js';
-import { tokenizeJs } from './js-tokens.js';
+import { isLineTerminator, tokenizeJs } from './js-tokens.js';
 
 /**
  * Plan 032 — maintainers' lint for a Claude dynamic workflow script, from the host's own rules (host-library/claude/guide/
@@ -18,9 +18,6 @@ const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor as
 const RUNTIME_GLOBALS = ['agent', 'pipeline', 'parallel', 'phase', 'log', 'args', 'budget', 'workflow'];
 
 const NO_META = 'The first statement must be `export const meta = { ... }` with an object literal.';
-const LINE_SEPARATOR = String.fromCharCode(0x2028);
-const PARAGRAPH_SEPARATOR = String.fromCharCode(0x2029);
-const isLineEnd = (char: string): boolean => char === '\n' || char === '\r' || char === LINE_SEPARATOR || char === PARAGRAPH_SEPARATOR;
 const SPACE = /\s/;
 const WORD = /[\p{ID_Continue}$]+/uy;
 const SPACES = /\s+/y;
@@ -35,16 +32,16 @@ function skipTrivia(source: string, from: number): { at: number; broke: boolean 
   let broke = false;
   while (at < source.length) {
     const char = source[at];
-    if (isLineEnd(char)) { broke = true; at++; continue; }
+    if (isLineTerminator(char)) { broke = true; at++; continue; }
     if (SPACE.test(char)) { at++; continue; }
     if (char === '/' && source[at + 1] === '/') {
-      while (at < source.length && !isLineEnd(source[at])) at++;
+      while (at < source.length && !isLineTerminator(source[at])) at++;
       continue;
     }
     if (char === '/' && source[at + 1] === '*') {
       const end = source.indexOf('*/', at + 2);
       if (end < 0) return undefined;
-      for (let i = at; i < end && !broke; i++) broke = isLineEnd(source[i]);
+      for (let i = at; i < end && !broke; i++) broke = isLineTerminator(source[i]);
       at = end + 2;
       continue;
     }
@@ -115,7 +112,7 @@ export function scanMeta(source: string): MetaScan {
       const quote = char;
       for (i++; i < source.length && source[i] !== quote; i++) if (source[i] === '\\') i++;
     } else if (char === '/' && source[i + 1] === '/') {
-      while (i < source.length && source[i] !== '\n') i++;
+      while (i < source.length && !isLineTerminator(source[i])) i++;
     } else if (char === '/' && source[i + 1] === '*') {
       i = source.indexOf('*/', i + 2);
       if (i < 0) return { ok: false, problem: NO_META };
