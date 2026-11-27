@@ -17,14 +17,99 @@ const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor as
 /** Names the runtime provides to a script body. */
 const RUNTIME_GLOBALS = ['agent', 'pipeline', 'parallel', 'phase', 'log', 'args', 'budget', 'workflow'];
 
-/** The text of the object literal assigned to `meta`, found by matching braces outside strings and comments. */
-export function extractMetaLiteral(source: string): { literal: string; end: number } | undefined {
-  const head = /^\s*(?:(?:\/\/[^\n]*\n|\/\*[\s\S]*?\*\/)\s*)*export\s+const\s+meta\s*=\s*/.exec(source);
-  if (!head) return undefined;
-  const start = head[0].length;
-  if (source[start] !== '{') return undefined;
+const NO_META = 'The first statement must be `export const meta = { ... }` with an object literal.';
+const LINE_SEPARATOR = String.fromCharCode(0x2028);
+const PARAGRAPH_SEPARATOR = String.fromCharCode(0x2029);
+const isLineEnd = (char: string): boolean => char === '\n' || char === '\r' || char === LINE_SEPARATOR || char === PARAGRAPH_SEPARATOR;
+const SPACE = /\s/;
+const WORD = /[\p{ID_Continue}$]+/uy;
+const SPACES = /\s+/y;
+
+/**
+ * White space and comments from `at` on: where the next token starts, and whether a line end was crossed (a block comment that
+ * holds one counts, as it does for automatic semicolon insertion). `undefined` for a block comment that is never closed. The
+ * scan moves forward one position at a time, so it takes time in proportion to the text.
+ */
+function skipTrivia(source: string, from: number): { at: number; broke: boolean } | undefined {
+  let at = from;
+  let broke = false;
+  while (at < source.length) {
+    const char = source[at];
+    if (isLineEnd(char)) { broke = true; at++; continue; }
+    if (SPACE.test(char)) { at++; continue; }
+    if (char === '/' && source[at + 1] === '/') {
+      while (at < source.length && !isLineEnd(source[at])) at++;
+      continue;
+    }
+    if (char === '/' && source[at + 1] === '*') {
+      const end = source.indexOf('*/', at + 2);
+      if (end < 0) return undefined;
+      for (let i = at; i < end && !broke; i++) broke = isLineEnd(source[i]);
+      at = end + 2;
+      continue;
+    }
+    break;
+  }
+  return { at, broke };
+}
+
+/** The word at `at` (identifier characters), or an empty string. */
+function wordAt(source: string, at: number): string {
+  WORD.lastIndex = at;
+  return WORD.exec(source)?.[0] ?? '';
+}
+
+/** Past the white space (at least one character) that must follow a word, or -1 when none does. */
+function afterSpaces(source: string, at: number): number {
+  SPACES.lastIndex = at;
+  const found = SPACES.exec(source);
+  return found === null ? -1 : at + found[0].length;
+}
+
+/** Past any white space (possibly none) from `at`. */
+function skipSpaces(source: string, at: number): number {
+  const after = afterSpaces(source, at);
+  return after < 0 ? at : after;
+}
+
+/**
+ * Whether the token at `at`, on a line after the closing brace of `meta`, would carry the initializer on: `(`, `[`, `.`, a
+ * template, a binary or conditional operator, `,`, `=`, or the words `in` and `instanceof`. Anything else (a word, a string, a
+ * number, `!`, `++`, `--`) starts a new statement. `+` and `-` count as operators unless doubled.
+ */
+function continuesInitializer(source: string, at: number): boolean {
+  const char = source[at];
+  const next = source[at + 1];
+  if ('([.`,=<>%^*/:?&|'.includes(char)) return true;
+  if (char === '+' || char === '-') return next !== char;
+  if (char === '!') return next === '=';
+  const word = wordAt(source, at);
+  return word === 'in' || word === 'instanceof';
+}
+
+const shownAt = (source: string, at: number): string => JSON.stringify(source.slice(at, at + 10).replace(/\s+/g, ' '));
+
+export type MetaScan = { ok: true; literal: string; end: number } | { ok: false; problem: string };
+
+/**
+ * The text of the object literal assigned to `export const meta`, which must be the first statement (comments and white space may
+ * come before it) and the whole initializer: after the closing brace, up to the next token, only white space and comments may
+ * stand, and that token is `;`, the end of the text, or (after a line end) one that cannot continue the expression. Otherwise
+ * the problem says what is wrong. The braces are matched outside strings and comments; the text is read once, forward.
+ */
+export function scanMeta(source: string): MetaScan {
+  const lead = skipTrivia(source, 0);
+  if (lead === undefined || wordAt(source, lead.at) !== 'export') return { ok: false, problem: NO_META };
+  let at = afterSpaces(source, lead.at + 'export'.length);
+  if (at < 0 || wordAt(source, at) !== 'const') return { ok: false, problem: NO_META };
+  at = afterSpaces(source, at + 'const'.length);
+  if (at < 0 || wordAt(source, at) !== 'meta') return { ok: false, problem: NO_META };
+  const equals = skipSpaces(source, at + 'meta'.length);
+  if (source[equals] !== '=') return { ok: false, problem: NO_META };
+  const open = skipSpaces(source, equals + 1);
+  if (source[open] !== '{') return { ok: false, problem: NO_META };
   let depth = 0;
-  for (let i = start; i < source.length; i++) {
+  for (let i = open; i < source.length; i++) {
     const char = source[i];
     if (char === '"' || char === "'" || char === '`') {
       const quote = char;
@@ -33,16 +118,37 @@ export function extractMetaLiteral(source: string): { literal: string; end: numb
       while (i < source.length && source[i] !== '\n') i++;
     } else if (char === '/' && source[i + 1] === '*') {
       i = source.indexOf('*/', i + 2);
-      if (i < 0) return undefined;
+      if (i < 0) return { ok: false, problem: NO_META };
       i++;
     } else if (char === '{') {
       depth++;
     } else if (char === '}') {
       depth--;
-      if (depth === 0) return { literal: source.slice(start, i + 1), end: i + 1 };
+      if (depth === 0) return checkEnd(source, open, i + 1);
     }
   }
-  return undefined;
+  return { ok: false, problem: NO_META };
+}
+
+/** The initializer is the literal in `source[open, end)` only when what follows ends the statement. */
+function checkEnd(source: string, open: number, end: number): MetaScan {
+  const tail = skipTrivia(source, end);
+  if (tail === undefined) return { ok: false, problem: 'A block comment after the closing brace of `meta` is never closed.' };
+  const next = source[tail.at];
+  if (next === undefined || next === ';') return { ok: true, literal: source.slice(open, end), end };
+  if (!tail.broke) {
+    return { ok: false, problem: `The initializer of \`meta\` must be the object literal alone: ${shownAt(source, tail.at)} follows its closing brace on the same line. End the statement with ";" or a line break.` };
+  }
+  if (continuesInitializer(source, tail.at)) {
+    return { ok: false, problem: `The initializer of \`meta\` continues after the object literal with ${shownAt(source, tail.at)}, so \`meta\` is not that literal. End the statement with ";" before it.` };
+  }
+  return { ok: true, literal: source.slice(open, end), end };
+}
+
+/** The text of the object literal assigned to `meta` and where it ends, or undefined when `scanMeta` finds a problem. */
+export function extractMetaLiteral(source: string): { literal: string; end: number } | undefined {
+  const scanned = scanMeta(source);
+  return scanned.ok ? { literal: scanned.literal, end: scanned.end } : undefined;
 }
 
 const isObject = (value: unknown): value is JsLiteralObject => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -94,9 +200,9 @@ export function lintWorkflow(source: string): string[] {
   const problems: string[] = [];
   const text = source.replace(/\r\n/g, '\n');
 
-  const found = extractMetaLiteral(text);
-  if (!found) {
-    problems.push('The first statement must be `export const meta = { ... }` with an object literal.');
+  const found = scanMeta(text);
+  if (!found.ok) {
+    problems.push(found.problem);
     return problems;
   }
 
