@@ -97,6 +97,39 @@ describe('parseJsLiteral: what it refuses, and it never runs anything', () => {
     expect(failure(text)).not.toBe('');
   });
 
+  // Codex round 2: a legacy leading-zero decimal is not valid in an exported declaration (module code is strict), so it is not data.
+  it.each([
+    ['01', `{ n: 01 }`],
+    ['00', `{ n: 00 }`],
+    ['007', `{ n: 007 }`],
+    ['08', `{ n: 08 }`],
+    ['01.5', `{ n: 01.5 }`],
+    ['01e2', `{ n: 01e2 }`],
+    ['a signed leading zero', `{ n: -01 }`],
+    ['a leading zero in an array', `{ list: [1, 01] }`],
+    ['a numeric separator after a zero', `{ n: 0_1 }`],
+  ])('fails the legacy decimal %s', (_label, text) => {
+    expect(failure(text)).toMatch(/not a number/);
+  });
+
+  it.each([
+    ['0', `{ n: 0 }`, 0],
+    ['-0', `{ n: -0 }`, -0],
+    ['0.5', `{ n: 0.5 }`, 0.5],
+    ['0.', `{ n: 0. }`, 0],
+    ['0e1', `{ n: 0e1 }`, 0],
+    ['0E+2', `{ n: 0E+2 }`, 0],
+    ['10', `{ n: 10 }`, 10],
+    ['100', `{ n: 100 }`, 100],
+    ['10.05', `{ n: 10.05 }`, 10.05],
+    ['.5', `{ n: .5 }`, 0.5],
+    ['0x1F', `{ n: 0x1F }`, 31],
+    ['0o17', `{ n: 0o17 }`, 15],
+    ['0b101', `{ n: 0b101 }`, 5],
+  ])('still reads the number %s', (_label, text, expected) => {
+    expect((parsed(text) as { n: number }).n).toBe(expected);
+  });
+
   it('fails an input nested deeper than any workflow needs, without overflowing the stack', () => {
     expect(failure(`${'['.repeat(5000)}${']'.repeat(5000)}`)).toMatch(/nest/i);
   });
