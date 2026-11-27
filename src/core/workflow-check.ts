@@ -116,7 +116,7 @@ function registryOf(file: string): { registry: string } | { problem: string } {
 }
 
 /** A line end as the tokenizer counts it: CRLF, or one of LF, CR, U+2028 and U+2029, so a reported line number finds its source line. */
-const LINE_END = /\r\n|[\n\r  ]/;
+const LINE_END = new RegExp('\\r\\n|[\\n\\r' + String.fromCharCode(0x2028, 0x2029) + ']');
 
 const EXCERPT_MAX = 120;
 /** A source line for the unresolved-agent-type list: trimmed, at most 120 characters, ending in "..." when it was cut. */
