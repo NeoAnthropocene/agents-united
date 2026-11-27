@@ -156,6 +156,13 @@ describe('author-workflow source gates', () => {
     expect(fs.readFileSync(path.join(candidate, 'examples/one-draft.md'), 'utf8')).toMatch(/Repair mode|repair mode/);
   });
 
+  it('documents that a reused file number after the descriptor closes needs another process, so it falls under the concurrent-swap limit', () => {
+    const job = fs.readFileSync(path.join(candidate, 'references/job.md'), 'utf8').replace(/\r\n/g, '\n');
+    expect(job).toMatch(/A file number can be reused once a descriptor is closed[^.]*another process[^.]*same limit as a concurrent swap/);
+    // The sentence sits in the documented limits, beside the swap window it belongs to.
+    expect(job.indexOf('same limit as a concurrent swap')).toBeGreaterThan(job.indexOf('outside what a pathname can prevent'));
+  });
+
   it('refuses a missing paired Skill and sends the contributor to author-skill first, in the entry and the job contract', () => {
     for (const file of [path.join(candidate, 'SKILL.md'), loaderFile]) {
       const step = lines(fs.readFileSync(file, 'utf8')).find(line => line.startsWith('2. ')) ?? '';
