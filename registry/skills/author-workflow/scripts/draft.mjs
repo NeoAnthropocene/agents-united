@@ -20,8 +20,10 @@ const WORKFLOWS = 'registry/hosts/claude/workflows';
 // Test seam. AUTHOR_WORKFLOW_TEST_FAULT is a test-only switch (a comma-separated list) that can only force failures: it makes the
 // helper behave as if a step had failed or a file had changed. Used only by tests/author-workflow-skill.test.ts. It does nothing at all
 // unless AUTHOR_WORKFLOW_TEST_ROOT names an existing absolute folder whose real path is under the real path of the temp folder
-// (os.tmpdir()), so a stray variable in a contributor's shell cannot change a real run, whatever the fault. Every fault that touches a
-// file acts only on a path inside that root.
+// (os.tmpdir()) and that folder holds the marker file .author-workflow-test-root with exactly the marker text (a regular file, not a
+// link), which only the tests create: a contributor checkout that merely lies under the temp folder is never a test root, so a stray
+// variable in a contributor's shell cannot change a real run, whatever the fault. Every fault that touches a file acts only on a path
+// inside that root, and every folder or file a fault creates is created exclusively: a fault finds its target already there and does nothing.
 // Faults that write nothing: fail-after-write, fail-lock-write, fail-lock-removal.
 // Faults that swap the workflows folder for a junction, as another process could: workflows-swapped-after-lock and workflows-swapped-before-create.
 // A fault that cuts a write short: partial-write writes the first half of the intended bytes through the real write path, then throws
@@ -29,6 +31,22 @@ const WORKFLOWS = 'registry/hosts/claude/workflows';
 // Faults that replace the workflow file just before the rollback looks at it: workflow-becomes-directory, workflow-becomes-link,
 // workflow-becomes-oversized, workflow-becomes-prefix, and workflow-swapped (another file with the very same bytes, a different file).
 // lock-swapped puts another file in the place of this run's lock just before the lock is removed.
+const TEST_ROOT_MARKER = '.author-workflow-test-root';
+const TEST_ROOT_MARKER_TEXT = 'author-workflow test root v1\n';
+// True only when the marker is a regular file (a link is not followed) holding exactly the marker text; at most one byte more is read.
+function hasTestMarker(root) {
+  const file = path.join(root, TEST_ROOT_MARKER);
+  const expected = Buffer.from(TEST_ROOT_MARKER_TEXT);
+  const entry = fs.lstatSync(file, { throwIfNoEntry: false });
+  if (!entry || !entry.isFile() || entry.size !== expected.length) return false;
+  const descriptor = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0));
+  try {
+    if (!fs.fstatSync(descriptor).isFile()) return false;
+    const buffer = Buffer.alloc(expected.length + 1);
+    const got = fs.readSync(descriptor, buffer, 0, buffer.length, 0);
+    return got === expected.length && buffer.subarray(0, got).equals(expected);
+  } finally { fs.closeSync(descriptor); }
+}
 function testSwitch() {
   const names = (process.env.AUTHOR_WORKFLOW_TEST_FAULT ?? '').split(',').filter(Boolean);
   const given = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
@@ -38,6 +56,7 @@ function testSwitch() {
     const root = fs.realpathSync(given);
     const rel = path.relative(fs.realpathSync(os.tmpdir()), root);
     if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) return off;
+    if (!hasTestMarker(root)) return off;
     return { faults: new Set(names), root };
   } catch { return off; }
 }
@@ -305,8 +324,9 @@ function removeIfMine(file, expected, writeThrew, id, stuck, left) {
   } catch { stuck.push(file); }
 }
 
-// Test seam only (see `faults`): replaces the workflow file, inside the test root, just before the rollback inspects it. An existing keep.txt
-// or a linked link-target stops the link fault before anything is touched, so it never writes through a link or over a file.
+// Test seam only (see `faults`): replaces the workflow file, inside the test root, just before the rollback inspects it. The link fault
+// creates its link-target folder and keep.txt exclusively, so an existing link-target (a folder or a link) or keep.txt stops it before
+// the workflow file is touched: it never writes through a link or over a file.
 function replaceWorkflowForTest(file, body) {
   const kind = ['directory', 'link', 'oversized', 'prefix'].find(name => faults.has(`workflow-becomes-${name}`));
   const swap = faults.has('workflow-swapped');
@@ -319,8 +339,7 @@ function replaceWorkflowForTest(file, body) {
   }
   if (kind === 'link') {
     const target = path.join(testRoot, 'link-target');
-    if (fs.lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink()) return;
-    fs.mkdirSync(target, { recursive: true });
+    fs.mkdirSync(target);
     fs.writeFileSync(path.join(target, 'keep.txt'), 'keep\n', { flag: 'wx' });
     fs.rmSync(file, { force: true });
     fs.symlinkSync(target, file, 'junction');
@@ -333,12 +352,16 @@ function replaceWorkflowForTest(file, body) {
 }
 
 // Test seam only (see `faults`): swaps the workflows folder for a junction to <root>/elsewhere, as another process could, after moving the real
-// folder to <root>/moved-workflows. Used by workflows-swapped-after-lock and workflows-swapped-before-create. It acts only inside the test root.
+// folder to <root>/moved-workflows. Used by workflows-swapped-after-lock and workflows-swapped-before-create. It acts only inside the test
+// root, and only when neither <root>/moved-workflows nor <root>/elsewhere exists yet (elsewhere is created exclusively, and the real
+// folder is never renamed over anything): otherwise it returns before changing anything, and the fault does not act.
 function swapWorkflowsForTest(dir) {
   if (!inTestRoot(dir)) return;
+  const moved = path.join(testRoot, 'moved-workflows');
+  if (fs.lstatSync(moved, { throwIfNoEntry: false })) return;
   const elsewhere = path.join(testRoot, 'elsewhere');
-  fs.mkdirSync(elsewhere, { recursive: true });
-  fs.renameSync(dir, path.join(testRoot, 'moved-workflows'));
+  try { fs.mkdirSync(elsewhere); } catch { return; }
+  fs.renameSync(dir, moved);
   fs.symlinkSync(elsewhere, dir, 'junction');
 }
 
