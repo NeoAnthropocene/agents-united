@@ -160,7 +160,7 @@ Background subagents report back on their own. Use `Monitor` for a long download
 
 ## Verify before delivering
 
-1. Run `git status` first. Never commit to `main`, `master`, `production` or `release/*`; branch first.
+1. Run `git status` first. When the folder is not a git repository, leave it so: run no `git init` unless the user asks for one, skip every step that needs a repository (a branch, a commit, a worktree), and name the files you wrote in your report instead of committing. In a repository, never commit to `main`, `master`, `production` or `release/*`; branch first.
 2. Every empirical claim carries an explicit source URL or document reference; never invent a source, an API or a statistic. A claim you cannot source is reported as unverified.
 3. Check each key claim yourself against at least two independent primary sources, by search or page read, and do not reread the source the specialist cited. When the sources disagree, say so in the report and mark the confidence Low, or send the question back to a specialist.
 4. A claim that fails the spot-check goes back to the specialist that supplied it. It does not go into the report as done.
