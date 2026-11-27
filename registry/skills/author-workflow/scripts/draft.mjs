@@ -380,9 +380,12 @@ function run(argument) {
   const registry = path.join(checkout, 'registry');
   if (!fs.existsSync(registry)) block(`The checkout has no registry folder: ${registry}`);
   const { workflowsDir, realWorkflows } = workflowsFolder(checkout);
+  const lock = path.join(registry, '.author-workflow.lock');
+  // A run killed during the write can leave a partial workflow and its lock together, and this check comes before the lock check, so this
+  // refusal gives the whole recovery order (the same as references/job.md): no helper running, the workflow file, then the lock.
   const collision = () => {
     const clash = fs.readdirSync(workflowsDir).find(entry => entry.toLowerCase() === workflowFile);
-    if (clash) block(`${WORKFLOWS}/${clash} already exists; it collides with ${workflowFile}. Repair it by hand or pick another name.`);
+    if (clash) block(`${WORKFLOWS}/${clash} already exists; it collides with ${workflowFile}. Repair it by hand or pick another name. If a run that was killed left it, the lock ${lock} may be left too: check that no helper is running, look at the file and delete it if it is not yours, then delete the lock file (if it is there) and run again. Nothing was changed.`);
   };
   collision();
   // A native Claude loader of the same name would be replaced by the workflow at install time, and the factory binding refuses that.
@@ -394,7 +397,6 @@ function run(argument) {
   // The limit is workflow-check's, and it counts the file as written: the final newline this helper adds counts too.
   if (body.length > MAX_CONTENT_BYTES) block(`content is ${body.length} bytes as it will be written (a final newline is added when there is none), over the ${MAX_CONTENT_BYTES / 1024} KiB limit of workflow-check.`);
   const workflowPath = path.join(workflowsDir, workflowFile);
-  const lock = path.join(registry, '.author-workflow.lock');
   // Only what this run created is ever removed: the flag is set once the exclusive create has succeeded, so a create that finds the file already there owns nothing.
   // workflowWriteThrew means this run's own write threw, so a truncated file under that name is this run's. workflowId is the identity of the created file.
   // lockId is the identity of the lock this run created: the lock is removed only while the path still names that file.
