@@ -281,11 +281,16 @@ describe('author-workflow bounded draft helper', () => {
   const SKILL_TEXT = `---\nname: ${NAME}\ndescription: Draft release notes.\n---\n# ${NAME}\n`;
   const OTHER = "export const meta = { name: 'other-flow', description: 'Another workflow.' }\nreturn 1\n";
   const WORKFLOWS = 'registry/hosts/claude/workflows';
+  // A fault acts only in a test root that holds this marker file with exactly this text (the helper's own rule), so a contributor checkout
+  // that merely lies under the temp folder is never touched. Every fixture root carries it.
+  const MARKER_FILE = '.author-workflow-test-root';
+  const MARKER_TEXT = 'author-workflow test root v1\n';
   interface Fixture { root: string; checkout: string; job: Record<string, unknown> }
   function fixture(): Fixture {
     // The real path of the temp folder: the helper refuses a checkout path that goes through a link (macOS /var is one).
     const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'author-workflow-'));
     roots.push(root);
+    fs.writeFileSync(path.join(root, MARKER_FILE), MARKER_TEXT);
     const checkout = path.join(root, 'checkout');
     for (const dir of [WORKFLOWS, 'registry/hosts/claude/agents', `registry/skills/${NAME}`]) fs.mkdirSync(path.join(checkout, dir), { recursive: true });
     fs.writeFileSync(path.join(checkout, `registry/skills/${NAME}/SKILL.md`), SKILL_TEXT);
@@ -870,6 +875,84 @@ describe('author-workflow bounded draft helper', () => {
     const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: 'fail-after-write', AUTHOR_WORKFLOW_TEST_ROOT: alias });
     expect(result.exit, result.stdout + result.stderr).toBe(0);
     expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
+  });
+
+  // A checkout (or any folder) under the temp folder is not a test root: without the marker file, or with another text in it, no fault acts.
+  const everyFaultAndSwap = `${everyFault},workflows-swapped-after-lock,workflows-swapped-before-create,workflow-becomes-oversized,workflow-becomes-prefix`;
+  function expectNoFaultActed(f: Fixture, root: string, label: string): void {
+    const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: everyFaultAndSwap, AUTHOR_WORKFLOW_TEST_ROOT: root });
+    expect(result.exit, `${label}: ${result.stdout}${result.stderr}`).toBe(0);
+    expect(result.report.warnings, label).toBeUndefined();
+    expect(fs.readFileSync(written(f), 'utf8'), label).toBe(WORKFLOW);
+    expect(fs.readdirSync(path.join(f.checkout, WORKFLOWS)).sort(), label).toEqual(['other-flow.js', `${NAME}.js`]);
+    expect(fs.existsSync(path.join(f.checkout, 'registry/.author-workflow.lock')), label).toBe(false);
+    for (const leftover of ['moved-workflows', 'elsewhere', 'link-target']) expect(fs.existsSync(path.join(f.root, leftover)), `${label}: ${leftover}`).toBe(false);
+    expect(fs.existsSync(path.join(f.checkout, 'moved-workflows')), label).toBe(false);
+  }
+
+  it('does nothing for a fault in a folder under the temp folder that has no marker file, or a marker with other text, or a marker that is a folder', () => {
+    const cases: Array<[string, (f: Fixture) => void]> = [
+      ['no marker file', f => fs.rmSync(path.join(f.root, MARKER_FILE))],
+      ['a marker with other text', f => fs.writeFileSync(path.join(f.root, MARKER_FILE), 'something else\n')],
+      ['a marker with the text and more after it', f => fs.writeFileSync(path.join(f.root, MARKER_FILE), `${MARKER_TEXT}more\n`)],
+      ['a marker with only the start of the text', f => fs.writeFileSync(path.join(f.root, MARKER_FILE), MARKER_TEXT.slice(0, 10))],
+      ['a marker that is a folder', f => { fs.rmSync(path.join(f.root, MARKER_FILE)); fs.mkdirSync(path.join(f.root, MARKER_FILE)); }],
+    ];
+    for (const [label, arrange] of cases) {
+      const f = fixture();
+      arrange(f);
+      expectNoFaultActed(f, f.root, label);
+    }
+  });
+
+  it('does nothing for a fault when the test root is a contributor checkout under the temp folder, which carries no marker', () => {
+    const f = fixture();
+    expectNoFaultActed(f, f.checkout, 'the checkout as the test root');
+  });
+
+  fileLinks('does nothing for a fault when the marker file is a link, even to a file with the exact text (skipped only where a file link cannot be created)', () => {
+    const f = fixture();
+    const target = path.join(f.root, 'marker-target.txt');
+    fs.writeFileSync(target, MARKER_TEXT);
+    fs.rmSync(path.join(f.root, MARKER_FILE));
+    fs.symlinkSync(target, path.join(f.root, MARKER_FILE), 'file');
+    expectNoFaultActed(f, f.root, 'a linked marker');
+  });
+
+  it('makes every folder a fault creates by an exclusive create: a pre-existing moved-workflows or elsewhere is left as it is and the fault does not act', () => {
+    for (const fault of ['workflows-swapped-after-lock', 'workflows-swapped-before-create']) {
+      const f = fixture();
+      fs.mkdirSync(path.join(f.root, 'moved-workflows'));
+      const result = swapped(f, fault);
+      expect(result.exit, `${fault}: ${result.stdout}${result.stderr}`).toBe(0);
+      expect(fs.readdirSync(path.join(f.root, 'moved-workflows')), fault).toEqual([]);
+      expect(fs.existsSync(path.join(f.root, 'elsewhere')), fault).toBe(false);
+      expect(fs.lstatSync(path.join(f.checkout, WORKFLOWS)).isDirectory(), fault).toBe(true);
+      expect(fs.readFileSync(written(f), 'utf8'), fault).toBe(WORKFLOW);
+      const g = fixture();
+      fs.mkdirSync(path.join(g.root, 'elsewhere'));
+      fs.writeFileSync(path.join(g.root, 'elsewhere', 'mine.txt'), 'mine\n');
+      const second = swapped(g, fault);
+      expect(second.exit, `${fault}: ${second.stdout}${second.stderr}`).toBe(0);
+      expect(fs.readdirSync(path.join(g.root, 'elsewhere')), fault).toEqual(['mine.txt']);
+      expect(fs.existsSync(path.join(g.root, 'moved-workflows')), fault).toBe(false);
+      expect(fs.lstatSync(path.join(g.checkout, WORKFLOWS)).isDirectory(), fault).toBe(true);
+      expect(fs.readFileSync(written(g), 'utf8'), fault).toBe(WORKFLOW);
+    }
+  });
+
+  linked('does not follow a pre-existing elsewhere that is a link: nothing is written through it and the fault does not act (skipped only where a junction cannot be created)', () => {
+    for (const fault of ['workflows-swapped-after-lock', 'workflows-swapped-before-create']) {
+      const f = fixture();
+      const outside = path.join(f.root, 'outside-folder');
+      fs.mkdirSync(outside);
+      link(outside, path.join(f.root, 'elsewhere'));
+      const result = swapped(f, fault);
+      expect(result.exit, `${fault}: ${result.stdout}${result.stderr}`).toBe(0);
+      expect(fs.readdirSync(outside), fault).toEqual([]);
+      expect(fs.existsSync(path.join(f.root, 'moved-workflows')), fault).toBe(false);
+      expect(fs.lstatSync(path.join(f.checkout, WORKFLOWS)).isDirectory(), fault).toBe(true);
+    }
   });
 
   it('leaves a workflow file that another file with the very same bytes has replaced, and names it: the identity is checked, not only the bytes', () => {
