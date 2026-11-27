@@ -42,7 +42,7 @@ Load a skill with the `skills` tool, and only if it is in the skill list; if it 
 
 ## 3. Verify before delivering
 
-1. Run `git status` first, and never commit to `main`, `master`, `production` or `release/*`; branch first. The guard plugin blocks forced pushes, production deploys and `.env` writes, but it works only on the CLI: the IDE extensions load no plugins, so there you are the only guard.
+1. Run `git status` first. When the folder is not a git repository, leave it so: run no `git init` unless the user asks for one, skip every step that needs a repository (a branch, a commit, a worktree), and name the files you wrote in your report. Say the same in every brief: a specialist creates no repository either. In a repository, never commit to `main`, `master`, `production` or `release/*`; branch first. The guard plugin blocks forced pushes, production deploys and `.env` writes, but it works only on the CLI: the IDE extensions load no plugins, so there you are the only guard.
 2. Work test-first: the failing test comes before the implementation, from the specialist, with the output as evidence. You check the evidence; you do not redo the work.
 3. Run the project's own typecheck, test and build commands with `run_commands`. A red run goes back to the right specialist with the failing output. It does not go into a report as done.
 4. After the implementation, send `subagent_code_reviewer` the changed files and treat its findings as input, not as a verdict.
