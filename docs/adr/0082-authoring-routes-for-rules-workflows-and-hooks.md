@@ -29,7 +29,9 @@
 
 **Proposed defaults (the maintainer may revise):**
 
-5. **Workflow scope.** `author-workflow` writes the portable Skill (`registry/skills/workflow-<name>/`, ADR 0016). It may also write a native Claude workflow script (`registry/hosts/claude/workflows/<name>.js`) that passes `workflow-check`. Cline `.md` workflows wait for the Cline factory stage.
+5. **Workflow scope.** `author-workflow` writes one native Claude workflow script (`registry/hosts/claude/workflows/<name>.js`) that passes `workflow-check`, for a portable Skill of the same name that already exists. Cline `.md` workflows wait for the Cline factory stage.
+   - Revised 2026-11-27 as a team default, for the maintainer to revise. The first wording had `author-workflow` also write the portable Skill (`registry/skills/<name>/`, ADR 0016). The route is now native-only: it refuses when the paired Skill is missing, and portable Skill authoring goes through `author-skill`, with its own gates (skill-check, layout, licence, evals, Bundle membership).
+   - A journey that needs both chains `author-skill`, then `author-workflow`.
 6. **The rule route writes into the contributor's branch.**
    - `author-rule` writes `registry/rules/<name>.md` and the rule's entry in the chosen bundle's `rules[]` in the contributor's branch. It does not return a proposal for manual import.
    - There is no native `registry/hosts/claude/rules/` folder. The Claude projector renders `.claude/rules/<name>.md` from the canonical rule, and Cline gets a copy with the managed marker in `.cline/rules/`.
