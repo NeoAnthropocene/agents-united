@@ -640,6 +640,31 @@ describe('workflow-check', () => {
       }
     });
 
+    // Codex round 2, blocker 1: a call, an index or an operator after the closing brace is part of the initializer, so `meta` is not
+    // the literal. It is a LINT finding with exit 1, and nothing runs.
+    it.each([
+      ['a call on the next line', '\n(1)'],
+      ['an index', '[0]'],
+      ['a property read on the next line', '\n.name'],
+      ['an addition', ' + 1'],
+      ['a conditional on the next line', '\n? 1 : 2'],
+      ['a statement on the same line', ' const x = 1'],
+    ])('fails a meta initializer that continues with %s as LINT with exit 1', (_label, tail) => {
+      const result = check({ content: `${GOOD.replace(/\n\nphase/, `${tail}\n\nphase`)}` });
+      expect(result.status).toBe('failed');
+      expect(workflowCheckExitCode(result)).toBe(1);
+      expect(codesOf(result)).toEqual(['LINT']);
+      expect(result.findings[0]?.message).toMatch(/initializer|continues|ends/i);
+      expect(checkOf(result, 'meta-name')?.status).toBe('not-run');
+    });
+
+    it('fails a block comment that would swallow a statement before meta as LINT', () => {
+      const result = check({ content: `/* a */\nconst x = 1\n/* b */\n${GOOD}` });
+      expect(result.status).toBe('failed');
+      expect(codesOf(result)).toEqual(['LINT']);
+      expect(result.findings[0]?.message).toMatch(/first statement/);
+    });
+
     it('still passes a meta written with quoted keys, comments, trailing commas and a backtick string', () => {
       const meta = "{ 'name': \"demo-flow\", // the name\n  description: `A demo workflow.`, /* none */ phases: [{ 'title': 'Find', },], }";
       expect(check({ content: `export const meta = ${meta}\nphase('Find')\n` }).status).toBe('passed');

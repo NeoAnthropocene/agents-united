@@ -236,6 +236,144 @@ describe('agentTypeRequests: line terminators', () => {
   });
 });
 
+// Codex round 2, blocker 1: `meta` is the whole initializer, not just the first object literal in it.
+describe('lintWorkflow: where the meta initializer ends', () => {
+  const META = "{ name: 'a', description: 'b' }";
+  const withTail = (tail: string): string => `export const meta = ${META}${tail}`;
+  const ENDS_WRONG = /initializer|continues|ends/i;
+
+  it.each([
+    ['a call on the same line', '(1)'],
+    ['a call on the next line', '\n(1)'],
+    ['an index on the same line', '[0]'],
+    ['an index on the next line', '\n[0]'],
+    ['a property read on the same line', '.name'],
+    ['a property read on the next line', '\n.name'],
+    ['an optional call on the same line', '?.(1)'],
+    ['a template on the same line', ' `x`'],
+    ['a template on the next line', '\n`x`'],
+    ['an addition on the same line', ' + 1'],
+    ['an addition on the next line', '\n+ 1'],
+    ['a subtraction on the next line', '\n- 1'],
+    ['a multiplication on the next line', '\n* 2'],
+    ['a division on the same line', ' / 2'],
+    ['a division on the next line', '\n/ 2'],
+    ['a remainder on the next line', '\n% 2'],
+    ['an exponent on the next line', '\n** 2'],
+    ['a conditional on the same line', ' ? 1 : 2'],
+    ['a conditional on the next line', '\n? 1 : 2'],
+    ['an and on the same line', ' && other'],
+    ['an and on the next line', '\n&& other'],
+    ['an or on the next line', '\n|| other'],
+    ['a coalesce on the next line', '\n?? other'],
+    ['a bitwise and on the next line', '\n& 1'],
+    ['a bitwise or on the next line', '\n| 1'],
+    ['a comparison on the next line', '\n< 1'],
+    ['an inequality on the next line', '\n!= 1'],
+    ['an in on the same line', ' in other'],
+    ['an in on the next line', '\nin other'],
+    ['an instanceof on the next line', '\ninstanceof Object'],
+    ['a comma on the next line', '\n, other = 1'],
+    ['an assignment on the next line', '\n= 1'],
+    ['a statement on the same line', ' const x = 1'],
+    ['a call after a comment on the same line', ' /* x */ (1)'],
+    ['a call after a line comment', ' // x\n(1)'],
+    ['a call after a blank line', '\n\n\n(1)'],
+    ['an addition after a lone CR', '\r+ 1'],
+    ['an addition after U+2028', `${String.fromCharCode(0x2028)}+ 1`],
+  ])('is a lint problem when the initializer continues with %s', (_label, tail) => {
+    const source = `${withTail(tail)}\n`;
+    expect(extractMetaLiteral(source)).toBeUndefined();
+    expect(workflowMetaName(source)).toBeUndefined();
+    expect(lintWorkflow(source).join('\n')).toMatch(ENDS_WRONG);
+  });
+
+  it.each([
+    ['the end of the text', ''],
+    ['a newline and the end of the text', '\n'],
+    ['a semicolon', ';'],
+    ['a semicolon and a statement', ';\nconst x = 1'],
+    ['a space and a semicolon', ' ;'],
+    ['a comment and a semicolon', ' /* x */ ;'],
+    ['a line comment and a statement', ' // x\nconst x = 1'],
+    ['a block comment with a line break and a statement', ' /* x\ny */ const x = 1'],
+    ['a blank line and a statement', '\n\nconst x = 1'],
+    ['a statement on the next line', '\nconst x = 1'],
+    ['a name on the next line', '\nx = 1'],
+    ['a string on the next line', "\n'use strict'"],
+    ['a number on the next line', '\n1'],
+    ['a not on the next line', '\n!ready'],
+    ['an increment on the next line', '\n++count'],
+    ['a function call statement on the next line', '\nlog("x")'],
+    ['a lone CR and a statement', '\rconst x = 1'],
+    ['U+2029 and a statement', `${String.fromCharCode(0x2029)}const x = 1`],
+    ['CRLF and a statement', '\r\nconst x = 1'],
+  ])('accepts an initializer that ends before %s', (_label, tail) => {
+    const source = `${withTail(tail)}\n`;
+    expect(extractMetaLiteral(source)?.literal).toBe(META);
+    expect(workflowMetaName(source)).toBe('a');
+    expect(lintWorkflow(source)).toEqual([]);
+  });
+});
+
+// Codex round 2, blocker 1: the header before `meta` is read by a scanner that takes time in proportion to the text.
+describe('extractMetaLiteral: the header before meta', () => {
+  const META = "{ name: 'a', description: 'b' }";
+
+  it('does not let a block comment swallow a statement before meta', () => {
+    const source = `/* a */\nconst x = 1\n/* b */\nexport const meta = ${META}\n`;
+    expect(extractMetaLiteral(source)).toBeUndefined();
+    expect(lintWorkflow(source).join('\n')).toMatch(/first statement/);
+  });
+
+  it('does not let a line comment hide a statement before meta', () => {
+    const source = `// a\nconst x = 1 // b\nexport const meta = ${META}\n`;
+    expect(extractMetaLiteral(source)).toBeUndefined();
+  });
+
+  it('accepts comments and blank lines before meta', () => {
+    for (const head of ['', '\n\n', '// one\n// two\n', '/* one */\n/* two\nthree */\n', '/* one */ // two\n  ', '\t/**/\n']) {
+      expect(extractMetaLiteral(`${head}export const meta = ${META}\n`)?.literal, JSON.stringify(head)).toBe(META);
+    }
+  });
+
+  it.each([
+    ['export without const', `export meta = ${META}`],
+    ['a different name', `export const metadata = ${META}`],
+    ['a longer name', `export const meta2 = ${META}`],
+    ['a missing equals', `export const meta ${META}`],
+    ['a let', `export let meta = ${META}`],
+    ['no space after export', `exportconst meta = ${META}`],
+    ['a comment between the words', `export /* x */ const meta = ${META}`],
+    ['a parenthesis before the object', `export const meta = (${META})`],
+    ['no object', 'export const meta = 5'],
+  ])('refuses a header with %s', (_label, source) => {
+    expect(extractMetaLiteral(source)).toBeUndefined();
+  });
+
+  it('reads an unterminated block comment in time proportional to its length, and refuses it', () => {
+    const source = `/*${'a'.repeat(200000)}`;
+    expect(extractMetaLiteral(source)).toBeUndefined();
+    expect(lintWorkflow(source)).toEqual(['The first statement must be `export const meta = { ... }` with an object literal.']);
+  });
+
+  it('reads 5000 block comments in a row before a statement, and refuses the script', () => {
+    const source = `${'/**/ '.repeat(5000)}const x = 1\n`;
+    expect(extractMetaLiteral(source)).toBeUndefined();
+    expect(lintWorkflow(source)).toEqual(['The first statement must be `export const meta = { ... }` with an object literal.']);
+  });
+
+  it('reads 5000 block comments in a row before meta, and finds it', () => {
+    const source = `${'/**/ '.repeat(5000)}export const meta = ${META}\n`;
+    expect(extractMetaLiteral(source)?.literal).toBe(META);
+  });
+
+  it('reads 5000 line comments before a statement, and refuses the script', () => {
+    const source = `${'// x\n'.repeat(5000)}const x = 1\n`;
+    expect(extractMetaLiteral(source)).toBeUndefined();
+  });
+});
+
 // ADR 0082: `meta` is read as data. The lint never evaluates it, and a malformed shape is a lint problem, never an exception.
 describe('lintWorkflow reads meta as data', () => {
   const PROBE = '__workflowLintMetaRan';
