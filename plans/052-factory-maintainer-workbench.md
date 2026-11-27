@@ -1,6 +1,6 @@
 # Plan 052: The agent factory as the maintainer's and contributors' workbench
 
-Status: **Proposed, not started.** Written 2026-11-26 from a `/grill-with-docs` session with the maintainer; to be started in another session.
+Status: **In progress.** Written 2026-11-26 from a `/grill-with-docs` session with the maintainer. Step 1 is built: the `repo-doctor` Skill (`registry/skills/repo-doctor/`). The maintainer chose on 2026-11-26: fast checks run by the Skill, slow results only read, and an untracked, git-ignored `.repo-doctor-report.md` at the checkout root.
 Decisions: [ADR 0080](../docs/adr/0080-factory-maintainer-workbench.md) (Proposed).
 Base: origin/dev `24dcc77c` (#287).
 
@@ -47,8 +47,8 @@ Each step: its own branch from fresh `origin/dev` and worktree; tests first; foc
 
 1. **Repo doctor Skill (`repo-doctor`).**
    - Prep, read-only: list every consistency the repository already checks (tests, `hostlib:verify`, the four `*-check` commands, regeneration with `UPDATE_NATIVE=1` showing no diff, README/PROJECT counts, ADR numbering against open PRs, `CONTEXT.md` terms, stale references to removed files) and which have no check yet. Read `registry/skills/author-skill` and the factory bindings to follow the existing Skill shape.
-   - Build: the Skill (SKILL.md, references, a deterministic script for the mechanical reads where possible), its native Claude binding, its place in the `agent-factory` bundle, tests. Output: a report with findings, each with evidence and a proposed fix; no write outside its report.
-   - Open questions for prep: which checks it runs itself and which it only reads results of (the full suite takes about an hour); where its report goes.
+   - Build: the Skill (SKILL.md, references, a deterministic script for the mechanical reads where possible), its place in the `agent-factory` bundle, tests. Built as a plain shared Skill: the standard native Claude projection installs it with its support files, as for `handoff`, so it needed no binding, overlay or installer change. Output: a report with findings, each with evidence and a proposed fix; no write outside its report.
+   - Prep questions, answered by the maintainer on 2026-11-26: the Skill runs the fast checks and the no-write quick gates itself and only reads the full suite and CI results; its report is the untracked, git-ignored `.repo-doctor-report.md` at the checkout root.
 2. **`CONTRIBUTING.md`.** Setup (Node 24, `npm ci`, build); the gates (focused vs full, the serial flags inside Claude Code); regenerating native files; the line-ending traps on Windows; the factory workflow and the repo doctor; the PR route to `dev` (branch, tests first, review, no force push); where decisions live (ADRs, `CONTEXT.md`, plans); a maintainer section. `README.md` links to it. A test pins the links and the commands it names, so it cannot go stale silently.
 3. **Reinstall the factory workspace from dev and run one real journey** ("author a Skill", end to end) on the merged version. Record who sat it, what was shown and not shown, in a host-library observation.
 4. **PR creation (D6)** in the contribution route: show the gated diff and the repo doctor result, ask, then push the branch and open the PR to `dev`; read CI once. Tests for the refusal paths (no word, protected branch, merged PR, force).

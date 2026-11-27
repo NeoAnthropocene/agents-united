@@ -20,7 +20,7 @@ Agents United is the package manager for **expert AI agent teams**. Install a cu
 | **Cline** (CLI and VS Code extension) | ✅ Supported | `.cline/` plus `.agents/plugins/<bundle>/` |
 | Cursor, OpenCode, Codex / `AGENTS.md` readers | 🚧 Under development | Shown as unavailable in the wizard, and `--fanout` refuses them |
 
-**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 62 canonical agents (9 orchestrators + 53 sub-agents) · 218 skills (147 domain skills + 71 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories; a native-only contributor main and three workers are separate from the canonical agent sources.
+**In numbers:** 35 end-user bundles (including the `full` suite), plus the under-construction `agent-factory` contributor toolkit and `mock-organization-under-construction` placeholder · 62 canonical agents (9 orchestrators + 53 sub-agents) · 219 skills (148 domain skills + 71 workflow playbooks) · 8 end-user department domains. Inventory comes from `registry/bundles.json` and the current registry directories; a native-only contributor main and three workers are separate from the canonical agent sources.
 
 ---
 
@@ -274,7 +274,7 @@ agents add full                        # end-user suite; excludes contributor-on
 
 ### Skills
 
-The 218 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 147 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skills) and 71 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
+The 219 skills are open-standard [Agent Skills](https://agentskills.io) (`SKILL.md` folders). 148 are **domain skills** (best practices, runbooks, platform guides and the contributor authoring skills) and 71 are **workflow playbooks** (`workflow-*`) that guide a multi-step task such as `/workflow-implement` or `/workflow-review`. Third-party skills keep their upstream licence in their own folder; see [Credits](#-credits--acknowledgments) and [`docs/skill-intake.md`](./docs/skill-intake.md).
 
 ---
 
@@ -573,7 +573,7 @@ Maintainers and contributors: setup, the test gates, line-ending traps and the p
 
 **Developers only: contribute to Agents United** is a separate catalog section for authoring and maintaining Agents United artifacts. Local drafts do not require an upstream contribution; the upstream route is a reviewed PR to `dev` using [the artifact contribution guide](./docs/artifact-contribution.md).
 
-The under-construction `agent-factory` Domain Bundle contains `author-skill` for one complete skill folder, `author-contract` for a shared definition/contract pair, `author-rule` for one canonical rule and its bundle entry, and the bounded `factory-realizer` worker with its required `realize-artifact` runbook. The realizer prepares one Claude agent draft from a supplied shared pair and checked job. The read-only factory-evaluator with its required evaluate-artifact runbook supplies a separately checked opinion protocol for shared pairs, Skills, Claude agents and rules. The read-only `factory-sync` worker with its required `sync-host` runbook supplies read-only host-update sync planning: the coordinator starts it and runs its checker before and after. The local candidate also includes the proposal-only `author-bundle` Skill for Domain and Organization templates; P6 and the bounded P7 coordinator have passed their offline gates; actual Host behavior and the complete Claude stage remain unverified. This delivery is **Claude Code CLI, workspace scope, native lane**:
+The under-construction `agent-factory` Domain Bundle contains `author-skill` for one complete skill folder, `author-contract` for a shared definition/contract pair, `author-rule` for one canonical rule and its bundle entry, and the bounded `factory-realizer` worker with its required `realize-artifact` runbook. The realizer prepares one Claude agent draft from a supplied shared pair and checked job. The read-only factory-evaluator with its required evaluate-artifact runbook supplies a separately checked opinion protocol for shared pairs, Skills, Claude agents and rules. The read-only `factory-sync` worker with its required `sync-host` runbook supplies read-only host-update sync planning: the coordinator starts it and runs its checker before and after. The local candidate also includes the proposal-only `author-bundle` Skill for Domain and Organization templates; P6 and the bounded P7 coordinator have passed their offline gates. The read-only `repo-doctor` Skill (ADR 0080) reports whether this repository is consistent, each finding with evidence and a proposed fix, and changes nothing but its git-ignored report; actual Host behavior and the complete Claude stage remain unverified. This delivery is **Claude Code CLI, workspace scope, native lane**:
 
 ```bash
 agents add agent-factory -t claude --native --allow-under-construction --copy -y

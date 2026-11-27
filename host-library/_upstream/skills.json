@@ -1229,6 +1229,12 @@
       "recoveredAt": "2026-09-30",
       "skill": "replicate-model-inference"
     },
+    "repo-doctor": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-26",
+      "skill": "repo-doctor"
+    },
     "requesting-code-review": {
       "provenance": "in-house",
       "recoveredAt": "2026-09-30",

@@ -354,7 +354,7 @@ _Avoid_: Unenforced warning lists, silent feature drops, per-host prose explanat
 - **Pipeline / Runbook**: a pipeline schedules delegated stages and checks their results; a runbook guides one agent's decisions. Host-native realization determines whether scheduling is scripted or prose.
 - **Factory Evaluator**: a subagent delegated by the factory orchestrator to assess a bundle's host realization and report quality findings separately from deterministic checks and host evidence (ADR 0048; bounded Claude CLI/workspace/native implementation in progress). The initial evaluator reviews one shared pair, Skill or native Claude agent; complete Bundle coverage needs the pending coordinator/adapters. Actual invocation and usefulness remain unverified.
 - **Bundle Template**: a reusable authoring pattern for a Domain Bundle or Organization Bundle, stating the team's responsibilities and prerequisites (ADR 0048; templates pending).
-- **Repo Doctor** (ADR 0080, proposed): a factory Skill that reviews the repository's consistency (registry, generated native files, counts, ADR numbering, host library, stale references) and writes a report of findings, each with evidence and a proposed fix; it changes nothing else. Distinct from `agents doctor`, which checks an installed workspace.
+- **Repo Doctor** (ADR 0080, proposed): the `repo-doctor` factory Skill that reviews the repository's consistency (registry, generated native files, counts, ADR numbering, host library, stale references) and writes a report of findings, each with evidence and a proposed fix; it changes nothing else. Distinct from `agents doctor`, which checks an installed workspace.
 
 ### Semantic Core Architecture Terms (ADR 0021)
 
@@ -514,7 +514,7 @@ The registry catalog maintains **62 agents** (9 orchestrators and 53 sub-agents)
 8. **🌐 Universal Autonomous Department** (`universal`):
    - `universal-orchestration` (Guided Front Door): Prime Orchestrator (`orchestrator-universal.md`) + `handoff` + `git-guardrails` + `grill-me` + `host-agent-router`; routes to the correct department Essentials bundle and hands off, and on request runs a slice on another host CLI.
    - `universal-skills` (Baseline): Domain-agnostic meta-skills; no agents.
-   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 206 end-user Skills (136 domain + 70 workflow playbooks); contributor-only `author-skill`, `author-rule`, `realize-artifact`, `author-contract`, `evaluate-artifact`, `author-bundle`, `coordinate-artifact` and `sync-host`, and four optional 3D Skills are excluded. The physical registry totals 62 canonical agents and 218 Skills, plus a separately bound native-only factory main and three workers.
+   - `full` (Complete Universal Suite): Lists 59 agent assets (7 orchestrators + 52 specialists) and 206 end-user Skills (136 domain + 70 workflow playbooks); contributor-only `author-skill`, `author-rule`, `realize-artifact`, `author-contract`, `evaluate-artifact`, `author-bundle`, `coordinate-artifact`, `sync-host` and `repo-doctor`, and four optional 3D Skills are excluded. The physical registry totals 62 canonical agents and 219 Skills, plus a separately bound native-only factory main and three workers.
 
 9. **🏢 Organization Bundles** (`organization`):
    - **Lead Orchestrator**: `orchestrator-digital-agency.md` (Campaign Director / Chris)

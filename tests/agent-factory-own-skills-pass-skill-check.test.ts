@@ -9,7 +9,7 @@ import { runSkillCheck, skillCheckExitCode } from '../src/core/skill-check.js';
  */
 const POLICY = 'agents-united-original';
 const CORPUS = path.resolve('registry/quality/skill-boilerplate-corpus.txt');
-const FACTORY_SKILLS = ['coordinate-artifact', 'evaluate-artifact', 'author-skill', 'author-contract', 'author-bundle', 'author-rule'] as const;
+const FACTORY_SKILLS = ['coordinate-artifact', 'evaluate-artifact', 'author-skill', 'author-contract', 'author-bundle', 'author-rule', 'repo-doctor'] as const;
 
 describe('the factory\'s own Skills pass the factory\'s own Skill check', () => {
   it.each(FACTORY_SKILLS)('%s passes skill-check with policy agents-united-original and no finding', skill => {

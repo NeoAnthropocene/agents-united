@@ -19,6 +19,7 @@
         "author-bundle",
         "coordinate-artifact",
         "sync-host",
+        "repo-doctor",
         "host-agent-router",
         "handoff",
         "git-guardrails"

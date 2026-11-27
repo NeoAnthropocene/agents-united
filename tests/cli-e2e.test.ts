@@ -68,7 +68,7 @@ describe('CLI End-to-End Suite (dist/cli.js)', () => {
     }>;
     const factory = list.find(bundle => bundle.name === 'agent-factory');
     expect(factory).toMatchObject({ domain: 'contributor', tier: 'domain', status: 'under-construction', agents: [] });
-    expect([...(factory?.skills ?? [])].sort()).toEqual(['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'sync-host']);
+    expect([...(factory?.skills ?? [])].sort()).toEqual(['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host']);
     const search = JSON.parse(execSync(`node "${cliPath}" find --category contributor --type bundle --json`, { encoding: 'utf8' })) as {
       bundles: Array<{ name: string }>;
     };

@@ -118,7 +118,7 @@ node dist/cli.js bundle-check --help
 
 Background: [docs/agent-factory-foundation.md](./docs/agent-factory-foundation.md), the upstream contribution route in [docs/artifact-contribution.md](./docs/artifact-contribution.md), and the plan for the factory as a workbench in [plans/052-factory-maintainer-workbench.md](./plans/052-factory-maintainer-workbench.md).
 
-The repository health review is the `repo-doctor` Skill of the agent-factory Bundle. It reads the repository's consistency (the checks above, regeneration without a diff, counts, ADR numbering, stale references) and writes a report of findings, each with its evidence and a proposed fix. It changes nothing; each fix goes through the normal route below. The factory runs it before it prepares a pull request, and the pull request body records the result ([ADR 0080](./docs/adr/0080-factory-maintainer-workbench.md)).
+The repository health review is the [`repo-doctor` Skill](./registry/skills/repo-doctor/SKILL.md) of the agent-factory Bundle. Its script runs the fast checks (README counts, relative links, the plans index, ADR numbers, and ADR numbers of open pull requests), it runs the quick gates that write nothing, and it reads the latest CI result with its commit and age. It writes only the git-ignored `.repo-doctor-report.md`, each finding with its evidence and a proposed fix; each fix goes through the normal route below. Run it by hand before a pull request; the factory running it automatically and recording the result in the pull request body is Plan 052 step 4 ([ADR 0080](./docs/adr/0080-factory-maintainer-workbench.md)).
 
 `agents doctor` is a different tool: it checks an installed workspace, not this repository.
 
@@ -158,7 +158,7 @@ Never:
 
 ## For maintainers
 
-- **Before a pull request:** the gate for its size (focused tests and the test-tree type check for a local change; typecheck, the full suite, the addon matrix and `npm run hostlib:verify` for a cross-area change), and the repo doctor's report once the Skill is on `dev`.
+- **Before a pull request:** the gate for its size (focused tests and the test-tree type check for a local change; typecheck, the full suite, the addon matrix and `npm run hostlib:verify` for a cross-area change), and the repo doctor's report.
 - **After a push:** read the pull request's CI result once, when it finishes. Fix a red run on the same branch with a new commit.
 - **Merging is the maintainer's.** The maintainer merges pull requests to `dev`. An agent never merges, and pushes or opens a pull request only at the maintainer's word ([ADR 0080](./docs/adr/0080-factory-maintainer-workbench.md), decision 6).
 - **Live host sessions** (Claude Code, Cline, Antigravity, Codex) spend the maintainer's account. Keep each run bounded and read the host's own records afterwards: see [docs/live-test-protocol.md](./docs/live-test-protocol.md).
