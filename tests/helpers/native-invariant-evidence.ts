@@ -55,7 +55,7 @@ export const EVIDENCE: Record<string, RegExp> = {
   'If an expected peer input never arrives, proceed on a stated assumption and list the gap under open items.': /\*\*Never hang on a missing peer\.\*\* Proceed on a stated assumption and list the gap under `Open items`\./,
 
   // ── Coordinators (the two leads share most of their wording).
-  'When the final report leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal.': /end the report with one `AskUserQuestion`: settle them now, or stop here\. [^\n]*run the Skill `grill-me` with those items as its goal/,
+  'When the final report or handoff leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal.': /end it by offering two choices: settle them now, or stop here\. [^\n]*run the Skill tool with `skill: "grill-me"` and the open items in `args`/,
   'Resolve ambiguity with the user before any unverified work.': /\*\*Align first, in proportion to the stakes\.\*\*/,
   'Parallel slices fan out in a single turn; exactly one synthesis point.': /Parallel slices go out in one turn/,
   'Never busy-poll; liveness is event-driven or cron-based.': /Never loop on status commands/,

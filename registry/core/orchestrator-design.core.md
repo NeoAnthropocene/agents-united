@@ -40,7 +40,7 @@ invariants:
   - "Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs."
   - "A specialist type that is not installed is handed back to the user with the `agents add` command, never improvised."
   - "Every deliverable honours the four boundary constraints: no cliché tropes, accessibility, compositor-only motion, fluid sizing."
-  - "When the final report leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
+  - "When the final report or handoff leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search
