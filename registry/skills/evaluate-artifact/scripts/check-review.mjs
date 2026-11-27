@@ -265,12 +265,16 @@ function checkJob(jobFile) {
   const host = job.authoringHost;
   if ((host.observedVersion === null) === (host.unverifiedReason === null)) fail('Authoring Host needs an observed version or an explicit unverified reason.');
   if (job.subject.kind === 'claude-agent' && !job.subject.target) fail('Claude agent review requires its explicit target context.');
+  if (job.subject.kind === 'rule' && !job.subject.target) fail('Rule review requires its explicit target context.');
   const inventory = snapshot(roots.candidate, budget);
   const declared = job.candidate.files.map(({ role: _role, ...pin }) => ({ ...pin, path: relative(pin.path) }))
     .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   if (!same(inventory, declared)) fail('Candidate inventory/hash mismatch: missing, changed or unreported files.');
   unique(job.subject.paths.map(relative), 'Subject paths');
   if (!same([...job.subject.paths].sort(), job.candidate.files.filter(item => item.role === 'subject').map(item => item.path).sort())) fail('Subject coverage differs from the fixed candidate role inventory.');
+  if (job.subject.kind === 'rule' && (job.subject.paths.length !== 1 || job.subject.paths[0] !== `${job.subject.identity}.md`)) {
+    fail(`A rule review has exactly one subject file, ${job.subject.identity}.md.`);
+  }
   const candidateDigest = hash(canonical(inventory));
   if (job.inputs.length > budget.maxEvidenceFiles) fail('Evidence file budget exceeded.');
   unique(job.inputs.map(input => input.id), 'Input IDs');
@@ -314,6 +318,37 @@ function checkJob(jobFile) {
     if (!hasPin(path.join(workspace, relative(rel)), 'loading')) fail(`Missing required installed loading pin: ${rel}.`);
   }
   if (!hasPin(path.join(workspace, '.claude/hooks/agents-united-readonly-guard.js'), 'guard')) fail('Missing required read-only guard pin.');
+  // A rule review shows the route's checker ran: an executed, required rule-check and its saved output and receipt as validator inputs.
+  if (job.subject.kind === 'rule') {
+    const ran = job.checks.some(check => check.id === 'rule-check' && check.required === true && (check.status === 'passed' || check.status === 'failed'));
+    const saved = ['rule-check-raw', 'rule-check-receipt'].every(id => job.inputs.some(input => input.id === id && input.kind === 'validator' && input.required && input.status === 'clear'));
+    if (!ran || !saved) fail('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+    // Record consistency only (nothing is executed): the recorded command is the documented rule-check on this review's own rule file,
+    // and the two validator inputs (the read-folder copies) have the length and hash of the raw log and receipt the check record pins. The builder refuses the same job with the same reasons.
+    const recorded = job.checks.find(check => check.id === 'rule-check');
+    const cli = path.join(job.source.checkout, 'dist/cli.js');
+    const [first, verb, flag, artifact, ...rest] = recorded.command.argv;
+    if (!physicallySame(recorded.command.executable.path, job.runtime.executable.path) || rest.length > 0
+      || typeof first !== 'string' || !path.isAbsolute(first) || !physicallySame(first, cli) || verb !== 'rule-check' || flag !== '--artifact' || artifact === undefined) {
+      fail('The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.');
+    }
+    const rule = `${job.subject.identity}.md`;
+    // The candidate's own file is always the rule under review. A registry spelling counts only when that file exists as an ordinary
+    // file with the sha256 the job pins for the subject (the checker already reads the registry and checkout it names).
+    const pinnedRule = job.candidate.files.find(item => item.path === rule)?.sha256;
+    const sameBytes = file => {
+      const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+      return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, 'Registry rule')) === pinnedRule;
+    };
+    const own = [[path.join(roots.candidate, rule), true], [path.join(job.source.registry, 'rules', rule), false], [path.join(job.source.checkout, 'registry', 'rules', rule), false]];
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => physicallySame(file, artifact) && (isCandidate || sameBytes(file)))) {
+      fail('The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.');
+    }
+    for (const [id, pin] of [['rule-check-raw', recorded.raw], ['rule-check-receipt', recorded.receipt]]) {
+      const input = job.inputs.find(item => item.id === id);
+      if (!pin || input.sha256 !== pin.sha256 || input.bytes !== pin.bytes) fail(`The rule-check evidence differs from the check record: ${id}.`);
+    }
+  }
   for (const kind of ['profile', 'tool-policy', 'library-lock', 'validator', 'provenance']) {
     if (!job.inputs.some(input => input.kind === kind && input.required && input.status === 'clear')) fail(`Missing required ${kind} evidence.`);
   }
@@ -327,7 +362,8 @@ function checkJob(jobFile) {
   }
   const { subject } = job;
   if (subject.kind === 'skill' && subject.definition !== null) fail('A Skill-only review has no shared definition.');
-  if (subject.kind !== 'skill' && !subject.definition) fail('Shared/native review requires its exact shared definition stem.');
+  if (subject.kind === 'rule' && subject.definition !== null) fail('A rule review has no shared definition.');
+  if (subject.kind !== 'skill' && subject.kind !== 'rule' && !subject.definition) fail('Shared/native review requires its exact shared definition stem.');
   if (subject.kind === 'shared-pair') {
     if (subject.identity !== subject.definition || subject.target !== null) fail('Shared definition must match the host-neutral pair identity.');
     if (!same([...subject.paths].sort(), [`core/${subject.definition}.contract.json`, `core/${subject.definition}.core.md`])) fail('Shared definition pair paths are incomplete or substituted.');
@@ -336,8 +372,8 @@ function checkJob(jobFile) {
   if (subject.kind === 'claude-agent') for (const [kind, suffix] of [['shared-core', 'core.md'], ['shared-contract', 'contract.json']]) {
     if (!hasPin(path.join(job.source.registry, 'core', `${subject.definition}.${suffix}`), kind)) fail(`Missing required ${kind} pin for definition ${subject.definition}.`);
   }
-  const pages = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', hook: 'hook/hooks.md', tools: 'tools/tools-reference.md', orchestration: 'orchestration/workflows.md' };
-  const guideKinds = subject.target !== null ? ['agent', 'skill', 'hook', 'tools', 'orchestration'] : subject.kind === 'skill' ? ['skill'] : [];
+  const pages = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', hook: 'hook/hooks.md', tools: 'tools/tools-reference.md', orchestration: 'orchestration/workflows.md', rule: 'rule/memory.md' };
+  const guideKinds = subject.kind === 'rule' ? ['rule'] : subject.target !== null ? ['agent', 'skill', 'hook', 'tools', 'orchestration'] : subject.kind === 'skill' ? ['skill'] : [];
   const library = path.join(job.source.checkout, 'host-library/claude');
   const libraryLock = jsonAt(path.join(library, 'library.lock.json'), budget.maxEvidenceFileBytes, 'Library lock');
   if (libraryLock.host !== 'claude') fail('Selected library lock belongs to a different Host.');
@@ -359,7 +395,7 @@ function checkJob(jobFile) {
   if (!physicallySame(job.rubric.path, rubricFile)) fail('Review rubric must be this bundled rubric.');
   const rubric = JSON.parse(decode(pinned(job.rubric, budget.maxEvidenceFileBytes, 'Rubric')));
   if (rubric.version !== job.rubric.version || !same([...job.rubric.criteria.map(item => item.id)].sort(), rubric.criteria.map(item => item.id).sort())) fail('Fixed rubric criterion coverage mismatch.');
-  const needsShared = job.subject.kind !== 'skill';
+  const needsShared = job.subject.kind !== 'skill' && job.subject.kind !== 'rule';
   const needsHost = job.subject.target !== null;
   const needsCoverage = coverageFilesOf(job).length > 0;
   for (const criterion of job.rubric.criteria) {

@@ -13,7 +13,7 @@ metadata:
 Judge one bounded text artifact against its original objective, fixed values and acceptance criteria. An intact record, a useful quality opinion, an actual reviewer invocation and human acceptance are different evidence. This delivery is an ordinary read-only worker on Claude Code CLI/workspace/native only.
 
 ## Execution Triggers
-Review final validated bytes, or a caller-issued repair revision with a new digest. Choose exactly one subject kind: shared pair, Skill or Claude agent with its support. Partition a larger Bundle into explicit review jobs and report omitted coverage.
+Review final validated bytes, or a caller-issued repair revision with a new digest. Choose exactly one subject kind: shared pair, Skill, Claude agent with its support, or one rule. Partition a larger Bundle into explicit review jobs and report omitted coverage.
 
 ## Input/Output Requirements
 Require [the complete fixed job](references/job.md), caller-held job/candidate digests, actual input pins and check receipts, original brief, selected evidence, [rubric](assets/rubric.json), limits and installed assets/claude-binding.json receipt. The caller, never you, builds that job with the installed job builder `${CLAUDE_SKILL_DIR}/scripts/review-job.mjs` and checks it against [job.schema.json](assets/job.schema.json) with the [record helper](scripts/check-review.mjs) before dispatch; you cannot run either script or recompute hashes.

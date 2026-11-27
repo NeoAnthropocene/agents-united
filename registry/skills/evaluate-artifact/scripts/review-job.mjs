@@ -47,7 +47,9 @@ const LIMITS = { maxCandidateFiles: [1, 32], maxCandidateFileBytes: [1, 262144],
   maxEvidenceFiles: [1, 64], maxEvidenceFileBytes: [1, 1048576], maxEvidenceBytes: [1, 8388608],
   maxResultBytes: [1, 262144], maxFindings: [0, 32], maxOpenItems: [0, 16], maxChecks: [0, 6], maxSeconds: [1, 600], maxLogBytes: [1, 524288],
   maxExecutableBytes: [1, 134217728] };
-const GUIDE_PAGES = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', hook: 'hook/hooks.md', tools: 'tools/tools-reference.md', orchestration: 'orchestration/workflows.md' };
+const GUIDE_PAGES = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', hook: 'hook/hooks.md', tools: 'tools/tools-reference.md', orchestration: 'orchestration/workflows.md', rule: 'rule/memory.md' };
+// A Skill or Claude agent with a Claude target pins these five; a rule review pins only its own guide and page.
+const TARGET_GUIDES = ['agent', 'skill', 'hook', 'tools', 'orchestration'];
 // Input kinds the caller may add as extra evidence; every other kind is computed here.
 const EVIDENCE_KINDS = ['provenance', 'validator', 'source', 'baseline', 'diff', 'observation', 'rule'];
 const STATUSES = ['passed', 'failed', 'unavailable', 'not-run'];
@@ -236,14 +238,16 @@ function readSpec(specFile) {
   if (spec.intent !== 'local' && spec.intent !== 'upstream') fail('Spec intent must be local or upstream.');
   const budget = budgetOf(spec.budget);
   const subject = keys(spec.subject, ['kind', 'identity'], ['definition', 'target'], 'Spec subject');
-  if (!['skill', 'shared-pair', 'claude-agent'].includes(subject.kind)) fail('Spec subject kind must be skill, shared-pair or claude-agent.');
+  if (!['skill', 'shared-pair', 'claude-agent', 'rule'].includes(subject.kind)) fail('Spec subject kind must be skill, shared-pair, claude-agent or rule.');
   slug(subject.identity, 'Spec subject identity');
   const definition = subject.definition ?? (subject.kind === 'shared-pair' ? subject.identity : null);
   if (subject.kind === 'skill' && definition !== null) fail('A Skill-only review has no shared definition.');
-  if (subject.kind !== 'skill') slug(definition, 'Spec subject definition');
+  if (subject.kind === 'rule' && definition !== null) fail('A rule review has no shared definition.');
+  if (subject.kind !== 'skill' && subject.kind !== 'rule') slug(definition, 'Spec subject definition');
   if (subject.kind === 'shared-pair' && definition !== subject.identity) fail('Shared definition must match the host-neutral pair identity.');
   const target = subject.target === undefined || subject.target === null ? null : hostRecord(subject.target, 'Target Host');
   if (subject.kind === 'claude-agent' && !target) fail('Claude agent review requires its explicit target context.');
+  if (subject.kind === 'rule' && !target) fail('Rule review requires its explicit target context.');
   if (subject.kind === 'shared-pair' && target) fail('Shared definition must match the host-neutral pair identity.');
   const source = keys(spec.source, ['checkout', 'head', 'registry'], [], 'Spec source');
   if (typeof source.head !== 'string' || !/^[a-f0-9]{40}$/.test(source.head)) fail('Spec source head must be a full 40-character commit id.');
@@ -342,7 +346,8 @@ function build(specArg) {
   // Candidate inventory, roles and digest. The kind fixes some roles; the spec gives every other one.
   const inventory = snapshot(candidate, budget);
   const fixed = subject.kind === 'skill' ? { 'SKILL.md': 'subject' }
-    : subject.kind === 'shared-pair' ? { [`core/${subject.definition}.contract.json`]: 'subject', [`core/${subject.definition}.core.md`]: 'subject' } : {};
+    : subject.kind === 'shared-pair' ? { [`core/${subject.definition}.contract.json`]: 'subject', [`core/${subject.definition}.core.md`]: 'subject' }
+      : subject.kind === 'rule' ? { [`${subject.identity}.md`]: 'subject' } : {};
   for (const rel of Object.keys(fixed)) if (!inventory.some(item => item.path === rel)) fail(`The ${subject.kind} candidate lacks its fixed subject file ${rel}.`);
   for (const rel of Object.keys(spec.roles ?? {})) if (!inventory.some(item => item.path === rel)) fail(`Spec role names a path absent from the candidate: ${rel}.`);
   const files = inventory.map(item => {
@@ -355,6 +360,12 @@ function build(specArg) {
   });
   const paths = files.filter(item => item.role === 'subject').map(item => item.path);
   if (!paths.length) fail('The candidate needs at least one subject file.');
+  // A rule is one file: exactly one subject, at <identity>.md (check-review.mjs refuses the same job).
+  if (subject.kind === 'rule' && (paths.length !== 1 || paths[0] !== `${subject.identity}.md`)) fail(`A rule review has exactly one subject file, ${subject.identity}.md.`);
+  // The route's checker ran: a rule job records an executed, required rule-check (check-review.mjs requires its validator inputs).
+  if (subject.kind === 'rule' && !(spec.checks ?? []).some(check => check.id === 'rule-check' && check.required === true && (check.status === 'passed' || check.status === 'failed'))) {
+    fail('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
+  }
   const candidateDigest = hash(canonical(inventory));
 
   // Computed inputs: [id, kind, absolute file].
@@ -370,7 +381,7 @@ function build(specArg) {
   for (const file of ['profile.json', 'tool-policy.json']) if (jsonAt(path.join(hostDir, file), budget.maxEvidenceFileBytes, 'Host prerequisite').host !== 'claude') fail('Selected prerequisite belongs to a different Host.');
   const libraryLock = jsonAt(path.join(library, 'library.lock.json'), budget.maxEvidenceFileBytes, 'Library lock');
   if (libraryLock.host !== 'claude') fail('Selected library lock belongs to a different Host.');
-  const guideKinds = subject.target !== null ? Object.keys(GUIDE_PAGES) : subject.kind === 'skill' ? ['skill'] : [];
+  const guideKinds = subject.kind === 'rule' ? ['rule'] : subject.target !== null ? TARGET_GUIDES : subject.kind === 'skill' ? ['skill'] : [];
   for (const kind of guideKinds) {
     computed.push([`${kind}-guide`, 'guide', path.join(library, 'guide', `${kind}.md`)]);
     const rel = `pages/${GUIDE_PAGES[kind]}`, file = path.join(library, rel);
@@ -435,6 +446,29 @@ function build(specArg) {
     copies.push([`${check.id}.raw.txt`, rawBytes, `${check.id}-raw`, 'validator', true, []], [`${check.id}.receipt.json`, receiptBytes, `${check.id}-receipt`, 'validator', true, []]);
     return { id: check.id, required: check.required, status: check.status, command, candidateDigest, exit, raw, receipt };
   });
+  // A rule job's rule-check records the documented command on the rule file under review. Only the record is compared: the command
+  // is the caller's statement (this script never runs it), and check-review.mjs refuses the same job with the same reasons.
+  if (subject.kind === 'rule') {
+    const recorded = checks.find(item => item.id === 'rule-check');
+    const cli = path.join(checkout, 'dist/cli.js');
+    const [first, verb, flag, artifact, ...rest] = recorded.command.argv;
+    if (exact(physical(recorded.command.executable.path)) !== exact(physical(runtimeFile)) || rest.length > 0
+      || typeof first !== 'string' || !path.isAbsolute(first) || exact(physical(first)) !== exact(physical(cli)) || verb !== 'rule-check' || flag !== '--artifact' || artifact === undefined) {
+      fail('The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.');
+    }
+    const rule = `${subject.identity}.md`;
+    // The candidate's own file is always the rule under review. A registry spelling counts only when that file exists as an ordinary
+    // file with the pinned bytes of the candidate's rule: a path alone says nothing about which rule the check read.
+    const pinned = inventory.find(item => item.path === rule)?.sha256;
+    const sameBytes = file => {
+      const stat = fs.lstatSync(file, { throwIfNoEntry: false });
+      return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, 'Registry rule')) === pinned;
+    };
+    const own = [[path.join(candidate, rule), true], [path.join(registry, 'rules', rule), false], [path.join(checkout, 'registry', 'rules', rule), false]];
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => exact(physical(file)) === exact(physical(artifact)) && (isCandidate || sameBytes(file)))) {
+      fail('The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.');
+    }
+  }
 
   // Extra evidence the caller exposes: copied byte-identically into the read folder; candidate bytes are never copied.
   for (const item of spec.evidence ?? []) {
@@ -516,9 +550,9 @@ function build(specArg) {
   // The same rule as check-review.mjs: a subject agent file (ending in .md) with its coverage file beside it in the candidate.
   const hasCoverage = subject.kind === 'claude-agent' && paths.some(rel => rel.endsWith('.md') && files.some(item => item.path === coveragePathOf(rel)));
   const criteria = rubric.criteria.map(({ id }) => {
-    const applicable = id === 'shared-semantics' ? subject.kind !== 'skill' : id === 'host-fit' ? subject.target !== null : id === 'coverage-evidence' ? hasCoverage : true;
+    const applicable = id === 'shared-semantics' ? subject.kind !== 'skill' && subject.kind !== 'rule' : id === 'host-fit' ? subject.target !== null : id === 'coverage-evidence' ? hasCoverage : true;
     const reason = reasons[id] ?? (applicable ? `Applies to this ${subject.kind} review.`
-      : id === 'shared-semantics' ? 'A Skill-only review has no shared definition.'
+      : id === 'shared-semantics' ? (subject.kind === 'rule' ? 'A rule review has no shared definition.' : 'A Skill-only review has no shared definition.')
         : id === 'coverage-evidence' ? 'The candidate holds no Claude agent coverage file.' : 'No native target is declared for this subject.');
     return { id, required: applicable, applicable, reason };
   });

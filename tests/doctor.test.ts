@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { InstallEngine } from '../src/core/installer.js';
 import { DoctorEngine } from '../src/core/doctor.js';
 import { RegistryResolver } from '../src/core/registry.js';
+import { ClaudeProjector } from '../src/core/claude-projector.js';
 import type { LockfileManifest } from '../src/core/types.js';
 
 describe('DoctorEngine', () => {
@@ -298,6 +299,136 @@ describe('DoctorEngine', () => {
       expect(
         report.warnings.filter(w => w.includes('Missing projection') && w.includes(legacySlug))
       ).toEqual([]);
+    });
+
+    // The generative_ui -> generative-ui rename (Plan 016 Step 4) changed the projection FOLDER of a skill by the underscore normalisation, and
+    // the canonical key changed with it: the legacy lockfile records the projection under `skills/generative_ui/SKILL.md`, the current one under
+    // `skills/generative-ui/SKILL.md`. The doctor looks for a survivor of the SAME canonical, so it cannot see this rename: a deleted legacy
+    // copy is reported as Missing, never as superseded. `agents update` owns that rename (UpdateEngine.migrateLegacyGenerativeUiProjections
+    // removes the legacy records; tests/generative-ui-rename.test.ts). Here: the same shape on the native author-rule skill.
+    it('reports a deleted legacy projection whose canonical key was renamed with its folder (the generative_ui shape) as missing, not superseded', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      const canonical = 'skills/author-rule/SKILL.md';
+      const legacyCanonical = 'skills/author_rule/SKILL.md';
+      const current = '.claude/skills/author-rule/SKILL.md';
+      const legacy = '.claude/skills/author_rule/SKILL.md';
+      expect(lockfile.projections?.[current]?.canonical).toBe(canonical);
+      lockfile.projections![legacy] = { ...lockfile.projections![current]!, canonical: legacyCanonical };
+      lockfile.files[legacyCanonical] = { ...lockfile.files[canonical]!, projectedTo: [legacy] };
+      await fs.writeJson(lockfilePath, lockfile);
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const lines = [...report.issues, ...report.warnings].filter(line => line.includes(legacy));
+
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toMatch(/^Missing .*projection /);
+      expect(lines[0]).toContain(legacy);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
+    // The missing path is judged by ITS OWN host's renderer. A survivor of the same canonical that belongs to another host says nothing about
+    // whether the missing path is still current.
+    it('asks the missing path\'s own host renderer, not the survivor\'s: a deleted current Claude copy stays missing though a Cline survivor exists', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const scratchRoot = path.dirname(tempDir);
+      const gone = '.claude/skills/author-skill/references/skill-attribution.md';
+      const survivor = '.cline/rules/survivor-of-the-same-canonical.md';
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      const record = lockfile.projections![gone]!;
+      expect(record.host).toBe('claude');
+      await fs.outputFile(path.join(scratchRoot, survivor), 'survivor\n');
+      lockfile.projections![survivor] = { ...record, host: 'cline' };
+      await fs.writeJson(lockfilePath, lockfile);
+      await fs.remove(path.join(scratchRoot, gone));
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+      expect(hits).toHaveLength(1);
+      expect(hits[0]).toMatch(/^Missing .*projection /);
+      expect(hits[0]).not.toContain(survivor);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
+    // When the missing path's renderer is unavailable (here: its record names no owner bundle, so nothing can be rendered), nothing is guessed.
+    it('reports a missing path as missing when its own renderer is unavailable, though another projection of the canonical exists', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const scratchRoot = path.dirname(tempDir);
+      const gone = '.cline/rules/renamed-away.md';
+      const survivor = '.claude/skills/author-skill/references/skill-attribution.md';
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      const record = lockfile.projections![survivor]!;
+      expect(await fs.pathExists(path.join(scratchRoot, survivor))).toBe(true);
+      lockfile.projections![gone] = { ...record, host: 'cline', owners: [] };
+      await fs.writeJson(lockfilePath, lockfile);
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+      expect(hits).toHaveLength(1);
+      expect(hits[0]).toMatch(/^Missing .*projection /);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
+    // ADR 0082: the attribution rule is projected under each bound factory Skill. Both copies are CURRENT; a deleted one is missing.
+    it('classifies a deleted copy of a rule that two bound Skills carry as missing, never as superseded by the other copy', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const skillsDir = path.join(path.dirname(tempDir), '.claude', 'skills');
+      const gone = '.claude/skills/author-skill/references/skill-attribution.md';
+      const kept = '.claude/skills/author-rule/references/skill-attribution.md';
+      expect(await fs.pathExists(path.join(skillsDir, 'author-rule/references/skill-attribution.md'))).toBe(true);
+      await fs.remove(path.join(skillsDir, 'author-skill/references/skill-attribution.md'));
+
+      const report = await DoctorEngine.runDoctor(tempDir);
+      const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+      expect(hits).toHaveLength(1);
+      expect(hits[0]).toMatch(/^Missing .*projection /);
+      expect(hits[0]).not.toContain(kept);
+      expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+    });
+
+    // When one owner's render fails, the paths that owner would have produced are unknown: the host did not render fully this run, so a
+    // missing path of that host is Missing and is never called superseded because the owners that did render do not list it.
+    it('reports a missing path as missing when its host failed to render for one owner, though another projection of the canonical exists', async () => {
+      await installer.install('agent-factory', { targetDir: tempDir, method: 'copy', hosts: ['claude'], nativeLane: true });
+      const skillsDir = path.join(path.dirname(tempDir), '.claude', 'skills');
+      const gone = '.claude/skills/author-skill/references/skill-attribution.md';
+      const kept = '.claude/skills/author-rule/references/skill-attribution.md';
+      const lockfilePath = path.join(tempDir, 'agents-united.json');
+      const lockfile = await fs.readJson(lockfilePath) as LockfileManifest;
+      // A second owner whose render succeeds and does not list the missing path; the factory's own render is the one that fails below.
+      const record = lockfile.projections![gone]!;
+      expect(record.host).toBe('claude');
+      expect(record.owners).toContain('agent-factory');
+      for (const projection of Object.values(lockfile.projections!)) {
+        if (projection.host === 'claude' && !projection.owners.includes('software-engineering')) projection.owners = [...projection.owners, 'software-engineering'];
+      }
+      lockfile.installed!.bundles = [...lockfile.installed!.bundles, 'software-engineering'];
+      await fs.writeJson(lockfilePath, lockfile);
+      expect(await fs.pathExists(path.join(skillsDir, 'author-rule/references/skill-attribution.md'))).toBe(true);
+      await fs.remove(path.join(skillsDir, 'author-skill/references/skill-attribution.md'));
+
+      const original = ClaudeProjector.planCompoundProjection.bind(ClaudeProjector);
+      const spy = vi.spyOn(ClaudeProjector, 'planCompoundProjection').mockImplementation(async (bundleDef, ...rest) => {
+        if (bundleDef.name === 'agent-factory') throw new Error('the render of this owner fails');
+        return original(bundleDef, ...rest);
+      });
+      try {
+        const report = await DoctorEngine.runDoctor(tempDir);
+        const hits = [...report.issues, ...report.warnings].filter(line => line.includes(gone));
+
+        expect(spy.mock.calls.some(call => call[0].name === 'software-engineering')).toBe(true);
+        expect(hits, hits.join(' | ')).toHaveLength(1);
+        expect(hits[0]).toMatch(/^Missing .*projection /);
+        expect(hits[0]).not.toContain(kept);
+        expect([...report.issues, ...report.warnings].some(line => line.includes('Stale projection'))).toBe(false);
+      } finally { spy.mockRestore(); }
     });
 
   });

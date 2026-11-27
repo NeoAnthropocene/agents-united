@@ -15,15 +15,15 @@ export async function prepareFactoryNative(root: string) {
   const installed = (rel: string): string => path.join(workspace, ...rel.split('/'));
   await fs.ensureDir(workspace);
   for (const rel of [
-    'skills/author-skill', 'hosts/claude/skills/author-skill',
-    'hosts/claude/agent-factory.binding.json', 'rules/skill-attribution.md',
+    'skills/author-skill', 'hosts/claude/skills/author-skill', 'skills/author-rule', 'hosts/claude/skills/author-rule',
+    'hosts/claude/agent-factory.binding.json', 'hosts/claude/agent-factory-rule.binding.json', 'rules/skill-attribution.md',
     'hosts/claude/profile.json', 'hosts/claude/tool-policy.json',
     'hosts/claude/hooks/agents-united-guard.js',
   ]) await fs.copy(path.resolve('registry', rel), source(rel));
   await fs.outputFile(source('rules/GEMINI.md'), '# Baseline\n');
   const bundle: BundleDefinition = {
     name: 'agent-factory', domain: 'contributor', description: 'Native factory fixture',
-    status: 'under-construction', skills: ['author-skill', 'realize-artifact'],
+    status: 'under-construction', skills: ['author-skill', 'author-rule', 'realize-artifact'],
     rules: ['skill-attribution.md'],
     hostAvailability: { claude: { lane: 'native', scopes: ['workspace'] } },
   };

@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'fs-extra';
 import { RegistryResolver } from './registry.js';
 import { assertBundleHostAvailability, normalizeAvailabilityHost } from './bundle-host-availability.js';
-import { assertClaudeSkillBindings } from './claude-skill-binding.js';
+import { assertClaudeSkillBindings, isBoundFactorySkill } from './claude-skill-binding.js';
 import { assertClaudeContractTaskTargets } from './claude-contract-binding.js';
 import { assertClaudeFactoryTargets } from './claude-factory-binding.js';
 import { AgentHostAdapter } from './adapter.js';
@@ -1608,7 +1608,7 @@ export class InstallEngine {
         // real loading and ownership path. Partial restricted bundles need named selection.
         const owner = owners.length === 1 ? owners[0] : undefined;
         if (owner?.name === 'agent-factory'
-          && resolved.skills.length === 1 && resolved.skills[0] === 'author-skill'
+          && resolved.skills.length === 1 && resolved.skills.every(isBoundFactorySkill)
           && resolved.agents.length === 0 && resolved.workflows.length === 0) {
           // The bound task entry selects its complete contributor package, including
           // shared worker support. Availability and the native binding are still
@@ -1628,9 +1628,10 @@ export class InstallEngine {
       }
     }
     const restricted = [...required.values()].filter(bundle => bundle.hostAvailability !== undefined);
-    const needsBinding = required.has('agent-factory') || resolved.skills.includes('author-skill') || resolved.skills.includes('realize-artifact') || resolved.skills.includes('author-contract') || resolved.skills.includes('author-bundle') || resolved.skills.includes('evaluate-artifact') || resolved.skills.includes('sync-host') || resolved.skills.includes('coordinate-artifact');
-    if (resolved.skills.includes('author-skill') && !required.has('agent-factory')) {
-      throw new Error('author-skill requires its owning contributor bundle declaration agent-factory before delivery.');
+    const needsBinding = required.has('agent-factory') || resolved.skills.some(isBoundFactorySkill) || resolved.skills.includes('realize-artifact') || resolved.skills.includes('author-contract') || resolved.skills.includes('author-bundle') || resolved.skills.includes('evaluate-artifact') || resolved.skills.includes('sync-host') || resolved.skills.includes('coordinate-artifact');
+    const unownedBoundSkill = resolved.skills.find(isBoundFactorySkill);
+    if (unownedBoundSkill !== undefined && !required.has('agent-factory')) {
+      throw new Error(`${unownedBoundSkill} requires its owning contributor bundle declaration agent-factory before delivery.`);
     }
     if (resolved.skills.includes('realize-artifact') && !required.has('agent-factory')) {
       throw new Error('realize-artifact requires its owning contributor bundle declaration agent-factory before delivery.');
@@ -1681,7 +1682,7 @@ export class InstallEngine {
       if (targets.includes('claude')) {
         assertClaudeFactoryTargets(resolved, this.registry.getRegistryDir(), workspaceRootOf(targetDir), lock, options.force === true);
         for (const bundle of required.values()) {
-          if (assertClaudeSkillBindings(bundle, resolved, this.registry.getRegistryDir(), scope, native('claude'))) {
+          if (assertClaudeSkillBindings(bundle, resolved, this.registry.getRegistryDir(), scope, native('claude')).length > 0) {
             const artifacts = await ClaudeProjector.planCompoundProjection(bundle, scope, resolved, this.registry.getRegistryDir(), undefined, native('claude'));
             assertClaudeContractTaskTargets(artifacts, workspaceRootOf(targetDir), lock, options.force === true);
           }
@@ -1698,7 +1699,7 @@ export class InstallEngine {
     const resolved = await this.registry.resolve(identifier);
     // Contributor task skills use the same state/projection route the CLI selects for
     // Claude-only installs, including callers of the public installer API.
-    if (resolved.skills.includes('author-skill') && hosts.includes('claude')) {
+    if (resolved.skills.some(isBoundFactorySkill) && hosts.includes('claude')) {
       const override = options.targetDir && path.basename(path.resolve(options.targetDir)) === '.claude'
         ? path.join(path.resolve(options.targetDir), '.agents-united') : options.targetDir;
       const explicitStateHost = hosts.includes('agents');
@@ -1933,7 +1934,7 @@ export class InstallEngine {
 
         await this.assertSkillCopyUnmodified(targetDir, dest, lockfile, options.force);
         // Plan 035 — a skill's `evals/` is for the maintainers: a copy leaves it out, and the records below skip it (a link still shows the whole folder).
-        const factoryCopy = skillName === 'author-skill' || skillName === 'realize-artifact' || skillName === 'author-contract' || skillName === 'author-bundle' || skillName === 'evaluate-artifact' || skillName === 'sync-host' || skillName === 'coordinate-artifact';
+        const factoryCopy = isBoundFactorySkill(skillName) || skillName === 'realize-artifact' || skillName === 'author-contract' || skillName === 'author-bundle' || skillName === 'evaluate-artifact' || skillName === 'sync-host' || skillName === 'coordinate-artifact';
         const actualMethod = await this.deployFile(src, dest, factoryCopy ? 'copy' : skillMethod, options.force, from => !isMaintainerOnlySkillPath(path.relative(src, from)));
         const skillFile = path.join(src, 'SKILL.md');
         if (await fs.pathExists(skillFile)) {

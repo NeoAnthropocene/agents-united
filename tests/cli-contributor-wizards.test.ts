@@ -209,6 +209,12 @@ describe('Contributor CLI wizards', () => {
     for (const worker of ['factory-realizer', 'factory-evaluator', 'factory-sync']) expect(notice).toContain(worker);
   });
 
+  it('the agent-factory install notice names both task Skills that draft one artifact', () => {
+    const notice = underConstructionNotice({ name: 'agent-factory', domain: 'contributor', description: 'Factory fixture', status: 'under-construction' });
+    expect(notice).toContain('`author-skill` creates or repairs one skill folder and prepares draft evidence.');
+    expect(notice).toContain('`author-rule` creates or repairs one rule file and prepares draft evidence.');
+  });
+
   it('full inspection shows the current end-user inventory and preserves shared skills', async () => {
     const catalog = await fs.readJson(path.join(originalCwd, 'registry/bundles.json')) as BundlesManifest;
     const full = catalog.bundles.full;

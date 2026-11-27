@@ -12,6 +12,7 @@
       "agents": [],
       "skills": [
         "author-skill",
+        "author-rule",
         "realize-artifact",
         "author-contract",
         "evaluate-artifact",
