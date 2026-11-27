@@ -100,6 +100,12 @@
       "recoveredAt": "2026-10-28",
       "skill": "author-contract"
     },
+    "author-rule": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-26",
+      "skill": "author-rule"
+    },
     "author-skill": {
       "declaredLicence": "MIT",
       "provenance": "in-house",

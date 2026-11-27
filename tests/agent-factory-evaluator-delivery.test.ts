@@ -20,7 +20,7 @@ describe('independent factory evaluator delivery', () => {
       '---\nname: evaluate-artifact\ndescription: Review one fixed candidate without changing it.\nlicense: MIT\n---\nReview the caller-selected evidence.\n');
     // Preserve the already approved contributor entry; only realization is absent.
     await fs.outputJson(path.join(registry, 'bundles.json'), { version: 1, bundles: {
-      'agent-factory': { ...fixture.bundle, skills: ['author-skill', 'evaluate-artifact'] },
+      'agent-factory': { ...fixture.bundle, skills: ['author-skill', 'author-rule', 'evaluate-artifact'] },
     } });
     await fs.remove(fixture.source('hosts/claude/agent-factory-realize.binding.json'));
     await expect(new InstallEngine(new RegistryResolver(registry)).install('agent-factory', {

@@ -12,7 +12,7 @@ import { UninstallEngine } from '../src/core/uninstaller.js';
 import type { InstallOptions, LockfileManifest } from '../src/core/types.js';
 
 // Exact reviewed factory declaration, including the P7 coordinator and dormant router companions.
-const factorySkills = ['author-bundle', 'author-contract', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host'];
+const factorySkills = ['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host'];
 
 describe('shipped factory native lifecycle in fresh workspaces', () => {
   let root: string;
@@ -64,7 +64,11 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     const report = await DoctorEngine.runDoctor(state);
     expect(report.warnings.join('\n')).toMatch(/Content drift .*author-skill\/SKILL.md/);
     expect(report.warnings.join('\n')).toMatch(/user-modified projection .*author-skill\/references\/job.md/);
-    expect([...report.issues, ...report.warnings].join('\n')).toMatch(/Missing projection .*author-skill\/references\/skill-attribution.md/i);
+    // The canonical attribution rule is projected under each bound Skill (author-skill and author-rule). The author-rule copy is a second
+    // current projection, not a rename, so a deleted author-skill copy is still reported as missing, never as superseded by it.
+    const lines = [...report.issues, ...report.warnings].join('\n');
+    expect(lines).toMatch(/Missing .*projection .*author-skill\/references\/skill-attribution.md/i);
+    expect(lines).not.toMatch(/Stale projection .*author-skill\/references\/skill-attribution.md/i);
   });
   it('update retains the recorded native choice and restores an absent attribution file', async () => {
     await new InstallEngine().install('agent-factory', options());
@@ -158,6 +162,7 @@ describe('shipped factory native lifecycle in fresh workspaces', () => {
     }
     const full = await new RegistryResolver().resolve('full');
     expect(full.skills).not.toContain('author-skill');
+    expect(full.skills).not.toContain('author-rule');
     expect(full.rules).not.toContain('skill-attribution.md');
     for (const name of shared) expect(full.skills).toContain(name);
   });
