@@ -404,6 +404,14 @@ describe('the shipped review-job builder', () => {
       } finally { await fs.remove(registryRule); }
     });
 
+    it('keeps the rule kind\'s candidate path: a rule-check recorded on the candidate\'s own rule file passes the builder and the checker', async () => {
+      // roundTrip builds the job and runs the installed checker on it; the rule spec records the candidate's own <identity>.md.
+      const spec = await ruleSpec();
+      expect(spec.checks[0].command.argv[3]).toBe(path.join(candidate(), `${RULE_NAME}.md`));
+      const { out } = await roundTrip(spec);
+      expect(out).toMatchObject({ status: 'job-written' });
+    });
+
     it('refuses, in the installed checker, a rule job whose rule-check command or recorded hashes differ', async () => {
       const { jobFile } = await roundTrip(await ruleSpec());
       const job = await fs.readJson(jobFile) as Json;
@@ -593,7 +601,7 @@ describe('the shipped review-job builder', () => {
 
     const WF_NEEDS = 'A workflow review needs its executed workflow-check: record a required check with the id workflow-check that was run.';
     const WF_COMMAND = 'The workflow-check must record the command node <checkout>/dist/cli.js workflow-check --artifact <the workflow file>.';
-    const WF_ARTIFACT = 'The workflow-check must check this review\'s own workflow file: the candidate\'s <identity>.js or <registry>/hosts/claude/workflows/<identity>.js.';
+    const WF_ARTIFACT = 'The workflow-check must check the registry copy of this review\'s own workflow: <registry>/hosts/claude/workflows/<identity>.js or <checkout>/registry/hosts/claude/workflows/<identity>.js, a regular file with the candidate\'s bytes. A candidate path can never pass: workflow-check passes only at registry/hosts/claude/workflows/<name>.js.';
 
     it('refuses a workflow review without an executed workflow-check, in the builder', async () => {
       const spec = await workflowSpec();
@@ -626,11 +634,43 @@ describe('the shipped review-job builder', () => {
       if (!(await fs.pathExists(checkoutWorkflow()))) {
         expect(refusal(build(await writeSpec(withArgv([cli, 'workflow-check', '--artifact', checkoutWorkflow()])))).reason).toBe(WF_ARTIFACT);
       }
-      // The candidate spelling is recorded as given.
-      const built = build(await writeSpec(withArgv([cli, 'workflow-check', '--artifact', subject])));
+      // The registry copy with the candidate's bytes is recorded as given.
+      const built = build(await writeSpec(withArgv([cli, 'workflow-check', '--artifact', registryWorkflow()])));
       expect(built.status, built.stderr).toBe(0);
       await fs.remove(review()); await fs.remove(readFolder());
     });
+
+    it('refuses a workflow-check recorded on the candidate path, in the builder, and says why', async () => {
+      const spec = await workflowSpec();
+      const recorded = spec.checks[0] as Json;
+      const withArtifact = (artifact: string) => ({ ...spec, checks: [{ ...recorded, command: { ...recorded.command, argv: [path.join(CHECKOUT, 'dist/cli.js'), 'workflow-check', '--artifact', artifact] } }] });
+      // The candidate's own script, with the very bytes the job pins, still names no file workflow-check can pass.
+      const reason = refusal(build(await writeSpec(withArtifact(path.join(candidate(), `${WF_NAME}.js`))))).reason;
+      expect(reason).toBe(WF_ARTIFACT);
+      expect(reason).toContain('A candidate path can never pass');
+      expect(reason).toContain('workflow-check passes only at registry/hosts/claude/workflows/<name>.js');
+      // The registry copy with identical bytes passes (the checkout's own registry is never written by a test).
+      const registry = build(await writeSpec(withArtifact(registryWorkflow())));
+      expect(registry.status, registry.stderr).toBe(0);
+      await fs.remove(review()); await fs.remove(readFolder());
+    });
+
+    it('refuses, in the installed checker, a workflow job recorded on the candidate path, and accepts the same job on the registry copy', async () => {
+      const { jobFile } = await roundTrip(await workflowSpec());
+      const job = await fs.readJson(jobFile) as Json;
+      const withArtifact = async (artifact: string) => {
+        const copy = JSON.parse(JSON.stringify(job)) as Json;
+        copy.checks[0].command.argv[3] = artifact;
+        await fs.writeJson(jobFile, copy);
+        return check(['--job', jobFile]);
+      };
+      const candidatePath = await withArtifact(path.join(candidate(), `${WF_NAME}.js`));
+      expect(candidatePath.status).not.toBe(0);
+      expect(candidatePath.stderr + candidatePath.stdout).toContain(WF_ARTIFACT);
+      const registryPath = await withArtifact(registryWorkflow());
+      expect(registryPath.status, registryPath.stderr).toBe(0);
+    });
+
 
     it('accepts a registry spelling of the workflow only when that file has the candidate\'s bytes, in the builder', async () => {
       const spec = await workflowSpec();
