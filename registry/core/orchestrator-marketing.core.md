@@ -52,6 +52,7 @@ invariants:
   - "Search metadata is unique per page: titles under 60 characters, descriptions under 155 characters, valid OpenGraph tags."
   - "Email work respects consent, GDPR and CAN-SPAM, and user data is never harvested without consent."
   - "When the host has an image generator of its own, it is offered first and recommended among the image options."
+  - "When the final report leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search

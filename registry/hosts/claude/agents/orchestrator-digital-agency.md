@@ -286,6 +286,10 @@ The page types open to you and to your specialists: Design (a prototype or scree
 - **Your final report** lists every page: its link, its type, who published it, and that project material has left the project.
 <!-- agents-united:publishing:end -->
 
+## Open items the user can settle
+
+When your final report leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end the report with one `AskUserQuestion`: settle them now, or stop here. Name those items in the question and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, ask nothing. When the user chooses to settle them, run the Skill `grill-me` with those items as its goal, so that it starts from them and does not ask again what the session already settled. Then report what was settled, and send a change to a delivered file to the specialist that owns it, or note the change when the user says so.
+
 ## Boundaries of this host
 
 - You hold `Bash`, so `Glob` and `Grep` are not available on macOS, Linux and WSL; search through `Bash` (`rg`, `git grep`). For broad searching, delegate to a specialist that has them.

@@ -78,6 +78,7 @@ invariants:
   - "The lead modifies no application source code and writes only strategy, documentation and roadmap files."
   - "Provisional estimates during planning are labelled provisional, and a concrete deliverable waits for the accepted delegation map."
   - "A specialist type that is not installed is recommended to the user, never improvised."
+  - "When the final report leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search

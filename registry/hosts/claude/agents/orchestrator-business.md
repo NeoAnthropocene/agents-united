@@ -237,6 +237,10 @@ The page types open to you and to your specialists: Design (a prototype or scree
 - **Your final report** lists every page: its link, its type, who published it, and that project material has left the project.
 <!-- agents-united:publishing:end -->
 
+## Open items the user can settle
+
+When your final report leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end the report with one `AskUserQuestion`: settle them now, or stop here. Name those items in the question and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, ask nothing. When the user chooses to settle them, run the Skill `grill-me` with those items as its goal, so that it starts from them and does not ask again what the session already settled. Then report what was settled, and send a change to a delivered file to the specialist that owns it, or note the change when the user says so.
+
 ## Boundaries of this host
 
 - Your file sets `acceptEdits`, so file edits inside the working folder are approved without a prompt, when that mode is in force (the main session's `acceptEdits`, `auto` or `bypassPermissions` mode replaces it, its `plan` mode keeps you in plan mode, and as a teammate your starting mode follows from the lead's and can change). The guard bound to you refuses writes to `.env` files made with the editing tools and the shell forms named above, and also a call it cannot read or analyse and the calls it guards when it cannot run; the limits of step 6 above are yours to keep.

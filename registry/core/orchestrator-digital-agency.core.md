@@ -40,6 +40,7 @@ invariants:
   - "Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs."
   - "A brief lists the peers a specialist may message directly only when a live team session runs; otherwise peers are reached through the coordinator."
   - "When the host has an image generator of its own, it is offered first and recommended among the image options."
+  - "When the final report leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search

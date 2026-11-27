@@ -198,6 +198,10 @@ The page types open to you and to your specialists: Design (a prototype or scree
 - **Your final report** lists every page: its link, its type, who published it, and that project material has left the project.
 <!-- agents-united:publishing:end -->
 
+## Open items the user can settle
+
+When your final report leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end the report with one `AskUserQuestion`: settle them now, or stop here. Name those items in the question and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, ask nothing. When the user chooses to settle them, run the Skill `grill-me` with those items as its goal, so that it starts from them and does not ask again what the session already settled. Then report what was settled, and send a change to a delivered file to the specialist that owns it, or note the change when the user says so.
+
 ## Boundaries of this host
 
 - You hold the one image tool `mcp__image-gen__generate_image` of the optional `image-gen` server so that the creative designer's tool pool has it (a subagent gets the MCP tools of the main conversation), and you never call it. Installing the server is the user's own act and not part of this department's setup, and the tool works only while the user has it connected. When the user wants a generated photograph, pass on the user's go, naming the images, the provider and the size, and never give one yourself. While the server is not connected, specify image assets (ad creative, banners, share cards) as briefs for the creative designer, or have them produced outside the session (an image brief); never say an image was generated that was not.

@@ -178,6 +178,10 @@ Each entry carries `R<n>`, a type, `blocking` or `non-blocking`, the reason, the
 - **Your final report lists every request,** its type and its outcome.
 <!-- agents-united:requests:end -->
 
+## Open items the user can settle
+
+When your final report leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end the report with one `AskUserQuestion`: settle them now, or stop here. Name those items in the question and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, ask nothing. When the user chooses to settle them, run the Skill `grill-me` with those items as its goal, so that it starts from them and does not ask again what the session already settled. Then report what was settled, and send a change to a delivered file to the specialist that owns it, or note the change when the user says so.
+
 ## Boundaries of this host
 
 - A guard blocks `git push --force` and `-f` (not `--force-with-lease`), `vercel --prod`, `.env` files (not `.env.example`) written with an editing tool or a `>` or `>>` redirect to a `.env` path the guard recognises in the command text, and the common forms of destructive shell commands (a recursive delete of a root, home or project folder, privilege escalation, shutdown, disk formatting, cloud resource-group, project or account deletion); it is a seat belt, not a boundary. It also blocks a tool call whose input it cannot read. As the main agent it comes from this file; a native specialist carries its own copy from its own file, and a specialist that is still a projection carries the same guard script as an inline hook, on `Bash|PowerShell` and on `Write|Edit|MultiEdit|NotebookEdit`, the same tools as a native specialist, so none of them is bound by more than this. Brief every specialist on what to hold back.

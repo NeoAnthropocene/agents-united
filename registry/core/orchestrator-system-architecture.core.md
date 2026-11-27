@@ -67,6 +67,7 @@ invariants:
   - "Bounded contexts are explicit and modules have no circular dependencies."
   - "Every network call in a design has a circuit breaker, a retry backoff and a fallback."
   - "Security architecture is recommended to the user as the security-operations bundle, never delegated by this lead."
+  - "When the final report leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search
