@@ -23,9 +23,9 @@ import { readBoundedFile } from './bounded-file.js';
 import { validateHostProfile } from './host-profile.js';
 import { resolveWorkflowTree } from './workflow-check-path.js';
 import { MARKER_PREFIX } from './claude-projector.js';
-import { isNativeName, listNativeRoles, renderNativeWorkflow } from './native-package.js';
+import { isNativeName, renderNativeWorkflow } from './native-package.js';
 import { errorCode, shortened, unsafeEntryName, validUtf8 } from './skill-check.js';
-import { agentTypesUsed, lintWorkflow, workflowMetaName } from './workflow-lint.js';
+import { agentTypeRequests, lintWorkflow, workflowMetaName } from './workflow-lint.js';
 import type {
   WorkflowCheckCheckId, WorkflowCheckCode, WorkflowCheckFinding, WorkflowCheckGate, WorkflowCheckInput, WorkflowCheckResult, WorkflowCheckStatus,
 } from './types.js';
@@ -36,7 +36,17 @@ export const WORKFLOW_CHECK_MAX_BYTES = 128 * 1024;
 const EXTENSION = '.js';
 const BOM = String.fromCharCode(0xfeff);
 
-const UNAVAILABLE_CODES: ReadonlySet<WorkflowCheckCode> = new Set<WorkflowCheckCode>(['USAGE', 'INPUT_UNAVAILABLE']);
+/**
+ * What a pass does not establish, carried on every result (ADR 0082). The checker is stricter than the projector: it passes only
+ * a workflow the projector would emit intact, and it says nothing about whether the workflow is installed in a given workspace.
+ */
+export const WORKFLOW_CHECK_NOTES: readonly string[] = [
+  'agent-types: the agentType requests are found by a lexical scan of the script, not by running it. Only a request written as a string literal is verified against the registry; a value the scan cannot resolve fails as AGENT_TYPE_UNRESOLVED, and a type passed through a spread or built at run time cannot be seen at all.',
+  'agent-types: a native role file in the registry is not the same as an installed role. Whether the role is installed with a given Bundle (the Bundle lists it, and Bundle-specific native names apply) is out of reach of this check.',
+  'A pass does not establish installability: whether a Bundle lists the paired Skill, and a destination file in a workspace that is not managed and so needs --force, are not checked.',
+];
+
+const UNAVAILABLE_CODES:ReadonlySet<WorkflowCheckCode> = new Set<WorkflowCheckCode>(['USAGE', 'INPUT_UNAVAILABLE']);
 
 export function workflowCheckExitCode(result: WorkflowCheckResult): 0 | 1 | 2 {
   return result.status === 'passed' ? 0 : result.status === 'failed' ? 1 : 2;
@@ -51,7 +61,7 @@ function result(artifact: string | null, bytes: number | null, checks: WorkflowC
   const status: WorkflowCheckStatus = findings.some(item => UNAVAILABLE_CODES.has(item.code))
     ? 'unavailable'
     : checks.some(item => item.status === 'failed') ? 'failed' : 'passed';
-  return { version: 1, kind: 'deterministic', status, artifact: shortened(artifact), bytes, maxBytes: WORKFLOW_CHECK_MAX_BYTES, checks, findings, quality: 'pending', live: 'unverified' };
+  return { version: 1, kind: 'deterministic', status, artifact: shortened(artifact), bytes, maxBytes: WORKFLOW_CHECK_MAX_BYTES, checks, findings, notes: [...WORKFLOW_CHECK_NOTES], quality: 'pending', live: 'unverified' };
 }
 
 function unavailable(artifact: string | null, code: 'USAGE' | 'INPUT_UNAVAILABLE', messages: string[], reason: string): WorkflowCheckResult {
@@ -193,10 +203,15 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
         : []);
     }
 
-    const roles = new Set(listNativeRoles(registry, 'claude'));
-    const agentProblems = agentTypesUsed(text)
-      .filter(type => !roles.has(type))
-      .map(type => found('AGENT_TYPE', `The script asks for agentType ${quoted(type)}, which is not a native Claude agent: there is no ${path.posix.join('hosts', 'claude', 'agents', `${isNativeName(type) ? type : '<name>'}.md`)} in the registry.`));
+    // Only the requests written as a string literal can be checked. The others fail on purpose: the scan cannot know what they hold.
+    const requested = agentTypeRequests(text);
+    const roles = claudeRoleNames(registry);
+    const agentProblems = [
+      ...requested.literals
+        .filter(type => !roles.has(type))
+        .map(type => found('AGENT_TYPE', `The script asks for agentType ${quoted(type)}, which is not a native Claude agent: there is no regular file ${path.posix.join('hosts', 'claude', 'agents', `${isNativeName(type) ? type : '<name>'}.md`)} in the registry.`)),
+      ...requested.unresolved.map(line => found('AGENT_TYPE_UNRESOLVED', `Line ${line}: the script passes an agentType that is not a string literal, and the checker cannot resolve it statically, so it fails conservatively. Write the agent type as a string literal, for example agentType: 'code-reviewer'.`)),
+    ];
 
     return result(artifact, bytes.length, [
       name, done('size', []), done('encoding', encodingProblems), placement, lint, metaGate,
@@ -207,6 +222,34 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
   } catch (error) {
     return unavailable(artifact, 'INPUT_UNAVAILABLE', [`The workflow check could not run (${errorCode(error)}).`], 'The workflow check hit an unexpected error, so no check ran.');
   }
+}
+
+/**
+ * The native Claude agents the registry holds, by name: regular `.md` files (not a folder, not a link) with a native name, in a
+ * real `hosts/claude/agents/` folder. `listNativeRoles` (the native package's own list, which the projector and other callers
+ * use) goes by directory-entry names alone, so a folder named `code-reviewer.md` would count there; its behaviour is unchanged
+ * and this check does not use it.
+ */
+function claudeRoleNames(registry: string): ReadonlySet<string> {
+  const dir = path.join(registry, 'hosts', 'claude', 'agents');
+  const names = new Set<string>();
+  let entries: string[];
+  try {
+    if (!fs.lstatSync(dir).isDirectory()) return names;
+    entries = fs.readdirSync(dir);
+  } catch {
+    return names;
+  }
+  for (const entry of entries) {
+    const stem = entry.endsWith('.md') ? entry.slice(0, -'.md'.length) : null;
+    if (stem === null || !isNativeName(stem)) continue;
+    try {
+      if (fs.lstatSync(path.join(dir, entry)).isFile()) names.add(stem);
+    } catch {
+      // A role that cannot be inspected is not a role.
+    }
+  }
+  return names;
 }
 
 /** The largest host profile that is read. The committed one is a few KB; this stops a file that is not a profile. */

@@ -1336,7 +1336,7 @@ export type WorkflowCheckStatus = 'passed' | 'failed' | 'unavailable';
 export type WorkflowCheckGateStatus = 'passed' | 'failed' | 'not-run';
 export type WorkflowCheckCode =
   | 'USAGE' | 'INPUT_UNAVAILABLE'
-  | 'NAME' | 'SIZE' | 'ENCODING' | 'PLACEMENT' | 'LINT' | 'META_NAME' | 'SKILL_PAIR' | 'AGENT_TYPE' | 'RENDER';
+  | 'NAME' | 'SIZE' | 'ENCODING' | 'PLACEMENT' | 'LINT' | 'META_NAME' | 'SKILL_PAIR' | 'AGENT_TYPE' | 'AGENT_TYPE_UNRESOLVED' | 'RENDER';
 
 export interface WorkflowCheckFinding {
   code: WorkflowCheckCode;
@@ -1368,6 +1368,8 @@ export interface WorkflowCheckResult {
   maxBytes: number;
   checks: WorkflowCheckGate[];
   findings: WorkflowCheckFinding[];
+  /** What a pass does not establish (the agent-type scan is lexical; Bundle membership and installability are not checked). Present on every result. */
+  notes: string[];
   quality: 'pending';
   live: 'unverified';
 }

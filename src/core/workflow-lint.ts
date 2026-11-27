@@ -1,4 +1,5 @@
 import { parseJsLiteral, type JsLiteralObject } from './js-literal.js';
+import { tokenizeJs } from './js-tokens.js';
 
 /**
  * Plan 032 — maintainers' lint for a Claude dynamic workflow script, from the host's own rules (host-library/claude/guide/
@@ -133,7 +134,47 @@ export function lintWorkflow(source: string): string[] {
   return problems;
 }
 
-/** Every `agentType: '<name>'` the script asks for. */
+/** What a script asks for as `agentType`: the string-literal names, and the lines (1-based) of requests whose value is not a string literal. */
+export interface AgentTypeRequests {
+  literals: string[];
+  unresolved: number[];
+}
+
+/**
+ * Every `agentType` request in the script, found by a tokenizer (`js-tokens.ts`) that skips comments, strings, template text and
+ * regular expressions, so an example in any of them is not a request. A request is the key `agentType`, bare or quoted
+ * (`'agentType'`, `"agentType"`, `['agentType']`), after `{` or `,`, followed by `:`; or the shorthand `{ agentType }`. The value is
+ * a literal only when it is one string (single, double or backtick quotes, no `${`) and nothing more before the next `,` or `}`.
+ * Any other value, a shorthand included, is unresolved: the lexical scan cannot know what it holds.
+ */
+export function agentTypeRequests(source: string): AgentTypeRequests {
+  const literals = new Set<string>();
+  const unresolved: number[] = [];
+  for (const tokens of tokenizeJs(source)) {
+    for (let at = 0; at < tokens.length; at++) {
+      const head = tokens[at];
+      const bareOrQuoted = (head.kind === 'ident' && head.text === 'agentType') || (head.kind === 'string' && head.value === 'agentType');
+      const computed = head.kind === 'punct' && head.text === '[' && tokens[at + 1]?.kind === 'string' && tokens[at + 1].value === 'agentType'
+        && tokens[at + 2]?.kind === 'punct' && tokens[at + 2].text === ']';
+      if (!bareOrQuoted && !computed) continue;
+      const before = tokens[at - 1];
+      if (before === undefined || before.kind !== 'punct' || (before.text !== '{' && before.text !== ',')) continue;
+      const colon = tokens[at + (computed ? 3 : 1)];
+      if (colon?.kind === 'punct' && colon.text === ':') {
+        const value = tokens[at + (computed ? 4 : 2)];
+        const after = tokens[at + (computed ? 5 : 3)];
+        const closes = after === undefined || (after.kind === 'punct' && (after.text === ',' || after.text === '}'));
+        if (value !== undefined && closes && (value.kind === 'string' || (value.kind === 'template' && !value.interpolated))) literals.add(value.value);
+        else unresolved.push(head.line);
+      } else if (head.kind === 'ident' && colon?.kind === 'punct' && (colon.text === ',' || colon.text === '}')) {
+        unresolved.push(head.line);
+      }
+    }
+  }
+  return { literals: [...literals].sort(), unresolved: unresolved.sort((a, b) => a - b) };
+}
+
+/** Every `agentType` the script asks for as a string literal, sorted once each. */
 export function agentTypesUsed(source: string): string[] {
-  return [...new Set([...source.matchAll(/\bagentType\s*:\s*(['"`])((?:(?!\1).)*)\1/g)].map(match => match[2]))].sort();
+  return agentTypeRequests(source).literals;
 }
