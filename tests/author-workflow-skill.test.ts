@@ -765,6 +765,43 @@ describe('author-workflow bounded draft helper', () => {
     expect(fs.existsSync(written(f))).toBe(false);
   });
 
+  // A kill during the write can leave a partial workflow file and the lock together. The collision check comes before the lock check, so the
+  // first refusal names the workflow; it must give the whole recovery order, the same one the job contract gives: check that no helper is
+  // running, look at the workflow file (delete it if it is not yours), then delete the lock file.
+  it('names the workflow first when a killed run left a partial workflow and its lock, and says the recovery order: no helper running, the workflow, then the lock', () => {
+    const f = fixture();
+    const lock = path.join(f.checkout, 'registry/.author-workflow.lock');
+    fs.writeFileSync(lock, '4242\n');
+    fs.writeFileSync(written(f), WORKFLOW.slice(0, 60));
+    const before = tree(f.checkout);
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    const reason: string = result.blocked.reason;
+    expect(reason).toMatch(/already exists; it collides with/);
+    expect(reason).toContain(`${NAME}.js`);
+    expect(reason).toContain(lock);
+    expect(reason).toMatch(/check that no helper is running[\s\S]*delete it if it is not yours[\s\S]*then delete the lock file/i);
+    expect(tree(f.checkout)).toEqual(before);
+    // Following those steps in that order lets the next run write.
+    fs.rmSync(written(f));
+    fs.rmSync(lock);
+    expect(run(f).exit).toBe(0);
+  });
+
+  it('keeps the lock refusal on its own steps when only the lock is left, and the same recovery order in the job contract', () => {
+    const f = fixture();
+    const lock = path.join(f.checkout, 'registry/.author-workflow.lock');
+    fs.writeFileSync(lock, '4242\n');
+    const result = run(f);
+    expect(result.exit).toBe(1);
+    expect(result.blocked.reason).toMatch(/^Another run holds /);
+    expect(result.blocked.reason).toMatch(/check that no helper is running, then delete the lock file/i);
+    const job = fs.readFileSync(path.join(candidate, 'references/job.md'), 'utf8').replace(/\r\n/g, '\n');
+    expect(job).toMatch(/killed during the write can leave a partial workflow file and a stale lock/);
+    expect(job).toMatch(/refuses on the workflow file first/);
+    expect(job).toMatch(/check that no helper is running, look at the partial file and delete it if it is not yours, then delete the lock file/);
+  });
+
   // Two helpers started at the same moment with the same job: the lock lets exactly one write. The other is refused before it writes anything,
   // either at the lock ("Another run holds") or, when it takes the lock after the first has finished, at the collision check ("already exists").
   // No other outcome is acceptable: not a second write, not a generic failure, and the winner's file and lock are never touched by the loser.
