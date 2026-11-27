@@ -36,6 +36,20 @@ const MAX_TEMPLATE_DEPTH = 32;
 
 const LINE_SEPARATOR = String.fromCharCode(0x2028);
 const PARAGRAPH_SEPARATOR = String.fromCharCode(0x2029);
+const ZERO_WIDTH_NO_BREAK_SPACE = String.fromCharCode(0xfeff);
+/** Every code unit of the Unicode Space_Separator category (all in the Basic Multilingual Plane). */
+const SPACE_SEPARATOR = /^\p{Zs}$/u;
+
+/** ECMAScript LineTerminator: LF, CR, U+2028 or U+2029 (a CRLF pair is two of them, counted as one line end by the lexer). */
+export function isLineTerminator(char: string | undefined): boolean {
+  return char === '\n' || char === '\r' || char === LINE_SEPARATOR || char === PARAGRAPH_SEPARATOR;
+}
+
+/** ECMAScript WhiteSpace: tab, vertical tab, form feed, space, no-break space, the byte order mark and any Zs character. Not a line terminator. */
+export function isWhitespace(char: string | undefined): boolean {
+  if (char === undefined) return false;
+  return char === '\t' || char === '\v' || char === '\f' || char === ' ' || char === ZERO_WIDTH_NO_BREAK_SPACE || SPACE_SEPARATOR.test(char);
+}
 
 const SIMPLE = new Map<string, string>([['n', '\n'], ['r', '\r'], ['t', '\t'], ['b', '\b'], ['f', '\f'], ['v', '\v'], ['0', String.fromCharCode(0)]]);
 
@@ -63,6 +77,15 @@ function cook(body: string): string {
   return out;
 }
 
+/**
+ * Whether the identifier token at `at` is a member name, not a keyword: it follows a `.` (so also `?.`, which lexes as `?` then `.`)
+ * or a `#` (a private name, such as `this.#if`). `in`, `if` and `return` there are plain names, so a `/` after them divides.
+ */
+function isMemberName(list: JsToken[], at: number): boolean {
+  const prior = list[at - 1];
+  return prior !== undefined && prior.kind === 'punct' && (prior.text === '.' || prior.text === '#');
+}
+
 /** The tokens of `source`: the main list first, then one list for each template interpolation, in the order they occur. */
 export function tokenizeJs(source: string): JsToken[][] {
   const lists: JsToken[][] = [];
@@ -73,9 +96,8 @@ export function tokenizeJs(source: string): JsToken[][] {
   /** The length of the line terminator at `at`: 2 for CRLF, 1 for LF, a lone CR, U+2028 or U+2029, else 0. */
   const eolAt = (at: number): number => {
     const char = source[at];
-    if (char === '\n' || char === LINE_SEPARATOR || char === PARAGRAPH_SEPARATOR) return 1;
-    if (char === '\r') return source[at + 1] === '\n' ? 2 : 1;
-    return 0;
+    if (!isLineTerminator(char)) return 0;
+    return char === '\r' && source[at + 1] === '\n' ? 2 : 1;
   };
 
   const push = (list: JsToken[], kind: JsToken['kind'], text: string, startLine: number, value = text, interpolated = false): void => {
@@ -211,7 +233,7 @@ export function tokenizeJs(source: string): JsToken[][] {
       const next = source[index + 1];
       const lineEnd = eolAt(index);
       if (lineEnd > 0) { line++; index += lineEnd; continue; }
-      if (char === ' ' || char === '\t' || char === '\v' || char === '\f' || char === String.fromCharCode(0xa0) || char === String.fromCharCode(0xfeff)) { index++; continue; }
+      if (isWhitespace(char)) { index++; continue; }
       if (char === '/' && next === '/') {
         while (index < length && eolAt(index) === 0) index++;
         continue;
@@ -239,7 +261,7 @@ export function tokenizeJs(source: string): JsToken[][] {
         const before = list[list.length - 1];
         const startsRegex = before === undefined
           || (before.kind === 'punct' && (before.text === ')' ? headerCloses.has(before) : !POSTFIX_OR_CLOSE.has(before.text)))
-          || (before.kind === 'ident' && REGEX_AFTER.has(before.value));
+          || (before.kind === 'ident' && REGEX_AFTER.has(before.value) && !isMemberName(list, list.length - 1));
         if (startsRegex) { regex(list); continue; }
       }
       if ((char === '+' || char === '-') && next === char) {
@@ -252,7 +274,7 @@ export function tokenizeJs(source: string): JsToken[][] {
       if (char === '(') {
         const before = list[list.length - 2];
         const beforeThat = list[list.length - 3];
-        const property = before !== undefined && beforeThat?.kind === 'punct' && beforeThat.text === '.';
+        const property = isMemberName(list, list.length - 2);
         const keyword = before?.kind === 'ident' && !property && HEADER_KEYWORDS.has(before.value);
         const forAwait = before?.kind === 'ident' && before.value === 'await' && beforeThat?.kind === 'ident' && beforeThat.value === 'for';
         parens.push(keyword || forAwait);

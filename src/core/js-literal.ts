@@ -11,6 +11,8 @@
  * `valueOf`) can exist on a value. Pure: no terminal I/O, no file system.
  */
 
+import { isLineTerminator, isWhitespace } from './js-tokens.js';
+
 export type JsLiteral = null | boolean | number | string | JsLiteral[] | JsLiteralObject;
 /** An object read from a literal. It has no prototype (`Object.create(null)`). */
 export interface JsLiteralObject { [key: string]: JsLiteral }
@@ -19,8 +21,8 @@ export type JsLiteralResult = { ok: true; value: JsLiteral } | { ok: false; mess
 
 /** A workflow `meta` is two levels deep (`phases[].title`); this leaves ample room and stops a recursion bomb. */
 const MAX_DEPTH = 32;
-const WHITESPACE = new Set([' ', '\t', '\n', '\r', '\v', '\f', String.fromCharCode(0xa0), String.fromCharCode(0xfeff), String.fromCharCode(0x2028), String.fromCharCode(0x2029)]);
-const LINE_ENDS = new Set(['\n', '\r', String.fromCharCode(0x2028), String.fromCharCode(0x2029)]);
+/** White space and line terminators are the tokenizer's own definitions (`js-tokens.ts`): all ECMAScript WhiteSpace, and LF, CR, U+2028, U+2029. */
+const isTrivia = (char: string | undefined): boolean => isWhitespace(char) || isLineTerminator(char);
 const IDENT_START = /[\p{ID_Start}$_]/u;
 const IDENT_PART = /[\p{ID_Continue}$‌‍]/u;
 const NUMBER = /(?:0[xX][0-9a-fA-F]+|0[oO][0-7]+|0[bB][01]+|(?:(?:0|[1-9]\d*)(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)/y;
@@ -48,9 +50,9 @@ class Reader {
   private skipTrivia(): void {
     for (;;) {
       const char = this.text[this.index];
-      if (char !== undefined && WHITESPACE.has(char)) { this.index++; continue; }
+      if (isTrivia(char)) { this.index++; continue; }
       if (char === '/' && this.text[this.index + 1] === '/') {
-        while (this.index < this.text.length && !LINE_ENDS.has(this.text[this.index])) this.index++;
+        while (this.index < this.text.length && !isLineTerminator(this.text[this.index])) this.index++;
         continue;
       }
       if (char === '/' && this.text[this.index + 1] === '*') {
@@ -214,7 +216,7 @@ class Reader {
       if (this.text[this.index] === '\n') this.index++;
       return '';
     }
-    if (LINE_ENDS.has(char)) return '';
+    if (isLineTerminator(char)) return '';
     if (char === '0') {
       const next = this.text[this.index];
       if (next !== undefined && next >= '0' && next <= '9') this.fail('a legacy octal escape is not allowed');
