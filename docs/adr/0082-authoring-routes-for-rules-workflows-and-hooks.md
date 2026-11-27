@@ -67,7 +67,7 @@ A portable workflow is a Skill, `registry/skills/workflow-<name>/` (ADR 0016), s
 - **Placement.** The file sits at `<registry>/hosts/claude/workflows/<name>.js`; the registry is the folder four levels up. The projector looks nowhere else.
 - **Lint.** The script passes the workflow lint the repository already applies to its own workflows: `export const meta` first and a pure literal, phase titles that match `meta.phases`, no module loading, and none of the calls that break resume.
 - **Name match.** `meta.name` equals the file name. Claude Code runs a saved workflow as `/<name>`.
-- **Skill pair.** `<registry>/skills/<name>/SKILL.md` exists. The projector installs a native workflow only in place of a Skill of the same name, so a workflow without one is never installed.
+- **Skill pair.** `<registry>/skills/<name>/SKILL.md` exists. The projector installs a native workflow only in place of a Skill of the same name, so a workflow without one is never installed. The same holds when the Claude host profile lists that Skill as unsupported, because the projector skips it.
 - **Agent types.** Every `agentType` the script asks for is a native Claude agent in `<registry>/hosts/claude/agents/`.
 - **Rendering.** The installed form keeps the script's text. The installed form is the native package's own rendering: line endings normalised and the managed marker appended as the last line. The script carries no managed marker itself, and the rendered script still passes the lint.
 

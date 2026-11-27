@@ -13,6 +13,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { readBoundedFile } from './bounded-file.js';
+import { unsupportedSkillNames } from './host-profile.js';
 import { MARKER_PREFIX } from './claude-projector.js';
 import { isNativeName, listNativeRoles, renderNativeWorkflow } from './native-package.js';
 import { errorCode, shortened, unsafeEntryName, validUtf8 } from './skill-check.js';
@@ -164,7 +165,12 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
     const skillFile = path.join(registry, 'skills', stem, 'SKILL.md');
     const skillGate = !isNativeName(stem)
       ? gate('skill-pair', 'not-run', 'The file name is not one the native package lists, so there is no Skill name to look up (the name check says so).')
-      : done('skill-pair', isFile(skillFile) ? [] : [found('SKILL_PAIR', `There is no Skill of the same name: ${path.posix.join('skills', stem, 'SKILL.md')} is missing in the registry. The installer puts a native workflow only in place of that Skill, so this workflow would never be installed.`)]);
+      : done('skill-pair', !isFile(skillFile)
+        ? [found('SKILL_PAIR', `There is no Skill of the same name: ${path.posix.join('skills', stem, 'SKILL.md')} is missing in the registry. The installer puts a native workflow only in place of that Skill, so this workflow would never be installed.`)]
+        // The projector's own list: a Skill the Claude profile marks unsupported is not projected, and neither is the workflow in its place.
+        : unsupportedSkillNames(registry, 'claude').has(stem)
+          ? [found('SKILL_PAIR', `The Claude host profile lists the Skill ${stem} as unsupported (hosts/claude/profile.json unsupportedSkills), so the projector skips it and this workflow would never be installed.`)]
+          : []);
 
     const roles = new Set(listNativeRoles(registry, 'claude'));
     const agentProblems = agentTypesUsed(text)

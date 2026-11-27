@@ -456,6 +456,21 @@ describe('workflow-check', () => {
     it('does not need the other skills to exist or to be good', () => {
       expect(check({ skills: ['demo-flow', 'other-one', 'other-two'] }).status).toBe('passed');
     });
+
+    // The projector skips a Skill the Claude profile lists as unsupported, and with it the native workflow that stands in for it.
+    it('fails a workflow whose Skill the Claude profile lists as unsupported, and passes it when the profile does not', () => {
+      const withProfile = (unsupported: string[]): WorkflowCheckResult => {
+        const made = fixture();
+        const profile = JSON.parse(fs.readFileSync(path.resolve('registry/hosts/claude/profile.json'), 'utf8')) as { unsupportedSkills?: unknown[] };
+        profile.unsupportedSkills = unsupported.map(name => ({ name, since: '2026-11-27', rationale: 'Test fixture: written for another host.' }));
+        fs.writeFileSync(path.join(made.registry, 'hosts', 'claude', 'profile.json'), `${JSON.stringify(profile, null, 2)}\n`);
+        return runWorkflowCheck({ artifact: made.file });
+      };
+      const unsupported = withProfile(['demo-flow']);
+      expect(codesOf(unsupported)).toEqual(['SKILL_PAIR']);
+      expect(unsupported.findings[0]?.message).toMatch(/unsupported/i);
+      expect(withProfile(['other-flow']).status).toBe('passed');
+    });
   });
 
   describe('Tier 2: AGENT_TYPE', () => {
