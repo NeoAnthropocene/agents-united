@@ -496,7 +496,10 @@ describe('workflow-check', () => {
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, held.file), GOOD);
       const result = runWorkflowCheck({ artifact: path.join(path.dirname(root), spelled.registry, 'hosts', 'claude', 'workflows', 'demo-flow.js') });
-      unavailableWith(result, process.platform === 'win32' ? /spelled|exact|case/i : /./);
+      // The walk lists each folder and compares the names exactly, so the same message comes out on a case-sensitive file system, where
+      // the alias is only a different entry, and on a case-insensitive one, where the alias would have opened the entry.
+      unavailableWith(result, /the same name in another case/);
+      expect(result.findings[0]?.message).toContain(`spells ${JSON.stringify(spelled[which])} where the file system holds ${JSON.stringify(held[which])}`);
     });
 
     it('refuses a file replaced between the inspection and the open (the open file is not the inspected one)', () => {
@@ -1092,9 +1095,10 @@ describe('workflow-check', () => {
       });
 
       it('never puts AGENT_TYPE_UNRESOLVED in the finding codes (it is the entry name only)', () => {
+        // A compile-time check only: the finding union has no such code. The runtime check is the loop below.
         // @ts-expect-error the finding union no longer has this code
-        const code: WorkflowCheckCode = 'AGENT_TYPE_UNRESOLVED';
-        expect(code).toBe('AGENT_TYPE_UNRESOLVED');
+        const notAFindingCode: WorkflowCheckCode = 'AGENT_TYPE_UNRESOLVED';
+        void notAFindingCode;
         for (const call of ['{ agentType: kind }', "{ agentType: 'ghost' }"]) {
           expect(requests(call).findings.map(item => item.code)).not.toContain('AGENT_TYPE_UNRESOLVED');
         }
@@ -1384,8 +1388,10 @@ describe('workflow-check', () => {
     // workflow-implement.js and workflow-test.js choose their specialist at run time (`SPECIALISTS[request.specialist]`, then
     // `agentType: task.agentType`). A lexical scan cannot resolve that, so the checker lists those sites in unresolvedAgentTypes
     // and does not verify them; they still pass. workflow-review.js writes its types as literals and lists none. Any finding on
-    // any committed workflow fails this test.
-    const KNOWN_DYNAMIC_AGENT_TYPE = new Set(['workflow-implement.js', 'workflow-test.js']);
+    // any committed workflow fails this test. The number of unresolved sites is pinned (Codex round 2: "at least one" would pass if
+    // the tokenizer lost some): workflow-implement.js has three (the specialist lookup and the two spawns that pass task.agentType)
+    // and workflow-test.js one (the fixer spawn). A change here means either the scripts or the tokenizer changed; look at which.
+    const KNOWN_DYNAMIC_AGENT_TYPE = new Map<string, number>([['workflow-implement.js', 3], ['workflow-test.js', 1]]);
 
     it('passes workflow-check for every committed workflow, and lists the run-time agent types of the two that pick their specialist at run time', () => {
       const failures: string[] = [];
@@ -1395,8 +1401,9 @@ describe('workflow-check', () => {
         if (result.status !== 'passed') failures.push(`${name}: ${result.findings.map(item => `${item.code} ${item.message}`).join('; ')}`);
         expect(result.checks.every(item => item.status === 'passed'), name).toBe(true);
         expect(result.findings, name).toEqual([]);
-        if (KNOWN_DYNAMIC_AGENT_TYPE.has(name)) {
-          expect(result.unresolvedAgentTypes.length, name).toBeGreaterThan(0);
+        const pinned = KNOWN_DYNAMIC_AGENT_TYPE.get(name);
+        if (pinned !== undefined) {
+          expect(result.unresolvedAgentTypes.length, name).toBe(pinned);
           for (const site of result.unresolvedAgentTypes) {
             expect(site.code, name).toBe('AGENT_TYPE_UNRESOLVED');
             expect(site.excerpt, `${name} line ${site.line}`).toContain('agentType');
@@ -1416,7 +1423,7 @@ describe('workflow-check', () => {
     });
 
     it('lists only workflows that exist in the known-dynamic set', () => {
-      for (const name of KNOWN_DYNAMIC_AGENT_TYPE) expect(files, name).toContain(name);
+      for (const name of KNOWN_DYNAMIC_AGENT_TYPE.keys()) expect(files, name).toContain(name);
     });
   });
 });

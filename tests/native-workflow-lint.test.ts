@@ -89,11 +89,13 @@ describe('agentTypeRequests', () => {
     expect(agentTypeRequests(source)).toEqual({ literals: ['five'], unresolved: [] });
   });
 
-  it('finds nothing in an empty or unterminated script, and never throws', () => {
+  it('does not throw on an empty or unterminated script, and finds no request in an empty one or in a key with no value', () => {
     for (const source of ['', "const s = 'unterminated", 'const t = `open ${', '/* open', "{ agentType: ", "{ agentType: 'a"]) {
       expect(() => agentTypeRequests(source), source).not.toThrow();
     }
     expect(agentTypeRequests('')).toEqual({ literals: [], unresolved: [] });
+    // A key with no value is a request the scan cannot resolve: it is listed, not taken for a literal.
+    expect(agentTypeRequests('{ agentType: ')).toEqual({ literals: [], unresolved: [1] });
   });
 });
 
@@ -440,7 +442,7 @@ describe('the committed native workflows', () => {
     }
   });
 
-  it.each(names)('%s passes the lint, uses only installed native agent types, and replaces a skill of the same name', name => {
+  it.each(names)('%s passes the lint, its literal agent types name registry roles, and it replaces a skill of the same name', name => {
     const source = fs.readFileSync(nativeWorkflowSource(REGISTRY, 'claude', name)!, 'utf8');
     expect(lintWorkflow(source), name).toEqual([]);
     const nativeAgents = listNativeRoles(REGISTRY, 'claude');
