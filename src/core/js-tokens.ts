@@ -4,8 +4,11 @@
  * template ends at the end of its line or the text.
  *
  * It is a lexer, not a parser. The one ambiguity it settles by a rule is `/`: it starts a regular expression when the token
- * before it cannot end an expression (a punctuator other than `)`, `]` or `}`, a keyword such as `return`, or nothing), and is
- * a division otherwise. The code inside a template's `${...}` is lexed too, as a list of its own, so a key written there is seen.
+ * before it cannot end an expression (a punctuator other than `)`, `]`, `}`, `++` or `--`, a keyword such as `return`, or
+ * nothing) or is the `)` that closes the header of an `if`, `while`, `for` or `with`, and is a division otherwise. The rule is a
+ * heuristic with a stated limit: a `/` after a `}` that closes a block (a statement that starts with a regular expression) is
+ * read as a division, and a `/` after a `)` that closes a parenthesised expression that is not such a header is a division. The code inside a template's `${...}` is lexed too, as a list
+ * of its own, so a key written there is seen.
  */
 
 export interface JsToken {
@@ -22,7 +25,11 @@ export interface JsToken {
 
 /** Keywords after which a `/` starts a regular expression rather than dividing. */
 const REGEX_AFTER = new Set(['return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'throw', 'case', 'do', 'else', 'yield', 'await']);
-const IDENT_START = /[\p{ID_Start}$_]/u;
+/** Keywords whose parenthesised header is followed by a statement, which may start with a regular expression. */
+const HEADER_KEYWORDS = new Set(['if', 'while', 'for', 'with']);
+/** Punctuators after which a `/` divides: the closers of a group, an index or a block or object, and the postfix operators. */
+const POSTFIX_OR_CLOSE = new Set([']', '}', '++', '--']);
+const IDENT_START =/[\p{ID_Start}$_]/u;
 const IDENT_PART = /[\p{ID_Continue}$‌‍]/u;
 /** Templates nested deeper than this are read as text from the inner `${` on, which stops a recursion bomb. */
 const MAX_TEMPLATE_DEPTH = 32;
@@ -168,6 +175,10 @@ export function tokenizeJs(source: string): JsToken[][] {
   /** Lexes into `list` until the end of the text or, when `nested`, the `}` that closes the interpolation. */
   function code(list: JsToken[], nested: boolean, depth: number): void {
     let braces = 0;
+    /** One entry per open `(`: whether it opens the header of an `if`, `while`, `for` or `with`. */
+    const parens: boolean[] = [];
+    /** The `)` tokens that close such a header: a `/` after one starts a regular expression, not a division. */
+    const headerCloses = new Set<JsToken>();
     while (index < length) {
       const char = source[index];
       const next = source[index + 1];
@@ -199,11 +210,27 @@ export function tokenizeJs(source: string): JsToken[][] {
       if (char === '/') {
         const before = list[list.length - 1];
         const startsRegex = before === undefined
-          || (before.kind === 'punct' && !')]}'.includes(before.text))
+          || (before.kind === 'punct' && (before.text === ')' ? headerCloses.has(before) : !POSTFIX_OR_CLOSE.has(before.text)))
           || (before.kind === 'ident' && REGEX_AFTER.has(before.value));
         if (startsRegex) { regex(list); continue; }
       }
+      if ((char === '+' || char === '-') && next === char) {
+        // `++` and `--` are one token, so a `/` after one is a division (`n++ / 2`): a postfix operator ends an expression.
+        push(list, 'punct', char + char, line);
+        index += 2;
+        continue;
+      }
       push(list, 'punct', char, line);
+      if (char === '(') {
+        const before = list[list.length - 2];
+        const beforeThat = list[list.length - 3];
+        const property = before !== undefined && beforeThat?.kind === 'punct' && beforeThat.text === '.';
+        const keyword = before?.kind === 'ident' && !property && HEADER_KEYWORDS.has(before.value);
+        const forAwait = before?.kind === 'ident' && before.value === 'await' && beforeThat?.kind === 'ident' && beforeThat.value === 'for';
+        parens.push(keyword || forAwait);
+      } else if (char === ')') {
+        if (parens.pop() === true) headerCloses.add(list[list.length - 1]);
+      }
       index++;
     }
   }
