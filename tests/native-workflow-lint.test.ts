@@ -137,6 +137,54 @@ describe('agentTypeRequests: escaped identifiers and a computed template key', (
   });
 });
 
+// Codex round 2, blocker 3: where a `/` starts a regular expression and where it divides.
+describe('agentTypeRequests: regular expression or division', () => {
+  const EXAMPLE = "{ agentType: 'inside' }";
+
+  it.each([
+    ['an if header', "if (ok) /{ agentType: 'inside' }/.test(text)"],
+    ['an if header with a nested call', "if (check(a, (b) => b)) /{ agentType: 'inside' }/.test(text)"],
+    ['a while header', "while (more()) /{ agentType: 'inside' }/.test(text)"],
+    ['a for header', "for (let i = 0; i < 3; i++) /{ agentType: 'inside' }/.test(text)"],
+    ['a for-of header', "for (const item of list) /{ agentType: 'inside' }/.test(item)"],
+    ['a for await header', "for await (const item of list) /{ agentType: 'inside' }/.test(item)"],
+    ['an else-if chain', "if (a) x(); else if (b) /{ agentType: 'inside' }/.test(text)"],
+  ])('starts a regular expression after the ) that closes %s, so its text is not code', (_label, statement) => {
+    const source = `${statement}\nconst c = ${EXAMPLE.replace('inside', 'seen')}`;
+    expect(agentTypeRequests(source)).toEqual({ literals: ['seen'], unresolved: [] });
+  });
+
+  it.each([
+    ['a postfix ++', 'n++ / 2'],
+    ['a postfix --', 'n-- / 2'],
+    ['a postfix ++ on a member', 'this.count++ / 2'],
+    ['a postfix ++ with a space', 'n ++ / 2'],
+  ])('divides after %s, so a request later on the line is still seen', (_label, expression) => {
+    const source = `const v = ${expression}, w = agent('x', { agentType: 'ghost' })`;
+    expect(agentTypeRequests(source)).toEqual({ literals: ['ghost'], unresolved: [] });
+  });
+
+  it('still divides after a ) that does not close a header, and after ] and }', () => {
+    const source = [
+      "const a = (b + c) / 2, d = agent('x', { agentType: 'one' })",
+      "const e = f(g) / 2, h = agent('x', { agentType: 'two' })",
+      "const i = j[0] / 2, k = agent('x', { agentType: 'three' })",
+      "const l = { m: 1 }.m / 2, n = agent('x', { agentType: 'four' })",
+    ].join('\n');
+    expect(agentTypeRequests(source).literals).toEqual(['four', 'one', 'three', 'two']);
+  });
+
+  it('still starts a regular expression after an operator, a keyword and the start of a statement', () => {
+    const source = [
+      `/${EXAMPLE}/.test(x)`,
+      `const a = b || /${EXAMPLE}/`,
+      `const c = d ? /${EXAMPLE}/ : 1`,
+      `function f() { return /${EXAMPLE}/ }`,
+    ].join('\n');
+    expect(agentTypeRequests(source)).toEqual({ literals: [], unresolved: [] });
+  });
+});
+
 // ADR 0082: `meta` is read as data. The lint never evaluates it, and a malformed shape is a lint problem, never an exception.
 describe('lintWorkflow reads meta as data', () => {
   const PROBE = '__workflowLintMetaRan';

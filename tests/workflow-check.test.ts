@@ -780,6 +780,19 @@ describe('workflow-check', () => {
         }
       });
 
+      it('tells a regular expression from a division after an if header and after a postfix ++ (Codex round 2)', () => {
+        const tail = "const found = await agent('look', { agentType: 'ghost' })\n";
+        const head = GOOD.replace(/const found = .*\n/, '');
+        const regexAfterIf = check({ content: `${head}if (args) /{ agentType: 'inside' }/.test(args.text)\n${tail}` });
+        expect(codesOf(regexAfterIf)).toEqual(['AGENT_TYPE']);
+        expect(regexAfterIf.findings).toHaveLength(1);
+        expect(regexAfterIf.findings[0]?.message).toContain('ghost');
+        expect(regexAfterIf.findings[0]?.message).not.toContain('inside');
+        const divisionAfterPostfix = check({ content: `${head}let n = 0\nconst half = n++ / 2, found = await agent('look', { agentType: 'ghost' })\n` });
+        expect(codesOf(divisionAfterPostfix)).toEqual(['AGENT_TYPE']);
+        expect(divisionAfterPostfix.findings[0]?.message).toContain('ghost');
+      });
+
       it('does not take an example in a comment for a request', () => {
         const result = check({ content: `${GOOD}// ask for { agentType: 'ghost' } here\n/* agentType: 'ghost2', agentType: kind */\n` });
         expect(result.status).toBe('passed');
