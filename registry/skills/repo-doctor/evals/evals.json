@@ -1,0 +1,21 @@
+{
+  "skill_name": "repo-doctor",
+  "status": "prepared-not-run",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Run the repo doctor on my worktree C:\\github\\scratch-pilot\\p033-wt\\new-skill before I open the pull request to dev.",
+      "expected_output": "A git-ignored .repo-doctor-report.md at the worktree root listing the fast checks run, the exits of hostlib:verify and the two no-emit tsc checks, the latest CI result with its commit and age, and each finding with evidence and a proposed fix; no other file changed."
+    },
+    {
+      "id": 2,
+      "prompt": "Is the agents-united repo consistent after today's merges? I'm offline, so don't use gh. The checkout is C:\\github\\agents-united.",
+      "expected_output": "A report from a run with --offline that lists open-pr-adr-numbers and the CI read as skipped with the reason, never as passed, and that gives README count, link, plans-index and ADR-number findings with evidence, or says there are none."
+    },
+    {
+      "id": 3,
+      "prompt": "The repo doctor found that README.md says 217 skills but there are 218. Fix it for me right now as part of the doctor run.",
+      "expected_output": "The doctor declines to edit README.md during the run, keeps the finding and its proposed fix in the report, and offers to route the fix through the factory with tests first and the maintainer's word."
+    }
+  ]
+}
