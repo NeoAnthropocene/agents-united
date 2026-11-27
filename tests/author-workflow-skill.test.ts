@@ -80,6 +80,30 @@ describe('author-workflow source gates', () => {
     expect(text).toMatch(/never pushes|no commit, push/i);
   });
 
+  it('names the Bundle membership note in the entry, the native loader, the report and the job contract, and says how repair mode states it', () => {
+    for (const file of [path.join(candidate, 'SKILL.md'), loaderFile]) {
+      const text = fs.readFileSync(file, 'utf8');
+      const step = lines(text).find(line => line.startsWith('7. ')) ?? '';
+      expect(step, file).toMatch(/whether a Bundle lists the paired Skill/);
+      expect(step, file).toMatch(/Create mode/);
+      expect(step, file).toMatch(/`bundleMembership`/);
+      expect(step, file).toMatch(/Repair mode/);
+      expect(step, file).toMatch(/registry\/bundles\.json/);
+      expect(lines(text).length, file).toBeLessThanOrEqual(90);
+      expect(text.length, file).toBeLessThanOrEqual(6000);
+    }
+    const report = fs.readFileSync(path.join(candidate, 'assets/report.md'), 'utf8');
+    expect(report).toMatch(/yes or no/i);
+    expect(report).toMatch(/which Bundles/);
+    const job = fs.readFileSync(path.join(candidate, 'references/job.md'), 'utf8');
+    expect(job).toMatch(/`bundleMembership`/);
+    expect(job).toMatch(/never refuses/i);
+    expect(job).toMatch(/never installed/);
+    expect(job).toMatch(/Repair mode[^\n]*registry\/bundles\.json|registry\/bundles\.json[^\n]*Repair mode/);
+    expect(job).toMatch(/unreadable/);
+    expect(fs.readFileSync(path.join(candidate, 'examples/one-draft.md'), 'utf8')).toMatch(/bundleMembership/);
+  });
+
   it('words the checker as the checkout\'s built CLI and never as a workspace-relative dist path', () => {
     for (const file of [path.join(candidate, 'SKILL.md'), loaderFile, path.join(candidate, 'references/quality.md'), path.join(candidate, 'examples/one-draft.md')]) {
       const text = fs.readFileSync(file, 'utf8');
@@ -296,6 +320,7 @@ describe('author-workflow bounded draft helper', () => {
       version: 1, status: 'written',
       workflow: { path: `${WORKFLOWS}/${NAME}.js`, bytes: Buffer.byteLength(WORKFLOW), sha256: sha(WORKFLOW) },
       skill: { path: `registry/skills/${NAME}/SKILL.md`, sha256: sha(SKILL_TEXT) },
+      bundleMembership: { listed: null, bundles: [], unreadable: expect.stringMatching(/registry\/bundles\.json is unavailable/), note: expect.stringMatching(/could not be read/) },
       validation: { status: 'unverified', reason: 'This helper runs no workflow-check; run it on the written workflow file.' },
       externalActions: [],
     });
@@ -307,6 +332,80 @@ describe('author-workflow bounded draft helper', () => {
     expect(fs.existsSync(path.join(f.checkout, 'registry/bundles.json'))).toBe(false);
     expect(run(f).exit).toBe(0);
     expect(fs.existsSync(path.join(f.checkout, 'registry/bundles.json'))).toBe(false);
+  });
+
+  /** A registry/bundles.json in the shape of the shipped one: each Bundle names its Skills. */
+  function writeBundles(f: Fixture, bundles: Record<string, string[]>): Buffer {
+    const bytes = Buffer.from(`${JSON.stringify({ version: 1, bundles: Object.fromEntries(Object.entries(bundles).map(([name, list]) => [name, { name, skills: list }])) }, null, 2)}\n`);
+    fs.writeFileSync(path.join(f.checkout, 'registry/bundles.json'), bytes);
+    return bytes;
+  }
+  const bundlesFile = (f: Fixture): string => path.join(f.checkout, 'registry/bundles.json');
+
+  it('reports the one Bundle that lists the paired Skill, and leaves bundles.json as it was', () => {
+    const f = fixture();
+    const bytes = writeBundles(f, { 'agent-factory': ['author-skill', NAME], 'software-engineering': ['author-skill'] });
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(0);
+    expect(result.report.bundleMembership).toEqual({ listed: true, bundles: ['agent-factory'] });
+    expect(fs.readFileSync(bundlesFile(f)).equals(bytes)).toBe(true);
+    expect(fs.existsSync(written(f))).toBe(true);
+  });
+
+  it('reports every Bundle that lists the paired Skill, in the order of the file', () => {
+    const f = fixture();
+    writeBundles(f, { 'software-engineering': [NAME, 'author-skill'], 'agent-factory': ['author-rule'], 'release-ops': [NAME] });
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(0);
+    expect(result.report.bundleMembership).toEqual({ listed: true, bundles: ['software-engineering', 'release-ops'] });
+  });
+
+  it('writes the workflow and reports that no Bundle lists the paired Skill, never refusing on it, and matches the exact name only', () => {
+    const f = fixture();
+    const bytes = writeBundles(f, { 'agent-factory': [`${NAME}-extra`, `pre-${NAME}`, 'author-skill'], empty: [] });
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(0);
+    expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
+    expect(result.report.status).toBe('written');
+    expect(result.report.bundleMembership.listed).toBe(false);
+    expect(result.report.bundleMembership.bundles).toEqual([]);
+    expect(result.report.bundleMembership.note).toMatch(/No Bundle lists the paired Skill/);
+    expect(result.report.bundleMembership.note).toMatch(/never installed/);
+    expect(fs.readFileSync(bundlesFile(f)).equals(bytes)).toBe(true);
+  });
+
+  it('reports bundles.json as unreadable instead of failing the write: invalid JSON, a missing bundles map, a folder, or a file past the bound', () => {
+    const cases: Array<[string, (f: Fixture) => void, RegExp]> = [
+      ['invalid JSON', f => fs.writeFileSync(bundlesFile(f), '{ not json'), /not valid JSON/],
+      ['no bundles map', f => fs.writeFileSync(bundlesFile(f), '{"version":1}\n'), /no bundles map/],
+      ['a folder', f => fs.mkdirSync(bundlesFile(f)), /not a regular file/],
+      ['past the bound', f => fs.writeFileSync(bundlesFile(f), Buffer.alloc(2 * 1024 * 1024, ' ')), /larger than 1 MiB/],
+    ];
+    for (const [label, arrange, reason] of cases) {
+      const f = fixture();
+      arrange(f);
+      const before = fs.lstatSync(bundlesFile(f)).isFile() ? sha(fs.readFileSync(bundlesFile(f))) : null;
+      const result = run(f);
+      expect(result.exit, `${label}: ${result.stdout}${result.stderr}`).toBe(0);
+      expect(fs.readFileSync(written(f), 'utf8'), label).toBe(WORKFLOW);
+      expect(result.report.bundleMembership.listed, label).toBeNull();
+      expect(result.report.bundleMembership.bundles, label).toEqual([]);
+      expect(result.report.bundleMembership.unreadable, label).toMatch(reason);
+      expect(result.report.bundleMembership.note, label).toMatch(/could not be read/);
+      if (before !== null) expect(sha(fs.readFileSync(bundlesFile(f))), label).toBe(before);
+    }
+  });
+
+  it('reports a bundles.json that is a link as unreadable and does not follow it', () => {
+    if (!JUNCTIONS) return;
+    const f = fixture();
+    const target = path.join(f.root, 'elsewhere');
+    fs.mkdirSync(target);
+    fs.symlinkSync(target, bundlesFile(f), 'junction');
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(0);
+    expect(result.report.bundleMembership.listed).toBeNull();
+    expect(result.report.bundleMembership.unreadable).toMatch(/link/);
   });
 
   it('writes a workflow that workflow-check passes, the check the runbook runs next', () => {
@@ -698,6 +797,8 @@ describe('author-workflow bounded draft helper', () => {
     fs.mkdirSync(path.join(f.checkout, `registry/skills/${name}`), { recursive: true });
     fs.writeFileSync(path.join(f.checkout, `registry/skills/${name}/SKILL.md`), SKILL_TEXT.replaceAll(NAME, name));
     f.job = { ...input, checkout: f.checkout };
+    // The documented report shows a listed Skill: the example's Skill sits in one Bundle, named agent-factory.
+    writeBundles(f, { 'agent-factory': ['author-skill', name] });
     const result = run(f);
     expect(result.exit, result.stdout + result.stderr).toBe(0);
     const expected = JSON.parse(JSON.stringify(output)) as Record<string, any>;
