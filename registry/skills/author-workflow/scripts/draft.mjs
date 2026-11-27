@@ -368,6 +368,8 @@ function run(argument) {
   const skill = pairedSkill(registry, job.name);
   checkMeta(job.content, job.name);
   const body = Buffer.from(/\n$/.test(job.content) ? job.content : `${job.content}\n`);
+  // The limit is workflow-check's, and it counts the file as written: the final newline this helper adds counts too.
+  if (body.length > MAX_CONTENT_BYTES) block(`content is ${body.length} bytes as it will be written (a final newline is added when there is none), over the ${MAX_CONTENT_BYTES / 1024} KiB limit of workflow-check.`);
   const workflowPath = path.join(workflowsDir, workflowFile);
   const lock = path.join(registry, '.author-workflow.lock');
   // Only what this run created is ever removed: the flag is set once the exclusive create has succeeded, so a create that finds the file already there owns nothing.

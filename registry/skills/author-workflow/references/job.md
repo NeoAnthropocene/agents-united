@@ -61,7 +61,7 @@ A refusal exits 1, writes nothing and prints one line on stderr, `{"status":"blo
 - an existing workflow of that name (any letter case);
 - a missing paired Skill, or a paired `SKILL.md` that is not a regular file or sits behind a link;
 - a name whose Skill has a native Claude loader in `registry/hosts/claude/skills/`, which a workflow of that name would replace;
-- content without `export const meta`, or whose `meta.name` is not a string literal equal to the name, or over 128 KiB;
+- content without `export const meta`, or whose `meta.name` is not a string literal equal to the name, or over 128 KiB as it will be written (the final newline the helper adds counts, so text of exactly 128 KiB with no final newline is refused);
 - a link or junction in the checkout path or in any folder from `registry/` down to `registry/hosts/claude/workflows/`, and a workflows folder that is missing (the helper creates no folder).
 
 A script without a final newline gets one; CRLF text is kept as it is. The helper writes only the workflow file. It does not touch `bundles.json` beyond reading it: Bundle membership of the paired Skill belongs to the Skill's own route, and the helper reads the Skill without changing it.
