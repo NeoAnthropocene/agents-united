@@ -18,6 +18,9 @@ export const NATIVE_MARKER_PROFILE = 'claude-native';
 export const NATIVE_MARKER_PROFILES: Record<NativeHost, string> = { claude: NATIVE_MARKER_PROFILE, cline: 'cline-native', antigravity: 'antigravity-native' };
 
 const ROLE_NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/** True for a name the native package lists: lower-case kebab-case (`a`, `a-b`, `2fa`). Any other file stem is never installed. */
+export const isNativeName = (name: string): boolean => ROLE_NAME.test(name);
 const FRONTMATTER = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
 
 /** The file extension of a host's agent files and workflow files. */

@@ -1330,6 +1330,61 @@ export interface RuleCheckResult {
   live: 'unverified';
 }
 
+/** ADR 0082: the deterministic native workflow command (`agents workflow-check`); the checks live in workflow-check.ts. */
+export type WorkflowCheckCheckId = 'name' | 'size' | 'encoding' | 'placement' | 'lint' | 'meta-name' | 'skill-pair' | 'agent-types' | 'render';
+export type WorkflowCheckStatus = 'passed' | 'failed' | 'unavailable';
+export type WorkflowCheckGateStatus = 'passed' | 'failed' | 'not-run';
+export type WorkflowCheckCode =
+  | 'USAGE' | 'INPUT_UNAVAILABLE'
+  | 'NAME' | 'SIZE' | 'ENCODING' | 'PLACEMENT' | 'LINT' | 'META_NAME' | 'SKILL_PAIR' | 'AGENT_TYPE' | 'RENDER';
+
+/** One `agentType` request the lexical scan cannot resolve (ADR 0082). It is listed, not verified, and is never a finding: the code is the entry's name. */
+export interface WorkflowCheckUnresolvedAgentType {
+  code: 'AGENT_TYPE_UNRESOLVED';
+  /** The 1-based line of the request in the script. */
+  line: number;
+  /** The trimmed source line, at most 120 characters, ending in "..." when it was cut. */
+  excerpt: string;
+}
+
+export interface WorkflowCheckFinding {
+  code: WorkflowCheckCode;
+  /** The checked file's path, or null for a usage finding (no file was named well enough to report). */
+  path: string | null;
+  message: string;
+}
+
+export interface WorkflowCheckGate {
+  id: WorkflowCheckCheckId;
+  status: WorkflowCheckGateStatus;
+  reason: string | null;
+  findings: WorkflowCheckFinding[];
+}
+
+export interface WorkflowCheckInput {
+  /** Absolute path of one native Claude workflow script, `<registry>/hosts/claude/workflows/<name>.js`. */
+  artifact?: string;
+}
+
+export interface WorkflowCheckResult {
+  version: 1;
+  kind: 'deterministic';
+  status: WorkflowCheckStatus;
+  artifact: string | null;
+  /** The file's size in bytes, or null when it was not read (or was over the cap). */
+  bytes: number | null;
+  /** The size cap in bytes (`WORKFLOW_CHECK_MAX_BYTES`). */
+  maxBytes: number;
+  checks: WorkflowCheckGate[];
+  findings: WorkflowCheckFinding[];
+  /** The run-time `agentType` requests the scan could not resolve: listed, not verified, never a failure. Empty when there are none or the agent-types check did not run. Present on every result. */
+  unresolvedAgentTypes: WorkflowCheckUnresolvedAgentType[];
+  /** What a pass does not establish (the agent-type scan is lexical; Bundle membership and installability are not checked). Present on every result. */
+  notes: string[];
+  quality: 'pending';
+  live: 'unverified';
+}
+
 /** Plan 033 P20: the deterministic Bundle proposal command (`agents bundle-check`); the rules live in bundle-check.ts. */
 export type BundleCheckCheckId = 'inventory' | 'shape' | 'registry-rules' | 'references' | 'bundle-rules' | 'consistency';
 export type BundleCheckOperation = 'create' | 'update' | 'reuse';
