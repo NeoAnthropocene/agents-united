@@ -4,8 +4,15 @@
  * A native Claude workflow is `registry/hosts/claude/workflows/<name>.js`. With the native lane on, the Claude projector
  * installs it at `.claude/workflows/<name>.js` behind its managed marker, and only in place of the Skill
  * `registry/skills/<name>/SKILL.md`. So each check here guards one thing the installer would otherwise do silently or wrongly.
- * The script is parsed (the repository's own workflow lint compiles it as an async function body) and never run: nothing in it
- * is imported, required, spawned or evaluated. No terminal I/O here; `src/cli.ts` prints the result and sets the exit code.
+ * The script is parsed and never run: its `meta` is read as data by a strict literal parser and its body is only compiled
+ * (the repository's own workflow lint), so nothing in it is imported, required, spawned or evaluated. The checker is stricter
+ * than the projector: it passes only a workflow the projector would emit intact, and it does not establish installability
+ * (Bundle membership of the Skill and of the agent roles, an unmanaged destination that needs `--force`). No terminal I/O
+ * here; `src/cli.ts` prints the result and sets the exit code.
+ *
+ * Reads stay inside the registry tree the path names: the pure name and placement checks run before any file is touched, then
+ * `workflow-check-path.ts` confirms the path is spelled exactly and goes through no link or junction, and the bounded read
+ * compares the opened file with the one inspected.
  *
  * Passing means only the deterministic checks passed. It does not mean the workflow is good or live (`quality` stays pending,
  * `live` unverified).
@@ -13,7 +20,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { readBoundedFile } from './bounded-file.js';
-import { unsupportedSkillNames } from './host-profile.js';
+import { validateHostProfile } from './host-profile.js';
+import { resolveWorkflowTree } from './workflow-check-path.js';
 import { MARKER_PREFIX } from './claude-projector.js';
 import { isNativeName, listNativeRoles, renderNativeWorkflow } from './native-package.js';
 import { errorCode, shortened, unsafeEntryName, validUtf8 } from './skill-check.js';
@@ -76,7 +84,12 @@ function registryOf(file: string): { registry: string } | { problem: string } {
   const workflows = path.dirname(file);
   const claude = path.dirname(workflows);
   const hosts = path.dirname(claude);
-  if (path.basename(workflows) === 'workflows' && path.basename(claude) === 'claude' && path.basename(hosts) === 'hosts') return { registry: path.dirname(hosts) };
+  const root = path.dirname(hosts);
+  if (path.basename(workflows) === 'workflows' && path.basename(claude) === 'claude' && path.basename(hosts) === 'hosts') {
+    // The registry is a folder with a name and a parent: a file-system root has neither, so no path below it can be confirmed.
+    if (path.dirname(root) === root) return { problem: `The registry cannot be a file-system root (${shortened(root)}); the file must sit at <registry>/hosts/claude/workflows/<name>.js in a registry folder.` };
+    return { registry: root };
+  }
   return { problem: `The file must sit at <registry>/hosts/claude/workflows/<name>.js (the registry is the folder four levels up); the projector looks nowhere else. It is in ${shortened(workflows)}.` };
 }
 
@@ -115,17 +128,34 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
     if (artifact === null) return workflowCheckUsageResult(['--artifact is required: the absolute path of one native Claude workflow .js file.'], input ?? {});
     if (!path.isAbsolute(artifact)) return workflowCheckUsageResult([`--artifact must be an absolute path; got ${JSON.stringify(shortened(artifact))}.`], input);
 
-    const read = readBoundedFile(artifact, WORKFLOW_CHECK_MAX_BYTES, 'workflow');
-    if (read.kind === 'unavailable') return unavailable(artifact, 'INPUT_UNAVAILABLE', [read.message], 'The workflow file could not be read, so no check ran.');
+    const last = artifact[artifact.length - 1];
+    if (last === '/' || (path.sep === '\\' && last === '\\')) {
+      return unavailable(artifact, 'INPUT_UNAVAILABLE', [`The path ends with a path separator, so it does not name a file: ${artifact}`], 'The path does not name a file, so no check ran.');
+    }
 
     const shown = shortened(artifact);
     const found = (code: WorkflowCheckCode, message: string): WorkflowCheckFinding => ({ code, path: shown, message });
     const done = (id: WorkflowCheckCheckId, problems: WorkflowCheckFinding[]): WorkflowCheckGate => gate(id, problems.length > 0 ? 'failed' : 'passed', null, problems);
 
+    // The pure checks come first and touch no file: the name (including the Windows device names, which must never be opened) and
+    // the spelling of the place. When either fails no file is read, so the checks that need the content are not run.
     const base = path.basename(artifact);
     const stem = path.basename(base, EXTENSION);
     const nameMessage = workflowNameProblem(base);
     const name = done('name', nameMessage === null ? [] : [found('NAME', nameMessage)]);
+    const place = registryOf(artifact);
+    const placement = done('placement', 'problem' in place ? [found('PLACEMENT', place.problem)] : []);
+    if (nameMessage !== null || 'problem' in place) {
+      const reason = 'The name or placement check failed, so the file was not read.';
+      return result(artifact, null, CHECK_IDS.map(id => (id === 'name' ? name : id === 'placement' ? placement : gate(id, 'not-run', reason))), []);
+    }
+
+    const tree = resolveWorkflowTree(artifact);
+    if (!tree.ok) return unavailable(artifact, 'INPUT_UNAVAILABLE', [tree.message], 'The path could not be confirmed to lie inside the registry tree, so no file was read.');
+    const registry = tree.registry;
+
+    const read = readBoundedFile(tree.file, WORKFLOW_CHECK_MAX_BYTES, 'workflow');
+    if (read.kind === 'unavailable') return unavailable(artifact, 'INPUT_UNAVAILABLE', [read.message], 'The workflow file could not be read, so no check ran.');
 
     if (read.kind === 'oversize') {
       const reason = `The file is over ${WORKFLOW_CHECK_MAX_BYTES} bytes, so its content was not read.`;
@@ -143,9 +173,6 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
     if (raw.startsWith(BOM)) encodingProblems.push(found('ENCODING', 'The file starts with a byte order mark (BOM); save it as UTF-8 without BOM.'));
     if (bytes.includes(0)) encodingProblems.push(found('ENCODING', 'The file contains a NUL byte, so it is not plain text.'));
 
-    const place = registryOf(artifact);
-    const placement = done('placement', 'problem' in place ? [found('PLACEMENT', place.problem)] : []);
-
     const lint = done('lint', lintWorkflow(text).map(problem => found('LINT', problem)));
 
     const metaName = workflowMetaName(text);
@@ -153,24 +180,18 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
       ? gate('meta-name', 'not-run', 'meta.name could not be read as a string from a pure `meta` literal (the lint check says why), so it was not compared with the file name.')
       : done('meta-name', metaName === stem ? [] : [found('META_NAME', `meta.name is ${quoted(metaName)} but the file name is ${quoted(base)}. Claude Code runs a saved workflow as /<name>; make meta.name ${quoted(stem)}.`)]);
 
-    if ('problem' in place) {
-      const reason = 'The placement check failed, so the registry is not known.';
-      return result(artifact, bytes.length, [
-        name, done('size', []), done('encoding', encodingProblems), placement, lint, metaGate,
-        gate('skill-pair', 'not-run', reason), gate('agent-types', 'not-run', reason), gate('render', 'not-run', reason),
-      ], []);
-    }
-    const registry = place.registry;
-
     const skillFile = path.join(registry, 'skills', stem, 'SKILL.md');
-    const skillGate = !isNativeName(stem)
-      ? gate('skill-pair', 'not-run', 'The file name is not one the native package lists, so there is no Skill name to look up (the name check says so).')
-      : done('skill-pair', !isFile(skillFile)
-        ? [found('SKILL_PAIR', `There is no Skill of the same name: ${path.posix.join('skills', stem, 'SKILL.md')} is missing in the registry. The installer puts a native workflow only in place of that Skill, so this workflow would never be installed.`)]
-        // The projector's own list: a Skill the Claude profile marks unsupported is not projected, and neither is the workflow in its place.
-        : unsupportedSkillNames(registry, 'claude').has(stem)
-          ? [found('SKILL_PAIR', `The Claude host profile lists the Skill ${stem} as unsupported (hosts/claude/profile.json unsupportedSkills), so the projector skips it and this workflow would never be installed.`)]
-          : []);
+    let skillGate: WorkflowCheckGate;
+    if (!isFile(skillFile)) {
+      skillGate = done('skill-pair', [found('SKILL_PAIR', `There is no Skill of the same name: ${path.posix.join('skills', stem, 'SKILL.md')} is missing in the registry. The installer puts a native workflow only in place of that Skill, so this workflow would never be installed.`)]);
+    } else {
+      // The projector's own list: a Skill the Claude profile marks unsupported is not projected, and neither is the workflow in its place.
+      const profile = claudeUnsupportedSkills(registry);
+      if ('problem' in profile) return unavailable(artifact, 'INPUT_UNAVAILABLE', [profile.problem], 'The host profile could not be read, so no check ran.');
+      skillGate = done('skill-pair', profile.names.has(stem)
+        ? [found('SKILL_PAIR', `The Claude host profile lists the Skill ${stem} as unsupported (hosts/claude/profile.json unsupportedSkills), so the projector skips it and this workflow would never be installed.`)]
+        : []);
+    }
 
     const roles = new Set(listNativeRoles(registry, 'claude'));
     const agentProblems = agentTypesUsed(text)
@@ -185,6 +206,28 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
     ], []);
   } catch (error) {
     return unavailable(artifact, 'INPUT_UNAVAILABLE', [`The workflow check could not run (${errorCode(error)}).`], 'The workflow check hit an unexpected error, so no check ran.');
+  }
+}
+
+/** The largest host profile that is read. The committed one is a few KB; this stops a file that is not a profile. */
+const PROFILE_MAX_BYTES = 256 * 1024;
+
+/**
+ * The Skills the Claude host profile lists as unsupported, read the bounded way (a regular file, no link, at most 256 KiB, the
+ * bytes validated by the repository's own profile validator). A registry with no profile lists none, as the projector treats it.
+ * A profile that is oversize, not a regular file, a link or not valid is a problem: the Skill pair cannot be judged, so the
+ * result is unavailable (exit 2) rather than a pass.
+ */
+function claudeUnsupportedSkills(registry: string): { names: ReadonlySet<string> } | { problem: string } {
+  const file = path.join(registry, 'hosts', 'claude', 'profile.json');
+  const read = readBoundedFile(file, PROFILE_MAX_BYTES, 'host profile');
+  if (read.kind === 'unavailable') return read.code === 'ENOENT' ? { names: new Set() } : { problem: read.message };
+  if (read.kind === 'oversize') return { problem: `The host profile is larger than ${PROFILE_MAX_BYTES / 1024} KiB, so it was not read: ${file}` };
+  try {
+    const profile = validateHostProfile(JSON.parse(read.bytes.toString('utf8')) as unknown, file);
+    return { names: new Set((profile.unsupportedSkills ?? []).map(entry => entry.name)) };
+  } catch (error) {
+    return { problem: `The host profile is not valid (${(error as Error).message.slice(0, 200)}): ${file}` };
   }
 }
 
