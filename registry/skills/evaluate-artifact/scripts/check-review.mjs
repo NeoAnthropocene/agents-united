@@ -23,8 +23,9 @@ const lf = text => text.replace(/\r\n/g, '\n');
 // The kinds whose subject is one file, with the checker their route runs on it and the folder of the registry copy it may also name
 // (a workflow review pins only the orchestration guide and page, a rule review only the rule ones). candidatePath says whether the check
 // may also name the candidate's own file: a rule's may, a workflow's may not, because workflow-check passes only at
-// registry/hosts/claude/workflows/<name>.js. exactSpelling says the recorded path must be one expected spelling, compared as written after
-// path.normalize and in exact case on every platform (a link, another letter case or a registry folder not named exactly "registry" is
+// registry/hosts/claude/workflows/<name>.js. exactSpelling says the recorded path must be one expected spelling, compared as written
+// (rawSpelling: only the kind of separator may differ, and only on Windows) and in exact case on every platform, and the registry copy must sit
+// on a folder chain without a link (a link, a "." or ".." segment, another letter case or a registry folder not named exactly "registry" is
 // refused by workflow-check itself, so a path that merely reaches the same file proves nothing); a rule's path is compared by its physical file. review-job.mjs holds the same table; the two scripts copy it on purpose and never import each other.
 const SINGLE_FILE_KINDS = {
   rule: { noun: 'rule', check: 'rule-check', extension: '.md', registryFolder: ['rules'], candidatePath: true, exactSpelling: false, guide: 'rule' },
@@ -127,6 +128,20 @@ const withinBoth = (parent, child) => within(parent, child) && physicallyWithin(
 const sameBoth = (a, b) => sameString(a, b) && physicallySame(a, b);
 const overlaps = (a, b) => [[a, b], [physical(a), physical(b)]].some(([x, y]) => within(x, y) || within(y, x));
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
+// The recorded spelling of a workflow's registry copy is compared as written: only the kind of separator may differ, and only on Windows, where
+// workflow-check takes either. A "." or ".." segment, a doubled separator or another letter case is another spelling (workflow-check refuses it).
+const separators = value => (process.platform === 'win32' ? value.replace(/\\/g, '/') : value);
+const rawSpelling = (file, given) => typeof given === 'string'
+  && !given.split(process.platform === 'win32' ? /[\\/]/ : '/').some(part => part === '.' || part === '..') && separators(file) === separators(given);
+// True when no folder from the root down to the file, and not the file, is a link or junction (the same walk as absolute() above, which bytesAt runs, so the builder and this checker agree).
+const unlinked = file => {
+  let current = path.parse(path.resolve(file)).root;
+  for (const part of path.resolve(file).slice(current.length).split(path.sep).filter(Boolean)) {
+    current = path.join(current, part);
+    if (fs.lstatSync(current, { throwIfNoEntry: false })?.isSymbolicLink()) return false;
+  }
+  return true;
+};
 /** A managed Host folder in the root as given or in its physical spelling. */
 const managedHostPath = root => [root, physical(root)].some(spelling => spelling.split(/[\\/]/).some(part => HOST_DIRS.includes(part.toLowerCase())));
 const unique = (values, label) => { if (new Set(values.map(value => value.toLowerCase())).size !== values.length) fail(`${label}: duplicate/case-colliding values.`); };
@@ -351,12 +366,12 @@ function checkJob(jobFile) {
     const pinnedFile = job.candidate.files.find(item => item.path === reviewed)?.sha256;
     const sameBytes = file => {
       const stat = fs.lstatSync(file, { throwIfNoEntry: false });
-      return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, `Registry ${single.noun}`)) === pinnedFile;
+      return stat?.isFile() === true && (!single.exactSpelling || unlinked(file)) && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, `Registry ${single.noun}`)) === pinnedFile;
     };
     // The declared registry spelling counts only where the folder is named exactly "registry", as workflow-check requires; the checkout's own is always so named.
     const registryNamed = !single.exactSpelling || path.basename(job.source.registry) === 'registry';
     const own = [...(single.candidatePath ? [[path.join(roots.candidate, reviewed), true]] : []), ...(registryNamed ? [[path.join(job.source.registry, ...single.registryFolder, reviewed), false]] : []), [path.join(job.source.checkout, 'registry', ...single.registryFolder, reviewed), false]];
-    const sameSpelling = (file, given) => (single.exactSpelling ? path.normalize(file) === path.normalize(given) : physicallySame(file, given));
+    const sameSpelling = (file, given) => (single.exactSpelling ? rawSpelling(file, given) : physicallySame(file, given));
     if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => sameSpelling(file, artifact) && (isCandidate || sameBytes(file)))) {
       const folder = single.registryFolder.join('/');
       fail(single.candidatePath
