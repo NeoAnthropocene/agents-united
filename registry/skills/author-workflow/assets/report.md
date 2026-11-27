@@ -11,7 +11,7 @@
 | `registry/hosts/claude/workflows/<name>.js` | | the script |
 | `registry/skills/<name>/SKILL.md` | | read only; the paired Skill |
 
-Attach the before/after diff of the script and state whether unrelated edits are preserved. State that `registry/bundles.json` was not touched and whether a Bundle lists the paired Skill.
+Attach the before/after diff of the script and state whether unrelated edits are preserved. State that `registry/bundles.json` was not changed, then yes or no whether a Bundle lists the paired Skill and which Bundles do (create mode: the helper's `bundleMembership`; repair mode: read `registry/bundles.json`). A Skill no Bundle lists means its workflow is never installed; an unreadable `bundles.json` is reported as unknown, not as no.
 
 | Source disposition | Upstream, pin, licence and notice evidence | Credit changes | Unresolved owner and task |
 | --- | --- | --- | --- |

@@ -4,13 +4,14 @@ import { createHash } from 'node:crypto';
 
 // This helper writes one already-authored native Claude workflow, registry/hosts/claude/workflows/<name>.js, for the portable Skill
 // registry/skills/<name>/SKILL.md, which must already exist. It does not author the script, run workflow-check or any other validator,
-// touch registry/bundles.json or the Skill, contact a host or the network, or use git.
+// change registry/bundles.json (it only reads it, to report which Bundles list the Skill) or the Skill, contact a host or the network, or use git.
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 class Blocked extends Error {}
 const block = reason => { throw new Blocked(reason); };
 const MAX_CONTENT_BYTES = 128 * 1024; // the size workflow-check accepts
 const MAX_JOB_BYTES = 1024 * 1024;
 const MAX_SKILL_BYTES = 1024 * 1024;
+const MAX_BUNDLES_BYTES = 1024 * 1024;
 const ALLOWED = ['checkout', 'name', 'content'];
 const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
@@ -199,6 +200,33 @@ function boundedRead(file, limit) {
   } finally { fs.closeSync(descriptor); }
 }
 
+// Which Bundles of registry/bundles.json list the paired Skill by exact name, for the hand-off. A report only: it never refuses and never
+// changes the file, and a workflow whose Skill no Bundle lists is never installed. A file that cannot be read as the one regular
+// file it should be (missing, a link, a folder, over the bound, not JSON, no bundles map) is reported as unreadable, with listed null
+// (not false, which would claim the Skill is in no Bundle), so it never fails the write.
+function bundleMembership(registry, name) {
+  const rel = 'registry/bundles.json';
+  const unreadable = reason => ({ listed: null, bundles: [], unreadable: reason,
+    note: `Bundle membership could not be read, so whether this workflow is ever installed is not known; read ${rel} by hand.` });
+  try {
+    const file = path.join(registry, 'bundles.json');
+    const entry = fs.lstatSync(file, { throwIfNoEntry: false });
+    if (!entry) return unreadable(`${rel} is unavailable.`);
+    if (entry.isSymbolicLink()) return unreadable(`${rel} is a link, so it was not followed.`);
+    if (!entry.isFile()) return unreadable(`${rel} is not a regular file.`);
+    const bytes = boundedRead(file, MAX_BUNDLES_BYTES + 1);
+    if (!bytes) return unreadable(`${rel} is not a regular file.`);
+    if (bytes.length > MAX_BUNDLES_BYTES) return unreadable(`${rel} is larger than 1 MiB.`);
+    let parsed;
+    try { parsed = JSON.parse(bytes.toString('utf8')); } catch { return unreadable(`${rel} is not valid JSON.`); }
+    const map = parsed?.bundles;
+    if (map === null || typeof map !== 'object' || Array.isArray(map)) return unreadable(`${rel} has no bundles map.`);
+    const bundles = Object.entries(map).filter(([, bundle]) => Array.isArray(bundle?.skills) && bundle.skills.includes(name)).map(([key]) => key);
+    if (bundles.length) return { listed: true, bundles };
+    return { listed: false, bundles: [], note: 'No Bundle lists the paired Skill, so this workflow is never installed until one does; this helper does not change a Bundle.' };
+  } catch (error) { return unreadable(`${rel} could not be read (${error?.code ?? 'unexpected error'}).`); }
+}
+
 // Rollback removes the file only while it is still the file this run wrote: a pathname alone could now name a replacement that someone
 // else created. Gone is fine. A file that is not a regular file, or whose bytes are not the intended ones, is left in place and named.
 // When this run's own write of the file threw, a prefix of the intended bytes is this run's truncated write and is removed too. At most
@@ -323,6 +351,7 @@ function run(argument) {
     version: 1, status: 'written',
     workflow: { path: `${WORKFLOWS}/${workflowFile}`, bytes: body.length, sha256: hash(body) },
     skill,
+    bundleMembership: bundleMembership(registry, job.name),
     validation: { status: 'unverified', reason: 'This helper runs no workflow-check; run it on the written workflow file.' },
     externalActions: [],
     ...(lockProblem ? { warnings: [lockProblem] } : {}),

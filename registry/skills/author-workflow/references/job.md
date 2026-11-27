@@ -43,6 +43,10 @@ No other key is allowed. A prepared run exits 0 and prints this report on stdout
     "path": "registry/skills/release-flow/SKILL.md",
     "sha256": "<64 hex characters>"
   },
+  "bundleMembership": {
+    "listed": true,
+    "bundles": ["agent-factory"]
+  },
   "validation": {
     "status": "unverified",
     "reason": "This helper runs no workflow-check; run it on the written workflow file."
@@ -60,7 +64,9 @@ A refusal exits 1, writes nothing and prints one line on stderr, `{"status":"blo
 - content without `export const meta`, or whose `meta.name` is not a string literal equal to the name, or over 128 KiB;
 - a link or junction in the checkout path or in any folder from `registry/` down to `registry/hosts/claude/workflows/`, and a workflows folder that is missing (the helper creates no folder).
 
-A script without a final newline gets one; CRLF text is kept as it is. The helper writes only the workflow file. It does not touch `bundles.json`: Bundle membership of the paired Skill belongs to the Skill's own route, and the helper reads the Skill without changing it.
+A script without a final newline gets one; CRLF text is kept as it is. The helper writes only the workflow file. It does not touch `bundles.json` beyond reading it: Bundle membership of the paired Skill belongs to the Skill's own route, and the helper reads the Skill without changing it.
+
+`bundleMembership` is a note for the hand-off. It names, in the order of `registry/bundles.json`, the Bundles whose `skills` list the paired Skill by exact name. The helper never refuses on membership. When no Bundle lists the Skill the report says `"listed": false` with `"bundles": []` and a `note`: the workflow is then never installed, because it is installed only in place of a Skill that a Bundle lists. The helper reads `bundles.json` as a regular file (not a link) of at most 1 MiB; when it cannot (missing, a link, a folder, too large, not JSON, no `bundles` map) the write still succeeds and the field is `"listed": null`, `"bundles": []`, an `unreadable` reason and a `note`: report that as unknown, never as no. The hand-off states yes or no whether a Bundle lists the paired Skill, and which Bundles do. Repair mode does not run the helper, so read `registry/bundles.json` and state the same by hand.
 
 The helper holds the lock file `registry/.author-workflow.lock` while it works and refuses to start when that file exists (delete it only when no run is active). After the exclusive create of the script it reads the file back and compares its hash. If a step fails, it removes the script and the lock it created, but removes the script only while it is still a regular file whose bytes are exactly what this run wrote, or, when this run's own write failed, a truncated start of them; it reads at most one byte more than it wrote, so a huge file is never read whole. A file that changed since (a replacement someone else created, a folder or a link, a longer file) is left in place and named in the refusal. If the lock cannot be removed at the end, a successful run still exits 0 and adds a `warnings` list (with that one sentence) to the report, and a failed run appends it to the refusal; delete the lock file by hand before the next run. Save stdout, stderr and the exit code with the other evidence.
 
