@@ -51,6 +51,35 @@ function realCheckout(checkout) {
   return given;
 }
 
+// Every folder from the registry down to the workflows folder is inspected without following links; none is created. Run once before the
+// lock and again after it, because the folders can change in between. Returns the folder as the checkout spells it and its real path.
+function workflowsFolder(checkout) {
+  let workflowsDir = checkout;
+  for (const part of ['registry', 'hosts', 'claude', 'workflows']) {
+    workflowsDir = path.join(workflowsDir, part);
+    realDirectory(workflowsDir, path.relative(checkout, workflowsDir).split(path.sep).join('/'));
+  }
+  let realWorkflows;
+  try { realWorkflows = fs.realpathSync(workflowsDir); } catch { block(`${WORKFLOWS} is unavailable: ${workflowsDir}`); }
+  if (!sameDisk(realWorkflows, workflowsDir)) block(`${WORKFLOWS} resolves to ${realWorkflows}, not to ${workflowsDir}; a link or junction is in the path.`);
+  return { workflowsDir, realWorkflows };
+}
+
+// A created file's identity: the device and file number its descriptor reports, as bigints (a Windows file number does not fit a double).
+const fileId = stat => ({ dev: stat.dev, ino: stat.ino });
+const sameFile = (stat, id) => stat.dev === id.dev && stat.ino === id.ino;
+// Removes `file` only while it is still the file with identity `id` (an ordinary file). Returns 'removed', 'gone', 'other' (something else is
+// there now) or 'failed' (it is the file, but could not be removed).
+function removeIfSameFile(file, id) {
+  try {
+    const entry = fs.lstatSync(file, { bigint: true, throwIfNoEntry: false });
+    if (!entry) return 'gone';
+    if (!entry.isFile() || !sameFile(entry, id)) return 'other';
+    fs.rmSync(file, { force: true });
+    return 'removed';
+  } catch { return 'failed'; }
+}
+
 function readJob(argument) {
   if (typeof argument !== 'string' || !path.isAbsolute(argument)) block('The one argument must be the absolute path of the job JSON file.');
   regularFile(argument, 'The job file');
@@ -190,15 +219,19 @@ function boundedRead(file, limit) {
   const descriptor = fs.openSync(file, 'r');
   try {
     if (!fs.fstatSync(descriptor).isFile()) return null;
-    const buffer = Buffer.alloc(limit);
-    let count = 0;
-    while (count < limit) {
-      const got = fs.readSync(descriptor, buffer, count, Math.min(READ_CHUNK, limit - count), count);
-      if (got === 0) break;
-      count += got;
-    }
-    return buffer.subarray(0, count);
+    return readDescriptor(descriptor, limit);
   } finally { fs.closeSync(descriptor); }
+}
+// The first `limit` bytes (at most) of an open descriptor, from position 0.
+function readDescriptor(descriptor, limit) {
+  const buffer = Buffer.alloc(limit);
+  let count = 0;
+  while (count < limit) {
+    const got = fs.readSync(descriptor, buffer, count, Math.min(READ_CHUNK, limit - count), count);
+    if (got === 0) break;
+    count += got;
+  }
+  return buffer.subarray(0, count);
 }
 
 // Which Bundles of registry/bundles.json list the paired Skill by exact name, for the hand-off. A report only: it never refuses and never
@@ -279,15 +312,7 @@ function run(argument) {
   const checkout = realCheckout(job.checkout);
   const registry = path.join(checkout, 'registry');
   if (!fs.existsSync(registry)) block(`The checkout has no registry folder: ${registry}`);
-  // Every folder from the registry down to the workflows folder is inspected without following links; none is created.
-  let workflowsDir = checkout;
-  for (const part of ['registry', 'hosts', 'claude', 'workflows']) {
-    workflowsDir = path.join(workflowsDir, part);
-    realDirectory(workflowsDir, path.relative(checkout, workflowsDir).split(path.sep).join('/'));
-  }
-  let realWorkflows;
-  try { realWorkflows = fs.realpathSync(workflowsDir); } catch { block(`${WORKFLOWS} is unavailable: ${workflowsDir}`); }
-  if (!sameDisk(realWorkflows, workflowsDir)) block(`${WORKFLOWS} resolves to ${realWorkflows}, not to ${workflowsDir}; a link or junction is in the path.`);
+  const { workflowsDir, realWorkflows } = workflowsFolder(checkout);
   const collision = () => {
     const clash = fs.readdirSync(workflowsDir).find(entry => entry.toLowerCase() === workflowFile);
     if (clash) block(`${WORKFLOWS}/${clash} already exists; it collides with ${workflowFile}. Repair it by hand or pick another name.`);
@@ -301,16 +326,10 @@ function run(argument) {
   const body = Buffer.from(/\n$/.test(job.content) ? job.content : `${job.content}\n`);
   const workflowPath = path.join(workflowsDir, workflowFile);
   const lock = path.join(registry, '.author-workflow.lock');
-  // Only what this run created is ever removed: the flag is set just before the create, and cleared again when the create finds the file already there.
-  // workflowWriteThrew means this run's own write threw, so a truncated file under that name is this run's.
-  let lockHeld = false, workflowWritten = false, workflowWriteThrew = false;
+  // Only what this run created is ever removed: the flag is set once the exclusive create has succeeded, so a create that finds the file already there owns nothing.
+  // workflowWriteThrew means this run's own write threw, so a truncated file under that name is this run's. workflowId is the identity of the created file.
+  let lockHeld = false, workflowWritten = false, workflowWriteThrew = false, workflowId;
   let failure;
-  // Creates the file exclusively. The partial fault (test seam) writes the first half through this same call, then fails as a full disk would.
-  const writeFile = (file, bytes) => {
-    if (!faults.has('partial-write')) { fs.writeFileSync(file, bytes, { flag: 'wx' }); return; }
-    fs.writeFileSync(file, bytes.subarray(0, Math.floor(bytes.length / 2)), { flag: 'wx' });
-    throw Object.assign(new Error('injected failure'), { code: 'EIO' });
-  };
   try {
     // The flag is set as soon as the exclusive open succeeds, before the process id is written, so a failed write still removes the lock.
     let descriptor;
@@ -323,18 +342,43 @@ function run(argument) {
       fs.writeSync(descriptor, `${process.pid}\n`);
     } finally { fs.closeSync(descriptor); }
     if (faults.has('workflows-swapped-after-lock')) swapWorkflowsForTest(workflowsDir);
-    // The lock only keeps other runs of this helper out, so what the checks above read is read again before the write.
+    // The lock only keeps other runs of this helper out, so what the checks above read is read again before the write: the checkout and
+    // every folder down to the workflows folder (a link or junction put there since is refused), the collision and the paired Skill.
+    if (realCheckout(job.checkout) !== checkout) block('The checkout path changed while the helper was working; nothing was written. Run it again.');
+    if (workflowsFolder(checkout).workflowsDir !== workflowsDir) block(`${WORKFLOWS} changed while the helper was working; nothing was written. Run it again.`);
     collision();
     if (pairedSkill(registry, job.name).sha256 !== skill.sha256) block('The paired Skill changed while the helper was working; nothing was written. Run it again.');
     if (faults.has('workflows-swapped-before-create')) swapWorkflowsForTest(workflowsDir);
-    try { workflowWritten = true; writeFile(workflowPath, body); } catch (error) {
-      if (error?.code === 'EEXIST') { workflowWritten = false; block(`${WORKFLOWS}/${workflowFile} appeared while the helper was working; nothing was written.`); }
-      workflowWriteThrew = true;
+    // The create is exclusive and the file stays open until it is checked: its path must still resolve to the real workflows folder (a
+    // folder swapped for a link since the walk would have sent the create elsewhere), and the bytes are read back from the same descriptor.
+    let file;
+    try { file = fs.openSync(workflowPath, 'wx+'); } catch (error) {
+      if (error?.code === 'EEXIST') block(`${WORKFLOWS}/${workflowFile} appeared while the helper was working; nothing was written.`);
       throw error;
     }
-    // Read the file back: the bytes on disk must be the bytes this run meant to write.
-    const back = boundedRead(workflowPath, body.length + 1);
-    if (back === undefined || back === null || !back.equals(body)) block(`${WORKFLOWS}/${workflowFile} does not hold the bytes this run wrote.`);
+    try {
+      workflowWritten = true;
+      workflowId = fileId(fs.fstatSync(file, { bigint: true }));
+      const confirmPlace = () => {
+        let actual = null;
+        try { actual = fs.realpathSync(workflowPath); } catch { /* reported below */ }
+        if (actual !== null && sameDisk(actual, path.join(realWorkflows, workflowFile))) return;
+        const at = actual ?? workflowPath;
+        const outcome = removeIfSameFile(at, workflowId);
+        if (outcome === 'removed' || outcome === 'gone') workflowWritten = false;
+        block(`${WORKFLOWS}/${workflowFile} was created at ${actual ?? 'a path that cannot be resolved'}, not in the checkout's workflows folder: a link or junction is in the path.${outcome === 'removed' ? ' The file this run created there was removed.' : ` The file this run created could not be removed from ${at} (${outcome === 'other' ? 'something else is there now' : 'removal failed'}); check it and remove it by hand if it is not yours.`}`);
+      };
+      confirmPlace();
+      try {
+        // The partial fault (test seam) writes the first half, then fails as a full disk would.
+        if (faults.has('partial-write')) { fs.writeFileSync(file, body.subarray(0, Math.floor(body.length / 2))); throw Object.assign(new Error('injected failure'), { code: 'EIO' }); }
+        fs.writeFileSync(file, body);
+      } catch (error) { workflowWriteThrew = true; throw error; }
+      // Read the file back: the bytes on disk must be the bytes this run meant to write.
+      const back = readDescriptor(file, body.length + 1);
+      if (!back.equals(body)) block(`${WORKFLOWS}/${workflowFile} does not hold the bytes this run wrote.`);
+      confirmPlace();
+    } finally { fs.closeSync(file); }
     // Test seam (see `faults` above), inert unless AUTHOR_WORKFLOW_TEST_FAULT is set: fails after a complete, verified write.
     if (faults.has('fail-after-write')) throw Object.assign(new Error('injected failure'), { code: 'EIO' });
   } catch (error) {
