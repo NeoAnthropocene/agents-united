@@ -1143,6 +1143,19 @@ describe('workflow-check', () => {
       }
     });
 
+    // Codex round 2: the limits that concern a result are on the result, with the same words as ADR 0082 "Documented limits".
+    it('states the walk-time, tokenizer-form, native-lane and slash limits in the notes of every result', () => {
+      for (const result of [check(), check({ content: 'const x = 1\n' }), runWorkflowCheck({})]) {
+        const notes = result.notes.join('\n');
+        expect(notes).toMatch(/swapped for a link by another process during the run is not detected/);
+        expect(notes).toMatch(/covers the forms the scan recognises/);
+        expect(notes).toMatch(/regular expression from a division/);
+        expect(notes).toMatch(/assumes the native lane is on/);
+        expect(notes).toMatch(/Basic Multilingual Plane/);
+        expect(notes).toMatch(/decoded \(meta\) against raw \(body\)/);
+      }
+    });
+
     it('carries unresolvedAgentTypes, empty, on a result where the agent-types check did not run', () => {
       const loose = path.join(fixture().registry, 'loose.js');
       fs.writeFileSync(loose, GOOD);

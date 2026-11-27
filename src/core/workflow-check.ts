@@ -12,7 +12,9 @@
  *
  * Reads stay inside the registry tree the path names: the pure name and placement checks run before any file is touched, then
  * `workflow-check-path.ts` confirms the path is spelled exactly and goes through no link or junction, and the bounded read
- * compares the opened file with the one inspected.
+ * compares the opened file with the one inspected. The Skill of the same name is looked up the same way (no link, real path
+ * inside the registry), and a file that vanishes after it was seen is unavailable. This checks the tree as the walk reads it;
+ * it is not a guard against another process swapping a folder in the path during the run (ADR 0082, "Documented limits").
  *
  * Passing means only the deterministic checks passed. It does not mean the workflow is good or live (`quality` stays pending,
  * `live` unverified).
@@ -44,7 +46,9 @@ const BOM = String.fromCharCode(0xfeff);
 export const WORKFLOW_CHECK_NOTES: readonly string[] = [
   'agent-types: the agentType requests are found by a lexical scan of the script, not by running it, so literal agent types are verified against the native roles; run-time ones are listed in unresolvedAgentTypes and not verified. A type passed through a spread cannot be seen at all.',
   'agent-types: a native role file in the registry is not the same as an installed role. Whether the role is installed with a given Bundle (the Bundle lists it, and Bundle-specific native names apply) is out of reach of this check.',
-  'A pass does not establish installability: whether a Bundle lists the paired Skill, and a destination file in a workspace that is not managed and so needs --force, are not checked.',
+  'agent-types: literal verification covers the forms the scan recognises (a bare, quoted or computed-string key, with escapes decoded, also in template interpolations to a depth of 32). The scan tells a regular expression from a division by a rule on the token before the slash, so a regular expression that starts a statement after a closing brace is read as a division and its text as code.',
+  'The path is confirmed as it is when the tree is read: a folder in the path swapped for a link by another process during the run is not detected. The meta literal parser refuses a bare key outside the Basic Multilingual Plane or written with an escape and a braced unicode escape with more than six digits, and phase titles are compared decoded (meta) against raw (body), so a draft that uses them can be reported although it is valid JavaScript.',
+  'A pass assumes the native lane is on: with it off the installer emits the Skill, not this script. A pass does not establish installability: whether a Bundle lists the paired Skill, and a destination file in a workspace that is not managed and so needs --force, are not checked.',
 ];
 
 const UNAVAILABLE_CODES:ReadonlySet<WorkflowCheckCode> = new Set<WorkflowCheckCode>(['USAGE', 'INPUT_UNAVAILABLE']);
