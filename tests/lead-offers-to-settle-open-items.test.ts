@@ -23,7 +23,7 @@ const LEADS = ['business', 'design', 'digital-agency', 'engineering', 'marketing
 const MAY_FOLLOW = new Set(['orchestrator-agent-factory']);
 const HEADING = '## Open items the user can settle';
 const PARAGRAPH =
-  'When your final report or handoff leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end it by offering two choices: settle them now, or stop here. Deliver the report, the handoff and any shutdown requests first, as your other rules say; the offer is your closing line after them and starts an optional new round. Name only those items, and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, offer nothing. Ask with `AskUserQuestion` when you have it; otherwise write the two choices as a numbered list and wait for the reply; when you run as a subagent, put the offer and the items in your report, so that your caller can ask the user and pass the answer back to you. When the user chooses to settle them, run the Skill tool with `skill: "grill-me"` and the open items in `args`, so that it starts from them and does not ask again what the session already settled. Then report what was settled, in a refreshed handoff when your role ends with one. A change that follows is new work under the same gates as any other (an accepted plan or delegation map where your rules require one, and the same verification): update a file you own yourself, such as your synthesis or handoff; send a change to a specialist\'s file to that specialist, continuing it once when the host can still resume it, or briefing a new one with its report and the settled decisions when it has shut down or the continuation is refused; and when you hold no specialist for the work, record the settlement in your handoff for the session that will do it. Note the change instead when the user says so.';
+  'When your final report or handoff leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end it by offering two choices: settle them now, or stop here. Deliver the report, the handoff and any shutdown requests first, as your other rules say; the offer is your closing line after them and starts an optional new round. Name only those items, and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, offer nothing. Ask with `AskUserQuestion` when you have it; otherwise write the two choices as a numbered list and wait for the reply; when you run as a subagent, put the offer and the items in your report, so that your caller asks the user, runs grill-me itself and passes the settled decisions back to you. When the user chooses to settle them, run the Skill tool with `skill: "grill-me"` and the open items in `args`, so that it starts from them and does not ask again what the session already settled. Then report what was settled, in a refreshed handoff when your role ends with one. A change that follows is new work under the same gates as any other (an accepted plan or delegation map where your rules require one, and the same verification): update a file you own yourself, such as your synthesis or handoff; send a change to a specialist\'s file to that specialist, continuing it once when you have not asked it to shut down and the host can still resume it; a specialist you have asked to shut down counts as unavailable, so brief a new one with its report and the settled decisions, as you do when a continuation is refused; and when you hold no specialist for the work, record the settlement in your handoff for the session that will do it. Note the change instead when the user says so.';
 
 const cores = await loadSemanticCore('registry');
 
@@ -38,19 +38,57 @@ function split(text: string): { frontmatter: Record<string, unknown>; body: stri
 function sections(body: string): Array<{ heading: string; lines: string[] }> {
   const out: Array<{ heading: string; lines: string[] }> = [];
   let fence = ''; // the opening fence run (character and length) while inside a fenced block
-  let comment = false;
+  let comment = false; // inside a multi-line HTML comment
+  const keep = (line: string): void => {
+    if (out.length) out[out.length - 1].lines.push(line);
+  };
   for (const line of body.split('\n')) {
+    if (comment) {
+      if (line.includes('-->')) comment = false;
+      keep(line);
+      continue;
+    }
     const run = line.match(/^\s{0,3}(`{3,}|~{3,})/)?.[1];
-    if (run && !fence) fence = run;
-    else if (run && run[0] === fence[0] && run.length >= fence.length && line.trim() === run) fence = '';
-    const fenced = fence !== '' || run !== undefined;
-    if (!fenced && line.includes('<!--') && !line.includes('-->')) comment = true;
-    if (!fenced && !comment && line.startsWith('## ')) out.push({ heading: line, lines: [] });
-    else if (out.length) out[out.length - 1].lines.push(line);
-    if (comment && line.includes('-->')) comment = false;
+    if (fence) {
+      if (run && run[0] === fence[0] && run.length >= fence.length && line.trim() === run) fence = '';
+      keep(line);
+      continue;
+    }
+    if (run) {
+      fence = run;
+      keep(line);
+      continue;
+    }
+    if (line.includes('<!--') && !line.includes('-->')) {
+      comment = true;
+      keep(line);
+      continue;
+    }
+    if (line.startsWith('## ')) out.push({ heading: line, lines: [] });
+    else keep(line);
   }
   return out;
 }
+
+describe('the heading reader the placement check uses', () => {
+  it('counts no heading inside a fenced block or a comment, a fence marker inside a comment included', () => {
+    const body = [
+      '## Real',
+      '<!--',
+      '```',
+      '-->',
+      '```markdown',
+      '## Inside the fence',
+      '```',
+      '````',
+      '```',
+      '## Inside a longer fence',
+      '````',
+      '## Last',
+    ].join('\n');
+    expect(sections(body).map(section => section.heading)).toEqual(['## Real', '## Last']);
+  });
+});
 
 const toolNames = (value: unknown): string[] =>
   String(value ?? '')
