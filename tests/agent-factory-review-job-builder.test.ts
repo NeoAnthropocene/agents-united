@@ -672,6 +672,88 @@ describe('the shipped review-job builder', () => {
     });
 
 
+    // The workflow-check passes only at the path <checkout>/registry/hosts/claude/workflows/<name>.js, spelled exactly (a link, another letter
+    // case or another folder name is refused by the check itself), so the recorded --artifact must be that very spelling, not a path that reaches the same bytes.
+    const canLink = (() => {
+      const base = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'au-link-probe-'));
+      try { fs.mkdirSync(path.join(base, 'target')); fs.symlinkSync(path.join(base, 'target'), path.join(base, 'link'), 'junction'); return true; } catch { return false; } finally { fs.removeSync(base); }
+    })();
+    const withRecorded = (spec: Json, artifact: string, over: Json = {}) => ({ ...spec, ...over, checks: [{ ...spec.checks[0], command: { ...spec.checks[0].command, argv: [path.join(CHECKOUT, 'dist/cli.js'), 'workflow-check', '--artifact', artifact] } }] });
+    /** A copy of the evaluator's source registry under a name other than "registry"; it holds the same workflow bytes. */
+    async function renamedRegistry(): Promise<string> {
+      const copy = path.join(fixture.root, 'reg');
+      await fs.copy(fixture.registry, copy);
+      return copy;
+    }
+
+    it.skipIf(!canLink)('refuses, in the builder, a workflow-check recorded through a link to the registry (skipped only where a link cannot be created)', async () => {
+      const spec = await workflowSpec();
+      const alias = path.join(fixture.root, 'registry-alias');
+      fs.symlinkSync(fixture.registry, alias, 'junction');
+      const throughLink = path.join(alias, 'hosts/claude/workflows', `${WF_NAME}.js`);
+      expect(fs.readFileSync(throughLink, 'utf8')).toBe(WF_TEXT);
+      expect(refusal(build(await writeSpec(withRecorded(spec, throughLink)))).reason).toBe(WF_ARTIFACT);
+    });
+
+    it('refuses, in the builder, a workflow-check recorded in another letter case than the registry copy has, even where the volume would find the same file', async () => {
+      const spec = await workflowSpec();
+      const folded = path.join(fixture.registry, 'hosts/claude/Workflows', `${WF_NAME}.js`);
+      const upper = registryWorkflow().replace(/release-flow\.js$/, 'Release-Flow.js');
+      for (const artifact of [folded, upper]) expect(refusal(build(await writeSpec(withRecorded(spec, artifact)))).reason, artifact).toBe(WF_ARTIFACT);
+    });
+
+    it('refuses, in the builder, a workflow-check on a registry copy whose source folder is not named exactly registry', async () => {
+      const spec = await workflowSpec();
+      const copy = await renamedRegistry();
+      const artifact = path.join(copy, 'hosts/claude/workflows', `${WF_NAME}.js`);
+      expect(fs.readFileSync(artifact, 'utf8')).toBe(WF_TEXT);
+      const refused = refusal(build(await writeSpec(withRecorded(spec, artifact, { source: { ...spec.source, registry: copy } }))));
+      expect(refused.reason).toBe(WF_ARTIFACT);
+    });
+
+    it('still accepts the exact spellings, with the separators normalised, in the builder', async () => {
+      const spec = await workflowSpec();
+      for (const artifact of [registryWorkflow(), [fixture.registry, 'hosts', '.', 'claude', `${path.sep}workflows`, `${WF_NAME}.js`].join(path.sep)]) {
+        const built = build(await writeSpec(withRecorded(spec, artifact)));
+        expect(built.status, built.stderr).toBe(0);
+        await fs.remove(review()); await fs.remove(readFolder());
+      }
+    });
+
+    it.skipIf(!canLink)('refuses, in the installed checker, a workflow job recorded through a link to the registry (skipped only where a link cannot be created)', async () => {
+      const { jobFile } = await roundTrip(await workflowSpec());
+      const job = await fs.readJson(jobFile) as Json;
+      const alias = path.join(fixture.root, 'registry-alias');
+      fs.symlinkSync(fixture.registry, alias, 'junction');
+      job.checks[0].command.argv[3] = path.join(alias, 'hosts/claude/workflows', `${WF_NAME}.js`);
+      await fs.writeJson(jobFile, job);
+      const refused = check(['--job', jobFile]);
+      expect(refused.status).not.toBe(0);
+      expect(refused.stderr + refused.stdout).toContain(WF_ARTIFACT);
+    });
+
+    it('refuses, in the installed checker, a workflow job recorded in another letter case than the registry copy has', async () => {
+      const { jobFile } = await roundTrip(await workflowSpec());
+      const job = await fs.readJson(jobFile) as Json;
+      job.checks[0].command.argv[3] = path.join(fixture.registry, 'hosts/claude/Workflows', `${WF_NAME}.js`);
+      await fs.writeJson(jobFile, job);
+      const refused = check(['--job', jobFile]);
+      expect(refused.status).not.toBe(0);
+      expect(refused.stderr + refused.stdout).toContain(WF_ARTIFACT);
+    });
+
+    it('refuses, in the installed checker, a workflow job whose source registry folder is not named exactly registry', async () => {
+      const { jobFile } = await roundTrip(await workflowSpec());
+      const job = await fs.readJson(jobFile) as Json;
+      const copy = await renamedRegistry();
+      job.source.registry = copy;
+      job.checks[0].command.argv[3] = path.join(copy, 'hosts/claude/workflows', `${WF_NAME}.js`);
+      await fs.writeJson(jobFile, job);
+      const refused = check(['--job', jobFile]);
+      expect(refused.status).not.toBe(0);
+      expect(refused.stderr + refused.stdout).toContain(WF_ARTIFACT);
+    });
+
     it('accepts a registry spelling of the workflow only when that file has the candidate\'s bytes, in the builder', async () => {
       const spec = await workflowSpec();
       const recorded = spec.checks[0] as Json;
