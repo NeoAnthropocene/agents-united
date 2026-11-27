@@ -1,10 +1,12 @@
 /**
- * ADR 0082: workflow-check passes exactly the native workflows the Claude compound projection installs, with their content.
+ * ADR 0082: workflow-check is stricter than the Claude compound projection: it passes only workflows the projector emits intact,
+ * with their content. It does not establish installability (Bundle membership, an unmanaged destination that needs --force).
  *
  * The test drives `ClaudeProjector.planCompoundProjection` with the native lane on, on a temporary registry that holds a
  * workflow with a Skill of the same name, a second one, a workflow with no Skill and a workflow whose name the native package
  * never lists. Then it asks `workflow-check` about each file.
  */
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -95,19 +97,23 @@ describe('workflow-check agrees with the Claude compound projection', () => {
     expect(await emitted(false)).toEqual([]);
   });
 
-  it('passes workflow-check for exactly the emitted workflows', async () => {
+  it('passes workflow-check only for workflows the projector emits intact (in this fixture the two sets coincide)', async () => {
     const artifacts = await emitted();
     const installed = artifacts.map(item => path.posix.basename(item.relPath)).sort();
     expect(installed).toEqual(['demo-flow.js', 'other-flow.js']);
     const passing = Object.keys(WORKFLOWS).filter(name => checked(name).status === 'passed').sort();
     expect(passing).toEqual(installed);
-    // What was installed is what workflow-check promised: LF-normalised source, then one managed marker as the last line.
+    // What was installed is what workflow-check promised: LF-normalised source with trailing newlines collapsed, then one managed
+    // marker as the last line, and the whole marker line is the one the native package writes (canonical path, profile, source hash).
     for (const artifact of artifacts) {
       const name = path.posix.basename(artifact.relPath);
       const lines = String(artifact.content).split('\n');
       expect(lines.pop()).toBe('');
-      expect(lines.pop()).toMatch(/^\/\/ managed-by: agents-united /);
-      expect(`${lines.join('\n')}\n`).toBe(`${sourceOf(name).replace(/\r\n/g, '\n').replace(/\n*$/, '')}\n`);
+      const marker = lines.pop();
+      const body = `${lines.join('\n')}\n`;
+      expect(body).toBe(`${sourceOf(name).replace(/\r\n/g, '\n').replace(/\n*$/, '')}\n`);
+      const hash = crypto.createHash('sha256').update(body).digest('hex');
+      expect(marker).toBe(`// managed-by: agents-united | profile: claude-native | canonical: skills/${name.slice(0, -3)}/SKILL.md | source: sha256:${hash} | do not edit`);
     }
   });
 });

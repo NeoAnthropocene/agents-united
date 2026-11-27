@@ -992,6 +992,19 @@ describe('workflow-check', () => {
       }
     });
 
+    // The current behaviour, pinned and not a promise of the command: CAC handles --help before the action sees an unknown option,
+    // so --help with a misspelled undotted option prints the usage text and exits 0, like skill-check and rule-check. (A dotted
+    // option such as --help.topic is caught earlier by the shared parser and is a JSON USAGE result, see the misuse test above.)
+    it('prints the usage text and exits 0 for --help together with an unknown option, because CAC handles help first', () => {
+      for (const argv of [['--help', '--nope'], ['--nope', '--help'], ['-h', '--nope']]) {
+        const done = spawnSync(process.execPath, [cli, 'workflow-check', ...argv], { cwd: folderOf(), encoding: 'utf8', timeout: 30_000 });
+        expect(done.status, argv.join(' ')).toBe(0);
+        expect(done.stdout, argv.join(' ')).toContain('--artifact');
+        expect(done.stdout, argv.join(' ')).toContain('workflow-check');
+        expect(done.stderr, argv.join(' ')).toBe('');
+      }
+    });
+
     it('lists workflow-check in the top-level help', () => {
       const done = spawnSync(process.execPath, [cli, '--help'], { cwd: folderOf(), encoding: 'utf8', timeout: 30_000 });
       expect(done.status).toBe(0);

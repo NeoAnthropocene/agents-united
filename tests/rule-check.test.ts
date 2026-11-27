@@ -597,6 +597,18 @@ describe('rule-check', () => {
       }
     });
 
+    // The current behaviour, pinned and not a promise of the command: CAC handles --help before the action sees an unknown option,
+    // so --help with a misspelled undotted option prints the usage text and exits 0, as skill-check and workflow-check do.
+    it('prints the usage text and exits 0 for --help together with an unknown option, because CAC handles help first', () => {
+      for (const argv of [['--help', '--nope'], ['--nope', '--help'], ['-h', '--nope']]) {
+        const done = spawnSync(process.execPath, [cli, 'rule-check', ...argv], { cwd: folder(), encoding: 'utf8', timeout: 30_000 });
+        expect(done.status, argv.join(' ')).toBe(0);
+        expect(done.stdout, argv.join(' ')).toContain('--artifact');
+        expect(done.stdout, argv.join(' ')).toContain('rule-check');
+        expect(done.stderr, argv.join(' ')).toBe('');
+      }
+    });
+
     it('lists rule-check in the top-level help', () => {
       const done = spawnSync(process.execPath, [cli, '--help'], { cwd: folder(), encoding: 'utf8', timeout: 30_000 });
       expect(done.status).toBe(0);
