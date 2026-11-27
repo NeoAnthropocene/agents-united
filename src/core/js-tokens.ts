@@ -12,7 +12,7 @@ export interface JsToken {
   kind: 'ident' | 'string' | 'template' | 'number' | 'regex' | 'punct';
   /** The source text of the token (for a string or template, the text between the quotes, undecoded). */
   text: string;
-  /** For a string or template: the text with the standard escapes decoded. */
+  /** For a string or template: the text with the standard escapes decoded. For an identifier: the name with `\u` escapes decoded. */
   value: string;
   /** For a template: whether it has a `${...}` interpolation. */
   interpolated: boolean;
@@ -68,6 +68,40 @@ export function tokenizeJs(source: string): JsToken[][] {
     const stop = end < 0 ? length : end + 2;
     for (let i = index; i < stop; i++) if (source[i] === '\n') line++;
     index = stop;
+  }
+
+  /**
+   * An identifier starting at `index`, as its source text and its name with `\uXXXX` and `\u{...}` escapes decoded, or undefined
+   * when none starts here. Moves `index` past it. A code point above U+FFFF is one character (an astral identifier).
+   */
+  function readIdentifier(): { raw: string; name: string } | undefined {
+    let at = index;
+    let name = '';
+    while (at < length) {
+      let part: string;
+      let size: number;
+      if (source[at] === '\\') {
+        if (source[at + 1] !== 'u') break;
+        const braced = source[at + 2] === '{';
+        const close = braced ? source.indexOf('}', at + 3) : at + 6;
+        const digits = braced ? source.slice(at + 3, close < 0 ? at + 3 : close) : source.slice(at + 2, at + 6);
+        if (!/^[0-9a-fA-F]+$/.test(digits) || (braced ? digits.length > 10 || close < 0 : digits.length !== 4)) break;
+        const code = parseInt(digits, 16);
+        if (code > 0x10ffff) break;
+        part = String.fromCodePoint(code);
+        size = braced ? close + 1 - at : 6;
+      } else {
+        part = String.fromCodePoint(source.codePointAt(at) as number);
+        size = part.length;
+      }
+      if (!(at === index ? IDENT_START : IDENT_PART).test(part)) break;
+      name += part;
+      at += size;
+    }
+    if (at === index) return undefined;
+    const raw = source.slice(index, at);
+    index = at;
+    return { raw, name };
   }
 
   function quoted(list: JsToken[], quote: string): void {
@@ -144,11 +178,9 @@ export function tokenizeJs(source: string): JsToken[][] {
         continue;
       }
       if (char === '/' && next === '*') { skipBlockComment(); continue; }
-      if (IDENT_START.test(char)) {
-        const start = index;
-        index++;
-        while (index < length && IDENT_PART.test(source[index])) index++;
-        push(list, 'ident', source.slice(start, index), line);
+      const ident = readIdentifier();
+      if (ident !== undefined) {
+        push(list, 'ident', ident.raw, line, ident.name);
         continue;
       }
       if (char >= '0' && char <= '9') {
@@ -168,7 +200,7 @@ export function tokenizeJs(source: string): JsToken[][] {
         const before = list[list.length - 1];
         const startsRegex = before === undefined
           || (before.kind === 'punct' && !')]}'.includes(before.text))
-          || (before.kind === 'ident' && REGEX_AFTER.has(before.text));
+          || (before.kind === 'ident' && REGEX_AFTER.has(before.value));
         if (startsRegex) { regex(list); continue; }
       }
       push(list, 'punct', char, line);

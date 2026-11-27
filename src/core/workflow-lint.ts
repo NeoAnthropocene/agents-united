@@ -153,8 +153,10 @@ export function agentTypeRequests(source: string): AgentTypeRequests {
   for (const tokens of tokenizeJs(source)) {
     for (let at = 0; at < tokens.length; at++) {
       const head = tokens[at];
-      const bareOrQuoted = (head.kind === 'ident' && head.text === 'agentType') || (head.kind === 'string' && head.value === 'agentType');
-      const computed = head.kind === 'punct' && head.text === '[' && tokens[at + 1]?.kind === 'string' && tokens[at + 1].value === 'agentType'
+      const bareOrQuoted = (head.kind === 'ident' && head.value === 'agentType') || (head.kind === 'string' && head.value === 'agentType');
+      const key = tokens[at + 1];
+      const computed = head.kind === 'punct' && head.text === '[' && key !== undefined
+        && (key.kind === 'string' || (key.kind === 'template' && !key.interpolated)) && key.value === 'agentType'
         && tokens[at + 2]?.kind === 'punct' && tokens[at + 2].text === ']';
       if (!bareOrQuoted && !computed) continue;
       const before = tokens[at - 1];
