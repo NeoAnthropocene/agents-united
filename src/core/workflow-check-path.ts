@@ -88,3 +88,45 @@ export function resolveWorkflowTree(artifact: string): WorkflowTree {
   if (!same) return { ok: false, message: `The path resolves elsewhere (to ${real}), so it goes through a link or junction; pass the real path of the workflow: ${artifact}` };
   return { ok: true, registry: path.join(realCheckout, names[0]), file: current };
 }
+
+export type SkillPair = { kind: 'found' } | { kind: 'missing' } | { kind: 'unavailable'; message: string };
+
+/**
+ * Whether the Skill `<registry>/skills/<stem>/SKILL.md` is there as the projector would find it. `registry` is the real registry
+ * folder (`resolveWorkflowTree` returns it). Each of `skills`, `skills/<stem>` and `SKILL.md` must be inspected with lstat: not
+ * a link or junction (unavailable, as for the workflow path), a folder or, for the last, a regular file (anything else, or
+ * nothing there, is `missing`: the Skill does not exist). The real path of the file must then be exactly the expected one, so
+ * nothing outside the registry can stand in for the Skill. A name that vanishes between the lstat and the real-path call is
+ * unavailable: the file was seen, so its disappearance is not "no Skill". The tree is checked as it is when the walk reads it;
+ * a folder swapped for a link after this call is outside what a read-only check can prevent.
+ */
+export function resolveSkillPair(registry: string, stem: string): SkillPair {
+  const names = ['skills', stem, 'SKILL.md'];
+  let current = registry;
+  for (const [index, name] of names.entries()) {
+    const last = index === names.length - 1;
+    const next = path.join(current, name);
+    let entry: fs.Stats;
+    try {
+      entry = fs.lstatSync(next);
+    } catch (error) {
+      const code = errorCode(error);
+      if (code === 'ENOENT' || code === 'ENOTDIR') return { kind: 'missing' };
+      return { kind: 'unavailable', message: `The Skill of the same name cannot be inspected (${code}): ${next}` };
+    }
+    if (entry.isSymbolicLink()) {
+      return { kind: 'unavailable', message: `The Skill path goes through a link or junction at ${next}, so the SKILL.md may not be inside the registry; the Skill must be a real file in the registry.` };
+    }
+    if (last ? !entry.isFile() : !entry.isDirectory()) return { kind: 'missing' };
+    current = next;
+  }
+  let real: string;
+  try {
+    real = fs.realpathSync(current);
+  } catch (error) {
+    return { kind: 'unavailable', message: `The SKILL.md of the same name cannot be resolved (${errorCode(error)}), so it is not shown to be inside the registry: ${current}` };
+  }
+  const same = process.platform === 'win32' ? real.toLowerCase() === current.toLowerCase() : real === current;
+  if (!same) return { kind: 'unavailable', message: `The SKILL.md of the same name resolves elsewhere (to ${real}), so it goes through a link or junction; the Skill must be a real file in the registry: ${current}` };
+  return { kind: 'found' };
+}

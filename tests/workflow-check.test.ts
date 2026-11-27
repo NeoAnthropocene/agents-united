@@ -576,8 +576,9 @@ describe('workflow-check', () => {
         const { registry, file } = fixture();
         const skill = path.join(registry, 'skills', 'demo-flow', 'SKILL.md');
         const real = fs.realpathSync;
+        let removed = false;
         const spy = vi.spyOn(fs, 'realpathSync').mockImplementation(((...args: Parameters<typeof fs.realpathSync>) => {
-          if (String(args[0]) === skill && fs.existsSync(skill)) fs.rmSync(skill);
+          if (String(args[0]) === skill && !removed) { removed = true; fs.unlinkSync(skill); }
           return (real as (...call: unknown[]) => unknown)(...args);
         }) as typeof fs.realpathSync);
         try {
@@ -612,8 +613,9 @@ describe('workflow-check', () => {
         const profile = path.join(registry, 'hosts', 'claude', 'profile.json');
         fs.writeFileSync(profile, realProfile());
         const real = fs.openSync;
+        let removed = false;
         const spy = vi.spyOn(fs, 'openSync').mockImplementation(((...args: Parameters<typeof fs.openSync>) => {
-          if (String(args[0]) === profile) fs.rmSync(profile);
+          if (String(args[0]) === profile && !removed) { removed = true; fs.unlinkSync(profile); }
           return real(...args);
         }) as typeof fs.openSync);
         try {
@@ -633,8 +635,9 @@ describe('workflow-check', () => {
         const { registry, file } = fixture();
         const role = path.join(registry, 'hosts', 'claude', 'agents', 'code-reviewer.md');
         const real = fs.lstatSync;
+        let removed = false;
         const spy = vi.spyOn(fs, 'lstatSync').mockImplementation(((...args: Parameters<typeof fs.lstatSync>) => {
-          if (String(args[0]) === role && fs.existsSync(role)) fs.rmSync(role);
+          if (String(args[0]) === role && !removed) { removed = true; fs.unlinkSync(role); }
           return (real as (...call: unknown[]) => unknown)(...args);
         }) as typeof fs.lstatSync);
         try {
@@ -648,8 +651,9 @@ describe('workflow-check', () => {
         const { registry, file } = fixture();
         const agents = path.join(registry, 'hosts', 'claude', 'agents');
         const real = fs.readdirSync;
+        let removed = false;
         const spy = vi.spyOn(fs, 'readdirSync').mockImplementation(((...args: Parameters<typeof fs.readdirSync>) => {
-          if (String(args[0]) === agents && fs.existsSync(agents)) fs.rmSync(agents, { recursive: true });
+          if (String(args[0]) === agents && !removed) { removed = true; fs.rmSync(agents, { recursive: true }); }
           return (real as (...call: unknown[]) => unknown)(...args);
         }) as typeof fs.readdirSync);
         try {

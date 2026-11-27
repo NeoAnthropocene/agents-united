@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { readBoundedFile } from './bounded-file.js';
 import { validateHostProfile } from './host-profile.js';
-import { resolveWorkflowTree } from './workflow-check-path.js';
+import { resolveSkillPair, resolveWorkflowTree } from './workflow-check-path.js';
 import { MARKER_PREFIX } from './claude-projector.js';
 import { isNativeName, renderNativeWorkflow } from './native-package.js';
 import { errorCode, shortened, unsafeEntryName, validUtf8 } from './skill-check.js';
@@ -212,9 +212,12 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
       ? gate('meta-name', 'not-run', 'meta.name could not be read as a string from a pure `meta` literal (the lint check says why), so it was not compared with the file name.')
       : done('meta-name', metaName === stem ? [] : [found('META_NAME', `meta.name is ${quoted(metaName)} but the file name is ${quoted(base)}. Claude Code runs a saved workflow as /<name>; make meta.name ${quoted(stem)}.`)]);
 
-    const skillFile = path.join(registry, 'skills', stem, 'SKILL.md');
+    // The Skill is looked up like the workflow: no link on the way and a real path inside the registry. A link, or a file that
+    // vanishes after it was seen, is unavailable (exit 2); only a Skill that is not there is a SKILL_PAIR finding.
+    const pair = resolveSkillPair(registry, stem);
+    if (pair.kind === 'unavailable') return unavailable(artifact, 'INPUT_UNAVAILABLE', [pair.message], 'The Skill of the same name could not be confirmed to lie inside the registry tree, so no check ran.');
     let skillGate: WorkflowCheckGate;
-    if (!isFile(skillFile)) {
+    if (pair.kind === 'missing') {
       skillGate = done('skill-pair', [found('SKILL_PAIR', `There is no Skill of the same name: ${path.posix.join('skills', stem, 'SKILL.md')} is missing in the registry. The installer puts a native workflow only in place of that Skill, so this workflow would never be installed.`)]);
     } else {
       // The projector's own list: a Skill the Claude profile marks unsupported is not projected, and neither is the workflow in its place.
@@ -228,7 +231,9 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
     // Only the requests written as a string literal can be checked. The others are listed, not failed: the scan cannot know what
     // they hold, so they are reported as not verified and the check passes on them.
     const requested = agentTypeRequests(text);
-    const roles = claudeRoleNames(registry);
+    const roleList = claudeRoleNames(registry);
+    if ('problem' in roleList) return unavailable(artifact, 'INPUT_UNAVAILABLE', [roleList.problem], 'The native agent roles could not be read, so no check ran.');
+    const roles = roleList.names;
     const agentProblems = requested.literals
       .filter(type => !roles.has(type))
       .map(type => found('AGENT_TYPE', `The script asks for agentType ${quoted(type)}, which is not a native Claude agent: there is no regular file ${path.posix.join('hosts', 'claude', 'agents', `${isNativeName(type) ? type : '<name>'}.md`)} in the registry.`));
@@ -254,26 +259,35 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
  * use) goes by directory-entry names alone, so a folder named `code-reviewer.md` would count there; its behaviour is unchanged
  * and this check does not use it.
  */
-function claudeRoleNames(registry: string): ReadonlySet<string> {
+function claudeRoleNames(registry: string): { names: ReadonlySet<string> } | { problem: string } {
   const dir = path.join(registry, 'hosts', 'claude', 'agents');
   const names = new Set<string>();
+  const vanished = (what: string, where: string): { problem: string } => ({ problem: `The ${what} disappeared while the registry was being read (ENOENT), so the native agent roles cannot be confirmed: ${where}` });
   let entries: string[];
   try {
-    if (!fs.lstatSync(dir).isDirectory()) return names;
-    entries = fs.readdirSync(dir);
+    if (!fs.lstatSync(dir).isDirectory()) return { names };
   } catch {
-    return names;
+    // No agents folder (or one that cannot be inspected) holds no role.
+    return { names };
+  }
+  try {
+    entries = fs.readdirSync(dir);
+  } catch (error) {
+    // The folder was inspected a moment ago: if it is gone now, the registry changed under the check.
+    return errorCode(error) === 'ENOENT' ? vanished('agents folder', dir) : { names };
   }
   for (const entry of entries) {
     const stem = entry.endsWith('.md') ? entry.slice(0, -'.md'.length) : null;
     if (stem === null || !isNativeName(stem)) continue;
+    const file = path.join(dir, entry);
     try {
-      if (fs.lstatSync(path.join(dir, entry)).isFile()) names.add(stem);
-    } catch {
-      // A role that cannot be inspected is not a role.
+      if (fs.lstatSync(file).isFile()) names.add(stem);
+    } catch (error) {
+      // The folder listed this entry a moment ago, so ENOENT means it vanished. Any other failure: a role that cannot be inspected is not a role.
+      if (errorCode(error) === 'ENOENT') return vanished('agent file', file);
     }
   }
-  return names;
+  return { names };
 }
 
 /** The largest host profile that is read. The committed one is a few KB; this stops a file that is not a profile. */
@@ -287,22 +301,20 @@ const PROFILE_MAX_BYTES = 256 * 1024;
  */
 function claudeUnsupportedSkills(registry: string): { names: ReadonlySet<string> } | { problem: string } {
   const file = path.join(registry, 'hosts', 'claude', 'profile.json');
+  // No profile is a registry that lists no unsupported Skill. That is only the case when the file is not there at the first look;
+  // an ENOENT from the read after the file was seen means it vanished, and the pair cannot be judged.
+  try {
+    fs.lstatSync(file);
+  } catch (error) {
+    return errorCode(error) === 'ENOENT' ? { names: new Set() } : { problem: `The host profile cannot be inspected (${errorCode(error)}): ${file}` };
+  }
   const read = readBoundedFile(file, PROFILE_MAX_BYTES, 'host profile');
-  if (read.kind === 'unavailable') return read.code === 'ENOENT' ? { names: new Set() } : { problem: read.message };
+  if (read.kind === 'unavailable') return { problem: read.code === 'ENOENT' ? `The host profile disappeared while it was being read (ENOENT), so the Skill pair cannot be judged: ${file}` : read.message };
   if (read.kind === 'oversize') return { problem: `The host profile is larger than ${PROFILE_MAX_BYTES / 1024} KiB, so it was not read: ${file}` };
   try {
     const profile = validateHostProfile(JSON.parse(read.bytes.toString('utf8')) as unknown, file);
     return { names: new Set((profile.unsupportedSkills ?? []).map(entry => entry.name)) };
   } catch (error) {
     return { problem: `The host profile is not valid (${(error as Error).message.slice(0, 200)}): ${file}` };
-  }
-}
-
-/** A regular file (a link to one counts, as it does for the projector's own existence test). */
-function isFile(file: string): boolean {
-  try {
-    return fs.statSync(file).isFile();
-  } catch {
-    return false;
   }
 }
