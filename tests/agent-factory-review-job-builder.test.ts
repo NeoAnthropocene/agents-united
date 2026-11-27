@@ -711,13 +711,70 @@ describe('the shipped review-job builder', () => {
       expect(refused.reason).toBe(WF_ARTIFACT);
     });
 
-    it('still accepts the exact spellings, with the separators normalised, in the builder', async () => {
+    // The recorded spelling is compared as written. Only the kind of separator may differ, and only on Windows (where the checker takes either);
+    // a "." or ".." segment, a doubled separator or another letter case is another spelling, and workflow-check refuses it.
+    const sameWithOtherSeparators = (file: string): string[] => (process.platform === 'win32' ? [file.replace(/\\/g, '/')] : []);
+    const dottedSpellings = (): string[] => {
+      const sep = path.sep;
+      const dir = path.join(fixture.registry, 'hosts', 'claude', 'workflows');
+      return [
+        `${dir}${sep}.${sep}${WF_NAME}.js`,
+        `${path.join(fixture.registry, 'hosts')}${sep}.${sep}claude${sep}workflows${sep}${WF_NAME}.js`,
+        `${path.join(fixture.registry, 'hosts', 'claude')}${sep}workflows${sep}..${sep}workflows${sep}${WF_NAME}.js`,
+        `${dir}${sep}${sep}${WF_NAME}.js`,
+      ];
+    };
+
+    it('still accepts the exact spelling in the builder, and on Windows the same path with the other kind of separator', async () => {
       const spec = await workflowSpec();
-      for (const artifact of [registryWorkflow(), [fixture.registry, 'hosts', '.', 'claude', `${path.sep}workflows`, `${WF_NAME}.js`].join(path.sep)]) {
+      for (const artifact of [registryWorkflow(), ...sameWithOtherSeparators(registryWorkflow())]) {
         const built = build(await writeSpec(withRecorded(spec, artifact)));
-        expect(built.status, built.stderr).toBe(0);
+        expect(built.status, `${artifact}: ${built.stderr}`).toBe(0);
         await fs.remove(review()); await fs.remove(readFolder());
       }
+    });
+
+    it('refuses, in the builder, a workflow-check recorded with a "." or ".." segment or a doubled separator, which workflow-check itself refuses', async () => {
+      const spec = await workflowSpec();
+      for (const artifact of dottedSpellings()) {
+        expect(fs.readFileSync(path.normalize(artifact), 'utf8')).toBe(WF_TEXT);
+        expect(refusal(build(await writeSpec(withRecorded(spec, artifact)))).reason, artifact).toBe(WF_ARTIFACT);
+      }
+    });
+
+    it('refuses, in the installed checker, a workflow job recorded with a "." or ".." segment or a doubled separator', async () => {
+      const { jobFile } = await roundTrip(await workflowSpec());
+      for (const artifact of dottedSpellings()) {
+        const job = await fs.readJson(jobFile) as Json;
+        job.checks[0].command.argv[3] = artifact;
+        await fs.writeJson(jobFile, job);
+        const refused = check(['--job', jobFile]);
+        expect(refused.status, artifact).not.toBe(0);
+        expect(refused.stderr + refused.stdout, artifact).toContain(WF_ARTIFACT);
+      }
+    });
+
+    /** The workflows folder of the registry copy becomes a link to the real folder, as a contributor's checkout could have it. */
+    function linkWorkflowsFolder(): void {
+      const folder = path.join(fixture.registry, 'hosts/claude/workflows');
+      const real = path.join(fixture.root, 'workflows-real');
+      fs.renameSync(folder, real);
+      fs.symlinkSync(real, folder, 'junction');
+      expect(fs.readFileSync(registryWorkflow(), 'utf8')).toBe(WF_TEXT);
+    }
+
+    it.skipIf(!canLink)('refuses, in the builder, a workflow-check on a registry copy whose workflows folder is a link, as the installed checker does (skipped only where a link cannot be created)', async () => {
+      const spec = await workflowSpec();
+      linkWorkflowsFolder();
+      expect(refusal(build(await writeSpec(withRecorded(spec, registryWorkflow())))).reason).toBe(WF_ARTIFACT);
+    });
+
+    it.skipIf(!canLink)('refuses, in the installed checker, a workflow job whose registry copy sits in a linked workflows folder, with the same reason as the builder (skipped only where a link cannot be created)', async () => {
+      const { jobFile } = await roundTrip(await workflowSpec());
+      linkWorkflowsFolder();
+      const refused = check(['--job', jobFile]);
+      expect(refused.status).not.toBe(0);
+      expect(refused.stderr + refused.stdout).toContain(WF_ARTIFACT);
     });
 
     it.skipIf(!canLink)('refuses, in the installed checker, a workflow job recorded through a link to the registry (skipped only where a link cannot be created)', async () => {
