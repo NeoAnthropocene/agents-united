@@ -97,6 +97,46 @@ describe('agentTypeRequests', () => {
   });
 });
 
+// Codex round 2, blocker 3: valid JavaScript that spells the key another way must still be seen as a request.
+describe('agentTypeRequests: escaped identifiers and a computed template key', () => {
+  // The source text holds a real backslash: '\\u0054' in this file is the six characters T in the script.
+  it.each([
+    ['a four-digit escape', "{ agent\\u0054ype: 'ghost' }"],
+    ['a braced escape', "{ agent\\u{54}ype: 'ghost' }"],
+    ['a braced escape with leading zeros', "{ agent\\u{000054}ype: 'ghost' }"],
+    ['an escape in the first letter', "{ \\u0061gentType: 'ghost' }"],
+    ['an escape of every letter', "{ \\u0061\\u0067\\u0065\\u006e\\u0074\\u0054\\u0079\\u0070\\u0065: 'ghost' }"],
+    ['a computed template key with no substitution', "{ [`agentType`]: 'ghost' }"],
+    ['a computed template key with an escape in its text', "{ [`agent\\u0054ype`]: 'ghost' }"],
+    ['a computed key in single quotes with an escape', "{ ['agent\\u0054ype']: 'ghost' }"],
+  ])('finds the literal request written with %s', (_label, call) => {
+    expect(agentTypeRequests(`const a = await agent('x', ${call})`)).toEqual({ literals: ['ghost'], unresolved: [] });
+  });
+
+  it.each([
+    ['an escaped bare key', '{ agent\\u0054ype: kind }'],
+    ['a braced escaped bare key', '{ agent\\u{54}ype: kind }'],
+    ['an escaped shorthand', '{ agent\\u0054ype }'],
+    ['a computed template key', '{ [`agentType`]: kind }'],
+  ])('lists the unresolved request written with %s', (_label, call) => {
+    expect(agentTypeRequests(`const a = await agent('x', ${call})`)).toEqual({ literals: [], unresolved: [1] });
+  });
+
+  it.each([
+    ['a different escaped name', "{ agent\\u0054yp: 'ghost' }"],
+    ['a template key with a substitution', "{ [`agent${'Type'}`]: 'ghost' }"],
+    ['a template key with more text', "{ [`agentTypes`]: 'ghost' }"],
+    ['an escape that is not a letter of the name', "{ agent\\u0055ype: 'ghost' }"],
+  ])('does not take %s for the key', (_label, call) => {
+    expect(agentTypeRequests(`const a = await agent('x', ${call})`)).toEqual({ literals: [], unresolved: [] });
+  });
+
+  it('reads an escaped identifier as one name, so the code after it keeps its place', () => {
+    const source = "const valu\\u0065 = 4 / 2\nconst b = { agentType: 'seen' }";
+    expect(agentTypeRequests(source)).toEqual({ literals: ['seen'], unresolved: [] });
+  });
+});
+
 // ADR 0082: `meta` is read as data. The lint never evaluates it, and a malformed shape is a lint problem, never an exception.
 describe('lintWorkflow reads meta as data', () => {
   const PROBE = '__workflowLintMetaRan';

@@ -767,6 +767,19 @@ describe('workflow-check', () => {
         expect(codesOf(check({ content: `${GOOD}const note = \`run \${await agent('again', { agentType: 'ghost' })}\`\n` }))).toEqual(['AGENT_TYPE']);
       });
 
+      it('fails a missing literal role written with an escaped identifier or a computed template key (Codex round 2)', () => {
+        for (const call of ["{ agent\\u0054ype: 'ghost' }", "{ agent\\u{54}ype: 'ghost' }", "{ [`agentType`]: 'ghost' }"]) {
+          const result = requests(call);
+          expect(codesOf(result), call).toEqual(['AGENT_TYPE']);
+          expect(result.findings[0]?.message, call).toContain('ghost');
+        }
+        for (const call of ['{ agent\\u0054ype: kind }', '{ [`agentType`]: kind }']) {
+          const result = requests(call);
+          expect(result.findings, call).toEqual([]);
+          expect(result.unresolvedAgentTypes, call).toHaveLength(1);
+        }
+      });
+
       it('does not take an example in a comment for a request', () => {
         const result = check({ content: `${GOOD}// ask for { agentType: 'ghost' } here\n/* agentType: 'ghost2', agentType: kind */\n` });
         expect(result.status).toBe('passed');
