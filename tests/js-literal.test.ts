@@ -47,6 +47,16 @@ describe('parseJsLiteral: what it accepts', () => {
     expect(Object.keys(value)).toEqual(['toString', 'valueOf', 'constructor', 'hasOwnProperty', 'nested']);
   });
 
+  // Codex round 3: every ECMAScript white space (tab, VT, FF, space, NBSP, BOM and the Zs category) separates tokens.
+  it.each([
+    ['U+0009', 0x09], ['U+000B', 0x0b], ['U+000C', 0x0c], ['U+0020', 0x20], ['U+00A0', 0xa0], ['U+FEFF', 0xfeff],
+    ['U+1680', 0x1680], ['U+2000', 0x2000], ['U+2003', 0x2003], ['U+202F', 0x202f], ['U+205F', 0x205f], ['U+3000', 0x3000],
+  ])('skips %s between tokens, around keys, values, commas and brackets', (_label, code) => {
+    const space = String.fromCharCode(code);
+    const text = `${space}{${space}name${space}:${space}'a'${space},${space}list${space}:${space}[${space}1${space},${space}-2${space}]${space}}${space}`;
+    expect(parsed(text)).toEqual({ name: 'a', list: [1, -2] });
+  });
+
   it('lets a later duplicate key win, as an object literal does', () => {
     expect(parsed(`{ a: 1, a: 2 }`)).toEqual({ a: 2 });
   });

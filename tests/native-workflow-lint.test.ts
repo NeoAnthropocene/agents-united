@@ -238,6 +238,96 @@ describe('agentTypeRequests: line terminators', () => {
   });
 });
 
+// Codex round 3, blocker 1: a keyword written as a member name is an identifier (so a `/` after it divides), and every
+// ECMAScript white space is white space.
+describe('agentTypeRequests: member names and white space (Codex round 3)', () => {
+  const ch = (code: number): string => String.fromCharCode(code);
+  const REQUEST = "await agent('x', { agentType: 'ghost' })";
+  const SPACES: Array<[string, string]> = [
+    ['U+0009', ch(0x09)], ['U+000B', ch(0x0b)], ['U+000C', ch(0x0c)], ['U+00A0', ch(0xa0)], ['U+FEFF', ch(0xfeff)],
+    ['U+1680', ch(0x1680)], ['U+2000', ch(0x2000)], ['U+2003', ch(0x2003)], ['U+202F', ch(0x202f)], ['U+205F', ch(0x205f)], ['U+3000', ch(0x3000)],
+  ];
+
+  it.each(['in', 'of', 'instanceof', 'typeof', 'return', 'new', 'delete', 'void', 'throw', 'case', 'do', 'else', 'yield', 'await'])(
+    'divides after the member name %s (after a dot, ?. or #), so the request on the line is seen',
+    (word) => {
+      for (const access of ['args.', 'args?.', 'this.#']) {
+        const source = `const q = ${access}${word} / (${REQUEST})`;
+        expect(agentTypeRequests(source), source).toEqual({ literals: ['ghost'], unresolved: [] });
+      }
+    },
+  );
+
+  it.each(['if', 'while', 'for', 'with'])('does not take a private name %s followed by a call for a statement header', (word) => {
+    for (const access of ['args.', 'args?.', 'this.#']) {
+      const source = `const q = ${access}${word}() / (${REQUEST})`;
+      expect(agentTypeRequests(source), source).toEqual({ literals: ['ghost'], unresolved: [] });
+    }
+  });
+
+  it.each(SPACES)('sees a request across %s between the tokens', (_label, space) => {
+    const source = `const a = { agentType:${space}'ghost' }\nconst b = {${space}agentType${space}:${space}kind${space}}`;
+    expect(agentTypeRequests(source)).toEqual({ literals: ['ghost'], unresolved: [2] });
+  });
+
+  it('accepts meta with U+2003 and U+00A0 between its tokens', () => {
+    const em = ch(0x2003);
+    const nb = ch(0xa0);
+    const source = `export const meta = {${em}name:${nb}'demo-flow',${em}description:${nb}'A demo',${nb}phases:${em}[]${nb}}\nreturn 1\n`;
+    expect(lintWorkflow(source)).toEqual([]);
+  });
+});
+
+// Codex round 3, blocker 2: a // comment inside `meta` ends at every line terminator, as the tokenizer's does.
+describe('lintWorkflow: a // comment inside meta (Codex round 3)', () => {
+  const LS = String.fromCharCode(0x2028);
+  const PS = String.fromCharCode(0x2029);
+
+  it.each([['LF', '\n'], ['CRLF', '\r\n'], ['a lone CR', '\r'], ['U+2028', LS], ['U+2029', PS]])(
+    'passes a property after a comment ended by %s, whatever the comment holds',
+    (_label, end) => {
+      const source = `export const meta = { name: 'a', // it's a { note${end}description: 'b' }\n`;
+      expect(extractMetaLiteral(source)?.literal).toBe(`{ name: 'a', // it's a { note${end}description: 'b' }`);
+      expect(lintWorkflow(source)).toEqual([]);
+      expect(workflowMetaName(source)).toBe('a');
+    },
+  );
+});
+
+// Codex round 3, blocker 4: the no-module-loading check reads the token stream, so a comment cannot hide an import call.
+describe('lintWorkflow: no module loading (Codex round 3)', () => {
+  const LS = String.fromCharCode(0x2028);
+  const HEAD = "export const meta = { name: 'a', description: 'b' }\n";
+  const NO_MODULES = /cannot load modules/;
+
+  it.each([
+    ['no space', "const m = await import('x')"],
+    ['a space', "const m = await import ('x')"],
+    ['a line comment and a line break between import and the parenthesis', "const m = await import // c\n('x')"],
+    ['a block comment between them', "const m = await import /* c */ ('x')"],
+    ['a block comment that holds a line break', "const m = await import /* c\n */ ('x')"],
+    ['several comments and blank lines', "const m = await import // one\n\n/* two */ // three\n('x')"],
+    ['U+2028 after a line comment', `const m = await import // c${LS}('x')`],
+    ['a call inside a template interpolation', "const t = `${await import // c\n('x')}`"],
+  ])('fails a dynamic import with %s', (_label, body) => {
+    expect(lintWorkflow(`${HEAD}${body}\n`).join('\n')).toMatch(NO_MODULES);
+  });
+
+  it.each([
+    ['a default import', "import x from 'y'"],
+    ['a named import', "import { a } from 'y'"],
+    ['a namespace import', "import * as m from 'y'"],
+    ['a bare import', "import 'y'"],
+  ])('still refuses a static import: %s', (_label, body) => {
+    expect(lintWorkflow(`${HEAD}${body}\nreturn 1\n`).join('\n')).toMatch(NO_MODULES);
+  });
+
+  it('does not take the word in a string, a comment or a regular expression for an import', () => {
+    const body = "const a = 'await import (x)'\n// await import ('x')\n/* import ('x') */\nconst b = /import ('x')/\nreturn { a, b }\n";
+    expect(lintWorkflow(`${HEAD}${body}`)).toEqual([]);
+  });
+});
+
 // Codex round 2, blocker 1: `meta` is the whole initializer, not just the first object literal in it.
 describe('lintWorkflow: where the meta initializer ends', () => {
   const META = "{ name: 'a', description: 'b' }";
@@ -251,6 +341,8 @@ describe('lintWorkflow: where the meta initializer ends', () => {
     ['an index on the next line', '\n[0]'],
     ['a property read on the same line', '.name'],
     ['a property read on the next line', '\n.name'],
+    ['a one-letter property read on the next line', '\n.x'],
+    ['an exponent-like property read on the next line', '\n.e5'],
     ['an optional call on the same line', '?.(1)'],
     ['a template on the same line', ' `x`'],
     ['a template on the next line', '\n`x`'],
@@ -304,6 +396,9 @@ describe('lintWorkflow: where the meta initializer ends', () => {
     ['a name on the next line', '\nx = 1'],
     ['a string on the next line', "\n'use strict'"],
     ['a number on the next line', '\n1'],
+    ['a number with a leading dot on the next line (Codex round 3)', '\n.5'],
+    ['a number with a leading dot and an exponent on the next line', '\n.5e1'],
+    ['a number with a leading dot after a comment line', ' // x\n.25'],
     ['a not on the next line', '\n!ready'],
     ['an increment on the next line', '\n++count'],
     ['a function call statement on the next line', '\nlog("x")'],

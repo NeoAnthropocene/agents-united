@@ -976,6 +976,22 @@ describe('workflow-check', () => {
         expect(divisionAfterPostfix.findings[0]?.message).toContain('ghost');
       });
 
+      it('fails a missing literal role after a keyword used as a member name, and after any white space (Codex round 3)', () => {
+        const head = GOOD.replace(/const found = .*\n/, '');
+        const ask = "await agent('look', { agentType: 'ghost' })";
+        const em = String.fromCharCode(0x2003);
+        for (const body of [
+          `const half = args.in / (${ask})\n`,
+          `const half = args?.in / (${ask})\n`,
+          `class K {\n  #if() { return 1 }\n  async m() { return this.#if() / (${ask}) }\n}\n`,
+          `const found = ${ask.replace(": 'ghost'", `:${em}'ghost'`)}\n`,
+        ]) {
+          const result = check({ content: `${head}${body}` });
+          expect(codesOf(result), body).toEqual(['AGENT_TYPE']);
+          expect(result.findings[0]?.message, body).toContain('ghost');
+        }
+      });
+
       it('numbers the lines of unresolved sites by every line terminator, and cuts the excerpt at the same ones (Codex round 2)', () => {
         const LS = String.fromCharCode(0x2028);
         const PS = String.fromCharCode(0x2029);
