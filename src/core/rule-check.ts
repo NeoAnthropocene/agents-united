@@ -9,9 +9,9 @@
  * Passing means only the deterministic checks passed. It does not mean the rule is good or live (`quality` stays
  * pending, `live` unverified).
  */
-import fs from 'node:fs';
 import path from 'node:path';
 import { ClaudeProjector, ENTRYPOINT_RULES, MARKER_PREFIX } from './claude-projector.js';
+import { readBoundedFile } from './bounded-file.js';
 import { errorCode, shortened, unsafeEntryName, validUtf8 } from './skill-check.js';
 import type {
   RuleCheckCheckId, RuleCheckCode, RuleCheckFinding, RuleCheckGate, RuleCheckInput, RuleCheckResult, RuleCheckStatus,
@@ -53,41 +53,6 @@ function unavailable(artifact: string | null, code: 'USAGE' | 'INPUT_UNAVAILABLE
 /** A usage result (exit 2) for an invocation problem the caller found before any input was read, e.g. an unknown option. */
 export function ruleCheckUsageResult(problems: string[], input: RuleCheckInput = {}): RuleCheckResult {
   return unavailable(typeof input.artifact === 'string' ? input.artifact : null, 'USAGE', problems, 'The invocation was not valid, so no check ran.');
-}
-
-type ReadOutcome =
-  | { kind: 'unavailable'; message: string }
-  | { kind: 'oversize' }
-  | { kind: 'ok'; bytes: Buffer };
-
-/** lstat first (a link is refused, a named pipe is never opened), then a bounded read of the same file. */
-function readRule(file: string): ReadOutcome {
-  let fd: number | undefined;
-  try {
-    const last = file[file.length - 1];
-    if (last === '/' || (path.sep === '\\' && last === '\\')) return { kind: 'unavailable', message: `The path ends with a path separator, so it does not name a file: ${file}` };
-    const entry = fs.lstatSync(file);
-    if (entry.isSymbolicLink()) return { kind: 'unavailable', message: `The path is a link, not a regular file; pass the real path of the rule: ${file}` };
-    if (!entry.isFile()) return { kind: 'unavailable', message: `The path is not a regular file: ${file}` };
-    // O_NOFOLLOW and O_NONBLOCK do not exist on Windows (undefined there); where they do, they close the gap between the lstat and the open.
-    fd = fs.openSync(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW ?? 0) | (fs.constants.O_NONBLOCK ?? 0));
-    const opened = fs.fstatSync(fd);
-    if (!opened.isFile()) return { kind: 'unavailable', message: `The path is not a regular file: ${file}` };
-    if (opened.size > RULE_CHECK_MAX_BYTES) return { kind: 'oversize' };
-    const buffer = Buffer.alloc(RULE_CHECK_MAX_BYTES + 1);
-    let length = 0;
-    for (;;) {
-      const read = fs.readSync(fd, buffer, length, buffer.length - length, null);
-      if (read === 0) break;
-      length += read;
-      if (length > RULE_CHECK_MAX_BYTES) return { kind: 'oversize' };
-    }
-    return { kind: 'ok', bytes: Buffer.from(buffer.subarray(0, length)) };
-  } catch (error) {
-    return { kind: 'unavailable', message: `The rule file cannot be read (${errorCode(error)}): ${file}` };
-  } finally {
-    if (fd !== undefined) fs.closeSync(fd);
-  }
 }
 
 /** The first non-empty line must be a level-1 title, and some non-empty line must follow it. */
@@ -161,7 +126,7 @@ export function runRuleCheck(input: RuleCheckInput): RuleCheckResult {
     if (artifact === null) return ruleCheckUsageResult(['--artifact is required: the absolute path of one canonical rule .md file.'], input ?? {});
     if (!path.isAbsolute(artifact)) return ruleCheckUsageResult([`--artifact must be an absolute path; got ${JSON.stringify(shortened(artifact))}.`], input);
 
-    const read = readRule(artifact);
+    const read = readBoundedFile(artifact, RULE_CHECK_MAX_BYTES, 'rule');
     if (read.kind === 'unavailable') return unavailable(artifact, 'INPUT_UNAVAILABLE', [read.message], 'The rule file could not be read, so no check ran.');
 
     const shown = shortened(artifact);
