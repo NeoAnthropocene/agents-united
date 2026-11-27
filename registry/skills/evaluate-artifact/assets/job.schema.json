@@ -70,7 +70,8 @@
             "shared-pair",
             "skill",
             "claude-agent",
-            "rule"
+            "rule",
+            "workflow"
           ]
         },
         "identity": {
