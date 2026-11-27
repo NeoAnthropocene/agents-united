@@ -517,6 +517,157 @@ describe('workflow-check', () => {
       }
     });
 
+    // Codex round 2, blocker 2: the Skill pair is read like the workflow: no link anywhere on the way, and the real path of the
+    // SKILL.md must be the one the registry names. A link is unavailable (exit 2), not a pass and not a missing Skill.
+    describe('the Skill of the same name', () => {
+      /** A file symlink; skips the test only when the platform refuses to create one (EPERM or EACCES). */
+      function fileLink(context: { skip: () => void }, target: string, link: string): boolean {
+        try {
+          fs.symlinkSync(target, link, 'file');
+          return true;
+        } catch (error) {
+          const code = (error as NodeJS.ErrnoException).code;
+          if (code === 'EPERM' || code === 'EACCES') { context.skip(); return false; }
+          throw error;
+        }
+      }
+      const outsideSkill = (): string => {
+        const target = path.join(base(), 'SKILL.md');
+        fs.writeFileSync(target, '---\nname: demo-flow\ndescription: A skill outside the registry.\n---\n# demo-flow\n');
+        return target;
+      };
+
+      it('refuses a SKILL.md that is a file symlink to a file outside the registry (skipped only when a file symlink cannot be created: EPERM or EACCES)', context => {
+        const { registry, file } = fixture();
+        const skill = path.join(registry, 'skills', 'demo-flow', 'SKILL.md');
+        fs.rmSync(skill);
+        if (!fileLink(context, outsideSkill(), skill)) return;
+        unavailableWith(runWorkflowCheck({ artifact: file }), /link|junction/i);
+      });
+
+      it('refuses a SKILL.md that is a file symlink to another file inside the registry (skipped only when a file symlink cannot be created: EPERM or EACCES)', context => {
+        const { registry, file } = fixture();
+        const skill = path.join(registry, 'skills', 'demo-flow', 'SKILL.md');
+        const inside = path.join(registry, 'skills', 'demo-flow', 'REAL.md');
+        fs.renameSync(skill, inside);
+        if (!fileLink(context, inside, skill)) return;
+        unavailableWith(runWorkflowCheck({ artifact: file }), /link|junction/i);
+      });
+
+      it('refuses a skills/<name> folder that is a junction to a folder outside the registry (skipped only when a junction cannot be created: EPERM or EACCES)', context => {
+        const { registry, file } = fixture();
+        const folder = path.join(registry, 'skills', 'demo-flow');
+        fs.rmSync(folder, { recursive: true });
+        const outside = path.dirname(outsideSkill());
+        if (!junction(context, outside, folder)) return;
+        unavailableWith(runWorkflowCheck({ artifact: file }), /link|junction/i);
+      });
+
+      it('refuses a skills folder that is a junction to a folder outside the registry (skipped only when a junction cannot be created: EPERM or EACCES)', context => {
+        const { registry, file } = fixture();
+        const skills = path.join(registry, 'skills');
+        const outside = path.join(base(), 'skills');
+        fs.renameSync(skills, outside);
+        if (!junction(context, outside, skills)) return;
+        unavailableWith(runWorkflowCheck({ artifact: file }), /link|junction/i);
+      });
+
+      it('is unavailable (exit 2), not a missing Skill, when the SKILL.md disappears after it was inspected', () => {
+        const { registry, file } = fixture();
+        const skill = path.join(registry, 'skills', 'demo-flow', 'SKILL.md');
+        const real = fs.realpathSync;
+        const spy = vi.spyOn(fs, 'realpathSync').mockImplementation(((...args: Parameters<typeof fs.realpathSync>) => {
+          if (String(args[0]) === skill && fs.existsSync(skill)) fs.rmSync(skill);
+          return (real as (...call: unknown[]) => unknown)(...args);
+        }) as typeof fs.realpathSync);
+        try {
+          unavailableWith(runWorkflowCheck({ artifact: file }), /SKILL\.md|Skill/);
+        } finally {
+          spy.mockRestore();
+        }
+      });
+
+      it('still fails a Skill that is missing, a folder or not a regular file as SKILL_PAIR (exit 1)', () => {
+        expect(codesOf(check({ skills: [] }))).toEqual(['SKILL_PAIR']);
+        const noSkills = fixture({ skills: [] });
+        fs.rmSync(path.join(noSkills.registry, 'skills'), { recursive: true, force: true });
+        expect(codesOf(runWorkflowCheck({ artifact: noSkills.file }))).toEqual(['SKILL_PAIR']);
+        const folder = fixture({ skills: [] });
+        fs.mkdirSync(path.join(folder.registry, 'skills', 'demo-flow', 'SKILL.md'), { recursive: true });
+        expect(codesOf(runWorkflowCheck({ artifact: folder.file }))).toEqual(['SKILL_PAIR']);
+        const plain = fixture({ skills: [] });
+        fs.mkdirSync(path.join(plain.registry, 'skills'), { recursive: true });
+        fs.writeFileSync(path.join(plain.registry, 'skills', 'demo-flow'), 'a file, not a folder');
+        expect(codesOf(runWorkflowCheck({ artifact: plain.file }))).toEqual(['SKILL_PAIR']);
+      });
+    });
+
+    // Codex round 2, blocker 2: a file that vanishes after it was inspected is an unavailable input (exit 2), never "no profile"
+    // and never "not a role".
+    describe('a file that disappears after it was inspected', () => {
+      const realProfile = (): string => fs.readFileSync(path.resolve('registry/hosts/claude/profile.json'), 'utf8');
+
+      it('makes the host profile unavailable (exit 2), not "no profile", when it disappears between the inspection and the open', () => {
+        const { registry, file } = fixture();
+        const profile = path.join(registry, 'hosts', 'claude', 'profile.json');
+        fs.writeFileSync(profile, realProfile());
+        const real = fs.openSync;
+        const spy = vi.spyOn(fs, 'openSync').mockImplementation(((...args: Parameters<typeof fs.openSync>) => {
+          if (String(args[0]) === profile) fs.rmSync(profile);
+          return real(...args);
+        }) as typeof fs.openSync);
+        try {
+          unavailableWith(runWorkflowCheck({ artifact: file }), /profile/i);
+        } finally {
+          spy.mockRestore();
+        }
+      });
+
+      it('still treats a registry with no profile as one that lists no unsupported Skill', () => {
+        const { registry, file } = fixture();
+        expect(fs.existsSync(path.join(registry, 'hosts', 'claude', 'profile.json'))).toBe(false);
+        expect(runWorkflowCheck({ artifact: file }).status).toBe('passed');
+      });
+
+      it('makes the result unavailable (exit 2), not AGENT_TYPE, when a role file disappears after the folder was listed', () => {
+        const { registry, file } = fixture();
+        const role = path.join(registry, 'hosts', 'claude', 'agents', 'code-reviewer.md');
+        const real = fs.lstatSync;
+        const spy = vi.spyOn(fs, 'lstatSync').mockImplementation(((...args: Parameters<typeof fs.lstatSync>) => {
+          if (String(args[0]) === role && fs.existsSync(role)) fs.rmSync(role);
+          return (real as (...call: unknown[]) => unknown)(...args);
+        }) as typeof fs.lstatSync);
+        try {
+          unavailableWith(runWorkflowCheck({ artifact: file }), /agent|role/i);
+        } finally {
+          spy.mockRestore();
+        }
+      });
+
+      it('makes the result unavailable (exit 2) when the agents folder disappears after it was inspected', () => {
+        const { registry, file } = fixture();
+        const agents = path.join(registry, 'hosts', 'claude', 'agents');
+        const real = fs.readdirSync;
+        const spy = vi.spyOn(fs, 'readdirSync').mockImplementation(((...args: Parameters<typeof fs.readdirSync>) => {
+          if (String(args[0]) === agents && fs.existsSync(agents)) fs.rmSync(agents, { recursive: true });
+          return (real as (...call: unknown[]) => unknown)(...args);
+        }) as typeof fs.readdirSync);
+        try {
+          unavailableWith(runWorkflowCheck({ artifact: file }), /agent|role/i);
+        } finally {
+          spy.mockRestore();
+        }
+      });
+
+      it('still reports a missing literal role as AGENT_TYPE when the registry has no agents folder at all', () => {
+        const { registry, file } = fixture();
+        fs.rmSync(path.join(registry, 'hosts', 'claude', 'agents'), { recursive: true });
+        const result = runWorkflowCheck({ artifact: file });
+        expect(codesOf(result)).toEqual(['AGENT_TYPE']);
+        expect(workflowCheckExitCode(result)).toBe(1);
+      });
+    });
+
     describe('the host profile', () => {
       const realProfile = (): string => fs.readFileSync(path.resolve('registry/hosts/claude/profile.json'), 'utf8');
       const withProfile = (place: (profile: string) => void): WorkflowCheckResult => {
