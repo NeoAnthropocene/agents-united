@@ -352,7 +352,7 @@ describe('workflow-check', () => {
 
     it('names the expected place in the finding', () => {
       const result = placedAt('loose', 'demo-flow.js');
-      expect(result.findings[0]?.message).toContain(path.join('hosts', 'claude', 'workflows'));
+      expect(result.findings[0]?.message).toContain('hosts/claude/workflows');
     });
 
     it('takes the registry as the folder four levels up, whatever its name', () => {
@@ -439,7 +439,7 @@ describe('workflow-check', () => {
       const result = check({ skills: [] });
       expect(result.status).toBe('failed');
       expect(codesOf(result)).toEqual(['SKILL_PAIR']);
-      expect(result.findings[0]?.message).toContain(path.join('skills', 'demo-flow', 'SKILL.md'));
+      expect(result.findings[0]?.message).toContain('skills/demo-flow/SKILL.md');
       expect(checkOf(result, 'skill-pair')?.status).toBe('failed');
     });
 

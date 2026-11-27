@@ -10,6 +10,7 @@ import { checkSharedPair } from './core/shared-pair.js';
 import { runSkillCheck, skillCheckExitCode, skillCheckUsageResult } from './core/skill-check.js';
 import { bundleCheckExitCode, bundleCheckUsageResult, runBundleCheck } from './core/bundle-check.js';
 import { ruleCheckExitCode, ruleCheckUsageResult, runRuleCheck } from './core/rule-check.js';
+import { runWorkflowCheck, workflowCheckExitCode, workflowCheckUsageResult } from './core/workflow-check.js';
 import type { FactoryCheckResult } from './core/types.js';
 import { resolveStateDir } from './core/state-dir.js';
 import { UninstallEngine } from './core/uninstaller.js';
@@ -443,6 +444,39 @@ cli
     const result = problems.length > 0 ? ruleCheckUsageResult(problems, input) : runRuleCheck(input);
     console.log(JSON.stringify(result, null, 2));
     process.exitCode = ruleCheckExitCode(result);
+  });
+
+cli
+  .command('workflow-check', 'Check one native Claude workflow script (.js) against the deterministic workflow checks (read-only)')
+  .allowUnknownOptions()
+  .option('--artifact [path]', 'Required: absolute path of the native workflow, <registry>/hosts/claude/workflows/<name>.js')
+  .action((options: Record<string, unknown>) => {
+    // Unknown or malformed options take the same JSON exit-2 route as every other normal outcome, not CAC's prose error.
+    const problems: string[] = [];
+    for (const name of Object.keys(options)) {
+      if (name === '--') {
+        if (Array.isArray(options['--']) && options['--'].length > 0) problems.push('Unexpected arguments after --.');
+      } else if (name !== 'artifact') {
+        problems.push(`Unknown option ${name.length > 1 ? `--${name}` : `-${name}`}.`);
+      }
+    }
+    if (cli.args.length > 0) problems.push(`Unexpected argument ${JSON.stringify(String(cli.args[0]))}; use --artifact.`);
+    // CAC nests a dotted name (--artifact.x) into an object and, when two clash, keeps only one, so the raw arguments are
+    // read as well: an option name with a dot is unknown, whatever else was given.
+    for (const arg of cli.rawArgs.slice(2)) {
+      if (arg === '--') break;
+      const optionName = arg.split('=')[0] ?? '';
+      if (optionName.startsWith('-') && optionName.includes('.')) problems.push(`Unknown option ${optionName}: option names with a dot are not accepted.`);
+    }
+    let artifact: string | undefined;
+    if (options.artifact !== undefined) {
+      if (typeof options.artifact === 'string') artifact = options.artifact;
+      else problems.push('--artifact needs exactly one text value.');
+    }
+    const input = { artifact };
+    const result = problems.length > 0 ? workflowCheckUsageResult(problems, input) : runWorkflowCheck(input);
+    console.log(JSON.stringify(result, null, 2));
+    process.exitCode = workflowCheckExitCode(result);
   });
 
 cli
@@ -3298,6 +3332,7 @@ cli.version('1.0.0');
  */
 const JSON_USAGE_COMMANDS: ReadonlyMap<string, (problems: string[]) => unknown> = new Map<string, (problems: string[]) => unknown>([
   ['rule-check', problems => ruleCheckUsageResult(problems)],
+  ['workflow-check', problems => workflowCheckUsageResult(problems)],
   ['skill-check', problems => skillCheckUsageResult(problems)],
   ['bundle-check', problems => bundleCheckUsageResult(problems)],
 ]);

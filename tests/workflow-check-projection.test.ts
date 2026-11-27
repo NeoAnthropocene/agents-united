@@ -9,10 +9,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ClaudeProjector } from '../src/core/claude-projector.js';
+import { ClaudeProjector, type PlannedClaudeArtifact } from '../src/core/claude-projector.js';
 import { renderNativeWorkflow } from '../src/core/native-package.js';
 import { runWorkflowCheck } from '../src/core/workflow-check.js';
-import type { BundleDefinition, PlannedClaudeArtifact, ResolvedAssets } from '../src/core/types.js';
+import type { BundleDefinition, ResolvedAssets } from '../src/core/types.js';
 
 const script = (name: string): string => `export const meta = {
   name: '${name}',
@@ -30,10 +30,10 @@ const WORKFLOWS: Record<string, string> = {
   'demo-flow.js': script('demo-flow'),
   'other-flow.js': toCrlf(script('other-flow')),
   'lonely-flow.js': script('lonely-flow'),
-  'bad_name.js': script('bad_name'),
+  'Bad-Name.js': script('bad-name'),
 };
 /** Skills the registry holds: the first, second and fourth workflow have a Skill of the same name, the third does not. */
-const SKILLS = ['demo-flow', 'other-flow', 'bad_name', 'plain-skill'];
+const SKILLS = ['demo-flow', 'other-flow', 'Bad-Name', 'plain-skill'];
 
 function toCrlf(text: string): string {
   return text.replace(/\r?\n/g, '\r\n');
@@ -83,12 +83,12 @@ describe('workflow-check agrees with the Claude compound projection', () => {
     expect(codes('lonely-flow.js')).toEqual(['SKILL_PAIR']);
   });
 
-  it('emits nothing for the workflow whose name the native package never lists, and workflow-check fails it with NAME', async () => {
+  it('emits nothing for the workflow whose name the native package never lists, and workflow-check fails it with NAME (and META_NAME, since a lower-case meta.name cannot equal the file name)', async () => {
     const artifacts = await ClaudeProjector.planCompoundProjection(bundle, 'project', resolved, registry, undefined, true);
-    expect(artifacts.map(item => item.relPath)).not.toContain('.claude/workflows/bad_name.js');
+    expect(artifacts.map(item => item.relPath)).not.toContain('.claude/workflows/Bad-Name.js');
     // The Skill of that name is installed as a Skill instead.
-    expect(artifacts.some(item => item.kind === 'skill' && item.canonical === 'skills/bad_name/SKILL.md')).toBe(true);
-    expect(codes('bad_name.js')).toEqual(['NAME']);
+    expect(artifacts.some(item => item.kind === 'skill' && item.canonical === 'skills/Bad-Name/SKILL.md')).toBe(true);
+    expect(codes('Bad-Name.js')).toEqual(['META_NAME', 'NAME']);
   });
 
   it('emits no workflow at all with the native lane off, which workflow-check does not model', async () => {

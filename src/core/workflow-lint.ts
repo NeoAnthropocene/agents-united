@@ -49,6 +49,38 @@ interface Meta {
   phases?: Array<{ title?: unknown }>;
 }
 
+/** Pure literal: no template interpolation, and evaluation in an empty context must not reach any name. */
+function evaluateMeta(literal: string): { meta: Meta; problems: string[] } {
+  const problems: string[] = [];
+  let meta: Meta = {};
+  if (literal.includes('${')) problems.push('`meta` must be a pure literal: no template interpolation.');
+  // Built-ins such as String exist in any context, so evaluation alone cannot tell a call from a literal: with the strings
+  // and comments removed, a literal has no call, spread or function.
+  const bare = literal
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, '""');
+  if (/[()]|\.\.\.|=>/.test(bare)) problems.push('`meta` must be a pure literal: no calls, spreads or functions.');
+  try {
+    meta = vm.runInNewContext(`(${literal})`, Object.create(null), { timeout: 100 }) as Meta;
+  } catch (error) {
+    problems.push(`\`meta\` must be a pure literal (no variables, calls or spreads): ${(error as Error).message}`);
+  }
+  return { meta, problems };
+}
+
+/**
+ * `meta.name` of a script whose `meta` is a pure literal, or `undefined` when there is no `meta` literal, it is not pure
+ * (the lint reports that) or `name` is not a string. The script is parsed, never run.
+ */
+export function workflowMetaName(source: string): string | undefined {
+  const found = extractMetaLiteral(source.replace(/\r\n/g, '\n'));
+  if (!found) return undefined;
+  const evaluated = evaluateMeta(found.literal);
+  if (evaluated.problems.length > 0) return undefined;
+  return typeof evaluated.meta.name === 'string' ? evaluated.meta.name : undefined;
+}
+
 export function lintWorkflow(source: string): string[] {
   const problems: string[] = [];
   const text = source.replace(/\r\n/g, '\n');
@@ -59,21 +91,9 @@ export function lintWorkflow(source: string): string[] {
     return problems;
   }
 
-  // Pure literal: no template interpolation, and evaluation in an empty context must not reach any name.
-  let meta: Meta = {};
-  if (found.literal.includes('${')) problems.push('`meta` must be a pure literal: no template interpolation.');
-  // Built-ins such as String exist in any context, so evaluation alone cannot tell a call from a literal: with the strings
-  // and comments removed, a literal has no call, spread or function.
-  const bare = found.literal
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/[^\n]*/g, '')
-    .replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, '""');
-  if (/[()]|\.\.\.|=>/.test(bare)) problems.push('`meta` must be a pure literal: no calls, spreads or functions.');
-  try {
-    meta = vm.runInNewContext(`(${found.literal})`, Object.create(null), { timeout: 100 }) as Meta;
-  } catch (error) {
-    problems.push(`\`meta\` must be a pure literal (no variables, calls or spreads): ${(error as Error).message}`);
-  }
+  const evaluated = evaluateMeta(found.literal);
+  const meta = evaluated.meta;
+  problems.push(...evaluated.problems);
   if (typeof meta.name !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(meta.name)) problems.push('`meta.name` must be a lowercase-hyphen string.');
   if (typeof meta.description !== 'string' || meta.description.trim() === '') problems.push('`meta.description` must be a non-empty string.');
 
