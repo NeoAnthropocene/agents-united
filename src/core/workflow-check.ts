@@ -115,6 +115,9 @@ function registryOf(file: string): { registry: string } | { problem: string } {
   return { problem: `The file must sit at ${REGISTRY_FOLDER}/hosts/claude/workflows/<name>.js (the registry is the folder four levels up and must be named exactly "${REGISTRY_FOLDER}"); the projector looks nowhere else. It is in ${shortened(workflows)}.` };
 }
 
+/** A line end as the tokenizer counts it: CRLF, or one of LF, CR, U+2028 and U+2029, so a reported line number finds its source line. */
+const LINE_END = /\r\n|[\n\r  ]/;
+
 const EXCERPT_MAX = 120;
 /** A source line for the unresolved-agent-type list: trimmed, at most 120 characters, ending in "..." when it was cut. */
 const excerptOf = (line: string): string => {
@@ -229,7 +232,7 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
     const agentProblems = requested.literals
       .filter(type => !roles.has(type))
       .map(type => found('AGENT_TYPE', `The script asks for agentType ${quoted(type)}, which is not a native Claude agent: there is no regular file ${path.posix.join('hosts', 'claude', 'agents', `${isNativeName(type) ? type : '<name>'}.md`)} in the registry.`));
-    const sourceLines = text.split('\n');
+    const sourceLines = text.split(LINE_END);
     const unresolvedAgentTypes = requested.unresolved.map((line): WorkflowCheckUnresolvedAgentType => ({
       code: 'AGENT_TYPE_UNRESOLVED', line, excerpt: excerptOf(sourceLines[line - 1] ?? ''),
     }));

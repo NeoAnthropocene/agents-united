@@ -29,10 +29,13 @@ const REGEX_AFTER = new Set(['return', 'typeof', 'instanceof', 'in', 'of', 'new'
 const HEADER_KEYWORDS = new Set(['if', 'while', 'for', 'with']);
 /** Punctuators after which a `/` divides: the closers of a group, an index or a block or object, and the postfix operators. */
 const POSTFIX_OR_CLOSE = new Set([']', '}', '++', '--']);
-const IDENT_START =/[\p{ID_Start}$_]/u;
+const IDENT_START = /[\p{ID_Start}$_]/u;
 const IDENT_PART = /[\p{ID_Continue}$‌‍]/u;
 /** Templates nested deeper than this are read as text from the inner `${` on, which stops a recursion bomb. */
 const MAX_TEMPLATE_DEPTH = 32;
+
+const LINE_SEPARATOR = String.fromCharCode(0x2028);
+const PARAGRAPH_SEPARATOR = String.fromCharCode(0x2029);
 
 const SIMPLE = new Map<string, string>([['n', '\n'], ['r', '\r'], ['t', '\t'], ['b', '\b'], ['f', '\f'], ['v', '\v'], ['0', String.fromCharCode(0)]]);
 
@@ -53,7 +56,8 @@ function cook(body: string): string {
       out += code <= 0x10ffff ? String.fromCodePoint(code) : '';
       i = close;
     } else if (next === 'u' && /^[0-9a-fA-F]{4}$/.test(body.slice(i + 1, i + 5))) { out += String.fromCharCode(parseInt(body.slice(i + 1, i + 5), 16)); i += 4; }
-    else if (next === '\n') continue;
+    else if (next === '\r') { if (body[i + 1] === '\n') i++; }
+    else if (next === '\n' || next === LINE_SEPARATOR || next === PARAGRAPH_SEPARATOR) continue;
     else out += next;
   }
   return out;
@@ -66,6 +70,14 @@ export function tokenizeJs(source: string): JsToken[][] {
   let index = 0;
   let line = 1;
 
+  /** The length of the line terminator at `at`: 2 for CRLF, 1 for LF, a lone CR, U+2028 or U+2029, else 0. */
+  const eolAt = (at: number): number => {
+    const char = source[at];
+    if (char === '\n' || char === LINE_SEPARATOR || char === PARAGRAPH_SEPARATOR) return 1;
+    if (char === '\r') return source[at + 1] === '\n' ? 2 : 1;
+    return 0;
+  };
+
   const push = (list: JsToken[], kind: JsToken['kind'], text: string, startLine: number, value = text, interpolated = false): void => {
     list.push({ kind, text, value, interpolated, line: startLine });
   };
@@ -73,7 +85,11 @@ export function tokenizeJs(source: string): JsToken[][] {
   function skipBlockComment(): void {
     const end = source.indexOf('*/', index + 2);
     const stop = end < 0 ? length : end + 2;
-    for (let i = index; i < stop; i++) if (source[i] === '\n') line++;
+    for (let i = index; i < stop;) {
+      const size = eolAt(i);
+      if (size > 0) line++;
+      i += size > 0 ? size : 1;
+    }
     index = stop;
   }
 
@@ -115,11 +131,15 @@ export function tokenizeJs(source: string): JsToken[][] {
     const start = index;
     const startLine = line;
     index++;
-    while (index < length && source[index] !== quote && source[index] !== '\n') {
+    while (index < length && source[index] !== quote && source[index] !== '\n' && source[index] !== '\r') {
       if (source[index] === '\\' && index + 1 < length) {
-        if (source[index + 1] === '\n') line++;
-        index++;
+        // A backslash before a line end is a line continuation (CRLF is one); before anything else it escapes that one character.
+        const size = eolAt(index + 1);
+        if (size > 0) line++;
+        index += 1 + (size > 0 ? size : 1);
+        continue;
       }
+      if (eolAt(index) > 0) line++;
       index++;
     }
     const body = source.slice(start + 1, index);
@@ -131,9 +151,13 @@ export function tokenizeJs(source: string): JsToken[][] {
     const start = index;
     index++;
     let inClass = false;
-    while (index < length && source[index] !== '\n') {
+    while (index < length && eolAt(index) === 0) {
       const char = source[index];
-      if (char === '\\') { index += 2; continue; }
+      if (char === '\\') {
+        if (eolAt(index + 1) > 0) break;
+        index += 2;
+        continue;
+      }
       if (char === '[') inClass = true;
       else if (char === ']') inClass = false;
       else if (char === '/' && !inClass) { index++; break; }
@@ -152,9 +176,11 @@ export function tokenizeJs(source: string): JsToken[][] {
       const char = source[index];
       if (char === '`') { index++; break; }
       if (char === '\\' && index + 1 < length) {
-        if (source[index + 1] === '\n') line++;
-        text += char + source[index + 1];
-        index += 2;
+        const size = eolAt(index + 1);
+        if (size > 0) line++;
+        const taken = size > 0 ? size : 1;
+        text += source.slice(index, index + 1 + taken);
+        index += 1 + taken;
         continue;
       }
       if (char === '$' && source[index + 1] === '{' && depth < MAX_TEMPLATE_DEPTH) {
@@ -165,9 +191,10 @@ export function tokenizeJs(source: string): JsToken[][] {
         code(inner, true, depth + 1);
         continue;
       }
-      if (char === '\n') line++;
-      text += char;
-      index++;
+      const size = eolAt(index);
+      if (size > 0) line++;
+      text += source.slice(index, index + Math.max(size, 1));
+      index += Math.max(size, 1);
     }
     push(list, 'template', text, startLine, cook(text), interpolated);
   }
@@ -182,10 +209,11 @@ export function tokenizeJs(source: string): JsToken[][] {
     while (index < length) {
       const char = source[index];
       const next = source[index + 1];
-      if (char === '\n') { line++; index++; continue; }
-      if (char === ' ' || char === '\t' || char === '\r' || char === '\v' || char === '\f' || char === String.fromCharCode(0xa0) || char === String.fromCharCode(0xfeff)) { index++; continue; }
+      const lineEnd = eolAt(index);
+      if (lineEnd > 0) { line++; index += lineEnd; continue; }
+      if (char === ' ' || char === '\t' || char === '\v' || char === '\f' || char === String.fromCharCode(0xa0) || char === String.fromCharCode(0xfeff)) { index++; continue; }
       if (char === '/' && next === '/') {
-        while (index < length && source[index] !== '\n') index++;
+        while (index < length && eolAt(index) === 0) index++;
         continue;
       }
       if (char === '/' && next === '*') { skipBlockComment(); continue; }
