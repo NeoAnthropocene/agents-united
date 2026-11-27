@@ -18,7 +18,7 @@ import {
 import { lintWorkflow } from '../src/core/workflow-lint.js';
 import { listNativeWorkflows, renderNativeWorkflow } from '../src/core/native-package.js';
 import { MARKER_PREFIX } from '../src/core/claude-projector.js';
-import type { WorkflowCheckResult } from '../src/core/types.js';
+import type { WorkflowCheckCode, WorkflowCheckResult } from '../src/core/types.js';
 
 // A pass-through spy on the renderer, so one test can make it misbehave (it is pure and cannot do so with a real input).
 vi.mock('../src/core/native-package.js', async importOriginal => {
@@ -106,6 +106,7 @@ describe('workflow-check', () => {
       expect(result.maxBytes).toBe(WORKFLOW_CHECK_MAX_BYTES);
       expect(result.checks.map(item => item.id)).toEqual(CHECK_IDS);
       expect(result.checks.every(item => item.status === 'passed' && item.findings.length === 0 && item.reason === null)).toBe(true);
+      expect(result.unresolvedAgentTypes).toEqual([]);
       expect(result.quality).toBe('pending');
       expect(result.live).toBe('unverified');
       expect(workflowCheckExitCode(result)).toBe(0);
@@ -127,6 +128,7 @@ describe('workflow-check', () => {
       expect(result.artifact).toBe('/some/flow.js');
       expect(result.bytes).toBeNull();
       expect(result.findings).toEqual([{ code: 'USAGE', path: null, message: 'Unknown option --nope.' }]);
+      expect(result.unresolvedAgentTypes).toEqual([]);
       expect(result.checks.map(item => item.id)).toEqual(CHECK_IDS);
       expect(result.checks.every(item => item.status === 'not-run')).toBe(true);
       expect(workflowCheckExitCode(result)).toBe(2);
@@ -729,13 +731,16 @@ describe('workflow-check', () => {
       });
 
       it('reads a computed string key and a key inside a template interpolation', () => {
-        expect(codesOf(requests(`{ ['agentType']: kind }`))).toEqual(['AGENT_TYPE_UNRESOLVED']);
+        const computed = requests(`{ ['agentType']: kind }`);
+        expect(computed.findings).toEqual([]);
+        expect(computed.unresolvedAgentTypes).toHaveLength(1);
         expect(codesOf(check({ content: `${GOOD}const note = \`run \${await agent('again', { agentType: 'ghost' })}\`\n` }))).toEqual(['AGENT_TYPE']);
       });
 
       it('does not take an example in a comment for a request', () => {
         const result = check({ content: `${GOOD}// ask for { agentType: 'ghost' } here\n/* agentType: 'ghost2', agentType: kind */\n` });
         expect(result.status).toBe('passed');
+        expect(result.unresolvedAgentTypes).toEqual([]);
       });
 
       it('does not take an example in a string, a template text or a regular expression for a request', () => {
@@ -744,6 +749,7 @@ describe('workflow-check', () => {
         });
         expect(result.status).toBe('passed');
         expect(result.findings).toEqual([]);
+        expect(result.unresolvedAgentTypes).toEqual([]);
       });
 
       it('is not thrown off by a quote inside a regular expression, a string or a comment before the real request', () => {
@@ -770,14 +776,77 @@ describe('workflow-check', () => {
         ['a method call on a literal', "{ agentType: 'code-reviewer'.trim() }"],
         ['a shorthand property', '{ agentType }'],
         ['a quoted key with a variable', '{ "agentType": kind }'],
-      ])('fails %s as AGENT_TYPE_UNRESOLVED, saying the checker cannot resolve it statically and so fails conservatively', (_label, call) => {
+      ])('passes %s and lists the site in unresolvedAgentTypes, with its line and excerpt and no finding', (_label, call) => {
+        const content = withCall(call);
         const result = requests(call);
+        expect(result.status).toBe('passed');
+        expect(workflowCheckExitCode(result)).toBe(0);
+        expect(result.findings).toEqual([]);
+        expect(checkOf(result, 'agent-types')?.status).toBe('passed');
+        const lines = content.split('\n');
+        const line = lines.findIndex(text => text.includes('agentType')) + 1;
+        expect(line).toBeGreaterThan(0);
+        expect(result.unresolvedAgentTypes).toEqual([{ code: 'AGENT_TYPE_UNRESOLVED', line, excerpt: lines[line - 1].trim() }]);
+      });
+
+      it('lists every unresolved site, once each, in line order', () => {
+        const content = `${withCall('{ agentType: kind }')}const again = await agent('again', { agentType: args.type })\n`;
+        const result = check({ content });
+        expect(result.status).toBe('passed');
+        expect(result.unresolvedAgentTypes.map(item => item.line)).toEqual([11, 12]);
+        expect(result.unresolvedAgentTypes.map(item => item.excerpt)).toEqual([
+          "const found = await agent('look', { agentType: kind })",
+          "const again = await agent('again', { agentType: args.type })",
+        ]);
+      });
+
+      it('gives the same excerpt for a CRLF script (the line ending is trimmed)', () => {
+        const result = check({ content: toCrlf(withCall('{ agentType: kind }')) });
+        expect(result.status).toBe('passed');
+        expect(result.unresolvedAgentTypes.map(item => item.excerpt)).toEqual(["const found = await agent('look', { agentType: kind })"]);
+      });
+
+      it('cuts an excerpt longer than 120 characters to 120, ending in "...", and leaves one of exactly 120 whole', () => {
+        const head = "const found = await agent('look', { agentType: kind, note: '";
+        const tail = "' })";
+        const lineOf = (length: number): string => `${head}${'x'.repeat(length - head.length - tail.length)}${tail}`;
+        const whole = check({ content: `${GOOD.replace(/const found = .*\n/, '')}const kind = 'code-reviewer'\n  ${lineOf(120)}  \n` });
+        expect(whole.status).toBe('passed');
+        expect(whole.unresolvedAgentTypes.map(item => item.excerpt)).toEqual([lineOf(120)]);
+        const cut = check({ content: `${GOOD.replace(/const found = .*\n/, '')}const kind = 'code-reviewer'\n${lineOf(121)}\n` });
+        expect(cut.status).toBe('passed');
+        const excerpt = cut.unresolvedAgentTypes[0]?.excerpt ?? '';
+        expect(excerpt).toHaveLength(120);
+        expect(excerpt.endsWith('...')).toBe(true);
+        expect(excerpt).toBe(`${lineOf(121).slice(0, 117)}...`);
+      });
+
+      it('still fails a literal type that is not a native role, as AGENT_TYPE, and lists no site for it', () => {
+        const result = requests("{ agentType: 'ghost' }");
         expect(result.status).toBe('failed');
         expect(workflowCheckExitCode(result)).toBe(1);
-        expect(codesOf(result)).toEqual(['AGENT_TYPE_UNRESOLVED']);
+        expect(codesOf(result)).toEqual(['AGENT_TYPE']);
         expect(checkOf(result, 'agent-types')?.status).toBe('failed');
-        expect(result.findings[0]?.message).toMatch(/cannot resolve/i);
-        expect(result.findings[0]?.message).toMatch(/conservativ/i);
+        expect(result.unresolvedAgentTypes).toEqual([]);
+      });
+
+      it('fails a mix of one bad literal and one unresolved site with AGENT_TYPE only, and still lists the site', () => {
+        const result = check({ content: `${withCall('{ agentType: kind }')}const more = await agent('more', { agentType: 'ghost' })\n` });
+        expect(result.status).toBe('failed');
+        expect(codesOf(result)).toEqual(['AGENT_TYPE']);
+        expect(result.findings.map(item => item.code)).toEqual(['AGENT_TYPE']);
+        expect(result.findings[0]?.message).toContain('ghost');
+        expect(result.unresolvedAgentTypes.map(item => item.line)).toEqual([11]);
+        expect(result.unresolvedAgentTypes[0]?.excerpt).toContain('agentType: kind');
+      });
+
+      it('never puts AGENT_TYPE_UNRESOLVED in the finding codes (it is the entry name only)', () => {
+        // @ts-expect-error the finding union no longer has this code
+        const code: WorkflowCheckCode = 'AGENT_TYPE_UNRESOLVED';
+        expect(code).toBe('AGENT_TYPE_UNRESOLVED');
+        for (const call of ['{ agentType: kind }', "{ agentType: 'ghost' }"]) {
+          expect(requests(call).findings.map(item => item.code)).not.toContain('AGENT_TYPE_UNRESOLVED');
+        }
       });
 
       it('does not take a directory, a link or a non-.md file for an agent', context => {
@@ -814,7 +883,18 @@ describe('workflow-check', () => {
         expect(notes).toMatch(/Bundle/);
         expect(notes).toMatch(/--force/);
         expect(notes).toMatch(/lexical|static/i);
+        expect(notes).toContain('literal agent types are verified against the native roles; run-time ones are listed in unresolvedAgentTypes and not verified');
+        expect(notes).not.toMatch(/fails as AGENT_TYPE_UNRESOLVED/);
       }
+    });
+
+    it('carries unresolvedAgentTypes, empty, on a result where the agent-types check did not run', () => {
+      const loose = path.join(fixture().registry, 'loose.js');
+      fs.writeFileSync(loose, GOOD);
+      const misplaced = runWorkflowCheck({ artifact: loose });
+      expect(checkOf(misplaced, 'agent-types')?.status).toBe('not-run');
+      expect(misplaced.unresolvedAgentTypes).toEqual([]);
+      expect(runWorkflowCheck({}).unresolvedAgentTypes).toEqual([]);
     });
 
     it('never claims that every agentType was verified', () => {
@@ -923,6 +1003,7 @@ describe('workflow-check', () => {
       expect(done.json.status).toBe('passed');
       expect(done.json.artifact).toBe(file);
       expect(done.json.findings).toEqual([]);
+      expect(done.json.unresolvedAgentTypes).toEqual([]);
       expect(done.json.checks.map(item => item.id)).toEqual(CHECK_IDS);
       expect(done.json.quality).toBe('pending');
       expect(done.json.live).toBe('unverified');
@@ -1050,26 +1131,37 @@ describe('workflow-check', () => {
     });
 
     // workflow-implement.js and workflow-test.js choose their specialist at run time (`SPECIALISTS[request.specialist]`, then
-    // `agentType: task.agentType`). A lexical scan cannot resolve that, so the checker fails them conservatively with
-    // AGENT_TYPE_UNRESOLVED and nothing else. This is the known state of the committed files (every other check passes, and
-    // workflow-review.js passes in full). Whether those two workflows should write their types as literals or the rule should gain a
-    // declaration is open for the maintainers. Any other finding on them, or any finding on another workflow, fails this test.
+    // `agentType: task.agentType`). A lexical scan cannot resolve that, so the checker lists those sites in unresolvedAgentTypes
+    // and does not verify them; they still pass. workflow-review.js writes its types as literals and lists none. Any finding on
+    // any committed workflow fails this test.
     const KNOWN_DYNAMIC_AGENT_TYPE = new Set(['workflow-implement.js', 'workflow-test.js']);
 
-    it('passes workflow-check for every committed workflow, except the two that pick their specialist at run time', () => {
+    it('passes workflow-check for every committed workflow, and lists the run-time agent types of the two that pick their specialist at run time', () => {
       const failures: string[] = [];
       for (const name of files) {
         const result = runWorkflowCheck({ artifact: path.join(REAL_WORKFLOWS, name) });
         expect(result.bytes, name).toBeLessThan(WORKFLOW_CHECK_MAX_BYTES);
-        if (KNOWN_DYNAMIC_AGENT_TYPE.has(name)) {
-          expect(codesOf(result), name).toEqual(['AGENT_TYPE_UNRESOLVED']);
-          expect(result.checks.filter(item => item.status !== 'passed').map(item => item.id), name).toEqual(['agent-types']);
-          continue;
-        }
         if (result.status !== 'passed') failures.push(`${name}: ${result.findings.map(item => `${item.code} ${item.message}`).join('; ')}`);
         expect(result.checks.every(item => item.status === 'passed'), name).toBe(true);
+        expect(result.findings, name).toEqual([]);
+        if (KNOWN_DYNAMIC_AGENT_TYPE.has(name)) {
+          expect(result.unresolvedAgentTypes.length, name).toBeGreaterThan(0);
+          for (const site of result.unresolvedAgentTypes) {
+            expect(site.code, name).toBe('AGENT_TYPE_UNRESOLVED');
+            expect(site.excerpt, `${name} line ${site.line}`).toContain('agentType');
+          }
+        } else {
+          expect(result.unresolvedAgentTypes, name).toEqual([]);
+        }
       }
       expect(failures).toEqual([]);
+    });
+
+    it('passes workflow-review with no unresolved site, so its types are all verified', () => {
+      expect(files).toContain('workflow-review.js');
+      const result = runWorkflowCheck({ artifact: path.join(REAL_WORKFLOWS, 'workflow-review.js') });
+      expect(result.status).toBe('passed');
+      expect(result.unresolvedAgentTypes).toEqual([]);
     });
 
     it('lists only workflows that exist in the known-dynamic set', () => {
