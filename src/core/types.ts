@@ -1336,7 +1336,16 @@ export type WorkflowCheckStatus = 'passed' | 'failed' | 'unavailable';
 export type WorkflowCheckGateStatus = 'passed' | 'failed' | 'not-run';
 export type WorkflowCheckCode =
   | 'USAGE' | 'INPUT_UNAVAILABLE'
-  | 'NAME' | 'SIZE' | 'ENCODING' | 'PLACEMENT' | 'LINT' | 'META_NAME' | 'SKILL_PAIR' | 'AGENT_TYPE' | 'AGENT_TYPE_UNRESOLVED' | 'RENDER';
+  | 'NAME' | 'SIZE' | 'ENCODING' | 'PLACEMENT' | 'LINT' | 'META_NAME' | 'SKILL_PAIR' | 'AGENT_TYPE' | 'RENDER';
+
+/** One `agentType` request the lexical scan cannot resolve (ADR 0082). It is listed, not verified, and is never a finding: the code is the entry's name. */
+export interface WorkflowCheckUnresolvedAgentType {
+  code: 'AGENT_TYPE_UNRESOLVED';
+  /** The 1-based line of the request in the script. */
+  line: number;
+  /** The trimmed source line, at most 120 characters, ending in "..." when it was cut. */
+  excerpt: string;
+}
 
 export interface WorkflowCheckFinding {
   code: WorkflowCheckCode;
@@ -1368,6 +1377,8 @@ export interface WorkflowCheckResult {
   maxBytes: number;
   checks: WorkflowCheckGate[];
   findings: WorkflowCheckFinding[];
+  /** The run-time `agentType` requests the scan could not resolve: listed, not verified, never a failure. Empty when there are none or the agent-types check did not run. Present on every result. */
+  unresolvedAgentTypes: WorkflowCheckUnresolvedAgentType[];
   /** What a pass does not establish (the agent-type scan is lexical; Bundle membership and installability are not checked). Present on every result. */
   notes: string[];
   quality: 'pending';

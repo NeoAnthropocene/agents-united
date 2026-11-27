@@ -28,6 +28,7 @@ import { errorCode, shortened, unsafeEntryName, validUtf8 } from './skill-check.
 import { agentTypeRequests, lintWorkflow, workflowMetaName } from './workflow-lint.js';
 import type {
   WorkflowCheckCheckId, WorkflowCheckCode, WorkflowCheckFinding, WorkflowCheckGate, WorkflowCheckInput, WorkflowCheckResult, WorkflowCheckStatus,
+  WorkflowCheckUnresolvedAgentType,
 } from './types.js';
 
 const CHECK_IDS: readonly WorkflowCheckCheckId[] = ['name', 'size', 'encoding', 'placement', 'lint', 'meta-name', 'skill-pair', 'agent-types', 'render'];
@@ -41,7 +42,7 @@ const BOM = String.fromCharCode(0xfeff);
  * a workflow the projector would emit intact, and it says nothing about whether the workflow is installed in a given workspace.
  */
 export const WORKFLOW_CHECK_NOTES: readonly string[] = [
-  'agent-types: the agentType requests are found by a lexical scan of the script, not by running it. Only a request written as a string literal is verified against the registry; a value the scan cannot resolve fails as AGENT_TYPE_UNRESOLVED, and a type passed through a spread or built at run time cannot be seen at all.',
+  'agent-types: the agentType requests are found by a lexical scan of the script, not by running it, so literal agent types are verified against the native roles; run-time ones are listed in unresolvedAgentTypes and not verified. A type passed through a spread cannot be seen at all.',
   'agent-types: a native role file in the registry is not the same as an installed role. Whether the role is installed with a given Bundle (the Bundle lists it, and Bundle-specific native names apply) is out of reach of this check.',
   'A pass does not establish installability: whether a Bundle lists the paired Skill, and a destination file in a workspace that is not managed and so needs --force, are not checked.',
 ];
@@ -56,12 +57,14 @@ const gate = (id: WorkflowCheckCheckId, status: WorkflowCheckGate['status'], rea
   ({ id, status, reason, findings });
 const idleChecks = (reason: string): WorkflowCheckGate[] => CHECK_IDS.map(id => gate(id, 'not-run', reason));
 
-function result(artifact: string | null, bytes: number | null, checks: WorkflowCheckGate[], before: WorkflowCheckFinding[]): WorkflowCheckResult {
+function result(
+  artifact: string | null, bytes: number | null, checks: WorkflowCheckGate[], before: WorkflowCheckFinding[], unresolvedAgentTypes: WorkflowCheckUnresolvedAgentType[] = [],
+): WorkflowCheckResult {
   const findings = [...before, ...checks.flatMap(item => item.findings)];
   const status: WorkflowCheckStatus = findings.some(item => UNAVAILABLE_CODES.has(item.code))
     ? 'unavailable'
     : checks.some(item => item.status === 'failed') ? 'failed' : 'passed';
-  return { version: 1, kind: 'deterministic', status, artifact: shortened(artifact), bytes, maxBytes: WORKFLOW_CHECK_MAX_BYTES, checks, findings, notes: [...WORKFLOW_CHECK_NOTES], quality: 'pending', live: 'unverified' };
+  return { version: 1, kind: 'deterministic', status, artifact: shortened(artifact), bytes, maxBytes: WORKFLOW_CHECK_MAX_BYTES, checks, findings, unresolvedAgentTypes, notes: [...WORKFLOW_CHECK_NOTES], quality: 'pending', live: 'unverified' };
 }
 
 function unavailable(artifact: string | null, code: 'USAGE' | 'INPUT_UNAVAILABLE', messages: string[], reason: string): WorkflowCheckResult {
@@ -102,6 +105,13 @@ function registryOf(file: string): { registry: string } | { problem: string } {
   }
   return { problem: `The file must sit at <registry>/hosts/claude/workflows/<name>.js (the registry is the folder four levels up); the projector looks nowhere else. It is in ${shortened(workflows)}.` };
 }
+
+const EXCERPT_MAX = 120;
+/** A source line for the unresolved-agent-type list: trimmed, at most 120 characters, ending in "..." when it was cut. */
+const excerptOf = (line: string): string => {
+  const trimmed = line.trim();
+  return trimmed.length > EXCERPT_MAX ? `${trimmed.slice(0, EXCERPT_MAX - 3)}...` : trimmed;
+};
 
 const quoted = (value: string): string => JSON.stringify(value.length > 80 ? `${value.slice(0, 80)}...` : value);
 
@@ -203,22 +213,24 @@ export function runWorkflowCheck(input: WorkflowCheckInput): WorkflowCheckResult
         : []);
     }
 
-    // Only the requests written as a string literal can be checked. The others fail on purpose: the scan cannot know what they hold.
+    // Only the requests written as a string literal can be checked. The others are listed, not failed: the scan cannot know what
+    // they hold, so they are reported as not verified and the check passes on them.
     const requested = agentTypeRequests(text);
     const roles = claudeRoleNames(registry);
-    const agentProblems = [
-      ...requested.literals
-        .filter(type => !roles.has(type))
-        .map(type => found('AGENT_TYPE', `The script asks for agentType ${quoted(type)}, which is not a native Claude agent: there is no regular file ${path.posix.join('hosts', 'claude', 'agents', `${isNativeName(type) ? type : '<name>'}.md`)} in the registry.`)),
-      ...requested.unresolved.map(line => found('AGENT_TYPE_UNRESOLVED', `Line ${line}: the script passes an agentType that is not a string literal, and the checker cannot resolve it statically, so it fails conservatively. Write the agent type as a string literal, for example agentType: 'code-reviewer'.`)),
-    ];
+    const agentProblems = requested.literals
+      .filter(type => !roles.has(type))
+      .map(type => found('AGENT_TYPE', `The script asks for agentType ${quoted(type)}, which is not a native Claude agent: there is no regular file ${path.posix.join('hosts', 'claude', 'agents', `${isNativeName(type) ? type : '<name>'}.md`)} in the registry.`));
+    const sourceLines = text.split('\n');
+    const unresolvedAgentTypes = requested.unresolved.map((line): WorkflowCheckUnresolvedAgentType => ({
+      code: 'AGENT_TYPE_UNRESOLVED', line, excerpt: excerptOf(sourceLines[line - 1] ?? ''),
+    }));
 
     return result(artifact, bytes.length, [
       name, done('size', []), done('encoding', encodingProblems), placement, lint, metaGate,
       skillGate,
       done('agent-types', agentProblems),
       done('render', renderProblems(raw, stem).map(message => found('RENDER', message))),
-    ], []);
+    ], [], unresolvedAgentTypes);
   } catch (error) {
     return unavailable(artifact, 'INPUT_UNAVAILABLE', [`The workflow check could not run (${errorCode(error)}).`], 'The workflow check hit an unexpected error, so no check ran.');
   }
