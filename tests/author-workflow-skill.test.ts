@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import YAML from 'yaml';
 import { afterEach, describe, expect, it } from 'vitest';
 import { validateRewrittenSkill } from './helpers/skill-contract.js';
@@ -42,7 +42,7 @@ describe('author-workflow source gates', () => {
     expect(validateRewrittenSkill('author-workflow', raw, supportingText(candidate))).toEqual([]);
     expect(checkSkillLayout(skills, 'author-workflow')).toEqual([]);
     expect(lines(raw).length).toBeLessThanOrEqual(90);
-    expect(raw.length).toBeLessThanOrEqual(6000);
+    expect(raw.replace(/\r\n/g, '\n').length).toBeLessThanOrEqual(6000);
     expect(fs.existsSync(path.resolve('tests/fixtures/templated-skills/author-workflow'))).toBe(false);
   });
 
@@ -90,7 +90,8 @@ describe('author-workflow source gates', () => {
       expect(step, file).toMatch(/Repair mode/);
       expect(step, file).toMatch(/registry\/bundles\.json/);
       expect(lines(text).length, file).toBeLessThanOrEqual(90);
-      expect(text.length, file).toBeLessThanOrEqual(6000);
+      // The repository measures the cap on the source with normalised line endings, so a CRLF checkout does not fail it.
+      expect(text.replace(/\r\n/g, '\n').length, file).toBeLessThanOrEqual(6000);
     }
     const report = fs.readFileSync(path.join(candidate, 'assets/report.md'), 'utf8');
     expect(report).toMatch(/yes or no/i);
@@ -251,6 +252,16 @@ function canMakeJunction(): boolean {
   } catch { return false; } finally { fs.rmSync(base, { recursive: true, force: true }); }
 }
 const JUNCTIONS = canMakeJunction();
+/** True when this machine lets a test make a symbolic link to a file (Windows needs a privilege for it). */
+function canMakeFileLink(): boolean {
+  const base = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'author-workflow-probe-'));
+  try {
+    fs.writeFileSync(path.join(base, 'target.txt'), 'x');
+    fs.symlinkSync(path.join(base, 'target.txt'), path.join(base, 'link.txt'), 'file');
+    return true;
+  } catch { return false; } finally { fs.rmSync(base, { recursive: true, force: true }); }
+}
+const FILE_LINKS = canMakeFileLink();
 
 describe('author-workflow bounded draft helper', () => {
   const NAME = 'release-flow';
@@ -545,6 +556,50 @@ describe('author-workflow bounded draft helper', () => {
     expectBlocked(f, reason);
   });
 
+  // workflow-check accepts a script of exactly 128 KiB and refuses one byte more, and the helper adds a final newline when there is none, so
+  // the limit is measured on the final draft: the authored text may be one byte shorter than the limit when it has no final newline.
+  describe('the 128 KiB limit, measured on the final draft', () => {
+    const LIMIT = 128 * 1024;
+    /** A valid script of exactly `bytes` bytes as authored, with or without the final newline. */
+    function sized(bytes: number, finalNewline: boolean): string {
+      const filler = bytes - Buffer.byteLength(WORKFLOW) - 3 - (finalNewline ? 1 : 0);
+      const text = `${WORKFLOW}// ${'x'.repeat(filler)}${finalNewline ? '\n' : ''}`;
+      expect(Buffer.byteLength(text)).toBe(bytes);
+      return text;
+    }
+    it('writes a script of exactly 128 KiB that ends with a newline, and workflow-check passes it', () => {
+      const f = fixture();
+      f.job.content = sized(LIMIT, true);
+      const result = run(f);
+      expect(result.exit, result.stdout + result.stderr).toBe(0);
+      expect(fs.statSync(written(f)).size).toBe(LIMIT);
+      expect(result.report.workflow.bytes).toBe(LIMIT);
+      expect(workflowCheckExitCode(runWorkflowCheck({ artifact: written(f) }))).toBe(0);
+    });
+    it('writes a script one byte under 128 KiB with no final newline, which becomes exactly 128 KiB', () => {
+      const f = fixture();
+      f.job.content = sized(LIMIT - 1, false);
+      const result = run(f);
+      expect(result.exit, result.stdout + result.stderr).toBe(0);
+      expect(fs.statSync(written(f)).size).toBe(LIMIT);
+      expect(workflowCheckExitCode(runWorkflowCheck({ artifact: written(f) }))).toBe(0);
+    });
+    it('refuses a script of exactly 128 KiB with no final newline, because the appended newline pushes it over, and writes nothing', () => {
+      const f = fixture();
+      f.job.content = sized(LIMIT, false);
+      expectBlocked(f, /128 KiB|limit/i);
+    });
+    it('refuses a script one byte over 128 KiB that ends with a newline, and one whose multi-byte text is under 128 KiB in characters only', () => {
+      const f = fixture();
+      f.job.content = sized(LIMIT + 1, true);
+      expectBlocked(f, /128 KiB|limit/i);
+      const g = fixture();
+      g.job.content = `${WORKFLOW}// ${'\u00e9'.repeat(LIMIT / 2)}\n`;
+      expect(g.job.content.length).toBeLessThan(LIMIT);
+      expectBlocked(g, /128 KiB|limit/i);
+    });
+  });
+
   it.each([
     ['an extra key', { extra: 1 }, /unknown|extra|allowed/i],
     ['a bundle key, which this route never uses', { bundle: 'agent-factory' }, /unknown|allowed/i],
@@ -586,7 +641,7 @@ describe('author-workflow bounded draft helper', () => {
       expect(fs.readdirSync(target).includes(`${NAME}.js`)).toBe(false);
     });
 
-  linked('refuses a paired SKILL.md that is a link, found without following links (skipped only where a junction cannot be created)', () => {
+  linked('refuses a paired Skill folder that is a link, found without following links (skipped only where a junction cannot be created)', () => {
     const f = fixture();
     const target = path.join(f.root, 'skill-target');
     fs.mkdirSync(target);
@@ -597,6 +652,24 @@ describe('author-workflow bounded draft helper', () => {
     expect(result.exit, result.stdout + result.stderr).toBe(1);
     expect(result.blocked.reason).toMatch(/link|junction|paired Skill/i);
     expect(fs.existsSync(written(f))).toBe(false);
+  });
+
+  const fileLinks = it.skipIf(!FILE_LINKS);
+  fileLinks('refuses a paired SKILL.md that is itself a file link, even to a real SKILL.md, and writes nothing (skipped only where a file link cannot be created)', () => {
+    const f = fixture();
+    const target = path.join(f.root, 'SKILL-target.md');
+    fs.writeFileSync(target, SKILL_TEXT);
+    const skillFile = path.join(f.checkout, `registry/skills/${NAME}/SKILL.md`);
+    fs.rmSync(skillFile);
+    fs.symlinkSync(target, skillFile, 'file');
+    const before = tree(f.checkout);
+    const result = run(f);
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/link|junction/i);
+    expect(result.blocked.reason).toContain(`registry/skills/${NAME}`);
+    expect(fs.existsSync(written(f))).toBe(false);
+    expect(tree(f.checkout)).toEqual(before);
+    expect(fs.readFileSync(target, 'utf8')).toBe(SKILL_TEXT);
   });
 
   linked('refuses a checkout path that is a link to the real checkout, writing nothing in the real folder (skipped only where a junction cannot be created)', () => {
@@ -677,6 +750,35 @@ describe('author-workflow bounded draft helper', () => {
     expect(run(f).blocked.reason).toMatch(/check that no helper is running, then delete/i);
     expect(fs.readFileSync(lock, 'utf8')).toBe('another run\n');
     expect(fs.existsSync(written(f))).toBe(false);
+  });
+
+  // Two helpers started at the same moment with the same job: the lock lets exactly one write. The other is refused before it writes anything,
+  // either at the lock ("Another run holds") or, when it takes the lock after the first has finished, at the collision check ("already exists").
+  // No other outcome is acceptable: not a second write, not a generic failure, and the winner's file and lock are never touched by the loser.
+  function startHelper(f: Fixture): Promise<{ exit: number | null; stdout: string; stderr: string }> {
+    return new Promise(resolve => {
+      const child = spawn(process.execPath, [helper, path.join(f.root, 'job.json')], { cwd: f.root });
+      let stdout = '', stderr = '';
+      child.stdout.on('data', chunk => { stdout += String(chunk); });
+      child.stderr.on('data', chunk => { stderr += String(chunk); });
+      child.on('close', exit => resolve({ exit, stdout, stderr }));
+    });
+  }
+  it('lets exactly one of two helpers started together write the workflow, and refuses the other at the lock or the collision check', async () => {
+    for (let round = 0; round < 3; round++) {
+      const f = fixture();
+      fs.writeFileSync(path.join(f.root, 'job.json'), JSON.stringify(f.job));
+      const [first, second] = await Promise.all([startHelper(f), startHelper(f)]);
+      const label = `round ${round}: ${first.stdout}${first.stderr} | ${second.stdout}${second.stderr}`;
+      expect([first.exit, second.exit].sort(), label).toEqual([0, 1]);
+      const [winner, loser] = first.exit === 0 ? [first, second] : [second, first];
+      expect(JSON.parse(winner.stdout).workflow, label).toEqual({ path: `${WORKFLOWS}/${NAME}.js`, bytes: Buffer.byteLength(WORKFLOW), sha256: sha(WORKFLOW) });
+      expect(loser.stdout, label).toBe('');
+      expect(JSON.parse(loser.stderr).reason, label).toMatch(/^Another run holds |already exists; it collides with /);
+      expect(fs.readFileSync(written(f), 'utf8'), label).toBe(WORKFLOW);
+      expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort(), label).toEqual(['hosts', 'skills']);
+      expect(fs.readdirSync(path.join(f.checkout, WORKFLOWS)).sort(), label).toEqual(['other-flow.js', `${NAME}.js`]);
+    }
   });
 
   // The helper's only test seam: AUTHOR_WORKFLOW_TEST_FAULT, read once, inert unless set. A fault can only force a failure.
@@ -904,6 +1006,8 @@ describe('author-workflow records', () => {
   it('is named in the contributor lists of README.md and CONTEXT.md', () => {
     expect(read('README.md')).toMatch(/`author-workflow` for one native Claude workflow/);
     expect(read('CONTEXT.md')).toMatch(/contributor-only `author-skill`, `author-rule`, `author-workflow`,/);
+    // The evaluator summary names every kind the evaluator reviews, workflows included.
+    expect(read('README.md')).toMatch(/opinion protocol for shared pairs, Skills, Claude agents, rules and workflows\./);
   });
 
   it('has an in-house provenance record that copies the one of author-rule, with its own name and date', () => {
