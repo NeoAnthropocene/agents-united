@@ -279,9 +279,16 @@ function removeIfMine(file, expected, writeThrew, stuck, left) {
 function replaceWorkflowForTest(file, body) {
   const root = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
   const kind = ['directory', 'link', 'oversized', 'prefix'].find(name => faults.has(`workflow-becomes-${name}`));
-  if (!kind || !root) return;
+  const swap = faults.has('workflow-swapped');
+  if ((!kind && !swap) || !root) return;
   const inside = path.relative(path.resolve(root), file);
   if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return;
+  if (swap) {
+    // Another file with the very same bytes takes the place: a copy made first, then renamed over, so it is a different file.
+    fs.writeFileSync(`${file}.swap`, body, { flag: 'wx' });
+    fs.renameSync(`${file}.swap`, file);
+    return;
+  }
   fs.rmSync(file, { force: true });
   if (kind === 'directory') fs.mkdirSync(file);
   else if (kind === 'link') {
@@ -304,6 +311,17 @@ function swapWorkflowsForTest(dir) {
   fs.mkdirSync(elsewhere, { recursive: true });
   fs.renameSync(dir, path.join(path.resolve(root), 'moved-workflows'));
   fs.symlinkSync(elsewhere, dir, 'junction');
+}
+
+// Test seam only (see `faults`): another run's lock file takes the place of this run's, as a copy renamed over it (so it is a different file).
+// Used by lock-swapped. It acts only inside the test root.
+function swapLockForTest(lock) {
+  const root = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
+  if (!root) return;
+  const inside = path.relative(path.resolve(root), lock);
+  if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return;
+  fs.writeFileSync(`${lock}.swap`, 'another run\n', { flag: 'wx' });
+  fs.renameSync(`${lock}.swap`, lock);
 }
 
 function run(argument) {
@@ -400,6 +418,7 @@ function run(argument) {
   if (lockHeld) {
     try {
       if (faults.has('fail-lock-removal')) throw Object.assign(new Error('injected failure'), { code: 'EPERM' });
+      if (faults.has('lock-swapped')) swapLockForTest(lock);
       fs.rmSync(lock, { force: true });
     } catch { lockProblem = `The lock file ${lock} could not be removed; delete it by hand before the next run.`; }
   }

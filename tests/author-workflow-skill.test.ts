@@ -145,6 +145,9 @@ describe('author-workflow source gates', () => {
     expect(job).toMatch(/fs\.lstatSync\(p\)\.isFile\(\)/);
     expect(job).toMatch(/isSymbolicLink\(\)/);
     expect(job).toMatch(/One window stays open and is accepted/);
+    expect(job).toMatch(/killed during the write can leave a partial workflow file and a stale lock/);
+    expect(job).toMatch(/check that no helper is running, then delete the lock file/);
+    expect(job).toMatch(/same device and file number/);
     expect(job).toMatch(/swapped for a link or junction between the final check and the create/);
     expect(job).toMatch(/author-skill/);
     expect(job).toMatch(/never touches `?bundles\.json`?|does not touch `?bundles\.json`?/);
@@ -288,9 +291,12 @@ describe('author-workflow bounded draft helper', () => {
       return e.isDirectory() ? [`${prefix}${e.name}/`, ...tree(full, `${prefix}${e.name}/`)] : [`${prefix}${e.name}:${sha(fs.readFileSync(full))}`];
     }).sort();
   }
-  function run(f: Fixture, executable = helper, env: Record<string, string> = {}): { exit: number | null; stdout: string; stderr: string; report: Record<string, any>; blocked: Record<string, any> } {
+  function run(f: Fixture, executable = helper, given: Record<string, string | undefined> = {}): { exit: number | null; stdout: string; stderr: string; report: Record<string, any>; blocked: Record<string, any> } {
     const jobPath = path.join(f.root, 'job.json');
     fs.writeFileSync(jobPath, JSON.stringify(f.job));
+    // A fault acts only with a test root under the temp folder (the helper's own rule), so a test that names a fault gets its own temp
+    // folder as the root unless it passes another one (or an explicit undefined, for no root at all).
+    const env = 'AUTHOR_WORKFLOW_TEST_FAULT' in given && !('AUTHOR_WORKFLOW_TEST_ROOT' in given) ? { ...given, AUTHOR_WORKFLOW_TEST_ROOT: f.root } : given;
     const result = spawnSync(process.execPath, [executable, jobPath], { cwd: f.root, encoding: 'utf8', env: { ...process.env, ...env } });
     return { exit: result.status, stdout: result.stdout, stderr: result.stderr,
       report: result.status === 0 ? JSON.parse(result.stdout) as Record<string, any> : {},
@@ -666,6 +672,9 @@ describe('author-workflow bounded draft helper', () => {
     const lock = path.join(f.checkout, 'registry/.author-workflow.lock');
     fs.writeFileSync(lock, 'another run\n');
     expectBlocked(f, /lock/i);
+    // The refusal says how to clear a stale lock safely: check that no helper is running, then delete the named file.
+    expect(run(f).blocked.reason).toContain(lock);
+    expect(run(f).blocked.reason).toMatch(/check that no helper is running, then delete/i);
     expect(fs.readFileSync(lock, 'utf8')).toBe('another run\n');
     expect(fs.existsSync(written(f))).toBe(false);
   });
@@ -747,17 +756,75 @@ describe('author-workflow bounded draft helper', () => {
     expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW.slice(0, 20));
   });
 
-  it('acts on a replacement fault only inside the test root: outside it, or with no root, the rollback removes the file as usual', () => {
-    for (const root of [undefined, path.join(os.tmpdir(), 'author-workflow-not-this-folder')]) {
+  // Every fault needs a test root whose real path is under the real path of the temp folder; without one the switch does nothing at all.
+  const everyFault = 'fail-after-write,fail-lock-removal,partial-write,workflow-becomes-directory,workflow-becomes-link,workflow-swapped,lock-swapped';
+  it('is inert with no test root, an empty one, a missing one, or one outside the temp folder: no fault acts, not even a plain failure', () => {
+    const realTmp = fs.realpathSync(os.tmpdir());
+    for (const root of [undefined, '', path.dirname(realTmp), path.join(realTmp, 'author-workflow-absent-folder')]) {
       const f = fixture();
-      const before = tree(f.checkout);
-      const env: Record<string, string> = { AUTHOR_WORKFLOW_TEST_FAULT: 'fail-after-write,workflow-becomes-directory' };
-      if (root !== undefined) env.AUTHOR_WORKFLOW_TEST_ROOT = root;
-      const result = run(f, helper, env);
-      expect(result.exit, result.stdout + result.stderr).toBe(1);
-      expect(result.blocked.reason).not.toMatch(/left in place/i);
-      expect(tree(f.checkout)).toEqual(before);
+      const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: everyFault, AUTHOR_WORKFLOW_TEST_ROOT: root });
+      expect(result.exit, `${String(root)}: ${result.stdout}${result.stderr}`).toBe(0);
+      expect(result.report.warnings, String(root)).toBeUndefined();
+      expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
+      expect(fs.existsSync(path.join(f.checkout, 'registry/.author-workflow.lock'))).toBe(false);
     }
+  });
+
+  linked('is inert with a test root that is a link from the temp folder to a folder outside it, since the real path decides (skipped only where a junction cannot be created)', () => {
+    const realTmp = fs.realpathSync(os.tmpdir());
+    const f = fixture();
+    const alias = path.join(f.root, 'alias-of-outside');
+    link(path.dirname(realTmp), alias);
+    const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: 'fail-after-write', AUTHOR_WORKFLOW_TEST_ROOT: alias });
+    expect(result.exit, result.stdout + result.stderr).toBe(0);
+    expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
+  });
+
+  it('leaves a workflow file that another file with the very same bytes has replaced, and names it: the identity is checked, not only the bytes', () => {
+    const f = fixture();
+    const result = replaced(f, 'workflow-swapped');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/left in place/i);
+    expect(result.blocked.reason).toContain(`${NAME}.js`);
+    expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
+    expect(fs.readdirSync(path.join(f.checkout, WORKFLOWS)).sort()).toEqual(['other-flow.js', `${NAME}.js`]);
+  });
+
+  it('leaves a lock file that another file has replaced, names it in a warning, and still succeeds', () => {
+    const f = fixture();
+    const lock = path.join(f.checkout, 'registry/.author-workflow.lock');
+    const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: 'lock-swapped' });
+    expect(result.exit, result.stdout + result.stderr).toBe(0);
+    expect(result.report.warnings).toHaveLength(1);
+    expect(result.report.warnings[0]).toContain('.author-workflow.lock');
+    expect(result.report.warnings[0]).toMatch(/no longer/i);
+    expect(fs.readFileSync(lock, 'utf8')).toBe('another run\n');
+    const g = fixture();
+    const failed = run(g, helper, { AUTHOR_WORKFLOW_TEST_FAULT: 'fail-after-write,lock-swapped' });
+    expect(failed.exit, failed.stdout + failed.stderr).toBe(1);
+    expect(failed.blocked.reason).toContain('.author-workflow.lock');
+    expect(failed.blocked.reason).toMatch(/no longer/i);
+    expect(fs.existsSync(written(g))).toBe(false);
+  });
+
+  it('makes the link fault\'s keep.txt by an exclusive create: an existing keep.txt is left as it is and the fault does not act', () => {
+    const f = fixture();
+    fs.mkdirSync(path.join(f.root, 'link-target'));
+    fs.writeFileSync(path.join(f.root, 'link-target', 'keep.txt'), 'mine\n');
+    const result = replaced(f, 'workflow-becomes-link');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(fs.readFileSync(path.join(f.root, 'link-target', 'keep.txt'), 'utf8')).toBe('mine\n');
+    expect(fs.existsSync(written(f))).toBe(false);
+  });
+
+  linked('does not let the link fault write through a link-target that is itself a link (skipped only where a junction cannot be created)', () => {
+    const f = fixture();
+    const other = path.join(f.root, 'other-folder');
+    fs.mkdirSync(other);
+    link(other, path.join(f.root, 'link-target'));
+    const result = replaced(f, 'workflow-becomes-link');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(fs.readdirSync(other)).toEqual([]);
   });
 
   it('lets a fault force failures only: a replacement fault with no failure changes nothing, and the report is the documented one', () => {
