@@ -134,10 +134,18 @@ describe('author-workflow source gates', () => {
       expect(repairApply, label).not.toMatch(/draft\.mjs/);
       expect(repairApply, label).toMatch(/do not run the helper/i);
       expect(repairApply, label).toMatch(/in place/);
+      // Repair edits by pathname, so the script itself must first be shown to be a regular, unlinked file; the how is in the job contract.
+      expect(repairApply, label).toMatch(/regular, unlinked file/);
+      expect(repairApply, label).toMatch(/job contract/);
       expect(all.find(line => /^Stop the dependent action/.test(line)) ?? '', label).toMatch(/when creating/);
     }
     const job = fs.readFileSync(path.join(candidate, 'references/job.md'), 'utf8');
     expect(job).toMatch(/Repair mode/);
+    expect(job).toMatch(/regular, unlinked file/);
+    expect(job).toMatch(/fs\.lstatSync\(p\)\.isFile\(\)/);
+    expect(job).toMatch(/isSymbolicLink\(\)/);
+    expect(job).toMatch(/One window stays open and is accepted/);
+    expect(job).toMatch(/swapped for a link or junction between the final check and the create/);
     expect(job).toMatch(/author-skill/);
     expect(job).toMatch(/never touches `?bundles\.json`?|does not touch `?bundles\.json`?/);
     expect(job).toMatch(/Bundle membership|bundle membership/);
@@ -618,6 +626,32 @@ describe('author-workflow bounded draft helper', () => {
     expect(result.exit, result.stdout + result.stderr).toBe(1);
     expect(result.blocked.reason).toMatch(/already exists|collides|link/i);
     expect(tree(f.checkout)).toEqual(before);
+  });
+
+  // The swap faults put a junction in the place of the workflows folder (the real folder moves to <root>/moved-workflows, the junction points at
+  // <root>/elsewhere), as another process could between the helper's checks and its create. They act only inside the test root.
+  const swapped = (f: Fixture, fault: string) => run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: fault, AUTHOR_WORKFLOW_TEST_ROOT: f.root });
+  function expectNothingWrittenThroughTheSwap(f: Fixture): void {
+    expect(fs.readdirSync(path.join(f.root, 'elsewhere'))).toEqual([]);
+    expect(fs.readdirSync(path.join(f.root, 'moved-workflows'))).toEqual(['other-flow.js']);
+    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['hosts', 'skills']);
+  }
+
+  linked('walks the folders again after taking the lock: a workflows folder swapped for a link then is refused, and nothing is written through it (skipped only where a junction cannot be created)', () => {
+    const f = fixture();
+    const result = swapped(f, 'workflows-swapped-after-lock');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/link or junction/i);
+    expectNothingWrittenThroughTheSwap(f);
+  });
+
+  linked('removes the file it created when its path resolves elsewhere because the folder was swapped for a link just before the create, and refuses (skipped only where a junction cannot be created)', () => {
+    const f = fixture();
+    const result = swapped(f, 'workflows-swapped-before-create');
+    expect(result.exit, result.stdout + result.stderr).toBe(1);
+    expect(result.blocked.reason).toMatch(/created at/i);
+    expect(result.blocked.reason).toMatch(/link or junction/i);
+    expectNothingWrittenThroughTheSwap(f);
   });
 
   it('leaves no lock or temporary file behind after a successful run', () => {

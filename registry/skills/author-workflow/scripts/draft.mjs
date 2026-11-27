@@ -19,6 +19,7 @@ const WORKFLOWS = 'registry/hosts/claude/workflows';
 // Test seam. AUTHOR_WORKFLOW_TEST_FAULT is a test-only switch (a comma-separated list) that can only force failures: it makes the
 // helper behave as if a step had failed or a file had changed. Used only by tests/author-workflow-skill.test.ts.
 // Faults that write nothing: fail-after-write, workflow-replaced, fail-lock-write, fail-lock-removal.
+// Faults that swap the workflows folder for a junction, as another process could: workflows-swapped-after-lock and workflows-swapped-before-create.
 // A fault that cuts a write short: partial-write writes the first half of the intended bytes through the real write path, then throws
 // EIO, as a full disk would.
 // Faults that replace the workflow file just before the rollback looks at it: workflow-becomes-directory, workflow-becomes-link,
@@ -259,6 +260,19 @@ function replaceWorkflowForTest(file, body) {
   else fs.writeFileSync(file, body.subarray(0, 20));
 }
 
+// Test seam only (see `faults`): swaps the workflows folder for a junction to <root>/elsewhere, as another process could, after moving the real
+// folder to <root>/moved-workflows. Used by workflows-swapped-after-lock and workflows-swapped-before-create. It acts only inside the test root.
+function swapWorkflowsForTest(dir) {
+  const root = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
+  if (!root) return;
+  const inside = path.relative(path.resolve(root), dir);
+  if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return;
+  const elsewhere = path.join(path.resolve(root), 'elsewhere');
+  fs.mkdirSync(elsewhere, { recursive: true });
+  fs.renameSync(dir, path.join(path.resolve(root), 'moved-workflows'));
+  fs.symlinkSync(elsewhere, dir, 'junction');
+}
+
 function run(argument) {
   const job = readJob(argument);
   const workflowFile = `${job.name}.js`;
@@ -308,9 +322,11 @@ function run(argument) {
       if (faults.has('fail-lock-write')) throw Object.assign(new Error('injected failure'), { code: 'EIO' });
       fs.writeSync(descriptor, `${process.pid}\n`);
     } finally { fs.closeSync(descriptor); }
+    if (faults.has('workflows-swapped-after-lock')) swapWorkflowsForTest(workflowsDir);
     // The lock only keeps other runs of this helper out, so what the checks above read is read again before the write.
     collision();
     if (pairedSkill(registry, job.name).sha256 !== skill.sha256) block('The paired Skill changed while the helper was working; nothing was written. Run it again.');
+    if (faults.has('workflows-swapped-before-create')) swapWorkflowsForTest(workflowsDir);
     try { workflowWritten = true; writeFile(workflowPath, body); } catch (error) {
       if (error?.code === 'EEXIST') { workflowWritten = false; block(`${WORKFLOWS}/${workflowFile} appeared while the helper was working; nothing was written.`); }
       workflowWriteThrew = true;
