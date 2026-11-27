@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 
@@ -17,15 +18,36 @@ const KEBAB = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const DEVICE = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/;
 const WORKFLOWS = 'registry/hosts/claude/workflows';
 // Test seam. AUTHOR_WORKFLOW_TEST_FAULT is a test-only switch (a comma-separated list) that can only force failures: it makes the
-// helper behave as if a step had failed or a file had changed. Used only by tests/author-workflow-skill.test.ts.
-// Faults that write nothing: fail-after-write, workflow-replaced, fail-lock-write, fail-lock-removal.
+// helper behave as if a step had failed or a file had changed. Used only by tests/author-workflow-skill.test.ts. It does nothing at all
+// unless AUTHOR_WORKFLOW_TEST_ROOT names an existing absolute folder whose real path is under the real path of the temp folder
+// (os.tmpdir()), so a stray variable in a contributor's shell cannot change a real run, whatever the fault. Every fault that touches a
+// file acts only on a path inside that root.
+// Faults that write nothing: fail-after-write, fail-lock-write, fail-lock-removal.
 // Faults that swap the workflows folder for a junction, as another process could: workflows-swapped-after-lock and workflows-swapped-before-create.
 // A fault that cuts a write short: partial-write writes the first half of the intended bytes through the real write path, then throws
 // EIO, as a full disk would.
 // Faults that replace the workflow file just before the rollback looks at it: workflow-becomes-directory, workflow-becomes-link,
-// workflow-becomes-oversized, workflow-becomes-prefix. These are the only faults that touch a file other than the one this run wrote,
-// and they act only when AUTHOR_WORKFLOW_TEST_ROOT is set and the workflow path lies inside that folder; otherwise they do nothing.
-const faults = new Set((process.env.AUTHOR_WORKFLOW_TEST_FAULT ?? '').split(',').filter(Boolean));
+// workflow-becomes-oversized, workflow-becomes-prefix, and workflow-swapped (another file with the very same bytes, a different file).
+// lock-swapped puts another file in the place of this run's lock just before the lock is removed.
+function testSwitch() {
+  const names = (process.env.AUTHOR_WORKFLOW_TEST_FAULT ?? '').split(',').filter(Boolean);
+  const given = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
+  const off = { faults: new Set(), root: null };
+  if (!names.length || typeof given !== 'string' || !path.isAbsolute(given)) return off;
+  try {
+    const root = fs.realpathSync(given);
+    const rel = path.relative(fs.realpathSync(os.tmpdir()), root);
+    if (rel === '' || rel.startsWith('..') || path.isAbsolute(rel)) return off;
+    return { faults: new Set(names), root };
+  } catch { return off; }
+}
+const { faults, root: testRoot } = testSwitch();
+// Whether `file` lies inside the test root (a fault may only touch such a path).
+const inTestRoot = file => {
+  if (testRoot === null) return false;
+  const rel = path.relative(testRoot, path.resolve(file));
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
+};
 const READ_CHUNK = 64 * 1024;
 
 function regularFile(file, label) {
@@ -211,14 +233,17 @@ function pairedSkill(registry, name) {
 }
 
 // Reads at most `limit` bytes of a regular file through one descriptor, so a huge file is never read whole. Returns null for
-// anything that is not a regular file (a link, a folder, a device), and undefined for a file that is gone.
-function boundedRead(file, limit) {
+// anything that is not a regular file (a link, a folder, a device) or, when `id` is given, not the file with that identity, and
+// undefined for a file that is gone.
+function boundedRead(file, limit, id) {
   let entry;
   try { entry = fs.lstatSync(file); } catch (error) { if (error?.code === 'ENOENT') return undefined; throw error; }
   if (!entry.isFile()) return null;
   const descriptor = fs.openSync(file, 'r');
   try {
-    if (!fs.fstatSync(descriptor).isFile()) return null;
+    // With an identity given, the file that was opened must be that one (null otherwise, as for any file that is not the expected one).
+    const opened = fs.fstatSync(descriptor, { bigint: true });
+    if (!opened.isFile() || (id !== undefined && !sameFile(opened, id))) return null;
     return readDescriptor(descriptor, limit);
   } finally { fs.closeSync(descriptor); }
 }
@@ -261,65 +286,66 @@ function bundleMembership(registry, name) {
   } catch (error) { return unreadable(`${rel} could not be read (${error?.code ?? 'unexpected error'}).`); }
 }
 
-// Rollback removes the file only while it is still the file this run wrote: a pathname alone could now name a replacement that someone
-// else created. Gone is fine. A file that is not a regular file, or whose bytes are not the intended ones, is left in place and named.
-// When this run's own write of the file threw, a prefix of the intended bytes is this run's truncated write and is removed too. At most
-// the intended length plus one byte is read.
-function removeIfMine(file, expected, writeThrew, stuck, left) {
+// Rollback removes the file only while it is still the file this run created: a pathname alone could now name a replacement that someone
+// else created, even one with the very same bytes. So the file must have the device and file number recorded when the exclusive create
+// succeeded (and the same on the descriptor that reads it), and then also the intended bytes. Gone is fine. Anything else is left in
+// place and named. When this run's own write of the file threw, a prefix of the intended bytes is this run's truncated write and is
+// removed too. At most the intended length plus one byte is read. The window between that check and the removal is the one a pathname
+// cannot close; it is documented in references/job.md.
+function removeIfMine(file, expected, writeThrew, id, stuck, left) {
   try {
-    const found = boundedRead(file, expected.length + 1);
+    const entry = fs.lstatSync(file, { bigint: true, throwIfNoEntry: false });
+    if (!entry) return;
+    if (!entry.isFile() || id === undefined || !sameFile(entry, id)) { left.push(file); return; }
+    const found = boundedRead(file, expected.length + 1, id);
     if (found === undefined) return;
-    const mine = !faults.has('workflow-replaced') && found !== null && (found.equals(expected) || (writeThrew && found.length < expected.length + 1 && expected.subarray(0, found.length).equals(found)));
+    const mine = found !== null && (found.equals(expected) || (writeThrew && found.length < expected.length + 1 && expected.subarray(0, found.length).equals(found)));
     if (!mine) { left.push(file); return; }
     fs.rmSync(file, { force: true });
   } catch { stuck.push(file); }
 }
 
-// Test seam only (see `faults`): replaces the workflow file, inside the test's own folder, just before the rollback inspects it.
+// Test seam only (see `faults`): replaces the workflow file, inside the test root, just before the rollback inspects it. An existing keep.txt
+// or a linked link-target stops the link fault before anything is touched, so it never writes through a link or over a file.
 function replaceWorkflowForTest(file, body) {
-  const root = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
   const kind = ['directory', 'link', 'oversized', 'prefix'].find(name => faults.has(`workflow-becomes-${name}`));
   const swap = faults.has('workflow-swapped');
-  if ((!kind && !swap) || !root) return;
-  const inside = path.relative(path.resolve(root), file);
-  if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return;
+  if ((!kind && !swap) || !inTestRoot(file)) return;
   if (swap) {
     // Another file with the very same bytes takes the place: a copy made first, then renamed over, so it is a different file.
     fs.writeFileSync(`${file}.swap`, body, { flag: 'wx' });
     fs.renameSync(`${file}.swap`, file);
     return;
   }
+  if (kind === 'link') {
+    const target = path.join(testRoot, 'link-target');
+    if (fs.lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink()) return;
+    fs.mkdirSync(target, { recursive: true });
+    fs.writeFileSync(path.join(target, 'keep.txt'), 'keep\n', { flag: 'wx' });
+    fs.rmSync(file, { force: true });
+    fs.symlinkSync(target, file, 'junction');
+    return;
+  }
   fs.rmSync(file, { force: true });
   if (kind === 'directory') fs.mkdirSync(file);
-  else if (kind === 'link') {
-    const target = path.join(path.resolve(root), 'link-target');
-    fs.mkdirSync(target, { recursive: true });
-    fs.writeFileSync(path.join(target, 'keep.txt'), 'keep\n');
-    fs.symlinkSync(target, file, 'junction');
-  } else if (kind === 'oversized') fs.writeFileSync(file, Buffer.concat([body, Buffer.alloc(2 * 1024 * 1024, 'x')]));
+  else if (kind === 'oversized') fs.writeFileSync(file, Buffer.concat([body, Buffer.alloc(2 * 1024 * 1024, 'x')]));
   else fs.writeFileSync(file, body.subarray(0, 20));
 }
 
 // Test seam only (see `faults`): swaps the workflows folder for a junction to <root>/elsewhere, as another process could, after moving the real
 // folder to <root>/moved-workflows. Used by workflows-swapped-after-lock and workflows-swapped-before-create. It acts only inside the test root.
 function swapWorkflowsForTest(dir) {
-  const root = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
-  if (!root) return;
-  const inside = path.relative(path.resolve(root), dir);
-  if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return;
-  const elsewhere = path.join(path.resolve(root), 'elsewhere');
+  if (!inTestRoot(dir)) return;
+  const elsewhere = path.join(testRoot, 'elsewhere');
   fs.mkdirSync(elsewhere, { recursive: true });
-  fs.renameSync(dir, path.join(path.resolve(root), 'moved-workflows'));
+  fs.renameSync(dir, path.join(testRoot, 'moved-workflows'));
   fs.symlinkSync(elsewhere, dir, 'junction');
 }
 
 // Test seam only (see `faults`): another run's lock file takes the place of this run's, as a copy renamed over it (so it is a different file).
 // Used by lock-swapped. It acts only inside the test root.
 function swapLockForTest(lock) {
-  const root = process.env.AUTHOR_WORKFLOW_TEST_ROOT;
-  if (!root) return;
-  const inside = path.relative(path.resolve(root), lock);
-  if (inside === '' || inside.startsWith('..') || path.isAbsolute(inside)) return;
+  if (!inTestRoot(lock)) return;
   fs.writeFileSync(`${lock}.swap`, 'another run\n', { flag: 'wx' });
   fs.renameSync(`${lock}.swap`, lock);
 }
@@ -346,16 +372,18 @@ function run(argument) {
   const lock = path.join(registry, '.author-workflow.lock');
   // Only what this run created is ever removed: the flag is set once the exclusive create has succeeded, so a create that finds the file already there owns nothing.
   // workflowWriteThrew means this run's own write threw, so a truncated file under that name is this run's. workflowId is the identity of the created file.
-  let lockHeld = false, workflowWritten = false, workflowWriteThrew = false, workflowId;
+  // lockId is the identity of the lock this run created: the lock is removed only while the path still names that file.
+  let lockHeld = false, workflowWritten = false, workflowWriteThrew = false, workflowId, lockId;
   let failure;
   try {
     // The flag is set as soon as the exclusive open succeeds, before the process id is written, so a failed write still removes the lock.
     let descriptor;
     try { descriptor = fs.openSync(lock, 'wx'); lockHeld = true; } catch (error) {
-      if (error?.code === 'EEXIST') block(`Another run holds ${lock}; wait for it to finish, or delete the file if no run is active. Nothing was changed.`);
+      if (error?.code === 'EEXIST') block(`Another run holds ${lock}. A run that was killed leaves its lock behind, so if no run is active the lock is stale: check that no helper is running, then delete the lock file named here and run again. Nothing was changed.`);
       throw error;
     }
     try {
+      lockId = fileId(fs.fstatSync(descriptor, { bigint: true }));
       if (faults.has('fail-lock-write')) throw Object.assign(new Error('injected failure'), { code: 'EIO' });
       fs.writeSync(descriptor, `${process.pid}\n`);
     } finally { fs.closeSync(descriptor); }
@@ -404,11 +432,11 @@ function run(argument) {
     const stuck = [], left = [];
     if (workflowWritten) {
       try { replaceWorkflowForTest(workflowPath, body); } catch { /* test seam only */ }
-      removeIfMine(workflowPath, body, workflowWriteThrew, stuck, left);
+      removeIfMine(workflowPath, body, workflowWriteThrew, workflowId, stuck, left);
     }
     if (stuck.length || left.length) {
       let why = error instanceof Blocked ? error.message : `The helper could not finish (${error?.code ?? 'unexpected error'}).`;
-      if (left.length) why += ` Left in place, because it is no longer the file this run wrote (other bytes, or not a regular file): ${left.join(', ')}. Check it and remove it by hand if it is not yours.`;
+      if (left.length) why += ` Left in place, because it is no longer the file this run created (another file, other bytes, or not a regular file): ${left.join(', ')}. Check it and remove it by hand if it is not yours.`;
       if (stuck.length) why += ` It could not remove: ${stuck.join(', ')}. Remove ${stuck.length === 1 ? 'it' : 'them'} by hand.`;
       failure = new Blocked(why);
     } else failure = error;
@@ -419,7 +447,10 @@ function run(argument) {
     try {
       if (faults.has('fail-lock-removal')) throw Object.assign(new Error('injected failure'), { code: 'EPERM' });
       if (faults.has('lock-swapped')) swapLockForTest(lock);
-      fs.rmSync(lock, { force: true });
+      const held = fs.lstatSync(lock, { bigint: true, throwIfNoEntry: false });
+      if (held === undefined) { /* already gone: nothing to remove */ }
+      else if (lockId === undefined || !held.isFile() || !sameFile(held, lockId)) lockProblem = `The lock file ${lock} is no longer the one this run created, so it was left in place. Check that no helper is running, then delete it by hand before the next run.`;
+      else fs.rmSync(lock, { force: true });
     } catch { lockProblem = `The lock file ${lock} could not be removed; delete it by hand before the next run.`; }
   }
   if (failure) {

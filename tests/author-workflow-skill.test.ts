@@ -705,17 +705,6 @@ describe('author-workflow bounded draft helper', () => {
     expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
   });
 
-  it('leaves a workflow file whose bytes are not the ones this run wrote, and names it as left in place', () => {
-    const f = fixture();
-    // The seam makes the helper see different bytes at rollback time; no file is touched.
-    const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: 'fail-after-write,workflow-replaced' });
-    expect(result.exit, result.stdout + result.stderr).toBe(1);
-    expect(result.blocked.reason).toMatch(/left in place/i);
-    expect(result.blocked.reason).toContain(`${NAME}.js`);
-    expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
-    expect(fs.readdirSync(path.join(f.checkout, 'registry')).sort()).toEqual(['hosts', 'skills']);
-  });
-
   // The replacement faults act only inside AUTHOR_WORKFLOW_TEST_ROOT, which the test sets to its own temp folder.
   const replaced = (f: Fixture, fault: string, root = f.root) => run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: `fail-after-write,${fault}`, AUTHOR_WORKFLOW_TEST_ROOT: root });
 
@@ -829,7 +818,7 @@ describe('author-workflow bounded draft helper', () => {
 
   it('lets a fault force failures only: a replacement fault with no failure changes nothing, and the report is the documented one', () => {
     const f = fixture();
-    const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: 'workflow-becomes-directory,workflow-replaced', AUTHOR_WORKFLOW_TEST_ROOT: f.root });
+    const result = run(f, helper, { AUTHOR_WORKFLOW_TEST_FAULT: 'workflow-becomes-directory,workflow-swapped', AUTHOR_WORKFLOW_TEST_ROOT: f.root });
     expect(result.exit, result.stdout + result.stderr).toBe(0);
     expect(fs.readFileSync(written(f), 'utf8')).toBe(WORKFLOW);
     expect(result.report.status).toBe('written');
