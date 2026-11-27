@@ -326,7 +326,7 @@ describe('workflow-check', () => {
       return runWorkflowCheck({ artifact: file });
     }
 
-    it('fails a workflow that is not at <registry>/hosts/claude/workflows/<name>.js, and gates the last three checks', () => {
+    it('fails a workflow that is not at <registry>/hosts/claude/workflows/<name>.js, and reads no file (every later check is not run)', () => {
       const places: string[][] = [
         ['loose', 'demo-flow.js'],
         ['demo-flow.js'],
@@ -342,12 +342,13 @@ describe('workflow-check', () => {
         expect(result.status, place.join('/')).toBe('failed');
         expect(codesOf(result), place.join('/')).toEqual(['PLACEMENT']);
         expect(checkOf(result, 'placement')?.status).toBe('failed');
-        for (const id of LATER_THAN_PLACEMENT) {
+        // Where the registry is cannot be known, so nothing can bound the read: the file is not opened and no content check runs.
+        expect(result.bytes, place.join('/')).toBeNull();
+        for (const id of ['size', 'encoding', 'lint', 'meta-name', ...LATER_THAN_PLACEMENT]) {
           expect(checkOf(result, id)?.status, `${place.join('/')} ${id}`).toBe('not-run');
-          expect(checkOf(result, id)?.reason, id).toMatch(/placement/i);
+          expect(checkOf(result, id)?.reason, id).toMatch(/not read/i);
         }
-        // The checks that need only the file itself still run.
-        for (const id of ['name', 'size', 'encoding', 'lint', 'meta-name']) expect(checkOf(result, id)?.status, id).toBe('passed');
+        expect(checkOf(result, 'name')?.status).toBe('passed');
       }
     });
 
@@ -363,6 +364,167 @@ describe('workflow-check', () => {
       folders.push(renamed);
       const result = runWorkflowCheck({ artifact: path.join(renamed, 'hosts', 'claude', 'workflows', 'demo-flow.js') });
       expect(result.status).toBe('passed');
+    });
+  });
+
+  // Blocker 2 of Codex round 1: the reads must stay inside the registry tree the path names. The pure name and placement checks
+  // come first and touch no file; then the registry is found from the path, its real path is taken, every folder from the
+  // checkout down must be a real folder spelled exactly as the file system holds it, and the file opened must be the file inspected.
+  describe('Tier 2: reads stay inside the registry tree', () => {
+    const base = (): string => {
+      const made = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'au-workflow-tree-')));
+      folders.push(made);
+      return made;
+    };
+    /** A junction (a directory symlink elsewhere); skips the test when the platform refuses to create one. */
+    function junction(context: { skip: () => void }, target: string, link: string): boolean {
+      try {
+        fs.symlinkSync(target, link, 'junction');
+        return true;
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === 'EPERM' || code === 'EACCES') { context.skip(); return false; }
+        throw error;
+      }
+    }
+    const unavailableWith = (result: WorkflowCheckResult, message: RegExp): void => {
+      expect(result.status).toBe('unavailable');
+      expect(workflowCheckExitCode(result)).toBe(2);
+      expect(codesOf(result)).toEqual(['INPUT_UNAVAILABLE']);
+      expect(result.findings[0]?.message).toMatch(message);
+      expect(result.bytes).toBeNull();
+      expect(result.checks.every(item => item.status === 'not-run')).toBe(true);
+    };
+
+    it('runs the pure name and placement checks before any file-system access', () => {
+      const nothing = path.join(os.tmpdir(), 'au-workflow-no-such-folder');
+      const watched = ['lstatSync', 'statSync', 'fstatSync', 'openSync', 'readSync', 'readdirSync', 'realpathSync', 'existsSync', 'readFileSync'] as const;
+      const spies = watched.map(name => vi.spyOn(fs, name));
+      try {
+        const cases: Array<[string, string, string]> = [
+          [path.join(nothing, 'hosts', 'claude', 'workflows', 'con.js'), 'NAME', 'a Windows device name'],
+          [path.join(nothing, 'hosts', 'claude', 'workflows', 'Bad_Name.js'), 'NAME', 'a bad name'],
+          [path.join(nothing, 'loose', 'demo-flow.js'), 'PLACEMENT', 'a misplaced file'],
+          [path.join(path.parse(nothing).root, 'hosts', 'claude', 'workflows', 'demo-flow.js'), 'PLACEMENT', 'a registry that is a file-system root'],
+        ];
+        for (const [artifact, code, label] of cases) {
+          const result = runWorkflowCheck({ artifact });
+          expect(result.status, label).toBe('failed');
+          expect(workflowCheckExitCode(result), label).toBe(1);
+          expect(codesOf(result), label).toContain(code);
+          for (const id of ['size', 'encoding', 'lint', 'meta-name', ...LATER_THAN_PLACEMENT]) expect(checkOf(result, id)?.status, `${label} ${id}`).toBe('not-run');
+          for (const [index, spy] of spies.entries()) expect(spy, `${label}: fs.${watched[index]}`).not.toHaveBeenCalled();
+        }
+      } finally {
+        for (const spy of spies) spy.mockRestore();
+      }
+    });
+
+    it('refuses a workflows folder that is a link or junction to another registry (skipped when a junction cannot be created)', context => {
+      const outside = fixture();
+      const inside = path.join(base(), 'registry');
+      fs.mkdirSync(path.join(inside, 'hosts', 'claude'), { recursive: true });
+      if (!junction(context, path.join(outside.registry, 'hosts', 'claude', 'workflows'), path.join(inside, 'hosts', 'claude', 'workflows'))) return;
+      unavailableWith(runWorkflowCheck({ artifact: path.join(inside, 'hosts', 'claude', 'workflows', 'demo-flow.js') }), /link|junction/i);
+    });
+
+    it('refuses a hosts folder that is a link or junction to another registry (skipped when a junction cannot be created)', context => {
+      const outside = fixture();
+      const inside = path.join(base(), 'registry');
+      fs.mkdirSync(inside, { recursive: true });
+      if (!junction(context, path.join(outside.registry, 'hosts'), path.join(inside, 'hosts'))) return;
+      unavailableWith(runWorkflowCheck({ artifact: path.join(inside, 'hosts', 'claude', 'workflows', 'demo-flow.js') }), /link|junction/i);
+    });
+
+    it('refuses a registry folder that is a link or junction to another registry (skipped when a junction cannot be created)', context => {
+      const outside = fixture();
+      const inside = path.join(base(), 'registry');
+      if (!junction(context, outside.registry, inside)) return;
+      unavailableWith(runWorkflowCheck({ artifact: path.join(inside, 'hosts', 'claude', 'workflows', 'demo-flow.js') }), /link|junction/i);
+    });
+
+    it('resolves a link above the checkout instead of refusing it (skipped when a junction cannot be created)', context => {
+      const tree = base();
+      const real = path.join(tree, 'real');
+      fs.mkdirSync(real);
+      const { registry } = fixture();
+      fs.renameSync(registry, path.join(real, 'registry'));
+      const alias = path.join(tree, 'alias');
+      if (!junction(context, real, alias)) return;
+      expect(runWorkflowCheck({ artifact: path.join(alias, 'registry', 'hosts', 'claude', 'workflows', 'demo-flow.js') }).status).toBe('passed');
+    });
+
+    // On a case-insensitive file system (Windows) the lower-case spelling reaches the upper-case entry, and the check must say
+    // so; on a case-sensitive one the alias does not exist. Either way the artifact is refused as unavailable (exit 2).
+    it.each(['registry', 'hosts', 'claude', 'workflows', 'file'] as const)('refuses a lower-case alias of an upper-case %s entry', which => {
+      const spelled: Record<typeof which, string> = { registry: 'au-registry', hosts: 'hosts', claude: 'claude', workflows: 'workflows', file: 'demo-flow.js' };
+      const held = { ...spelled, [which]: which === 'file' ? 'Demo-Flow.js' : `${spelled[which][0].toUpperCase()}${spelled[which].slice(1)}` };
+      const root = path.join(base(), held.registry);
+      const dir = path.join(root, held.hosts, held.claude, held.workflows);
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, held.file), GOOD);
+      const result = runWorkflowCheck({ artifact: path.join(path.dirname(root), spelled.registry, 'hosts', 'claude', 'workflows', 'demo-flow.js') });
+      unavailableWith(result, process.platform === 'win32' ? /spelled|exact|case/i : /./);
+    });
+
+    it('refuses a file replaced between the inspection and the open (the open file is not the inspected one)', () => {
+      const { file } = fixture();
+      const replacement = path.join(path.dirname(file), 'replacement.tmp');
+      fs.writeFileSync(replacement, `${GOOD}// the other file\n`);
+      // The seam: fs.openSync is the one call between the lstat and the descriptor; this swaps a different file into place first.
+      const real = fs.openSync;
+      const spy = vi.spyOn(fs, 'openSync').mockImplementationOnce((...args: Parameters<typeof fs.openSync>) => {
+        fs.renameSync(replacement, file);
+        return real(...args);
+      });
+      try {
+        unavailableWith(runWorkflowCheck({ artifact: file }), /changed|replaced|not the file/i);
+        expect(spy).toHaveBeenCalled();
+      } finally {
+        spy.mockRestore();
+      }
+    });
+
+    describe('the host profile', () => {
+      const realProfile = (): string => fs.readFileSync(path.resolve('registry/hosts/claude/profile.json'), 'utf8');
+      const withProfile = (place: (profile: string) => void): WorkflowCheckResult => {
+        const made = fixture();
+        place(path.join(made.registry, 'hosts', 'claude', 'profile.json'));
+        return runWorkflowCheck({ artifact: made.file });
+      };
+
+      it('reads a valid profile that is within the limit', () => {
+        expect(withProfile(profile => fs.writeFileSync(profile, realProfile())).status).toBe('passed');
+      });
+
+      it('treats a registry with no profile as one that lists no unsupported Skill', () => {
+        expect(withProfile(() => undefined).status).toBe('passed');
+      });
+
+      it('is unavailable (exit 2), not read, when the profile is over 256 KiB, although it is valid JSON', () => {
+        const padded = `${realProfile()}${' '.repeat(256 * 1024)}`;
+        expect(Buffer.byteLength(padded)).toBeGreaterThan(256 * 1024);
+        unavailableWith(withProfile(profile => fs.writeFileSync(profile, padded)), /profile/i);
+      });
+
+      it('is unavailable (exit 2) when the profile is not a regular file', () => {
+        unavailableWith(withProfile(profile => fs.mkdirSync(profile)), /profile/i);
+      });
+
+      it('is unavailable (exit 2) when the profile is a link, even one that points at a good profile', context => {
+        const target = path.join(base(), 'profile.json');
+        fs.writeFileSync(target, realProfile());
+        let made = false;
+        const result = withProfile(profile => {
+          try { fs.symlinkSync(target, profile); made = true; } catch { /* no link permission */ }
+        });
+        if (!made) { context.skip(); return; }
+        unavailableWith(result, /link/i);
+      });
+
+      it('is unavailable (exit 2) when the profile is not a valid profile', () => {
+        unavailableWith(withProfile(profile => fs.writeFileSync(profile, '{ "not": "a profile" }')), /cannot run|profile/i);
+      });
     });
   });
 

@@ -83,12 +83,12 @@ describe('workflow-check agrees with the Claude compound projection', () => {
     expect(codes('lonely-flow.js')).toEqual(['SKILL_PAIR']);
   });
 
-  it('emits nothing for the workflow whose name the native package never lists, and workflow-check fails it with NAME (and META_NAME, since a lower-case meta.name cannot equal the file name)', async () => {
+  it('emits nothing for the workflow whose name the native package never lists, and workflow-check fails it with NAME only (the name check fails before the file is read)', async () => {
     const artifacts = await ClaudeProjector.planCompoundProjection(bundle, 'project', resolved, registry, undefined, true);
     expect(artifacts.map(item => item.relPath)).not.toContain('.claude/workflows/Bad-Name.js');
     // The Skill of that name is installed as a Skill instead.
     expect(artifacts.some(item => item.kind === 'skill' && item.canonical === 'skills/Bad-Name/SKILL.md')).toBe(true);
-    expect(codes('Bad-Name.js')).toEqual(['META_NAME', 'NAME']);
+    expect(codes('Bad-Name.js')).toEqual(['NAME']);
   });
 
   it('emits no workflow at all with the native lane off, which workflow-check does not model', async () => {
