@@ -1,4 +1,4 @@
-import vm from 'node:vm';
+import { parseJsLiteral, type JsLiteralObject } from './js-literal.js';
 
 /**
  * Plan 032 — maintainers' lint for a Claude dynamic workflow script, from the host's own rules (host-library/claude/guide/
@@ -7,7 +7,8 @@ import vm from 'node:vm';
  * Returns the problems found; an empty list means the script is acceptable.
  *
  * ADR 0082: this lint lives in `src/core/` so that `agents workflow-check` applies the one lint the repository already holds
- * its own workflows to. The script is parsed (compiled as an async function body), never run. Pure: no terminal I/O.
+ * its own workflows to. The script is never run: `meta` is parsed as data by the strict literal parser (`js-literal.ts`, nothing
+ * in it is evaluated), and the body is only compiled as an async function body. Pure: no terminal I/O.
  */
 
 const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor as new (...args: string[]) => unknown;
@@ -43,30 +44,37 @@ export function extractMetaLiteral(source: string): { literal: string; end: numb
   return undefined;
 }
 
-interface Meta {
-  name?: unknown;
-  description?: unknown;
-  phases?: Array<{ title?: unknown }>;
+const isObject = (value: unknown): value is JsLiteralObject => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * `meta` read as data (the strict parser in `js-literal.ts`; nothing is evaluated). A text that is not a pure literal gives
+ * one problem and an empty meta. The values are plain data with no prototype: they are only ever checked with `typeof`,
+ * never coerced, so no getter, `toString` or `valueOf` can exist or run.
+ */
+function readMeta(literal: string): { meta: JsLiteralObject; problems: string[] } {
+  const parsed = parseJsLiteral(literal);
+  if (!parsed.ok || !isObject(parsed.value)) {
+    const why = parsed.ok ? 'it is not an object' : parsed.message;
+    return {
+      meta: Object.create(null) as JsLiteralObject,
+      problems: [`\`meta\` must be a pure literal (strings, numbers, booleans, null, arrays and objects with plain keys; no variables, calls, spreads, functions, getters or template interpolation): ${why}.`],
+    };
+  }
+  return { meta: parsed.value, problems: [] };
 }
 
-/** Pure literal: no template interpolation, and evaluation in an empty context must not reach any name. */
-function evaluateMeta(literal: string): { meta: Meta; problems: string[] } {
-  const problems: string[] = [];
-  let meta: Meta = {};
-  if (literal.includes('${')) problems.push('`meta` must be a pure literal: no template interpolation.');
-  // Built-ins such as String exist in any context, so evaluation alone cannot tell a call from a literal: with the strings
-  // and comments removed, a literal has no call, spread or function.
-  const bare = literal
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/[^\n]*/g, '')
-    .replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`/g, '""');
-  if (/[()]|\.\.\.|=>/.test(bare)) problems.push('`meta` must be a pure literal: no calls, spreads or functions.');
-  try {
-    meta = vm.runInNewContext(`(${literal})`, Object.create(null), { timeout: 100 }) as Meta;
-  } catch (error) {
-    problems.push(`\`meta\` must be a pure literal (no variables, calls or spreads): ${(error as Error).message}`);
+/** The titles of well-formed `meta.phases` entries, and whether `phases` was malformed (present but not a list of objects that each have a string title). */
+function readPhases(meta: JsLiteralObject): { titles: string[]; malformed: boolean } {
+  const phases = meta.phases;
+  if (phases === undefined) return { titles: [], malformed: false };
+  if (!Array.isArray(phases)) return { titles: [], malformed: true };
+  const titles: string[] = [];
+  let malformed = false;
+  for (const entry of phases) {
+    if (isObject(entry) && typeof entry.title === 'string') titles.push(entry.title);
+    else malformed = true;
   }
-  return { meta, problems };
+  return { titles, malformed };
 }
 
 /**
@@ -76,9 +84,9 @@ function evaluateMeta(literal: string): { meta: Meta; problems: string[] } {
 export function workflowMetaName(source: string): string | undefined {
   const found = extractMetaLiteral(source.replace(/\r\n/g, '\n'));
   if (!found) return undefined;
-  const evaluated = evaluateMeta(found.literal);
-  if (evaluated.problems.length > 0) return undefined;
-  return typeof evaluated.meta.name === 'string' ? evaluated.meta.name : undefined;
+  const read = readMeta(found.literal);
+  if (read.problems.length > 0) return undefined;
+  return typeof read.meta.name === 'string' ? read.meta.name : undefined;
 }
 
 export function lintWorkflow(source: string): string[] {
@@ -91,11 +99,13 @@ export function lintWorkflow(source: string): string[] {
     return problems;
   }
 
-  const evaluated = evaluateMeta(found.literal);
-  const meta = evaluated.meta;
-  problems.push(...evaluated.problems);
+  const read = readMeta(found.literal);
+  const meta = read.meta;
+  problems.push(...read.problems);
   if (typeof meta.name !== 'string' || !/^[a-z0-9][a-z0-9-]*$/.test(meta.name)) problems.push('`meta.name` must be a lowercase-hyphen string.');
   if (typeof meta.description !== 'string' || meta.description.trim() === '') problems.push('`meta.description` must be a non-empty string.');
+  const phases = readPhases(meta);
+  if (phases.malformed) problems.push('`meta.phases`, when present, must be an array of objects that each have a string `title`.');
 
   const body = text.slice(found.end);
   const code = body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -110,7 +120,7 @@ export function lintWorkflow(source: string): string[] {
   const used = new Set<string>();
   for (const match of code.matchAll(/\bphase\(\s*(['"`])((?:(?!\1).)*)\1\s*\)/g)) used.add(match[2]);
   for (const match of code.matchAll(/\bphase\s*:\s*(['"`])((?:(?!\1).)*)\1/g)) used.add(match[2]);
-  const listed = new Set((meta.phases ?? []).map(entry => String(entry.title)));
+  const listed = new Set(phases.titles);
   for (const title of used) if (!listed.has(title)) problems.push(`Phase "${title}" is used but not listed in meta.phases.`);
   for (const title of listed) if (!used.has(title)) problems.push(`meta.phases lists "${title}" but no phase() call or phase option uses it.`);
 
