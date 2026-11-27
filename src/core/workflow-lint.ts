@@ -196,6 +196,22 @@ export function workflowMetaName(source: string): string | undefined {
   return typeof read.meta.name === 'string' ? read.meta.name : undefined;
 }
 
+/**
+ * Whether the script calls `import(...)`: the word `import` followed by `(` in the token stream (`js-tokens.ts`), template
+ * interpolations included. Comments and line breaks between the two do not hide it, and the words in a string, a comment or a
+ * regular expression are not a call. A static `import` statement is refused separately.
+ */
+function callsImport(body: string): boolean {
+  for (const tokens of tokenizeJs(body)) {
+    for (let at = 0; at + 1 < tokens.length; at++) {
+      const word = tokens[at];
+      const open = tokens[at + 1];
+      if (word.kind === 'ident' && word.value === 'import' && open.kind === 'punct' && open.text === '(') return true;
+    }
+  }
+  return false;
+}
+
 export function lintWorkflow(source: string): string[] {
   const problems: string[] = [];
   const text = source.replace(/\r\n/g, '\n');
@@ -217,7 +233,7 @@ export function lintWorkflow(source: string): string[] {
   const body = text.slice(found.end);
   const code = body.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
-  if (/\bimport\s*\(/.test(code) || /^\s*import\s/m.test(code)) problems.push('A workflow cannot load modules: no `import`.');
+  if (callsImport(body) || /^\s*import\s/m.test(code)) problems.push('A workflow cannot load modules: no `import`.');
   if (/\bDate\.now\s*\(/.test(code)) problems.push('`Date.now()` throws inside a workflow; pass a timestamp through `args`.');
   if (/\bMath\.random\s*\(/.test(code)) problems.push('`Math.random()` throws inside a workflow; vary the prompt or label by index.');
   if (/\bnew\s+Date\s*\(\s*\)/.test(code)) problems.push('`new Date()` without arguments throws inside a workflow; pass a timestamp through `args`.');
