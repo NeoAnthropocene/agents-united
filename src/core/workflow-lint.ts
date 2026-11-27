@@ -70,14 +70,17 @@ function skipSpaces(source: string, at: number): number {
 }
 
 /**
- * Whether the token at `at`, on a line after the closing brace of `meta`, would carry the initializer on: `(`, `[`, `.`, a
+ * Whether the token at `at`, on a line after the closing brace of `meta`, would carry the initializer on: `(`, `[`, `.` (but not
+ * a `.` that starts a number, such as `.5`), a
  * template, a binary or conditional operator, `,`, `=`, or the words `in` and `instanceof`. Anything else (a word, a string, a
  * number, `!`, `++`, `--`) starts a new statement. `+` and `-` count as operators unless doubled.
  */
 function continuesInitializer(source: string, at: number): boolean {
   const char = source[at];
   const next = source[at + 1];
-  if ('([.`,=<>%^*/:?&|'.includes(char)) return true;
+  // A `.` followed by a digit starts a number (`.5`), a new statement; any other `.` is a member access that carries the initializer on.
+  if (char === '.') return !(next !== undefined && next >= '0' && next <= '9');
+  if ('([`,=<>%^*/:?&|'.includes(char)) return true;
   if (char === '+' || char === '-') return next !== char;
   if (char === '!') return next === '=';
   const word = wordAt(source, at);
