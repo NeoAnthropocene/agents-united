@@ -594,8 +594,9 @@ describe('author-workflow bounded draft helper', () => {
       f.job.content = sized(LIMIT + 1, true);
       expectBlocked(f, /128 KiB|limit/i);
       const g = fixture();
-      g.job.content = `${WORKFLOW}// ${'\u00e9'.repeat(LIMIT / 2)}\n`;
-      expect(g.job.content.length).toBeLessThan(LIMIT);
+      const accented = `${WORKFLOW}// ${'\u00e9'.repeat(LIMIT / 2)}\n`;
+      g.job.content = accented;
+      expect(accented.length).toBeLessThan(LIMIT);
       expectBlocked(g, /128 KiB|limit/i);
     });
   });
