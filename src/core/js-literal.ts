@@ -3,7 +3,8 @@
  *
  * Nothing here evaluates anything. The text is parsed character by character into plain data: objects with quoted
  * (`'a'`, `"a"`) or bare identifier keys, arrays, strings (single, double or backtick quotes, the standard escapes, a
- * backtick string without `${`), numbers, `true`, `false` and `null`, with comments and trailing commas allowed.
+ * backtick string without `${`), numbers (decimal without a leading zero, `0x`, `0o` and `0b`; not `01`), `true`, `false` and
+ * `null`, with comments and trailing commas allowed.
  * Everything else is a parse failure: an identifier as a value, a call, a spread, a getter, a setter, a method, a shorthand
  * or computed key, a numeric key, a `__proto__` key, a template interpolation, an array hole, a nesting deeper than any
  * workflow needs. Objects come back with no prototype, so no inherited key can be found and no coercion (`toString`,
@@ -22,7 +23,7 @@ const WHITESPACE = new Set([' ', '\t', '\n', '\r', '\v', '\f', String.fromCharCo
 const LINE_ENDS = new Set(['\n', '\r', String.fromCharCode(0x2028), String.fromCharCode(0x2029)]);
 const IDENT_START = /[\p{ID_Start}$_]/u;
 const IDENT_PART = /[\p{ID_Continue}$‌‍]/u;
-const NUMBER = /(?:0[xX][0-9a-fA-F]+|0[oO][0-7]+|0[bB][01]+|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)/y;
+const NUMBER = /(?:0[xX][0-9a-fA-F]+|0[oO][0-7]+|0[bB][01]+|(?:(?:0|[1-9]\d*)(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)/y;
 const SINGLE_ESCAPES = new Map<string, string>([['n', '\n'], ['r', '\r'], ['t', '\t'], ['b', '\b'], ['f', '\f'], ['v', '\v']]);
 
 class LiteralError extends Error {}
