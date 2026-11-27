@@ -23,7 +23,7 @@ const LEADS = ['business', 'design', 'digital-agency', 'engineering', 'marketing
 const MAY_FOLLOW = new Set(['orchestrator-agent-factory']);
 const HEADING = '## Open items the user can settle';
 const PARAGRAPH =
-  'When your final report or handoff leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end it by offering two choices: settle them now, or stop here. Deliver the report, the handoff and any shutdown requests first, as your other rules say; the offer comes last and starts an optional new round. Name only those items, and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, offer nothing. Ask with `AskUserQuestion` when you have it; otherwise write the two choices as a numbered list and wait for the reply; when you run as a subagent, put the offer in your report for your caller instead. When the user chooses to settle them, run the Skill tool with `skill: "grill-me"` and the open items in `args`, so that it starts from them and does not ask again what the session already settled. Then report what was settled. A change that follows is new work under the same gates as any other (an accepted plan or delegation map where your rules require one, and the same verification): update a file you own yourself, such as your synthesis or handoff; send a change to a specialist\'s file to that specialist, continuing it when it is still available or briefing a new one when it has shut down; and when you hold no specialist for the work, record the settlement in your handoff for the session that will do it. Note the change instead when the user says so.';
+  'When your final report or handoff leaves open items that only the user can settle (a choice, an approval, or a fact only they hold), end it by offering two choices: settle them now, or stop here. Deliver the report, the handoff and any shutdown requests first, as your other rules say; the offer is your closing line after them and starts an optional new round. Name only those items, and leave out open items that belong to someone else, such as a decision for whoever builds the page later; when no open item needs the user, offer nothing. Ask with `AskUserQuestion` when you have it; otherwise write the two choices as a numbered list and wait for the reply; when you run as a subagent, put the offer and the items in your report, so that your caller can ask the user and pass the answer back to you. When the user chooses to settle them, run the Skill tool with `skill: "grill-me"` and the open items in `args`, so that it starts from them and does not ask again what the session already settled. Then report what was settled, in a refreshed handoff when your role ends with one. A change that follows is new work under the same gates as any other (an accepted plan or delegation map where your rules require one, and the same verification): update a file you own yourself, such as your synthesis or handoff; send a change to a specialist\'s file to that specialist, continuing it once when the host can still resume it, or briefing a new one with its report and the settled decisions when it has shut down or the continuation is refused; and when you hold no specialist for the work, record the settlement in your handoff for the session that will do it. Note the change instead when the user says so.';
 
 const cores = await loadSemanticCore('registry');
 
@@ -37,10 +37,13 @@ function split(text: string): { frontmatter: Record<string, unknown>; body: stri
 /** The level-2 headings of a body, outside fenced blocks and HTML comments, with the lines under each. */
 function sections(body: string): Array<{ heading: string; lines: string[] }> {
   const out: Array<{ heading: string; lines: string[] }> = [];
-  let fenced = false;
+  let fence = ''; // the opening fence run (character and length) while inside a fenced block
   let comment = false;
   for (const line of body.split('\n')) {
-    if (/^\s*(```|~~~)/.test(line)) fenced = !fenced;
+    const run = line.match(/^\s{0,3}(`{3,}|~{3,})/)?.[1];
+    if (run && !fence) fence = run;
+    else if (run && run[0] === fence[0] && run.length >= fence.length && line.trim() === run) fence = '';
+    const fenced = fence !== '' || run !== undefined;
     if (!fenced && line.includes('<!--') && !line.includes('-->')) comment = true;
     if (!fenced && !comment && line.startsWith('## ')) out.push({ heading: line, lines: [] });
     else if (out.length) out[out.length - 1].lines.push(line);
@@ -91,7 +94,8 @@ describe('the Claude realization in every lead', () => {
   it.each(LEADS)('%s is granted the tools the section names, and none is denied', role => {
     const { frontmatter } = split(nativeText(role));
     const granted = toolNames(frontmatter.tools);
-    const denied = toolNames(frontmatter.disallowedTools);
+    // A specifier in `disallowedTools` (for example `Skill(grill-me)`) removes the whole tool, so compare base names.
+    const denied = toolNames(frontmatter.disallowedTools).map(name => name.replace(/\(.*$/, '').trim());
     for (const tool of ['AskUserQuestion', 'Skill']) {
       expect(granted, `${role} grants ${tool}`).toContain(tool);
       expect(denied, `${role} denies ${tool}`).not.toContain(tool);
@@ -107,14 +111,21 @@ describe('the Claude realization in every lead', () => {
       let resolved;
       try {
         resolved = await resolver.resolve(name);
-      } catch {
-        continue; // an unavailable empty contributor shell
+      } catch (error) {
+        // Only an unavailable empty contributor shell may be skipped; any other resolver error fails with the bundle's name.
+        if (/unavailable empty contributor shell/.test(String(error))) continue;
+        throw new Error(`${name}: ${String(error)}`);
       }
       if (!resolved.agents.some(agent => LEADS.includes(agent.replace(/\.md$/, '')))) continue;
       led.push(name);
       if (!resolved.skills.includes('grill-me')) missing.push(name);
     }
-    expect(led.length).toBeGreaterThan(20);
+    // Every bundle that declares one of these leads, itself or through its parent, must be among those checked.
+    const manifest = JSON.parse(fs.readFileSync('registry/bundles.json', 'utf8')).bundles as Record<string, { orchestrator?: string; parentBundle?: string }>;
+    const leadOf = (name: string): string => String(manifest[name]?.orchestrator ?? '').replace(/\.md$/, '');
+    const declared = names.filter(name => LEADS.includes(leadOf(name)) || LEADS.includes(leadOf(manifest[name].parentBundle ?? '')));
+    expect(declared.length).toBeGreaterThan(20);
+    expect(led.filter(name => declared.includes(name)).sort()).toEqual([...declared].sort());
     expect(missing).toEqual([]);
   });
 });

@@ -22,13 +22,13 @@ The maintainer expects a lead to ask at the end whether to clarify the open item
    The nine leads are `orchestrator-business`, `orchestrator-design`, `orchestrator-digital-agency`, `orchestrator-engineering`, `orchestrator-marketing`, `orchestrator-research`, `orchestrator-security`, `orchestrator-system-architecture` and `orchestrator-universal`. "Handoff" covers the universal lead, which routes the user to a department and ends with a handoff rather than running a team. Every bundle that resolves one of these leads installs `grill-me`.
 
 2. **The Claude realization.** Each of the nine Claude native lead files gains the section "Open items the user can settle", word for word the same, as the section just before "Boundaries of this host":
-   - **Order.** The report, the required handoff and any shutdown requests go first, as the lead's other rules say. The offer comes last and starts an optional new round. The rules that questions come before the plan, and that the Completion report is delivered at once, are unchanged.
+   - **Order.** The report, the required handoff and any shutdown requests go first, as the lead's other rules say. The offer is the closing line after them and starts an optional new round; when the role ends with a handoff, what was settled goes into a refreshed handoff. The rules that questions come before the plan, and that the Completion report is delivered at once, are unchanged.
    - **Which items.** Only the items that need the user are named. Items that belong to someone else, such as a decision for whoever builds the page later, are left out. When no open item needs the user, nothing is offered.
-   - **How it asks.** With `AskUserQuestion` when the lead has it; otherwise the two choices are a numbered list. A lead running as a subagent puts the offer in its report for its caller.
+   - **How it asks.** With `AskUserQuestion` when the lead has it; otherwise the two choices are a numbered list. A lead running as a subagent puts the offer and the items in its report, so that its caller can ask the user and pass the answer back.
    - **Settling.** On "settle", the lead calls the Skill tool with `skill: "grill-me"` and the open items in `args`. Claude Code appends the arguments to the skill's text (`host-library/claude/guide/skill.md`), so grill-me starts from those items.
    - **What follows.** A change that follows is new work under the same gates as any other: an accepted plan or delegation map where the lead's rules require one, and the same verification.
      - The lead updates a file it owns itself, such as the research lead's synthesis or the universal lead's handoff.
-     - A change to a specialist's file goes to that specialist: continued when still available, or newly briefed when it has shut down.
+     - A change to a specialist's file goes to that specialist: continued once when the host can still resume it, or newly briefed with its report and the settled decisions when it has shut down or the continuation is refused. Requests a specialist is still waiting on are answered before shutdown, as the lead's existing rules say.
      - When the lead holds no specialist for the work, as with the universal lead, it records the settlement in its handoff for the session that will do it.
      - The lead notes the change instead when the user says so.
 
@@ -43,7 +43,7 @@ The maintainer expects a lead to ask at the end whether to clarify the open item
 
 ## Consequences
 
-- On Claude Code, a session that ends with open items for the user now ends with an offer after the report. A session with none ends as before.
+- In the Claude native lane (`agents add --native`), a lead session that ends with open items for the user is meant to end with an offer after the report; a session with none ends as before. A Claude install without the native lane renders the canonical lead file, which this change leaves as it is.
 - `tests/lead-offers-to-settle-open-items.test.ts` pins:
   - the rule in exactly the nine cores (the agent-factory lead may follow), with no host named;
   - the rule's absence from the rendered Contract Floor;
@@ -54,4 +54,4 @@ The maintainer expects a lead to ask at the end whether to clarify the open item
 
   It does not test Antigravity or any live behaviour.
 - `grill-me` itself is unchanged. It is an adopted upstream skill, and its runbook asks "2–4" questions and starts from "the user's initial prompt". Whether it takes the passed items as its goal and keeps a one-item round short is to be seen live.
-- **Not verified live.** The offer and the grill-me round need a person to answer, so a headless run cannot show them. A short live sitting with one lead checks it.
+- **Not verified live.** A headless run with answers given in the prompt could show only the written offer. The structured question, the grill-me round and the follow-up need a person answering, so a short interactive sitting with one lead checks them.
