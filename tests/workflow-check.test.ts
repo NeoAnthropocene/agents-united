@@ -711,6 +711,115 @@ describe('workflow-check', () => {
       const result = check({ content: GOOD.replace('code-reviewer', '../skills/demo-flow/SKILL'), agents: [] });
       expect(codesOf(result)).toEqual(['AGENT_TYPE']);
     });
+
+    // Blocker 3 of Codex round 1: the gate used to be a regex, so it missed quoted keys, took examples in comments and strings
+    // for requests, and ignored a value that is not a string literal. It is now a tokenizer that skips comments, strings, template
+    // text and regular expressions, and a value it cannot resolve statically is a finding of its own.
+    describe('found by a tokenizer, not a regex', () => {
+      const withCall = (call: string): string => `${GOOD.replace(/const found = .*\n/, '')}const kind = 'code-reviewer'\nconst found = await agent('look', ${call})\n`;
+      const requests = (call: string, agents: string[] = ['code-reviewer']): WorkflowCheckResult => check({ content: withCall(call), agents });
+
+      it('reads a quoted key, single or double quotes', () => {
+        for (const key of ["'agentType'", '"agentType"']) {
+          const result = requests(`{ ${key}: 'ghost' }`);
+          expect(codesOf(result), key).toEqual(['AGENT_TYPE']);
+          expect(result.findings[0]?.message, key).toContain('ghost');
+        }
+        expect(requests(`{ 'agentType': 'code-reviewer' }`).status).toBe('passed');
+      });
+
+      it('reads a computed string key and a key inside a template interpolation', () => {
+        expect(codesOf(requests(`{ ['agentType']: kind }`))).toEqual(['AGENT_TYPE_UNRESOLVED']);
+        expect(codesOf(check({ content: `${GOOD}const note = \`run \${await agent('again', { agentType: 'ghost' })}\`\n` }))).toEqual(['AGENT_TYPE']);
+      });
+
+      it('does not take an example in a comment for a request', () => {
+        const result = check({ content: `${GOOD}// ask for { agentType: 'ghost' } here\n/* agentType: 'ghost2', agentType: kind */\n` });
+        expect(result.status).toBe('passed');
+      });
+
+      it('does not take an example in a string, a template text or a regular expression for a request', () => {
+        const result = check({
+          content: `${GOOD}const a = "use agentType: 'ghost'"\nconst b = 'agentType: "ghost2"'\nconst c = \`agentType: 'ghost3' and agentType: kind\`\nconst d = /agentType: 'ghost4'/\n`,
+        });
+        expect(result.status).toBe('passed');
+        expect(result.findings).toEqual([]);
+      });
+
+      it('is not thrown off by a quote inside a regular expression, a string or a comment before the real request', () => {
+        const result = check({ content: `${GOOD.replace(/const found = .*\n/, '')}const q = /'/\nconst s = "it's"\n// it's\nconst found = await agent('look', { agentType: 'ghost' })\n` });
+        expect(codesOf(result)).toEqual(['AGENT_TYPE']);
+      });
+
+      it('does not take a property read or a ternary for a key', () => {
+        expect(check({ content: `${GOOD}const t = args && args.flag ? args.agentType : 'none'\nconst u = cond ? agentType : 'x'\n` }).status).toBe('passed');
+      });
+
+      it('accepts a template string without interpolation as a literal', () => {
+        expect(requests('{ agentType: `code-reviewer` }').status).toBe('passed');
+        expect(codesOf(requests('{ agentType: `ghost` }'))).toEqual(['AGENT_TYPE']);
+      });
+
+      it.each([
+        ['a variable', '{ agentType: kind }'],
+        ['a call', "{ agentType: pick('code-reviewer') }"],
+        ['a template with interpolation', '{ agentType: `code-${kind}` }'],
+        ['a concatenation', "{ agentType: 'code-' + 'reviewer' }"],
+        ['a conditional', "{ agentType: args.deep ? 'code-reviewer' : 'ghost' }"],
+        ['a member read', '{ agentType: args.type }'],
+        ['a method call on a literal', "{ agentType: 'code-reviewer'.trim() }"],
+        ['a shorthand property', '{ agentType }'],
+        ['a quoted key with a variable', '{ "agentType": kind }'],
+      ])('fails %s as AGENT_TYPE_UNRESOLVED, saying the checker cannot resolve it statically and so fails conservatively', (_label, call) => {
+        const result = requests(call);
+        expect(result.status).toBe('failed');
+        expect(workflowCheckExitCode(result)).toBe(1);
+        expect(codesOf(result)).toEqual(['AGENT_TYPE_UNRESOLVED']);
+        expect(checkOf(result, 'agent-types')?.status).toBe('failed');
+        expect(result.findings[0]?.message).toMatch(/cannot resolve/i);
+        expect(result.findings[0]?.message).toMatch(/conservativ/i);
+      });
+
+      it('does not take a directory, a link or a non-.md file for an agent', context => {
+        const made = fixture({ agents: [] });
+        const agents = path.join(made.registry, 'hosts', 'claude', 'agents');
+        fs.mkdirSync(path.join(agents, 'code-reviewer.md'));
+        const asDirectory = runWorkflowCheck({ artifact: made.file });
+        expect(codesOf(asDirectory)).toEqual(['AGENT_TYPE']);
+        expect(asDirectory.findings[0]?.message).toContain('code-reviewer');
+
+        fs.rmSync(path.join(agents, 'code-reviewer.md'), { recursive: true });
+        const target = path.join(made.registry, 'real-agent.md');
+        fs.writeFileSync(target, '---\nname: code-reviewer\ndescription: An agent.\n---\nBody.\n');
+        try {
+          fs.symlinkSync(target, path.join(agents, 'code-reviewer.md'));
+        } catch {
+          context.skip();
+          return;
+        }
+        expect(codesOf(runWorkflowCheck({ artifact: made.file }))).toEqual(['AGENT_TYPE']);
+      });
+
+      it('still accepts a regular .md agent file', () => {
+        expect(check().status).toBe('passed');
+      });
+    });
+  });
+
+  describe('Tier 2: what the checker does not establish', () => {
+    it('states its limits in a notes list on every result: Bundle membership of the agent roles, and installability', () => {
+      for (const result of [check(), check({ content: 'const x = 1\n' }), runWorkflowCheck({})]) {
+        expect(Array.isArray(result.notes)).toBe(true);
+        const notes = result.notes.join('\n');
+        expect(notes).toMatch(/Bundle/);
+        expect(notes).toMatch(/--force/);
+        expect(notes).toMatch(/lexical|static/i);
+      }
+    });
+
+    it('never claims that every agentType was verified', () => {
+      expect(check().notes.join('\n')).not.toMatch(/every agentType/i);
+    });
   });
 
   describe('Tier 2: RENDER', () => {

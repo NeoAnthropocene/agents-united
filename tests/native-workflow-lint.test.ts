@@ -3,7 +3,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { listNativeRoles, listNativeWorkflows, nativeWorkflowSource } from '../src/core/native-package.js';
-import { workflowMetaName } from '../src/core/workflow-lint.js';
+import { agentTypeRequests, workflowMetaName } from '../src/core/workflow-lint.js';
 import { agentTypesUsed, extractMetaLiteral, lintWorkflow } from './helpers/workflow-lint.js';
 
 /**
@@ -60,6 +60,40 @@ describe('lintWorkflow', () => {
 
   it('lists the agent types a script asks for', () => {
     expect(agentTypesUsed(GOOD)).toEqual(['code-reviewer']);
+  });
+});
+
+// ADR 0082: the agent types are found by a tokenizer that skips comments, strings, template text and regular expressions.
+describe('agentTypeRequests', () => {
+  it('lists the string-literal types, sorted once each, and the lines of values it cannot resolve', () => {
+    const source = [
+      "const a = await agent('x', { agentType: 'zeta' })",
+      'const b = await agent(\'y\', { "agentType": kind })',
+      "const c = await agent('z', { 'agentType': `alpha`, phase: 'P' })",
+      "const d = await agent('w', { agentType: 'zeta' })",
+      'const e = await agent(\'v\', { agentType })',
+    ].join('\n');
+    expect(agentTypeRequests(source)).toEqual({ literals: ['alpha', 'zeta'], unresolved: [2, 5] });
+    expect(agentTypesUsed(source)).toEqual(['alpha', 'zeta']);
+  });
+
+  it('skips comments, strings, template text and regular expressions, and reads a template interpolation as code', () => {
+    const source = [
+      "// { agentType: 'one' }",
+      "/* { agentType: 'two' } */",
+      "const s = \"{ agentType: 'three' }\"",
+      "const t = `{ agentType: 'four' } ${await agent('q', { agentType: 'five' })}`",
+      "const r = /{ agentType: 'six' }/",
+      "const u = ok ? o.agentType : 'seven'",
+    ].join('\n');
+    expect(agentTypeRequests(source)).toEqual({ literals: ['five'], unresolved: [] });
+  });
+
+  it('finds nothing in an empty or unterminated script, and never throws', () => {
+    for (const source of ['', "const s = 'unterminated", 'const t = `open ${', '/* open', "{ agentType: ", "{ agentType: 'a"]) {
+      expect(() => agentTypeRequests(source), source).not.toThrow();
+    }
+    expect(agentTypeRequests('')).toEqual({ literals: [], unresolved: [] });
   });
 });
 
