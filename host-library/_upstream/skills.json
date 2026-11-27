@@ -112,6 +112,12 @@
       "recoveredAt": "2026-10-12",
       "skill": "author-skill"
     },
+    "author-workflow": {
+      "declaredLicence": "MIT",
+      "provenance": "in-house",
+      "recoveredAt": "2026-11-27",
+      "skill": "author-workflow"
+    },
     "azure-infrastructure-bicep": {
       "declaredLicence": "MIT",
       "provenance": "in-house",
