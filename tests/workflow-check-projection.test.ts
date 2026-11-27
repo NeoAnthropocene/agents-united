@@ -42,9 +42,13 @@ function toCrlf(text: string): string {
 }
 
 describe('workflow-check agrees with the Claude compound projection', () => {
+  let base: string;
   let registry: string;
   beforeEach(() => {
-    registry = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'au-workflow-projection-')));
+    // The registry folder is named exactly `registry`, as workflow-check requires.
+    base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'au-workflow-projection-')));
+    registry = path.join(base, 'registry');
+    fs.mkdirSync(registry);
     const bundle = { name: 'workflow-proof', description: 'A bundle that only references skills.', skills: SKILLS };
     fs.writeFileSync(path.join(registry, 'bundles.json'), JSON.stringify({ version: 1, bundles: { [bundle.name]: bundle } }, null, 2));
     for (const skill of SKILLS) {
@@ -56,7 +60,7 @@ describe('workflow-check agrees with the Claude compound projection', () => {
     fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'workflows'), { recursive: true });
     for (const [name, text] of Object.entries(WORKFLOWS)) fs.writeFileSync(path.join(registry, 'hosts', 'claude', 'workflows', name), text);
   });
-  afterEach(() => { fs.rmSync(registry, { recursive: true, force: true }); });
+  afterEach(() => { fs.rmSync(base, { recursive: true, force: true }); });
 
   const bundle: BundleDefinition = { name: 'workflow-proof', description: 'A bundle that only references skills.', agents: [], skills: SKILLS };
   const resolved: ResolvedAssets = { targetBundle: 'workflow-proof', agents: [], skills: [...SKILLS, 'lonely-flow'], workflows: [], rules: [] };

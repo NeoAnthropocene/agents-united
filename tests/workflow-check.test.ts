@@ -70,10 +70,11 @@ describe('workflow-check', () => {
   }
   interface Fixture { registry: string; file: string }
 
-  /** A temporary registry laid out like `registry/`, and the absolute path of the workflow under test. */
+  /** A temporary registry laid out like `registry/` (the folder is named `registry`, as the checker requires), and the absolute path of the workflow under test. */
   function fixture(options: Options = {}): Fixture {
-    const registry = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'au-workflow-check-')));
-    folders.push(registry);
+    const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'au-workflow-check-')));
+    folders.push(base);
+    const registry = path.join(base, 'registry');
     const workflows = path.join(registry, 'hosts', 'claude', 'workflows');
     fs.mkdirSync(workflows, { recursive: true });
     fs.mkdirSync(path.join(registry, 'hosts', 'claude', 'agents'), { recursive: true });
@@ -359,13 +360,42 @@ describe('workflow-check', () => {
       expect(result.findings[0]?.message).toContain('hosts/claude/workflows');
     });
 
-    it('takes the registry as the folder four levels up, whatever its name', () => {
+    it('takes the registry as the folder four levels up, and it must be named exactly `registry`', () => {
       const { registry } = fixture();
-      const renamed = path.join(path.dirname(registry), `${path.basename(registry)}-moved`);
-      fs.renameSync(registry, renamed);
-      folders.push(renamed);
-      const result = runWorkflowCheck({ artifact: path.join(renamed, 'hosts', 'claude', 'workflows', 'demo-flow.js') });
+      const result = runWorkflowCheck({ artifact: path.join(registry, 'hosts', 'claude', 'workflows', 'demo-flow.js') });
+      expect(path.basename(registry)).toBe('registry');
       expect(result.status).toBe('passed');
+    });
+
+    it.each(['au-registry', 'registry-moved', 'Registry', 'REGISTRY', 'registry.bak', 'reg'])('refuses a registry folder named %s as PLACEMENT, and reads no file', name => {
+      const { registry } = fixture();
+      const renamed = path.join(path.dirname(registry), name);
+      fs.renameSync(registry, renamed);
+      const file = path.join(renamed, 'hosts', 'claude', 'workflows', 'demo-flow.js');
+      // Whatever the file system holds, the spelling of the path alone is refused: the check is pure, so a case alias is refused too.
+      const result = runWorkflowCheck({ artifact: file });
+      expect(result.status).toBe('failed');
+      expect(workflowCheckExitCode(result)).toBe(1);
+      expect(codesOf(result)).toEqual(['PLACEMENT']);
+      expect(result.findings[0]?.message).toContain('registry');
+      expect(checkOf(result, 'placement')?.status).toBe('failed');
+      expect(result.bytes).toBeNull();
+      expect(result.unresolvedAgentTypes).toEqual([]);
+      for (const id of ['size', 'encoding', 'lint', 'meta-name', ...LATER_THAN_PLACEMENT]) expect(checkOf(result, id)?.status, id).toBe('not-run');
+      expect(checkOf(result, 'name')?.status).toBe('passed');
+    });
+
+    it('refuses a registry folder with another name without touching the file system', () => {
+      const watched = ['lstatSync', 'statSync', 'fstatSync', 'openSync', 'readSync', 'readdirSync', 'realpathSync', 'existsSync', 'readFileSync'] as const;
+      const spies = watched.map(name => vi.spyOn(fs, name));
+      try {
+        const result = runWorkflowCheck({ artifact: path.join(os.tmpdir(), 'au-no-such-folder', 'au-registry', 'hosts', 'claude', 'workflows', 'demo-flow.js') });
+        expect(codesOf(result)).toEqual(['PLACEMENT']);
+        expect(workflowCheckExitCode(result)).toBe(1);
+        for (const [index, spy] of spies.entries()) expect(spy, `fs.${watched[index]}`).not.toHaveBeenCalled();
+      } finally {
+        for (const spy of spies) spy.mockRestore();
+      }
     });
   });
 
@@ -399,7 +429,7 @@ describe('workflow-check', () => {
     };
 
     it('runs the pure name and placement checks before any file-system access', () => {
-      const nothing = path.join(os.tmpdir(), 'au-workflow-no-such-folder');
+      const nothing = path.join(os.tmpdir(), 'au-workflow-no-such-folder', 'registry');
       const watched = ['lstatSync', 'statSync', 'fstatSync', 'openSync', 'readSync', 'readdirSync', 'realpathSync', 'existsSync', 'readFileSync'] as const;
       const spies = watched.map(name => vi.spyOn(fs, name));
       try {
@@ -459,7 +489,7 @@ describe('workflow-check', () => {
     // On a case-insensitive file system (Windows) the lower-case spelling reaches the upper-case entry, and the check must say
     // so; on a case-sensitive one the alias does not exist. Either way the artifact is refused as unavailable (exit 2).
     it.each(['registry', 'hosts', 'claude', 'workflows', 'file'] as const)('refuses a lower-case alias of an upper-case %s entry', which => {
-      const spelled: Record<typeof which, string> = { registry: 'au-registry', hosts: 'hosts', claude: 'claude', workflows: 'workflows', file: 'demo-flow.js' };
+      const spelled: Record<typeof which, string> = { registry: 'registry', hosts: 'hosts', claude: 'claude', workflows: 'workflows', file: 'demo-flow.js' };
       const held = { ...spelled, [which]: which === 'file' ? 'Demo-Flow.js' : `${spelled[which][0].toUpperCase()}${spelled[which].slice(1)}` };
       const root = path.join(base(), held.registry);
       const dir = path.join(root, held.hosts, held.claude, held.workflows);
