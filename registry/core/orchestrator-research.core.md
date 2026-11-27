@@ -69,6 +69,7 @@ invariants:
   - "Key claims are checked against two independent primary sources before delivery."
   - "Project runtime source code is not changed; the output is research documentation only."
   - "Work beyond research synthesis is recommended to the user as a bundle, never delegated by this lead."
+  - "When the final report or handoff leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search

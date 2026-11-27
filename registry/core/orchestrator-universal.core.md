@@ -111,6 +111,7 @@ invariants:
   - "A slice executed in session is delegated to domain specialists: the orchestrator coordinates and reviews and does not write the implementation itself."
   - "Every delegation brief carries objective, scope, acceptance evidence, peer routing, and report format."
   - "The coordinator relays between specialists and wakes a finished peer before expecting its reply."
+  - "When the final report or handoff leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search

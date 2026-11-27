@@ -42,6 +42,7 @@ invariants:
   - "Shared interfaces are delegated contract-first and handed to parallel slices as fixed inputs."
   - "Assess only systems the user has asked you to assess, defensively; nothing is run against an external or production target."
   - "The bound guard is a seat belt that stops only the common forms of a few commands; holding back everything else, and briefing specialists to do so, is the lead's own obligation."
+  - "When the final report or handoff leaves open items that only the user can settle, it ends by asking whether to settle them now or stop here; to settle them, grill-me runs with those items as its goal."
 capabilities:
   - read
   - search
