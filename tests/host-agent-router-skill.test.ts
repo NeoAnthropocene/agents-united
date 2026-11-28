@@ -232,12 +232,12 @@ describe('the default config', () => {
     }
   });
 
-  // The ordered lists themselves (the Neon and Argon Orchestrators, the Codex fallbacks) are pinned in host-agent-router-model-pool.test.ts.
+  // The ordered lists themselves (the Carbon and Neon Orchestrators, the Codex fallbacks) are pinned in host-agent-router-model-pool.test.ts.
   it('carries the maintainer-specified model table: the first model of each tier', () => {
     const m = (h: string): Array<string | undefined> => ['simple', 'medium', 'high'].map(t => { const e = firstOf(CFG.hosts[h]!.tiers[t]!); return e.model ?? e.displayName; });
     expect(CFG.priority).toEqual(['cline', 'antigravity', 'codex', 'claude']);
     expect(m('cline')).toEqual(['cline-pass/deepseek-v4.1-flash-1017', 'cline-pass/glm-5.3', 'cline-pass/kimi-k3.1-pro']);
-    expect(m('antigravity')).toEqual(['gemini-4-hydrogen-low', 'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-g1-pro']);
+    expect(m('antigravity')).toEqual(['gemini-4-hydrogen-low', 'gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator']);
     expect(m('codex')).toEqual(['gpt-6.1-terra', 'gpt-6.2-sol', 'gpt-6.2-astra']);
     expect(m('claude')).toEqual(['claude-haiku-5-5', 'claude-sonnet-5-5', 'claude-opus-5-5']);
   });
@@ -286,16 +286,27 @@ describe('command building: the host CLI flags that carry model, effort and acce
     expect(edit).not.toContain('--dangerously-bypass-approvals-and-sandbox');
   });
 
-  it('Antigravity: the model slug carries the effort, access maps to --mode, and no permission bypass is passed', async () => {
+  it('Antigravity: the model slug carries the effort, Orchestrators carry --settings, access maps to --mode, and no permission bypass is passed', async () => {
     const simpleArgs = (await spec('antigravity', 'simple')).args;
     expect(after(simpleArgs, '--model')).toBe('gemini-4-hydrogen-low');
     expect(simpleArgs).not.toContain('--effort');
+    expect(simpleArgs).not.toContain('--settings');
     const a = (await spec('antigravity')).args;
-    expect(after(a, '--model')).toBe('gemini-pro-orchestrator-g1-pro');
+    expect(after(a, '--model')).toBe('gemini-pro-orchestrator-neon');
     expect(a).not.toContain('--effort');
+    expect(a).not.toContain('--sandbox');
+    expect(JSON.parse(after(a, '--settings')!)).toEqual({
+      orchestrator: { planner: 'gemini-4-neon-high', executor: 'gemini-4-hydrogen-medium' },
+    });
     expect(after(a, '--mode')).toBe('plan');
     expect(a).not.toContain('--dangerously-skip-permissions');
-    expect(after((await spec('antigravity', 'medium', 'edit')).args, '--mode')).toBe('accept-edits');
+    const editArgs = (await spec('antigravity', 'medium', 'edit')).args;
+    expect(after(editArgs, '--mode')).toBe('accept-edits');
+    expect(editArgs).toContain('--sandbox');
+    expect(JSON.parse(after(editArgs, '--settings')!)).toMatchObject({
+      permissions: { allow: expect.any(Array) },
+      orchestrator: { planner: 'gemini-4-neon-high', executor: 'gemini-4-hydrogen-medium' },
+    });
   });
 
   it('Cline: provider, model, thinking, plan mode for read-only, and the prompt after -- so it is never read as an option', async () => {
@@ -1026,7 +1037,9 @@ describe("the worker contract, enforced with each host's own controls", () => {
     expect(prompt).toContain('npm run build');
     const ro = await argsOf('antigravity', 'read-only');
     expect(ro).not.toContain('--sandbox');
-    expect(ro).not.toContain('--settings');
+    expect(JSON.parse(ro[ro.indexOf('--settings') + 1]!)).not.toHaveProperty('permissions');
+    const roSimple = await buildSpec(CFG, 'antigravity', firstOf(CFG.hosts.antigravity.tiers.simple), 'TASK', 'read-only', 'C:/w', 'simple', {});
+    expect(roSimple.args).not.toContain('--settings');
   });
 
   it('Antigravity read-only: the prompt says no shell command is available and that any attempt ends the run', async () => {
@@ -1448,10 +1461,11 @@ describe('starting a host that npm installed on Windows', () => {
 // prompt, the `machine` command. Nothing here starts a model session.
 // ----------------------------------------------------------------------------------------------------------------------------
 
-interface TierE extends TierCfg { efforts?: Record<string, string | { label?: string; model?: string; effort?: string }> }
+interface OrchestratorCfg { planner?: string; executor?: string }
+interface TierE extends TierCfg { orchestrator?: OrchestratorCfg; efforts?: Record<string, string | { label?: string; model?: string; effort?: string; orchestrator?: OrchestratorCfg }> }
 interface CfgE extends Omit<Cfg, 'hosts'> { hosts: Record<string, { provider?: string; effortInModel?: boolean; quotaGroups?: Record<string, string>; tiers: Record<string, TierE> }> }
-interface Resolved { model: string; effort: string; label: string; note: string | null }
-interface CandE extends Candidate { effort_note?: string | null }
+interface Resolved { model: string; effort: string; label: string; orchestrator?: OrchestratorCfg; note: string | null }
+interface CandE extends Candidate { effort_note?: string | null; orchestrator?: OrchestratorCfg }
 interface PlanE { tier: string; selected: CandE | null; candidates: CandE[]; skipped: Array<{ host: string; side: string; reason: string }> }
 interface SkillText { name: string; chars: number; text: string }
 type Lib2 = {
@@ -1478,36 +1492,44 @@ type Lib2 = {
 };
 const lib2 = async (): Promise<Lib2> => (await import(pathToFileURL(SCRIPT).href)) as unknown as Lib2;
 const CFGE = CFG as unknown as CfgE;
-const AGY_LISTED = ['gemini-4-neon-low', 'gemini-4-neon-medium', 'gemini-4-neon-high', 'gemini-4-neon-xhigh',
+const AGY_LISTED = [
+  'gemini-4-neon-low', 'gemini-4-neon-medium', 'gemini-4-neon-high', 'gemini-4-neon-xhigh',
+  'gemini-4-carbon-low', 'gemini-4-carbon-medium', 'gemini-4-carbon-high',
   'gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh',
-  'gemini-4-argon-low', 'gemini-4-argon-medium', 'gemini-4-argon-high',
-  'gemini-3.8-flash-low', 'gemini-3.8-flash-medium', 'gemini-3.8-flash-high',
   'claude-opus-5-5-low', 'claude-opus-5-5-medium', 'claude-opus-5-5-high',
-  'gemini-pro-orchestrator-neon', 'gemini-pro-orchestrator-g1-pro']; // `agy models` on 2026-11-22
+  'gemini-pro-orchestrator', 'gemini-pro-orchestrator-neon',
+]; // `agy models` on 2026-11-28
 
-describe('Antigravity tiers (from `agy models` on 2026-11-22)', () => {
-  it('uses two-stage Hydrogen Low / Flash Medium for simple, Orchestrator (Argon) first for medium and high, and Neon High last in high', () => {
+describe('Antigravity tiers (from `agy models` on 2026-11-28)', () => {
+  it('uses Hydrogen Low for simple, Orchestrator (Neon) first for medium, and Orchestrator (Carbon) first for high with Hydrogen XHigh at the tail', () => {
     const t = CFGE.hosts.antigravity!.tiers;
     expect([firstOf(t.simple!).model, firstOf(t.simple!).effort]).toEqual(['gemini-4-hydrogen-low', 'low']);
-    expect(t.simple!.models![1]).toMatchObject({ model: 'gemini-3.8-flash-medium', effort: 'medium' });
-    expect([firstOf(t.medium!).model, firstOf(t.medium!).fixedEffort, firstOf(t.medium!).label]).toEqual(['gemini-pro-orchestrator-g1-pro', true, 'Orchestrator (Argon)']);
-    expect(t.medium!.models!.at(-1)).toMatchObject({ model: 'gemini-3.8-flash-high', effort: 'high' });
-    expect([firstOf(t.high!).model, firstOf(t.high!).fixedEffort, firstOf(t.high!).label]).toEqual(['gemini-pro-orchestrator-g1-pro', true, 'Orchestrator (Argon)']);
-    expect(t.high!.models!.at(-1)).toMatchObject({ model: 'gemini-4-neon-high', effort: 'high' });
+    expect(t.simple!.models).toHaveLength(1);
+    expect([firstOf(t.medium!).model, firstOf(t.medium!).effort, firstOf(t.medium!).label]).toEqual(['gemini-pro-orchestrator-neon', 'medium', 'Orchestrator (Neon)']);
+    expect(firstOf(t.medium!).orchestrator).toEqual({ planner: 'gemini-4-neon-high', executor: 'gemini-4-hydrogen-medium' });
+    expect(t.medium!.models!.at(-1)).toMatchObject({ model: 'gemini-4-hydrogen-medium', effort: 'medium' });
+    expect([firstOf(t.high!).model, firstOf(t.high!).effort, firstOf(t.high!).label]).toEqual(['gemini-pro-orchestrator', 'high', 'Orchestrator (Carbon)']);
+    expect(firstOf(t.high!).orchestrator).toEqual({ planner: 'gemini-4-carbon-high', executor: 'gemini-4-hydrogen-high' });
+    expect(t.high!.models!.at(-1)).toMatchObject({ model: 'gemini-4-hydrogen-xhigh', effort: 'extra' });
   });
 
-  it('lets Hydrogen in simple/medium go up to high and extra by job complexity', () => {
+  it('lets Hydrogen in simple/medium and Orchestrators tune by job complexity', () => {
     const simpleEfforts = firstOf(CFGE.hosts.antigravity!.tiers.simple!).efforts!;
-    expect(simpleEfforts.low).toMatchObject({ model: 'gemini-3.8-flash-medium' });
+    expect(simpleEfforts.low).toBeUndefined();
     expect(simpleEfforts.medium).toMatchObject({ model: 'gemini-4-hydrogen-medium' });
     expect(simpleEfforts.high).toMatchObject({ model: 'gemini-4-hydrogen-high' });
     expect(simpleEfforts.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' });
     const hydMed = (CFGE.hosts.antigravity!.tiers.medium!.models! as unknown as TierE[]).find(m => m.model === 'gemini-4-hydrogen-medium')!;
     expect(hydMed.efforts!.high).toMatchObject({ model: 'gemini-4-hydrogen-high' });
     expect(hydMed.efforts!.extra).toMatchObject({ model: 'gemini-4-hydrogen-xhigh' });
+    const medOrch = firstOf(CFGE.hosts.antigravity!.tiers.medium!);
+    expect(medOrch.efforts!.extra).toMatchObject({
+      model: 'gemini-pro-orchestrator-neon',
+      orchestrator: { planner: 'gemini-4-neon-xhigh', executor: 'gemini-4-hydrogen-high' },
+    });
   });
 
-  it('names only models that `agy models` lists, in the tiers and in every effort', () => {
+  it('names only non-retiring models that `agy models` lists, in the tiers and in every effort', () => {
     for (const [tier, tt] of Object.entries(CFGE.hosts.antigravity!.tiers)) {
       for (const t of (tt.models ?? [tt]) as TierE[]) {
         for (const m of [t.model, ...Object.values(t.efforts ?? {}).map(e => (typeof e === 'string' ? '' : e.model ?? ''))].filter(Boolean)) expect(AGY_LISTED, `${tier}: ${m}`).toContain(m);
@@ -1521,6 +1543,7 @@ describe('Antigravity tiers (from `agy models` on 2026-11-22)', () => {
     const { agyGroupFor } = await lib2();
     const groups = CFGE.hosts.antigravity!.quotaGroups!;
     expect(agyGroupFor('gemini-4-hydrogen-medium', groups)).toBe('Gemini Models');
+    expect(agyGroupFor('gemini-pro-orchestrator', groups)).toBe('Gemini Models');
     expect(agyGroupFor('gemini-4-argon-medium', groups)).toBe('Gemini 4 Argon');
   });
 
@@ -1533,9 +1556,9 @@ describe('Antigravity tiers (from `agy models` on 2026-11-22)', () => {
     const { configuredModels } = await lib2();
     const m = configuredModels(CFGE, 'antigravity');
     expect(m).toEqual(expect.arrayContaining([
-      'gemini-3.8-flash-medium', 'gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high',
-      'gemini-4-hydrogen-xhigh', 'gemini-pro-orchestrator-g1-pro', 'gemini-pro-orchestrator-neon',
-      'claude-opus-5-5-high', 'gemini-4-argon-high', 'gemini-4-neon-high', 'gemini-4-neon-xhigh', 'Orchestrator (Carbon)',
+      'gemini-4-hydrogen-low', 'gemini-4-hydrogen-medium', 'gemini-4-hydrogen-high', 'gemini-4-hydrogen-xhigh',
+      'gemini-pro-orchestrator', 'gemini-pro-orchestrator-neon',
+      'claude-opus-5-5-high', 'gemini-4-carbon-medium', 'gemini-4-neon-high', 'gemini-4-neon-xhigh',
     ]));
     expect(new Set(m).size).toBe(m.length);
     expect(configuredModels(CFGE, 'codex')).toEqual(['gpt-6.1-terra', 'gpt-6-luna', 'gpt-6.2-sol', 'gpt-6.1-sol', 'gpt-6.2-astra', 'gpt-6-astra']);
@@ -1548,7 +1571,14 @@ describe('an effort choice inside a tier', () => {
   it('keeps the tier as it is when no effort is asked for', async () => {
     const { resolveEffort } = await lib2();
     expect(resolveEffort(CFGE, 'antigravity', 'simple', undefined)).toEqual({ model: 'gemini-4-hydrogen-low', effort: 'low', label: 'Gemini 4 Hydrogen (Low)', note: null });
-    expect(resolveEffort(CFGE, 'antigravity', 'medium', undefined)).toEqual({ model: 'gemini-pro-orchestrator-g1-pro', effort: 'fixed', label: 'Orchestrator (Argon)', quotaGroups: ['Gemini Models', 'Gemini 4 Argon'], fixed: true, note: null });
+    expect(resolveEffort(CFGE, 'antigravity', 'medium', undefined)).toEqual({
+      model: 'gemini-pro-orchestrator-neon',
+      effort: 'medium',
+      label: 'Orchestrator (Neon)',
+      quotaGroups: ['Gemini Models'],
+      orchestrator: { planner: 'gemini-4-neon-high', executor: 'gemini-4-hydrogen-medium' },
+      note: null,
+    });
   });
 
   it('uses the model and label of an entry, and names the effort as asked', async () => {
@@ -2095,8 +2125,11 @@ describe('the Antigravity allow rules: a full-path rule for a bare program that 
     const linux = edit('antigravity', { platform: 'linux', home: NOHOME, resolve: exe });
     expect(linux.args[linux.args.indexOf('--settings') + 1]).not.toContain('nodejs');
     expect(linux.args[linux.args.indexOf('-p') + 1]).not.toMatch(/not recognised/);
-    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', 'C:/w', 'medium', { platform: 'win32', home: NOHOME, resolve: exe });
+    const tSimple = firstOf(CFG.hosts.antigravity.tiers.simple);
+    const ro = buildSpec(CFG, 'antigravity', tSimple, 'TASK', 'read-only', 'C:/w', 'simple', { platform: 'win32', home: NOHOME, resolve: exe });
     expect(ro.args).not.toContain('--settings');
+    const roMed = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', 'C:/w', 'medium', { platform: 'win32', home: NOHOME, resolve: exe });
+    expect(JSON.parse(roMed.args[roMed.args.indexOf('--settings') + 1]!)).not.toHaveProperty('permissions');
     expect(edit('claude', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toMatch(/nodejs|\.exe/);
     expect(edit('cline', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toContain(NODE);
     expect(edit('codex', { platform: 'win32', home: NOHOME, resolve: exe }).args.join(' ')).not.toContain(NODE);
@@ -2184,9 +2217,12 @@ describe('the Antigravity read-only mount of a program folder inside the user pr
     expect(allow).toContain('read_file(/home/u/.nvm/v24/bin)');
     expect(edit.notes?.join(' ')).toMatch(/mounted read-only/);
     expect(edit.notes?.join(' ')).not.toContain('/home/u');
-    const ro = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', '/work/repo', 'medium', extra);
+    const ro = buildSpec(CFG, 'antigravity', firstOf(CFG.hosts.antigravity.tiers.simple), 'TASK', 'read-only', '/work/repo', 'simple', extra);
     expect(ro.args).not.toContain('--settings');
     expect(ro.notes).toBeUndefined();
+    const roMed = buildSpec(CFG, 'antigravity', t, 'TASK', 'read-only', '/work/repo', 'medium', extra);
+    expect(JSON.parse(roMed.args[roMed.args.indexOf('--settings') + 1]!)).not.toHaveProperty('permissions');
+    expect(roMed.notes).toBeUndefined();
   });
 });
 
