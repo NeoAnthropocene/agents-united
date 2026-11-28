@@ -248,15 +248,16 @@ export function parseAgyModels(stdout) {
   return rows.length ? rows : null;
 }
 
-/** The Antigravity subscription tier implied by `agy models` rows: 'ultra' | 'pro' | 'enterprise' | 'free' | null. */
+/** The Antigravity subscription tier implied by `agy models` rows: 'ultra' (Carbon-capable paid Pro/Ultra pool) | 'pro' | 'enterprise' | 'free' | null. */
 export function agyPlanOf(rows) {
   if (!Array.isArray(rows) || !rows.length) return null;
   const slugs = rows.map(r => r.slug);
   const names = rows.map(r => String(r.name ?? '').trim().toLowerCase());
-  if (slugs.includes('gemini-pro-orchestrator') || slugs.some(s => /^gemini-3\.(?:7|6|1)-/.test(s))) return 'enterprise';
+  if (slugs.some(s => /^gemini-3\.(?:7|6|1)-/.test(s))) return 'enterprise';
+  if (slugs.includes('gemini-pro-orchestrator') && names.includes('orchestrator') && !names.includes('orchestrator (carbon)') && !slugs.some(s => s.startsWith('gemini-pro-orchestrator-'))) return 'enterprise';
   if (slugs.some(s => s.startsWith('gemini-4-carbon')) || names.includes('orchestrator (carbon)')) return 'ultra';
-  if (slugs.some(s => s.startsWith('gemini-4-') || s.startsWith('gemini-pro-orchestrator-'))) return 'pro';
-  if (slugs.some(s => s.startsWith('gemini-3.8-flash'))) return 'free';
+  if (slugs.some(s => s.startsWith('gemini-4-neon') || s.startsWith('gemini-4-argon') || s.startsWith('gemini-pro-orchestrator-'))) return 'pro';
+  if (slugs.some(s => s.startsWith('gemini-4-hydrogen') || s.startsWith('gemini-3.8-flash'))) return 'free';
   return null;
 }
 
@@ -425,14 +426,14 @@ function validateTier(where, t, effortInModel) {
   if (!isPlain(t)) return [`${where}: needs a model and an effort`];
   if (!('models' in t)) {
     const errs = [];
-    for (const key of ['fixedEffort', 'displayName', 'quotaGroups']) {
+    for (const key of ['fixedEffort', 'displayName', 'quotaGroups', 'orchestrator']) {
       if (key in t) errs.push(`${where}: ${key} beside model is not read; write { "models": [ { "model": "...", "${key}": ... } ] } instead`);
     }
     if (t.badKeys) errs.push(...badKeyProblems(where, t.badKeys));
     if (!t.model || !WORD.test(t.effort ?? '')) errs.push(`${where}: needs a model and an effort`);
     else if (t.effort === 'ultra') errs.push(`${where}: effort: ${ULTRA_MESSAGE}`);
     else if (t.effort === 'fixed' && !effortInModel) errs.push(`${where}: effort: ${FIXED_MESSAGE}`);
-    if (!effortInModel && shippedFixedModels().has(t.model)) errs.push(`${where}: ${orchestratorMessage(t.model)}`);
+    if (!effortInModel && shippedOrchestratorModels().has(t.model)) errs.push(`${where}: ${orchestratorMessage(t.model)}`);
     if (t.efforts !== undefined) errs.push(...validateEfforts(where, t.efforts, effortInModel));
     return errs;
   }
@@ -457,12 +458,13 @@ function validateTier(where, t, effortInModel) {
     if (e.model !== undefined && !nonEmpty(e.model) && nonEmpty(e.displayName)) errs.push(`${where}: entry ${n}: model must be a non-empty string`);
     if (e.fixedEffort !== undefined && typeof e.fixedEffort !== 'boolean') errs.push(`${where}: entry ${n}: fixedEffort must be true or false`);
     else if (e.fixedEffort === true && !effortInModel) errs.push(`${where}: entry ${n}: fixedEffort is only for a host whose effort is part of the model name (${where.split('/')[0]} takes its effort as a command-line flag); give the entry an effort instead`);
+    if (e.orchestrator !== undefined) errs.push(...validateOrchestrator(`${where}: entry ${n}`, e.orchestrator, effortInModel));
     const eff = e.effort === undefined ? (e.fixedEffort === true ? 'fixed' : (t.effort ?? 'medium')) : e.effort;
     if (!(typeof eff === 'string' && WORD.test(eff))) errs.push(`${where}: entry ${n} needs an effort (lowercase letters)`);
     else if (eff === 'ultra') errs.push(`${where}: entry ${n}: ${ULTRA_MESSAGE}`);
     else if (eff === 'fixed' && e.fixedEffort !== true && !effortInModel) errs.push(`${where}: entry ${n}: ${FIXED_MESSAGE}`);
     if (e.configEffort !== undefined && !(typeof e.configEffort === 'string' && WORD.test(e.configEffort))) errs.push(`${where}: entry ${n} needs an effort (lowercase letters)`);
-    if (!effortInModel && nonEmpty(e.model) && shippedFixedModels().has(e.model)) errs.push(`${where}: entry ${n}: ${orchestratorMessage(e.model)}`);
+    if (!effortInModel && nonEmpty(e.model) && shippedOrchestratorModels().has(e.model)) errs.push(`${where}: entry ${n}: ${orchestratorMessage(e.model)}`);
     if (e.quotaGroups !== undefined && !(Array.isArray(e.quotaGroups) && e.quotaGroups.length > 0 && e.quotaGroups.every(nonEmpty))) errs.push(`${where}: entry ${n}: quotaGroups must be a list of group names`);
     if (e.efforts !== undefined) errs.push(...validateEfforts(`${where}[${n}]`, e.efforts, effortInModel));
   });
@@ -543,9 +545,22 @@ export function configWslNodeProblem(value) {
   return null;
 }
 
+function validateOrchestrator(where, orch, effortInModel) {
+  if (!effortInModel) return [`${where}: orchestrator is only for a host whose effort is part of the model name (Antigravity)`];
+  if (!isPlain(orch)) return [`${where}: orchestrator must be an object with planner and/or executor`];
+  const errs = [];
+  const keys = Object.keys(orch);
+  for (const k of keys) {
+    if (k !== 'planner' && k !== 'executor') errs.push(`${where}: orchestrator.${k} is not supported (expected planner and/or executor)`);
+    else if (!nonEmpty(orch[k])) errs.push(`${where}: orchestrator.${k} must be a non-empty string`);
+  }
+  if (!keys.includes('planner') && !keys.includes('executor')) errs.push(`${where}: orchestrator must name planner and/or executor`);
+  return errs;
+}
+
 /**
  * Problems with a tier's optional `efforts` map. An entry is either a plain effort value (for a host whose effort is a flag; the tier's
- * model stays) or `{ label?, model?, effort? }` (for a host whose effort is part of the model name, `model` is required).
+ * model stays) or `{ label?, model?, effort?, orchestrator? }` (for a host whose effort is part of the model name, `model` or `orchestrator` is required).
  */
 export function validateEfforts(where, efforts, effortInModel = false) {
   if (!isPlain(efforts)) return [`${where}: efforts must be an object of effort names`];
@@ -556,18 +571,19 @@ export function validateEfforts(where, efforts, effortInModel = false) {
     if (!word(name)) errs.push(`${at}: an effort name is lowercase letters only`);
     if (name === 'ultra' || e === 'ultra' || (isPlain(e) && e.effort === 'ultra')) errs.push(`${at}: ${ULTRA_MESSAGE}`);
     if (!effortInModel && (e === 'fixed' || (isPlain(e) && e.effort === 'fixed'))) errs.push(`${at}: ${FIXED_MESSAGE}`);
-    if (!effortInModel && isPlain(e) && typeof e.model === 'string' && shippedFixedModels().has(e.model)) errs.push(`${at}: ${orchestratorMessage(e.model)}`);
+    if (!effortInModel && isPlain(e) && typeof e.model === 'string' && shippedOrchestratorModels().has(e.model)) errs.push(`${at}: ${orchestratorMessage(e.model)}`);
     if (typeof e === 'string') {
       if (!word(e)) errs.push(`${at}: needs an effort value (lowercase letters)`);
       else if (effortInModel) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
     } else if (isPlain(e)) {
-      const hasDisplay = effortInModel && nonEmpty(e.displayName);
+      const hasDisplay = effortInModel && (nonEmpty(e.displayName) || e.orchestrator !== undefined);
       if (e.model === undefined && e.effort === undefined && !hasDisplay) errs.push(`${at}: needs a model or an effort`);
       if (e.model !== undefined && (typeof e.model !== 'string' || !e.model.trim())) errs.push(`${at}: model must be a non-empty string`);
       else if (effortInModel && e.model === undefined && !hasDisplay) errs.push(`${at}: this host carries the effort in the model name, so the entry needs a model`);
       if (e.displayName !== undefined && !effortInModel) errs.push(`${at}: displayName is only for a host whose effort is part of the model name`);
       if (e.fixedEffort !== undefined && typeof e.fixedEffort !== 'boolean') errs.push(`${at}: fixedEffort must be true or false`);
       else if (e.fixedEffort === true && !effortInModel) errs.push(`${at}: ${FIXED_MESSAGE}`);
+      if (e.orchestrator !== undefined) errs.push(...validateOrchestrator(at, e.orchestrator, effortInModel));
       if (e.quotaGroups !== undefined && !(Array.isArray(e.quotaGroups) && e.quotaGroups.length > 0 && e.quotaGroups.every(nonEmpty))) errs.push(`${at}: quotaGroups must be a list of group names`);
       if (e.effort !== undefined && !word(e.effort)) errs.push(`${at}: effort must be lowercase letters`);
       if (e.label !== undefined && typeof e.label !== 'string') errs.push(`${at}: label must be a string`);
@@ -588,9 +604,10 @@ export function resolveEntry(entry, host, tier, effort, selector) {
     model: entry.model, effort: entry.effort, label: entry.label, note: null,
     ...(entry.displayName ? { displayName: entry.displayName } : {}),
     ...(entry.quotaGroups ? { quotaGroups: entry.quotaGroups } : {}),
+    ...(isPlain(entry.orchestrator) ? { orchestrator: structuredClone(entry.orchestrator) } : {}),
     ...(entry.fixedEffort ? { fixed: true } : {}),
   };
-  // An Orchestrator has a fixed configuration: no effort changes it, and the plan says so (for `--effort` and for an `effort` in the user's config).
+  // An Orchestrator with fixedEffort has a fixed configuration: no effort changes it, and the plan says so.
   if (entry.fixedEffort) {
     const notes = [];
     if (effort) notes.push(`${host}: --effort ${JSON.stringify(effort)} was not applied: ${entry.label} has a fixed configuration, so the ${tier} tier keeps ${name}`);
@@ -602,7 +619,17 @@ export function resolveEntry(entry, host, tier, effort, selector) {
   const userModel = isPlain(u) && (nonEmpty(u.model) || nonEmpty(u.displayName));
   const e = u !== undefined && !userModel ? u : entry.efforts?.[effort];
   if (typeof e === 'string') return { ...base, effort: e };
-  if (isPlain(e)) return { ...base, model: e.model ?? entry.model, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label };
+  if (isPlain(e)) {
+    const nextModel = e.model ?? entry.model;
+    const sameModel = nextModel === entry.model;
+    const nextOrch = isPlain(e.orchestrator)
+      ? { ...(sameModel && isPlain(entry.orchestrator) ? entry.orchestrator : {}), ...e.orchestrator }
+      : (sameModel && isPlain(entry.orchestrator) ? structuredClone(entry.orchestrator) : undefined);
+    const out = { ...base, model: nextModel, effort: e.effort ?? effort, label: e.label ?? e.model ?? base.label };
+    if (nextOrch) out.orchestrator = nextOrch;
+    else delete out.orchestrator;
+    return out;
+  }
   if (effort === entry.effort) return base;
   return { ...base, note: `${host}: no "${effort}" effort in the ${tier} tier; kept ${name} (${entry.effort}); add hosts.${host}.tiers.${tier}.efforts.${effort} to your config to choose one` };
 }
@@ -611,17 +638,27 @@ export function resolveEntry(entry, host, tier, effort, selector) {
 const tierSelector = tier => (isPlain(tier) && Array.isArray(tier.models) && isPlain(tier.efforts) ? tier.efforts : undefined);
 
 let shippedFixed = null;
-/** The models the SHIPPED config gives a fixed configuration (the Orchestrators): fixed wherever a config names them. */
-function shippedFixedModels() {
-  if (shippedFixed === null) {
-    shippedFixed = new Set();
-    try {
-      const base = JSON.parse(fs.readFileSync(path.join(path.dirname(SELF), '..', 'assets', 'config.default.json'), 'utf8'));
-      for (const h of Object.values(base.hosts ?? {})) for (const tier of Object.values(h.tiers ?? {})) for (const e of tierEntries(tier)) if (e.fixedEffort && e.model) shippedFixed.add(e.model);
-    } catch { /* no shipped file beside this script (a staged copy): the host's own entries still count */ }
-  }
-  return shippedFixed;
+let shippedOrch = null;
+function loadShippedSets() {
+  if (shippedFixed !== null) return;
+  shippedFixed = new Set();
+  shippedOrch = new Set();
+  try {
+    const base = JSON.parse(fs.readFileSync(path.join(path.dirname(SELF), '..', 'assets', 'config.default.json'), 'utf8'));
+    for (const h of Object.values(base.hosts ?? {})) {
+      for (const tier of Object.values(h.tiers ?? {})) {
+        for (const e of tierEntries(tier)) {
+          if (e.fixedEffort && e.model) shippedFixed.add(e.model);
+          if ((e.fixedEffort || e.orchestrator) && e.model) shippedOrch.add(e.model);
+        }
+      }
+    }
+  } catch { /* no shipped file beside this script (a staged copy): the host's own entries still count */ }
 }
+/** The models the SHIPPED config gives a fixed configuration (`fixedEffort: true`). */
+function shippedFixedModels() { loadShippedSets(); return shippedFixed; }
+/** The Orchestrator models in the SHIPPED config (`fixedEffort` or `orchestrator` settings): refused on non-effortInModel hosts. */
+function shippedOrchestratorModels() { loadShippedSets(); return shippedOrch; }
 
 const fixedModelsFor = hostCfg => new Set([...shippedFixedModels(), ...Object.values(hostCfg?.tiers ?? {}).flatMap(tr => tierEntries(tr).filter(e => e.fixedEffort && e.model).map(e => e.model))]);
 
@@ -654,6 +691,7 @@ export function resolveTier(tier, host, tierName, effort, hostCfg) {
           effort: ovFixed ? 'fixed' : (ov.effort ?? effort),
           label: ov.label ?? ovModel ?? ov.displayName ?? e.label,
           ...(ov.quotaGroups ? { quotaGroups: ov.quotaGroups } : {}),
+          ...(isPlain(ov.orchestrator) ? { orchestrator: structuredClone(ov.orchestrator) } : {}),
           ...(ovFixed ? { fixed: true } : {}),
           ...(userTier ? { user: true } : {}),
           note: null,
@@ -669,8 +707,8 @@ export function resolveTier(tier, host, tierName, effort, hostCfg) {
     const label = u.label ?? u.model ?? u.displayName;
     const isUFixed = u.fixedEffort === true || Boolean(u.model && fixedModelsFor(hostCfg).has(u.model));
     const head = isUFixed
-      ? { r: { ...(u.model ? { model: u.model } : {}), ...(u.displayName ? { displayName: u.displayName } : {}), effort: 'fixed', label, ...(u.quotaGroups ? { quotaGroups: u.quotaGroups } : {}), fixed: true, user: true, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${label} has a fixed configuration, so the ${tierName} tier keeps ${u.model ?? u.displayName}` }, defaultEffort: 'fixed' }
-      : { r: { model: u.model, effort: u.effort ?? effort, label, user: true, note: null }, defaultEffort: 'medium' };
+      ? { r: { ...(u.model ? { model: u.model } : {}), ...(u.displayName ? { displayName: u.displayName } : {}), effort: 'fixed', label, ...(u.quotaGroups ? { quotaGroups: u.quotaGroups } : {}), ...(isPlain(u.orchestrator) ? { orchestrator: structuredClone(u.orchestrator) } : {}), fixed: true, user: true, note: `${host}: --effort ${JSON.stringify(effort)} was not applied: ${label} has a fixed configuration, so the ${tierName} tier keeps ${u.model ?? u.displayName}` }, defaultEffort: 'fixed' }
+      : { r: { model: u.model, effort: u.effort ?? effort, label, ...(isPlain(u.orchestrator) ? { orchestrator: structuredClone(u.orchestrator) } : {}), user: true, note: null }, defaultEffort: 'medium' };
     combined.unshift(head);
   }
   const seen = new Set();
@@ -731,7 +769,7 @@ export function configuredModels(cfg, host) {
 
 /** The `ran` part of a run result: the host, side, model and effort actually used, and the note when a requested effort was not available. */
 export function ranOf(c) {
-  return { host: c.host, side: c.side, model: c.model, effort: c.effort, label: c.label, ...(c.effort_note ? { effort_note: c.effort_note } : {}) };
+  return { host: c.host, side: c.side, model: c.model, effort: c.effort, label: c.label, ...(c.orchestrator ? { orchestrator: c.orchestrator } : {}), ...(c.effort_note ? { effort_note: c.effort_note } : {}) };
 }
 
 const PLAIN_WORD = /^[\w@./=-]+$/;
@@ -910,7 +948,7 @@ function pickModels({ host, tier, pairs, pool, st, min, flagEffort, asked }) {
     if (usage?.replaced_groups?.length) notes.push(`your quotaGroups rule replaces this model's groups (${usage.replaced_groups.join(' and ')}); headroom is read from ${(usage.groups ?? []).join(' and ')} only, so their quota is not checked`);
     if (usage?.unknown) notes.push(`headroom unknown (${usage.unknown}); the model runs`);
     const quota = notes.length ? { quota_note: notes.join('; ') } : {};
-    accepted.push({ model, effort: r.effort, label: r.label ?? model, ...(r.note ? { effort_note: r.note } : {}), ...(poolNote ? { pool_note: poolNote } : {}), ...quota, usage, binding: b });
+    accepted.push({ model, effort: r.effort, label: r.label ?? model, ...(r.orchestrator ? { orchestrator: r.orchestrator } : {}), ...(r.note ? { effort_note: r.note } : {}), ...(poolNote ? { pool_note: poolNote } : {}), ...quota, usage, binding: b });
   }
   if (accepted.length) {
     const [chosen, ...rest] = accepted;
@@ -963,7 +1001,7 @@ export function buildPlan(cfg, tier, statuses, here, onlyHosts, access, effort) 
       const c = pick.chosen;
       const u = pick.usage ?? {};
       candidates.push({
-        host, side, model: c.model, effort: c.effort, label: c.label, ...(c.effort_note ? { effort_note: c.effort_note } : {}),
+        host, side, model: c.model, effort: c.effort, label: c.label, ...(c.orchestrator ? { orchestrator: c.orchestrator } : {}), ...(c.effort_note ? { effort_note: c.effort_note } : {}),
         ...(c.quota_note ? { quota_note: c.quota_note } : {}),
         ...(c.pool_note ? { pool_note: c.pool_note } : {}),
         binding_pct: u.binding_pct ?? null, five_hour_pct: u.five_hour_pct ?? null, weekly_pct: u.weekly_pct ?? null,
@@ -1104,7 +1142,13 @@ export function buildSpec(cfg, host, t0, prompt, access, cwd, tier, extra = {}) 
         const note = ro ? 'Shell commands: none are available in this read-only run, and any shell command at all stops the run with no result. You can read a file only by its path: there is no tool here to list a folder or to search file contents. Read the files the brief names; if you would need to find a file or a line you were not given, say what you could not look up instead of guessing.\n\n' : `Shell commands: only these exact command lines are allowed here, and any other command stops the run with no result: ${[...allow, ...rules.full].join('; ')}. Run them exactly as written, with no cd, flags or pipes added.${fullSentence}\n\n`;
         const text = preamble(access, tier) + note + attached + prompt;
         const args = ['-p', text, '--model', t.model, '--mode', ro ? 'plan' : 'accept-edits', '--output-format', 'json'];
-        if (!ro) args.push('--sandbox', '--settings', JSON.stringify({ permissions: { allow: rules.rules } }));
+        const settings = {};
+        if (!ro) {
+          args.push('--sandbox');
+          settings.permissions = { allow: rules.rules };
+        }
+        if (t.orchestrator) settings.orchestrator = t.orchestrator;
+        if (Object.keys(settings).length) args.push('--settings', JSON.stringify(settings));
         if (!cfg.hosts.antigravity.effortInModel) args.push('--effort', t.effort);
         return { rules, spec: { args, stdin: null, env, chars: text.length, ...(rules.notes.length ? { notes: rules.notes } : {}) } };
       };
@@ -2145,7 +2189,7 @@ export async function runAttempts({ cands, access, cwd, tryOne, snap = snapshotT
     }
     before = end;
     if (failure === 'model' && c.alternates?.length) {
-      const { alternates, effort_note: _note, quota_note: _quota, pool_note: _pool, binding_pct: _b, five_hour_pct: _f, weekly_pct: _w, ...same } = c;
+      const { alternates, orchestrator: _orch, effort_note: _note, quota_note: _quota, pool_note: _pool, binding_pct: _b, five_hour_pct: _f, weekly_pct: _w, ...same } = c;
       const [next, ...rest] = alternates;
       queue.splice(i + 1, 0, { ...same, ...next, alternates: rest });
     }
@@ -2520,7 +2564,13 @@ async function cmdRun(opts, cfg) {
       if (tempNote) spec.notes = [...(spec.notes ?? []), tempNote];
       const editNote = editSideNoteFor(c, cands);
       if (editNote) spec.notes = [...(spec.notes ?? []), editNote];
-      return { ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv', ...(settingsOf(spec) ? { allow_rules: settingsOf(spec).permissions.allow } : {}), ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}), ...(budgetUsd !== null ? { budget: budgetOf(c.host, budgetUsd) } : {}) };
+      const settings = settingsOf(spec);
+      return {
+        ...c, cwd: tcwd, prompt_chars: spec.chars, args: spec.args.map(a => (a.length < 120 ? a : `${a.slice(0, 117)}...`)), prompt_via: spec.stdin ? 'stdin' : 'argv',
+        ...(settings?.permissions?.allow ? { allow_rules: settings.permissions.allow } : {}),
+        ...(settings?.orchestrator ? { orchestrator: settings.orchestrator } : {}),
+        ...(spec.notes ? { notes: spec.notes } : {}), ...(skip ? { skip } : {}), ...(budgetUsd !== null ? { budget: budgetOf(c.host, budgetUsd) } : {}),
+      };
     });
     // A dry run is where the length is cheap to find out: each attempt carries `skip` (the reason the real run would skip it).
     if (would_try.length && would_try.every(t => t.skip)) routerNotes.push('every listed attempt would be skipped: its command line is too long for the host (see skip on each); a real run would end with failure "too_long"');
@@ -2644,8 +2694,9 @@ Commands:
          the result and the dry run say the cap did not apply, and the run is bounded by --timeout only. --require-budget skips the hosts that
          have no budget flag (and needs a cap).
          --effort E picks a setting inside the tier where a host has one (config tiers.<tier>.efforts); a host without it keeps its
-         default and the result says so. An effort no candidate host knows is a usage error. An Orchestrator model has a fixed
-         configuration: --effort does not change it, and the plan says so.
+         default and the result says so. An effort no candidate host knows is a usage error. Orchestrator entries pass
+         --settings '{"orchestrator":{"planner","executor"}}' and tune worker effort with --effort; fixedEffort: true entries
+         keep a fixed configuration and note why.
          Each tier is an ordered list of models (config tiers.<tier>.models). The router reads the models the logged-in account can use
          (Antigravity: agy models; Codex: model/list; hosts.<host>.pool in the config replaces that list) and runs the first entry that is
          in it; a model the host refuses runs the next entry of the tier on the same host before another host or side. If the list cannot
