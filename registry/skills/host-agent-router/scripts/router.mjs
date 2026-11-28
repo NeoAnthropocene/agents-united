@@ -248,7 +248,7 @@ export function parseAgyModels(stdout) {
   return rows.length ? rows : null;
 }
 
-/** The Antigravity subscription tier implied by `agy models` rows: 'ultra' | 'pro' | 'enterprise' | 'free' | null. */
+/** The Antigravity subscription tier implied by `agy models` rows: 'ultra' (Carbon-capable paid Pro/Ultra pool) | 'pro' | 'enterprise' | 'free' | null. */
 export function agyPlanOf(rows) {
   if (!Array.isArray(rows) || !rows.length) return null;
   const slugs = rows.map(r => r.slug);
