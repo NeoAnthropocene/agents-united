@@ -131,7 +131,7 @@ describe('production evaluator lifecycle independently of realization', () => {
 
   it('resolves the direct author-skill route to its complete owning factory with the evaluator', async () => {
     const result = await new InstallEngine(resolver).install('author-skill', fixture.options);
-    expect(result.installed.skills).toEqual(['author-skill', 'author-rule', 'evaluate-artifact']);
+    expect(result.installed.skills).toEqual(['author-skill', 'author-rule', 'author-workflow', 'evaluate-artifact']);
     expect(await fs.pathExists(fixture.installed('.claude/skills/author-skill/SKILL.md'))).toBe(true);
     expect(await fs.pathExists(fixture.installed('.claude/agents/factory-evaluator.md'))).toBe(true);
     expect(await fs.pathExists(fixture.installed(`${skill}/SKILL.md`))).toBe(true);

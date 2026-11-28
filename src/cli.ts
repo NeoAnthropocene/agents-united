@@ -56,6 +56,7 @@ export function underConstructionNotice(bundle: BundleDefinition): string {
     return heading
       + '`author-skill` creates or repairs one skill folder and prepares draft evidence.\n'
       + '`author-rule` creates or repairs one rule file and prepares draft evidence.\n'
+      + '`author-workflow` creates or repairs one native Claude workflow for an existing Skill and prepares draft evidence.\n'
       + '`author-contract` prepares a shared definition/contract pair; `factory-realizer` prepares one Claude agent draft.\n'
       + '`factory-evaluator` gives an independent read-only review of a draft; `factory-sync` plans host-update syncs, read-only.\n'
       + 'First delivery: Claude Code CLI in a workspace with --native. Use:\n'

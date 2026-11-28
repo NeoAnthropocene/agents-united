@@ -30,14 +30,14 @@ describe('RegistryResolver', () => {
       rules: ['skill-attribution.md'],
       hostAvailability: { claude: { lane: 'native', scopes: ['workspace'] } },
     });
-    expect([...(bundle?.skills ?? [])].sort()).toEqual(['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host']);
+    expect([...(bundle?.skills ?? [])].sort()).toEqual(['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'author-workflow', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host']);
     expect(bundle?.orchestrator).toBeUndefined();
     expect(bundle?.parentBundle).toBeUndefined();
   });
 
   it('resolves the explicit contributor toolkit without adding it to end-user inventories', async () => {
     const authoring = await resolver.resolve('agent-factory');
-    expect([...authoring.skills].sort()).toEqual(['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host']);
+    expect([...authoring.skills].sort()).toEqual(['author-bundle', 'author-contract', 'author-rule', 'author-skill', 'author-workflow', 'coordinate-artifact', 'evaluate-artifact', 'git-guardrails', 'handoff', 'host-agent-router', 'realize-artifact', 'repo-doctor', 'sync-host']);
     expect(authoring.agents).toEqual([]);
     expect(authoring.workflows).toEqual([]);
     expect([...authoring.rules].sort()).toEqual(['GEMINI.md', 'skill-attribution.md']);
@@ -45,6 +45,7 @@ describe('RegistryResolver', () => {
       const ordinary = await resolver.resolve(identifier);
       expect(ordinary.skills).not.toContain('author-skill');
       expect(ordinary.skills).not.toContain('author-rule');
+      expect(ordinary.skills).not.toContain('author-workflow');
       expect(ordinary.skills).not.toContain('realize-artifact');
       expect(ordinary.skills).not.toContain('author-contract');
       expect(ordinary.skills).not.toContain('evaluate-artifact');

@@ -135,8 +135,8 @@ describe('author-rule native Claude loader and binding', () => {
   const loader = (): string => fs.readFileSync(loaderFile, 'utf8');
   const entry = (): { skill: string; file: string } => BOUND_FACTORY_SKILLS.find(item => item.skill === 'author-rule')!;
 
-  it('is the second entry of the closed reviewed list, after author-skill', () => {
-    expect(BOUND_FACTORY_SKILLS.map(item => item.skill)).toEqual(['author-skill', 'author-rule']);
+  it('is the second entry of the closed reviewed list, after author-skill (author-workflow follows)', () => {
+    expect(BOUND_FACTORY_SKILLS.map(item => item.skill).slice(0, 2)).toEqual(['author-skill', 'author-rule']);
     expect(entry().file).toBe('hosts/claude/agent-factory-rule.binding.json');
   });
 

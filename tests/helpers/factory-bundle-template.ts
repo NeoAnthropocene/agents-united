@@ -22,7 +22,7 @@ export async function prepareBundleTemplate() {
   await fs.ensureDir(workspace);
   const catalog = await fs.readJson(path.join(registry, 'bundles.json')) as { bundles: Record<string, BundleDefinition> };
   const factory = catalog.bundles['agent-factory']!;
-  factory.skills = ['author-skill', 'author-rule', 'author-bundle', 'host-agent-router', 'handoff', 'git-guardrails'];
+  factory.skills = ['author-skill', 'author-rule', 'author-workflow', 'author-bundle', 'host-agent-router', 'handoff', 'git-guardrails'];
   await fs.writeJson(path.join(registry, 'bundles.json'), catalog);
   for (const name of ['realize', 'evaluate', 'sync', 'contract']) await fs.remove(path.join(registry, `hosts/claude/agent-factory-${name}.binding.json`));
   const state = path.join(workspace, '.claude/.agents-united');

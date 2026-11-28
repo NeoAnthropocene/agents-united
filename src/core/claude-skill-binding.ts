@@ -23,6 +23,7 @@ export interface BoundFactorySkill { readonly skill: string; readonly file: stri
 export const BOUND_FACTORY_SKILLS: readonly BoundFactorySkill[] = [
   { skill: 'author-skill', file: 'hosts/claude/agent-factory.binding.json' },
   { skill: 'author-rule', file: 'hosts/claude/agent-factory-rule.binding.json' },
+  { skill: 'author-workflow', file: 'hosts/claude/agent-factory-workflow.binding.json' },
 ];
 
 /** True when `name` is a factory Skill whose loading edge is declared by a binding record. */

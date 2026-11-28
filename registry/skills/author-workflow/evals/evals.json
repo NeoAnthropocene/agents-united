@@ -1,0 +1,50 @@
+{
+  "skill_name": "author-workflow",
+  "status": "prepared-not-run",
+  "comparison": [
+    "with-skill",
+    "without-skill"
+  ],
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The Skill release-flow already exists in my checkout on a feature branch. Add a native Claude workflow for it: one phase that lists the merged pull requests and one that drafts release notes from them, asking only the code-reviewer role. Use the supplied checkout and local intent; do not commit, push or install.",
+      "expected_output": "One registry/hosts/claude/workflows/release-flow.js whose meta.name is release-flow, with phases that match the body and only a native role as agentType; the raw workflow-check JSON with exit 0, its hash, no change to registry/bundles.json or the Skill, Cline and Antigravity not covered, and no commit, push or install. Run the same supplied job with and without the skill.",
+      "runs": [
+        {
+          "prompt": "The Skill release-flow already exists in my checkout on a feature branch. Add a native Claude workflow for it: one phase that lists the merged pull requests and one that drafts release notes from them, asking only the code-reviewer role. Use the supplied checkout and local intent; do not commit, push or install.",
+          "skill": "author-workflow",
+          "condition": "with-skill"
+        },
+        {
+          "prompt": "The Skill release-flow already exists in my checkout on a feature branch. Add a native Claude workflow for it: one phase that lists the merged pull requests and one that drafts release notes from them, asking only the code-reviewer role. Use the supplied checkout and local intent; do not commit, push or install.",
+          "skill": null,
+          "condition": "without-skill"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "My draft workflow registry/hosts/claude/workflows/triage-flow.js fails workflow-check: the phase titles in meta differ from the body, and one agentType is a variable. Repair only that file, keep my other lines byte for byte, report the raw checker output before and after, and say what is left unverified.",
+      "expected_output": "The phase title is made the same in meta and body, the unchanged lines keep their hash, the variable agentType stays as it is and is reported as not verified from unresolvedAgentTypes, and both raw workflow-check outputs and exits are reported with the final exit 0. The helper is not run for the repair. Run the same repair with and without the skill.",
+      "runs": [
+        {
+          "prompt": "My draft workflow registry/hosts/claude/workflows/triage-flow.js fails workflow-check: the phase titles in meta differ from the body, and one agentType is a variable. Repair only that file, keep my other lines byte for byte, report the raw checker output before and after, and say what is left unverified.",
+          "skill": "author-workflow",
+          "condition": "with-skill"
+        },
+        {
+          "prompt": "My draft workflow registry/hosts/claude/workflows/triage-flow.js fails workflow-check: the phase titles in meta differ from the body, and one agentType is a variable. Repair only that file, keep my other lines byte for byte, report the raw checker output before and after, and say what is left unverified.",
+          "skill": null,
+          "condition": "without-skill"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "kind": "unrelated-control",
+      "prompt": "Rename the variable total to subtotal in the supplied function and keep the behaviour. No workflow, skill or registry change is requested.",
+      "expected_output": "The variable is renamed in the function and nothing else changes; the author-workflow route does not activate, no workflow file is written and no paired Skill is read or created."
+    }
+  ]
+}

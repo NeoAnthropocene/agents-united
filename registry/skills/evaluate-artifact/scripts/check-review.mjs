@@ -20,6 +20,18 @@ const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(
 const same = (a, b) => canonical(a) === canonical(b);
 const lf = text => text.replace(/\r\n/g, '\n');
 
+// The kinds whose subject is one file, with the checker their route runs on it and the folder of the registry copy it may also name
+// (a workflow review pins only the orchestration guide and page, a rule review only the rule ones). candidatePath says whether the check
+// may also name the candidate's own file: a rule's may, a workflow's may not, because workflow-check passes only at
+// registry/hosts/claude/workflows/<name>.js. exactSpelling says the recorded path must be one expected spelling, compared as written
+// (rawSpelling: only the kind of separator may differ, and only on Windows) and in exact case on every platform, and the registry copy must sit
+// on a folder chain without a link (a link, a "." or ".." segment, another letter case or a registry folder not named exactly "registry" is
+// refused by workflow-check itself, so a path that merely reaches the same file proves nothing); a rule's path is compared by its physical file. review-job.mjs holds the same table; the two scripts copy it on purpose and never import each other.
+const SINGLE_FILE_KINDS = {
+  rule: { noun: 'rule', check: 'rule-check', extension: '.md', registryFolder: ['rules'], candidatePath: true, exactSpelling: false, guide: 'rule' },
+  workflow: { noun: 'workflow', check: 'workflow-check', extension: '.js', registryFolder: ['hosts', 'claude', 'workflows'], candidatePath: false, exactSpelling: true, guide: 'orchestration' },
+};
+
 /** The invariant coverage files of a Claude agent review: `<agent without .md>.coverage.json` beside a subject agent, when the candidate holds it (ADR 0072). */
 function coverageFilesOf(job) {
   if (job.subject.kind !== 'claude-agent') return [];
@@ -116,6 +128,20 @@ const withinBoth = (parent, child) => within(parent, child) && physicallyWithin(
 const sameBoth = (a, b) => sameString(a, b) && physicallySame(a, b);
 const overlaps = (a, b) => [[a, b], [physical(a), physical(b)]].some(([x, y]) => within(x, y) || within(y, x));
 const HOST_DIRS = ['.agents', '.claude', '.cline', '.cursor', '.codex', '.opencode', '.gemini'];
+// The recorded spelling of a workflow's registry copy is compared as written: only the kind of separator may differ, and only on Windows, where
+// workflow-check takes either. A "." or ".." segment, a doubled separator or another letter case is another spelling (workflow-check refuses it).
+const separators = value => (process.platform === 'win32' ? value.replace(/\\/g, '/') : value);
+const rawSpelling = (file, given) => typeof given === 'string'
+  && !given.split(process.platform === 'win32' ? /[\\/]/ : '/').some(part => part === '.' || part === '..') && separators(file) === separators(given);
+// True when no folder from the root down to the file, and not the file, is a link or junction (the same walk as absolute() above, which bytesAt runs, so the builder and this checker agree).
+const unlinked = file => {
+  let current = path.parse(path.resolve(file)).root;
+  for (const part of path.resolve(file).slice(current.length).split(path.sep).filter(Boolean)) {
+    current = path.join(current, part);
+    if (fs.lstatSync(current, { throwIfNoEntry: false })?.isSymbolicLink()) return false;
+  }
+  return true;
+};
 /** A managed Host folder in the root as given or in its physical spelling. */
 const managedHostPath = root => [root, physical(root)].some(spelling => spelling.split(/[\\/]/).some(part => HOST_DIRS.includes(part.toLowerCase())));
 const unique = (values, label) => { if (new Set(values.map(value => value.toLowerCase())).size !== values.length) fail(`${label}: duplicate/case-colliding values.`); };
@@ -266,14 +292,16 @@ function checkJob(jobFile) {
   if ((host.observedVersion === null) === (host.unverifiedReason === null)) fail('Authoring Host needs an observed version or an explicit unverified reason.');
   if (job.subject.kind === 'claude-agent' && !job.subject.target) fail('Claude agent review requires its explicit target context.');
   if (job.subject.kind === 'rule' && !job.subject.target) fail('Rule review requires its explicit target context.');
+  if (job.subject.kind === 'workflow' && !job.subject.target) fail('Workflow review requires its explicit target context.');
   const inventory = snapshot(roots.candidate, budget);
   const declared = job.candidate.files.map(({ role: _role, ...pin }) => ({ ...pin, path: relative(pin.path) }))
     .sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
   if (!same(inventory, declared)) fail('Candidate inventory/hash mismatch: missing, changed or unreported files.');
   unique(job.subject.paths.map(relative), 'Subject paths');
   if (!same([...job.subject.paths].sort(), job.candidate.files.filter(item => item.role === 'subject').map(item => item.path).sort())) fail('Subject coverage differs from the fixed candidate role inventory.');
-  if (job.subject.kind === 'rule' && (job.subject.paths.length !== 1 || job.subject.paths[0] !== `${job.subject.identity}.md`)) {
-    fail(`A rule review has exactly one subject file, ${job.subject.identity}.md.`);
+  const single = SINGLE_FILE_KINDS[job.subject.kind];
+  if (single && (job.subject.paths.length !== 1 || job.subject.paths[0] !== `${job.subject.identity}${single.extension}`)) {
+    fail(`A ${single.noun} review has exactly one subject file, ${job.subject.identity}${single.extension}.`);
   }
   const candidateDigest = hash(canonical(inventory));
   if (job.inputs.length > budget.maxEvidenceFiles) fail('Evidence file budget exceeded.');
@@ -318,35 +346,41 @@ function checkJob(jobFile) {
     if (!hasPin(path.join(workspace, relative(rel)), 'loading')) fail(`Missing required installed loading pin: ${rel}.`);
   }
   if (!hasPin(path.join(workspace, '.claude/hooks/agents-united-readonly-guard.js'), 'guard')) fail('Missing required read-only guard pin.');
-  // A rule review shows the route's checker ran: an executed, required rule-check and its saved output and receipt as validator inputs.
-  if (job.subject.kind === 'rule') {
-    const ran = job.checks.some(check => check.id === 'rule-check' && check.required === true && (check.status === 'passed' || check.status === 'failed'));
-    const saved = ['rule-check-raw', 'rule-check-receipt'].every(id => job.inputs.some(input => input.id === id && input.kind === 'validator' && input.required && input.status === 'clear'));
-    if (!ran || !saved) fail('A rule review needs its executed rule-check: record a required check with the id rule-check that was run.');
-    // Record consistency only (nothing is executed): the recorded command is the documented rule-check on this review's own rule file,
+  // A rule or workflow review shows the route's checker ran: an executed, required check of its route and its saved output and receipt as validator inputs.
+  if (single) {
+    const ran = job.checks.some(check => check.id === single.check && check.required === true && (check.status === 'passed' || check.status === 'failed'));
+    const saved = [`${single.check}-raw`, `${single.check}-receipt`].every(id => job.inputs.some(input => input.id === id && input.kind === 'validator' && input.required && input.status === 'clear'));
+    if (!ran || !saved) fail(`A ${single.noun} review needs its executed ${single.check}: record a required check with the id ${single.check} that was run.`);
+    // Record consistency only (nothing is executed): the recorded command is the documented check on this review's own file,
     // and the two validator inputs (the read-folder copies) have the length and hash of the raw log and receipt the check record pins. The builder refuses the same job with the same reasons.
-    const recorded = job.checks.find(check => check.id === 'rule-check');
+    const recorded = job.checks.find(check => check.id === single.check);
     const cli = path.join(job.source.checkout, 'dist/cli.js');
     const [first, verb, flag, artifact, ...rest] = recorded.command.argv;
     if (!physicallySame(recorded.command.executable.path, job.runtime.executable.path) || rest.length > 0
-      || typeof first !== 'string' || !path.isAbsolute(first) || !physicallySame(first, cli) || verb !== 'rule-check' || flag !== '--artifact' || artifact === undefined) {
-      fail('The rule-check must record the command node <checkout>/dist/cli.js rule-check --artifact <the rule file>.');
+      || typeof first !== 'string' || !path.isAbsolute(first) || !physicallySame(first, cli) || verb !== single.check || flag !== '--artifact' || artifact === undefined) {
+      fail(`The ${single.check} must record the command node <checkout>/dist/cli.js ${single.check} --artifact <the ${single.noun} file>.`);
     }
-    const rule = `${job.subject.identity}.md`;
-    // The candidate's own file is always the rule under review. A registry spelling counts only when that file exists as an ordinary
+    const reviewed = `${job.subject.identity}${single.extension}`;
+    // A rule's own candidate file may be the one under review; a workflow's never (candidatePath). A registry spelling counts only when that file exists as an ordinary
     // file with the sha256 the job pins for the subject (the checker already reads the registry and checkout it names).
-    const pinnedRule = job.candidate.files.find(item => item.path === rule)?.sha256;
+    const pinnedFile = job.candidate.files.find(item => item.path === reviewed)?.sha256;
     const sameBytes = file => {
       const stat = fs.lstatSync(file, { throwIfNoEntry: false });
-      return stat?.isFile() === true && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, 'Registry rule')) === pinnedRule;
+      return stat?.isFile() === true && (!single.exactSpelling || unlinked(file)) && stat.size <= budget.maxEvidenceFileBytes && hash(bytesAt(file, budget.maxEvidenceFileBytes, `Registry ${single.noun}`)) === pinnedFile;
     };
-    const own = [[path.join(roots.candidate, rule), true], [path.join(job.source.registry, 'rules', rule), false], [path.join(job.source.checkout, 'registry', 'rules', rule), false]];
-    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => physicallySame(file, artifact) && (isCandidate || sameBytes(file)))) {
-      fail('The rule-check must check this review\'s own rule file: the candidate\'s <identity>.md or <registry>/rules/<identity>.md.');
+    // The declared registry spelling counts only where the folder is named exactly "registry", as workflow-check requires; the checkout's own is always so named.
+    const registryNamed = !single.exactSpelling || path.basename(job.source.registry) === 'registry';
+    const own = [...(single.candidatePath ? [[path.join(roots.candidate, reviewed), true]] : []), ...(registryNamed ? [[path.join(job.source.registry, ...single.registryFolder, reviewed), false]] : []), [path.join(job.source.checkout, 'registry', ...single.registryFolder, reviewed), false]];
+    const sameSpelling = (file, given) => (single.exactSpelling ? rawSpelling(file, given) : physicallySame(file, given));
+    if (typeof artifact !== 'string' || !path.isAbsolute(artifact) || !own.some(([file, isCandidate]) => sameSpelling(file, artifact) && (isCandidate || sameBytes(file)))) {
+      const folder = single.registryFolder.join('/');
+      fail(single.candidatePath
+        ? `The ${single.check} must check this review's own ${single.noun} file: the candidate's <identity>${single.extension} or <registry>/${folder}/<identity>${single.extension}.`
+        : `The ${single.check} must check the registry copy of this review's own ${single.noun}: <registry>/${folder}/<identity>${single.extension} or <checkout>/registry/${folder}/<identity>${single.extension}, a regular file with the candidate's bytes. A candidate path can never pass: ${single.check} passes only at registry/${folder}/<name>${single.extension}.`);
     }
-    for (const [id, pin] of [['rule-check-raw', recorded.raw], ['rule-check-receipt', recorded.receipt]]) {
+    for (const [id, pin] of [[`${single.check}-raw`, recorded.raw], [`${single.check}-receipt`, recorded.receipt]]) {
       const input = job.inputs.find(item => item.id === id);
-      if (!pin || input.sha256 !== pin.sha256 || input.bytes !== pin.bytes) fail(`The rule-check evidence differs from the check record: ${id}.`);
+      if (!pin || input.sha256 !== pin.sha256 || input.bytes !== pin.bytes) fail(`The ${single.check} evidence differs from the check record: ${id}.`);
     }
   }
   for (const kind of ['profile', 'tool-policy', 'library-lock', 'validator', 'provenance']) {
@@ -363,7 +397,8 @@ function checkJob(jobFile) {
   const { subject } = job;
   if (subject.kind === 'skill' && subject.definition !== null) fail('A Skill-only review has no shared definition.');
   if (subject.kind === 'rule' && subject.definition !== null) fail('A rule review has no shared definition.');
-  if (subject.kind !== 'skill' && subject.kind !== 'rule' && !subject.definition) fail('Shared/native review requires its exact shared definition stem.');
+  if (subject.kind === 'workflow' && subject.definition !== null) fail('A workflow review has no shared definition.');
+  if (subject.kind !== 'skill' && !(subject.kind in SINGLE_FILE_KINDS) && !subject.definition) fail('Shared/native review requires its exact shared definition stem.');
   if (subject.kind === 'shared-pair') {
     if (subject.identity !== subject.definition || subject.target !== null) fail('Shared definition must match the host-neutral pair identity.');
     if (!same([...subject.paths].sort(), [`core/${subject.definition}.contract.json`, `core/${subject.definition}.core.md`])) fail('Shared definition pair paths are incomplete or substituted.');
@@ -373,7 +408,7 @@ function checkJob(jobFile) {
     if (!hasPin(path.join(job.source.registry, 'core', `${subject.definition}.${suffix}`), kind)) fail(`Missing required ${kind} pin for definition ${subject.definition}.`);
   }
   const pages = { agent: 'agent/sub-agents.md', skill: 'skill/skills.md', hook: 'hook/hooks.md', tools: 'tools/tools-reference.md', orchestration: 'orchestration/workflows.md', rule: 'rule/memory.md' };
-  const guideKinds = subject.kind === 'rule' ? ['rule'] : subject.target !== null ? ['agent', 'skill', 'hook', 'tools', 'orchestration'] : subject.kind === 'skill' ? ['skill'] : [];
+  const guideKinds = single ? [single.guide] : subject.target !== null ? ['agent', 'skill', 'hook', 'tools', 'orchestration'] : subject.kind === 'skill' ? ['skill'] : [];
   const library = path.join(job.source.checkout, 'host-library/claude');
   const libraryLock = jsonAt(path.join(library, 'library.lock.json'), budget.maxEvidenceFileBytes, 'Library lock');
   if (libraryLock.host !== 'claude') fail('Selected library lock belongs to a different Host.');
@@ -395,7 +430,7 @@ function checkJob(jobFile) {
   if (!physicallySame(job.rubric.path, rubricFile)) fail('Review rubric must be this bundled rubric.');
   const rubric = JSON.parse(decode(pinned(job.rubric, budget.maxEvidenceFileBytes, 'Rubric')));
   if (rubric.version !== job.rubric.version || !same([...job.rubric.criteria.map(item => item.id)].sort(), rubric.criteria.map(item => item.id).sort())) fail('Fixed rubric criterion coverage mismatch.');
-  const needsShared = job.subject.kind !== 'skill' && job.subject.kind !== 'rule';
+  const needsShared = job.subject.kind !== 'skill' && !single;
   const needsHost = job.subject.target !== null;
   const needsCoverage = coverageFilesOf(job).length > 0;
   for (const criterion of job.rubric.criteria) {

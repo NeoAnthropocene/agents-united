@@ -8,7 +8,7 @@ import { validateCoreSchema } from '../../src/core/semantic-core.js';
 /** Focused source fixture retaining slice 3, with no realizer or contract-authoring dependency. */
 export async function prepareFactoryEvaluator(root: string) {
   const fixture = await prepareFactoryNative(root);
-  fixture.bundle.skills = ['author-skill', 'author-rule', 'evaluate-artifact'];
+  fixture.bundle.skills = ['author-skill', 'author-rule', 'author-workflow', 'evaluate-artifact'];
   await fs.outputJson(fixture.source('bundles.json'), { version: 1, bundles: { 'agent-factory': fixture.bundle } });
   for (const rel of ['hosts/claude/agent-factory-realize.binding.json', 'hosts/claude/agents/factory-realizer.md',
     'hosts/claude/skills/realize-artifact', 'skills/realize-artifact', 'core/subagent-realize-for-host.core.md',
